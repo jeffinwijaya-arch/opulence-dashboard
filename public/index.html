@@ -548,7 +548,7 @@
         <div class="page" id="page-inventory">
             <div class="page-head">
                 <h1>Inventory</h1>
-                <p>Bot Sheet — Add, edit, and manage watches</p>
+                <p>Bot Sheet — Add, edit, and manage watches. Actions auto-post to Telegram.</p>
             </div>
             <!-- Summary -->
             <div class="metrics" id="inv-mgmt-summary" style="margin-bottom:12px;">
@@ -556,10 +556,13 @@
                 <div class="metric"><div class="label">Unsold</div><div class="val" id="im-unsold">—</div></div>
                 <div class="metric"><div class="label">In Transit</div><div class="val" id="im-transit">—</div></div>
                 <div class="metric"><div class="label">Unposted</div><div class="val" id="im-unposted">—</div></div>
+                <div class="metric"><div class="label">Capital</div><div class="val" id="im-capital">—</div></div>
+                <div class="metric"><div class="label">Revenue</div><div class="val" id="im-revenue">—</div></div>
+                <div class="metric"><div class="label">Profit</div><div class="val" id="im-profit">—</div></div>
             </div>
             <!-- Controls -->
             <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
-                <input class="input" id="im-search" placeholder="Search ref, seller, buyer..." style="flex:1;min-width:150px;" oninput="filterInventory()">
+                <input class="input" id="im-search" placeholder="Search ref, seller, buyer, serial..." style="flex:1;min-width:150px;" oninput="filterInventory()">
                 <select class="input" id="im-filter" style="width:auto;" onchange="filterInventory()">
                     <option value="all">All</option>
                     <option value="unsold">Unsold</option>
@@ -576,7 +579,7 @@
             <div style="overflow-x:auto;">
                 <table class="tbl" id="im-table">
                     <thead><tr>
-                        <th>Description</th><th>From</th><th>To</th><th>Cost</th><th>Sold $</th>
+                        <th>Description</th><th>From</th><th>To</th><th class="right">Cost</th><th class="right">Sold $</th><th class="right">P&L</th>
                         <th>Arr</th><th>Post</th><th>Sold</th><th>Ship</th><th>Paid</th><th>Actions</th>
                     </tr></thead>
                     <tbody id="im-tbody"></tbody>
@@ -638,6 +641,52 @@
                         <button class="btn" id="wm-submit" onclick="submitWatchForm()" style="background:var(--green);color:var(--bg-1);">Save</button>
                     </div>
                     <div id="wm-status" style="display:none;padding:8px;border-radius:var(--radius);font-size:0.75rem;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sell Watch Modal -->
+        <div id="sell-modal" style="display:none;position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+            <div style="background:var(--bg-2);border-radius:var(--radius);padding:20px;max-width:400px;width:90%;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <h3 style="margin:0;">Record Sale</h3>
+                    <button onclick="closeSellModal()" style="background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;">X</button>
+                </div>
+                <input type="hidden" id="sm-row">
+                <div id="sm-watch-info" style="font-size:0.75rem;color:var(--text-2);margin-bottom:10px;padding:8px;background:var(--bg-3);border-radius:var(--radius);"></div>
+                <div style="display:grid;gap:8px;">
+                    <div><label style="font-size:0.68rem;color:var(--text-2);">Sold To</label>
+                        <input class="input" id="sm-to" style="width:100%;margin-top:3px;" placeholder="Buyer name"></div>
+                    <div><label style="font-size:0.68rem;color:var(--text-2);">Sold Price ($)</label>
+                        <input class="input" id="sm-price" type="number" style="width:100%;margin-top:3px;" placeholder="e.g. 26100"></div>
+                    <div><label style="font-size:0.68rem;color:var(--text-2);">Sale Date</label>
+                        <input class="input" id="sm-date" type="date" style="width:100%;margin-top:3px;"></div>
+                    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
+                        <button class="btn" onclick="closeSellModal()" style="opacity:0.6;">Cancel</button>
+                        <button class="btn" id="sm-submit" onclick="submitSale()" style="background:var(--green);color:var(--bg-1);">Sell</button>
+                    </div>
+                    <div id="sm-status" style="display:none;padding:8px;border-radius:var(--radius);font-size:0.75rem;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ship Watch Modal -->
+        <div id="ship-modal" style="display:none;position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+            <div style="background:var(--bg-2);border-radius:var(--radius);padding:20px;max-width:400px;width:90%;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <h3 style="margin:0;">Mark Shipped</h3>
+                    <button onclick="closeShipModal()" style="background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;">X</button>
+                </div>
+                <input type="hidden" id="shm-row">
+                <div id="shm-watch-info" style="font-size:0.75rem;color:var(--text-2);margin-bottom:10px;padding:8px;background:var(--bg-3);border-radius:var(--radius);"></div>
+                <div style="display:grid;gap:8px;">
+                    <div><label style="font-size:0.68rem;color:var(--text-2);">Tracking Number (optional)</label>
+                        <input class="input" id="shm-tracking" style="width:100%;margin-top:3px;" placeholder="FedEx tracking #"></div>
+                    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
+                        <button class="btn" onclick="closeShipModal()" style="opacity:0.6;">Cancel</button>
+                        <button class="btn" id="shm-submit" onclick="submitShip()" style="background:var(--accent);color:var(--bg-1);">Ship</button>
+                    </div>
+                    <div id="shm-status" style="display:none;padding:8px;border-radius:var(--radius);font-size:0.75rem;"></div>
                 </div>
             </div>
         </div>
@@ -2288,10 +2337,20 @@ async function loadInventoryPage() {
 function updateInventorySummary() {
     const d = invMgmtData;
     const el = id => document.getElementById(id);
+    const p = v => { const n = parseFloat(String(v||'0').replace(/[$,]/g,'')); return isNaN(n)?0:n; };
+    const fmt = n => '$' + Math.round(n).toLocaleString();
     el('im-total').textContent = d.length;
     el('im-unsold').textContent = d.filter(r => r.sold !== 'Yes').length;
     el('im-transit').textContent = d.filter(r => r.sold === 'Yes' && r.shipped !== 'Yes').length;
     el('im-unposted').textContent = d.filter(r => r.sold !== 'Yes' && r.posted !== 'Yes' && r.arrived === 'Yes').length;
+    const totalCost = d.reduce((s,r) => s + p(r.cost_price), 0);
+    const totalRevenue = d.filter(r=>r.sold==='Yes').reduce((s,r) => s + p(r.sold_price), 0);
+    const totalProfit = d.filter(r=>r.sold==='Yes').reduce((s,r) => s + (p(r.sold_price) - p(r.cost_price)), 0);
+    el('im-capital').textContent = fmt(totalCost);
+    el('im-revenue').textContent = fmt(totalRevenue);
+    const profitEl = el('im-profit');
+    profitEl.textContent = (totalProfit>=0?'+':'') + fmt(totalProfit);
+    profitEl.style.color = totalProfit >= 0 ? 'var(--green)' : 'var(--red)';
 }
 
 function filterInventory() {
@@ -2320,23 +2379,33 @@ function renderInventoryTable(rows) {
     const tbody = document.getElementById('im-tbody');
     if (!tbody) return;
     if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-2);">No watches found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:20px;color:var(--text-2);">No watches found</td></tr>';
         return;
     }
     const yn = v => v === 'Yes' ? '<span style="color:var(--green);">Y</span>' : '<span style="color:var(--text-2);">-</span>';
     const price = v => { if (!v) return '-'; const n = parseFloat(String(v).replace(/[$,]/g,'')); return isNaN(n)?v:'$'+n.toLocaleString(); };
+    const pnl = r => {
+        if (r.sold !== 'Yes') return '<span style="color:var(--text-2);">—</span>';
+        const cost = parseFloat(String(r.cost_price||'0').replace(/[$,]/g,''));
+        const sold = parseFloat(String(r.sold_price||'0').replace(/[$,]/g,''));
+        if (!cost || !sold) return '<span style="color:var(--text-2);">—</span>';
+        const diff = sold - cost;
+        const color = diff >= 0 ? 'var(--green)' : 'var(--red)';
+        return `<span style="color:${color};">${diff>=0?'+':''}$${Math.round(diff).toLocaleString()}</span>`;
+    };
     
     tbody.innerHTML = rows.map(r => `<tr style="cursor:pointer;" ondblclick="editWatch(${r.row})">
         <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(r.description||'').replace(/"/g,'&quot;')}">${r.description||''}</td>
         <td style="font-size:0.72rem;">${r.bought_from||'-'}</td>
         <td style="font-size:0.72rem;">${r.sold_to||'-'}</td>
-        <td style="font-family:var(--mono);font-size:0.72rem;">${price(r.cost_price)}</td>
-        <td style="font-family:var(--mono);font-size:0.72rem;">${price(r.sold_price)}</td>
+        <td class="right" style="font-size:0.72rem;">${price(r.cost_price)}</td>
+        <td class="right" style="font-size:0.72rem;">${price(r.sold_price)}</td>
+        <td class="right" style="font-size:0.72rem;">${pnl(r)}</td>
         <td>${yn(r.arrived)}</td><td>${yn(r.posted)}</td><td>${yn(r.sold)}</td><td>${yn(r.shipped)}</td><td>${yn(r.paid_after_sold)}</td>
         <td style="white-space:nowrap;font-size:0.68rem;">
             ${r.arrived!=='Yes'?`<a onclick="quickAction(${r.row},'arrived')" style="cursor:pointer;color:var(--accent);margin-right:4px;">Arr</a>`:''}
-            ${r.sold!=='Yes'?`<a onclick="showSoldModal(${r.row})" style="cursor:pointer;color:var(--green);margin-right:4px;">Sell</a>`:''}
-            ${r.sold==='Yes'&&r.shipped!=='Yes'?`<a onclick="quickAction(${r.row},'shipped')" style="cursor:pointer;color:var(--accent);margin-right:4px;">Ship</a>`:''}
+            ${r.sold!=='Yes'?`<a onclick="showSellModal(${r.row})" style="cursor:pointer;color:var(--green);margin-right:4px;">Sell</a>`:''}
+            ${r.sold==='Yes'&&r.shipped!=='Yes'?`<a onclick="showShipModal(${r.row})" style="cursor:pointer;color:var(--accent);margin-right:4px;">Ship</a>`:''}
             ${r.sold==='Yes'&&r.paid_after_sold!=='Yes'?`<a onclick="quickAction(${r.row},'paid')" style="cursor:pointer;color:var(--green);margin-right:4px;">Paid</a>`:''}
             <a onclick="editWatch(${r.row})" style="cursor:pointer;color:var(--text-2);">Edit</a>
         </td>
@@ -2344,29 +2413,83 @@ function renderInventoryTable(rows) {
 }
 
 async function quickAction(row, action) {
-    if (!confirm(`Mark row ${row} as ${action}?`)) return;
+    const watch = invMgmtData.find(r => r.row === row);
+    const desc = watch ? watch.description : `Row ${row}`;
+    if (!confirm(`Mark "${desc}" as ${action}?`)) return;
     try {
         const r = await fetch(`/api/inventory/${row}/${action}`, {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
         const d = await r.json();
-        if (d.ok) loadInventoryPage();
+        if (d.ok) { loadInventoryPage(); }
         else alert('Error: ' + (d.error||'Unknown'));
     } catch(e) { alert('Error: ' + e.message); }
 }
 
-function showSoldModal(row) {
+// ── Sell Modal ──
+function showSellModal(row) {
     const watch = invMgmtData.find(r => r.row === row);
     if (!watch) return;
-    const soldTo = prompt(`Sold "${watch.description}" to:`);
-    if (!soldTo) return;
-    const soldPrice = prompt('Sold price ($):');
-    if (!soldPrice) return;
-    fetch(`/api/inventory/${row}/sold`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({sold_to: soldTo, sold_price: soldPrice})
-    }).then(r=>r.json()).then(d => {
-        if (d.ok) loadInventoryPage();
-        else alert('Error: ' + (d.error||'Unknown'));
-    }).catch(e => alert('Error: ' + e.message));
+    document.getElementById('sm-row').value = row;
+    document.getElementById('sm-watch-info').textContent = watch.description || `Row ${row}`;
+    document.getElementById('sm-to').value = '';
+    document.getElementById('sm-price').value = watch.sale_price ? parseFloat(String(watch.sale_price).replace(/[$,]/g,'')) : '';
+    document.getElementById('sm-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('sm-status').style.display = 'none';
+    document.getElementById('sell-modal').style.display = 'flex';
+    setTimeout(() => document.getElementById('sm-to').focus(), 100);
+}
+function closeSellModal() { document.getElementById('sell-modal').style.display = 'none'; }
+async function submitSale() {
+    const row = document.getElementById('sm-row').value;
+    const soldTo = document.getElementById('sm-to').value.trim();
+    const soldPrice = document.getElementById('sm-price').value.trim();
+    const saleDate = document.getElementById('sm-date').value;
+    const status = document.getElementById('sm-status');
+    if (!soldTo || !soldPrice) { status.style.display='block'; status.style.color='var(--red)'; status.textContent='Buyer and price required'; return; }
+    const btn = document.getElementById('sm-submit');
+    btn.disabled = true; btn.textContent = 'Saving...';
+    status.style.display = 'block'; status.style.color = 'var(--text-1)'; status.textContent = 'Recording sale + posting to Telegram...';
+    try {
+        const r = await fetch(`/api/inventory/${row}/sold`, {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({sold_to: soldTo, sold_price: soldPrice, sale_date: saleDate})
+        });
+        const d = await r.json();
+        if (d.ok) { status.style.color='var(--green)'; status.textContent='Sold! Posted to Telegram.'; setTimeout(()=>{closeSellModal();loadInventoryPage();},800); }
+        else { status.style.color='var(--red)'; status.textContent='Error: '+(d.error||'Unknown'); }
+    } catch(e) { status.style.color='var(--red)'; status.textContent='Error: '+e.message; }
+    btn.disabled = false; btn.textContent = 'Sell';
+}
+
+// ── Ship Modal ──
+function showShipModal(row) {
+    const watch = invMgmtData.find(r => r.row === row);
+    if (!watch) return;
+    document.getElementById('shm-row').value = row;
+    const info = [watch.description, watch.sold_to ? `To: ${watch.sold_to}` : ''].filter(Boolean).join(' | ');
+    document.getElementById('shm-watch-info').textContent = info;
+    document.getElementById('shm-tracking').value = '';
+    document.getElementById('shm-status').style.display = 'none';
+    document.getElementById('ship-modal').style.display = 'flex';
+    setTimeout(() => document.getElementById('shm-tracking').focus(), 100);
+}
+function closeShipModal() { document.getElementById('ship-modal').style.display = 'none'; }
+async function submitShip() {
+    const row = document.getElementById('shm-row').value;
+    const tracking = document.getElementById('shm-tracking').value.trim();
+    const status = document.getElementById('shm-status');
+    const btn = document.getElementById('shm-submit');
+    btn.disabled = true; btn.textContent = 'Saving...';
+    status.style.display = 'block'; status.style.color = 'var(--text-1)'; status.textContent = 'Marking shipped + posting to Telegram...';
+    try {
+        const r = await fetch(`/api/inventory/${row}/shipped`, {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({tracking: tracking})
+        });
+        const d = await r.json();
+        if (d.ok) { status.style.color='var(--green)'; status.textContent='Shipped! Posted to Telegram.'; setTimeout(()=>{closeShipModal();loadInventoryPage();},800); }
+        else { status.style.color='var(--red)'; status.textContent='Error: '+(d.error||'Unknown'); }
+    } catch(e) { status.style.color='var(--red)'; status.textContent='Error: '+e.message; }
+    btn.disabled = false; btn.textContent = 'Ship';
 }
 
 function showAddWatchModal() {
