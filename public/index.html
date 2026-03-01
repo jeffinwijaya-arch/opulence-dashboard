@@ -2073,8 +2073,7 @@ async function loadInvoiceSummary() {
         el('inv-outstanding').textContent = fmt(s.total_outstanding);
         el('inv-overdue').textContent = s.total_overdue > 0 ? fmt(s.total_overdue) : '$0';
         el('inv-paid-month').textContent = s.paid_this_month > 0 ? fmt(s.paid_this_month) : '$0';
-        const drafts = (s.recent_invoices||[]).filter(i=>i.status==='draft').length;
-        el('inv-draft-count').textContent = drafts;
+        el('inv-draft-count').textContent = s.draft_count || 0;
     } catch(e) { console.error('Invoice summary error:', e); }
 }
 
