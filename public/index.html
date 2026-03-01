@@ -533,13 +533,33 @@ async function refreshData() {
 // ── RENDER ──
 function renderAll() { renderTicker(); renderDashboard(); renderDeals(); renderArbitrage(); }
 
-function renderTicker() {
-    const refs = DATA.refs || DATA.topRefs || [];
-    const items = (Array.isArray(refs)?refs:Object.values(refs)).filter(r=>(r.b25||r.median)&&r.count>=5).sort((a,b)=>(b.count||0)-(a.count||0)).slice(0,30);
-    if (!items.length) return;
-    const f=n=>n>=1000?'$'+(n/1000).toFixed(n>=100000?0:1)+'K':'$'+n.toLocaleString();
-    const html = items.map(r=>`<span class="ticker-item"><span class="t-ref">${r.ref||''}</span> ${f(r.b25||r.median||0)} <span class="t-ct">${r.count} lst</span></span>`).join('');
-    document.getElementById('ticker-track').innerHTML = html + html;
+async function renderTicker() {
+    try {
+        const r = await fetch('/api/market_ticker');
+        if (!r.ok) return;
+        const tickers = await r.json();
+        if (!tickers.length) return;
+
+        const fmtPrice = (p, prefix) => {
+            if (!prefix) return p >= 100 ? p.toFixed(1) : p.toFixed(2);
+            if (p >= 10000) return prefix + Math.round(p).toLocaleString();
+            if (p >= 100) return prefix + p.toFixed(1);
+            return prefix + p.toFixed(2);
+        };
+
+        const html = tickers.map(t => {
+            const cls = t.change_pct > 0 ? 'up' : t.change_pct < 0 ? 'down' : '';
+            const arrow = t.change_pct > 0 ? '\u25B2' : t.change_pct < 0 ? '\u25BC' : '';
+            const stateLabel = t.market_state === 'CLOSED' || t.market_state === 'POST' ? ' \u00B7' : '';
+            return `<span class="ticker-item">
+                <span class="t-ref">${t.label}</span>
+                ${fmtPrice(t.price, t.prefix)}
+                <span class="t-chg ${cls}">${arrow} ${Math.abs(t.change_pct).toFixed(2)}%</span>
+                ${stateLabel}
+            </span>`;
+        }).join('');
+        document.getElementById('ticker-track').innerHTML = html + html;
+    } catch(e) { console.error('Ticker load failed:', e); }
 }
 
 function renderDashboard() {
@@ -1829,6 +1849,7 @@ let _lastLoadTs = Date.now();
 setInterval(()=>{
     _lastLoadTs = Date.now();
     loadData();
+    renderTicker();
     fetch('/api/portfolio_insights').then(r=>r.json()).then(d=>{DATA.portfolio=d;}).catch(()=>{});
 }, 120000);
 
