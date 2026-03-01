@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MK Opulence — Market Intelligence</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-0: #0a0a0f;
+            --bg-1: #101018;
+            --bg-2: #16161f;
+            --bg-3: #1c1c28;
+            --bg-4: #242430;
+            --bg-hover: #1e1e2a;
+            --text-0: #e8e6e3;
+            --text-1: #a8a6a0;
+            --text-2: #5c5b57;
+            --text-3: #3a3a42;
+            --accent: #c9a84c;
+            --accent-dim: rgba(201,168,76,0.08);
+            --accent-border: rgba(201,168,76,0.2);
+            --green: #00c853;
+            --green-dim: rgba(0,200,83,0.08);
+            --red: #ff1744;
+            --red-dim: rgba(255,23,68,0.08);
+            --blue: #448aff;
+            --blue-dim: rgba(68,138,255,0.08);
+            --orange: #ff9100;
+            --border: rgba(255,255,255,0.04);
+            --border-strong: rgba(255,255,255,0.08);
+            --radius: 4px;
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --mono: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html { font-size:13px; scroll-behavior:smooth; -webkit-font-smoothing:antialiased; }
+        body { background:var(--bg-0); color:var(--text-0); font-family:var(--font); min-height:100vh; }
+        ::selection { background:rgba(201,168,76,0.15); }
+
+        /* ── LAYOUT ── */
+        .app { display:flex; flex-direction:column; min-height:100vh; }
+
+        /* ── TOP BAR ── */
+        .top-bar {
+            background:var(--bg-1); border-bottom:1px solid var(--border-strong);
+            height:42px; display:flex; align-items:center; padding:0 20px;
+            position:sticky; top:0; z-index:100;
+        }
+        .logo {
+            font-family:var(--mono); font-size:0.85rem; font-weight:700; letter-spacing:2px;
+            color:var(--accent); cursor:pointer; text-decoration:none; white-space:nowrap;
+            margin-right:24px;
+        }
+        .logo span { color:var(--text-0); font-weight:400; }
+        .top-search {
+            background:var(--bg-3); border:1px solid var(--border); border-radius:2px;
+            padding:5px 10px; font-size:0.85rem; color:var(--text-0); width:220px;
+            font-family:var(--font); outline:none; transition:border-color 0.15s;
+        }
+        .top-search:focus { border-color:var(--accent); }
+        .top-search::placeholder { color:var(--text-2); }
+        .nav { display:flex; align-items:center; margin-left:auto; gap:0; }
+        .nav a {
+            padding:0 12px; height:42px; display:inline-flex; align-items:center;
+            color:var(--text-2); font-size:0.8rem; font-weight:500; text-decoration:none;
+            letter-spacing:0.3px; text-transform:uppercase; transition:color 0.1s;
+            border-bottom:2px solid transparent; white-space:nowrap;
+        }
+        .nav a:hover { color:var(--text-1); }
+        .nav a.active { color:var(--accent); border-bottom-color:var(--accent); }
+        .nav .badge {
+            background:var(--accent-dim); color:var(--accent); font-size:0.65rem;
+            padding:0 4px; border-radius:2px; font-weight:600; margin-left:4px;
+            font-family:var(--mono);
+        }
+
+        /* ── TICKER ── */
+        .ticker-bar {
+            background:var(--bg-1); border-bottom:1px solid var(--border);
+            overflow:hidden; white-space:nowrap; height:28px; line-height:28px;
+        }
+        .ticker-inner { display:inline-flex; animation:scroll 80s linear infinite; }
+        .ticker-inner:hover { animation-play-state:paused; }
+        .ticker-item {
+            display:inline-flex; align-items:center; gap:6px; padding:0 16px;
+            font-family:var(--mono); font-size:0.75rem; color:var(--text-1);
+            border-right:1px solid var(--border);
+        }
+        .ticker-item .t-ref { color:var(--accent); font-weight:600; }
+        .ticker-item .t-chg { font-weight:500; }
+        .ticker-item .t-chg.up { color:var(--green); }
+        .ticker-item .t-chg.down { color:var(--red); }
+        .ticker-item .t-ct { color:var(--text-2); font-size:0.7rem; }
+        @keyframes scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+        /* ── MAIN ── */
+        .main { flex:1; padding:16px 20px; max-width:1440px; margin:0 auto; width:100%; }
+
+        /* ── CARDS ── */
+        .card {
+            background:var(--bg-2); border:1px solid var(--border);
+            border-radius:var(--radius); margin-bottom:12px;
+        }
+        .card-head {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:10px 14px; border-bottom:1px solid var(--border);
+            font-size:0.72rem; font-weight:600; text-transform:uppercase;
+            letter-spacing:0.8px; color:var(--text-1);
+        }
+        .card-head .link { color:var(--accent); cursor:pointer; font-weight:500; text-decoration:none; text-transform:none; letter-spacing:0; font-size:0.75rem; }
+        .card-head .link:hover { text-decoration:underline; }
+        .card-body { padding:12px 14px; }
+
+        /* ── METRICS ROW ── */
+        .metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:8px; margin-bottom:12px; }
+        .metric {
+            background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius);
+            padding:12px 14px;
+        }
+        .metric .label { font-size:0.65rem; color:var(--text-2); text-transform:uppercase; letter-spacing:0.8px; font-weight:600; margin-bottom:2px; }
+        .metric .val { font-size:1.6rem; font-weight:700; font-family:var(--mono); line-height:1.1; }
+        .metric .sub { font-size:0.72rem; color:var(--text-2); margin-top:2px; font-family:var(--mono); }
+
+        /* ── TABLES ── */
+        .tbl { width:100%; border-collapse:collapse; font-size:0.8rem; }
+        .tbl th {
+            text-align:left; padding:7px 10px; color:var(--text-2); font-size:0.68rem;
+            font-weight:600; text-transform:uppercase; letter-spacing:0.5px;
+            border-bottom:1px solid var(--border-strong); background:var(--bg-2);
+            position:sticky; top:0; cursor:pointer; user-select:none;
+        }
+        .tbl th:hover { color:var(--text-1); }
+        .tbl td { padding:6px 10px; border-bottom:1px solid var(--border); font-family:var(--mono); font-size:0.78rem; }
+        .tbl tr:hover td { background:var(--bg-hover); }
+        .tbl .ref { color:var(--accent); font-weight:600; cursor:pointer; }
+        .tbl .ref:hover { text-decoration:underline; }
+        .tbl .green { color:var(--green); }
+        .tbl .red { color:var(--red); }
+        .tbl .dim { color:var(--text-2); }
+        .tbl .right { text-align:right; }
+        .tbl-wrap { overflow-x:auto; }
+
+        /* ── TAGS ── */
+        .tag { display:inline-block; padding:1px 5px; border-radius:2px; font-size:0.68rem; font-weight:600; font-family:var(--mono); }
+        .tag-green { background:var(--green-dim); color:var(--green); }
+        .tag-red { background:var(--red-dim); color:var(--red); }
+        .tag-blue { background:var(--blue-dim); color:var(--blue); }
+        .tag-gold { background:var(--accent-dim); color:var(--accent); }
+
+        /* ── PAGES ── */
+        .page { display:none; }
+        .page.active { display:block; }
+        .page-head { margin-bottom:14px; }
+        .page-head h1 { font-size:1.1rem; font-weight:700; letter-spacing:-0.2px; }
+        .page-head p { font-size:0.78rem; color:var(--text-2); margin-top:2px; }
+
+        /* ── CONFIDENCE ── */
+        .conf-dots { display:inline-flex; gap:1px; }
+        .conf-dots .d { width:3px; height:10px; border-radius:1px; background:var(--bg-4); }
+        .conf-dots .d.on { background:var(--green); }
+        .conf-dots .d.med { background:var(--orange); }
+
+        /* ── PROFIT PILL ── */
+        .pill { display:inline-block; padding:1px 6px; border-radius:2px; font-size:0.72rem; font-weight:600; font-family:var(--mono); }
+        .pill.pos { background:var(--green-dim); color:var(--green); }
+        .pill.neg { background:var(--red-dim); color:var(--red); }
+
+        /* ── PORTFOLIO GRID ── */
+        .pf-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; }
+        .pf-stat { text-align:center; padding:10px 8px; }
+        .pf-val { font-size:1.2rem; font-weight:700; font-family:var(--mono); }
+        .pf-label { font-size:0.62rem; color:var(--text-2); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
+
+        /* ── DEAL CARDS ── */
+        .deal-card {
+            background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius);
+            padding:12px 14px; margin-bottom:8px; border-left:3px solid var(--border);
+        }
+        .deal-card.tier-a { border-left-color:var(--green); }
+        .deal-card.tier-b { border-left-color:var(--accent); }
+        .deal-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px; margin:8px 0; }
+        .deal-stat {
+            background:var(--bg-3); border-radius:var(--radius); padding:8px 10px; text-align:center;
+        }
+        .deal-stat .ds-val { font-size:1rem; font-weight:700; font-family:var(--mono); }
+        .deal-stat .ds-label { font-size:0.58rem; color:var(--text-2); text-transform:uppercase; letter-spacing:0.3px; margin-top:1px; }
+
+        /* ── DETAIL GRID ── */
+        .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .detail-row { display:flex; align-items:center; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border); font-size:0.8rem; }
+        .listing-card { background:var(--bg-3); border:1px solid var(--border); border-radius:var(--radius); padding:8px 10px; margin-bottom:6px; }
+
+        /* ── INPUTS ── */
+        .input {
+            background:var(--bg-3); border:1px solid var(--border); border-radius:2px;
+            padding:6px 10px; font-size:0.8rem; color:var(--text-0);
+            font-family:var(--font); outline:none; transition:border-color 0.15s;
+        }
+        .input:focus { border-color:var(--accent); }
+        .input::placeholder { color:var(--text-2); }
+        select.input { cursor:pointer; }
+
+        /* ── TABS ── */
+        .tabs { display:flex; gap:0; border-bottom:1px solid var(--border-strong); margin-bottom:12px; }
+        .tab {
+            padding:6px 14px; color:var(--text-2); cursor:pointer; font-size:0.78rem;
+            font-weight:500; border-bottom:2px solid transparent; transition:all 0.1s;
+        }
+        .tab:hover { color:var(--text-1); }
+        .tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+        /* ── BUTTON ── */
+        .btn {
+            background:var(--bg-3); border:1px solid var(--border-strong); color:var(--text-1);
+            padding:5px 12px; border-radius:2px; cursor:pointer; font-family:var(--font);
+            font-size:0.78rem; transition:all 0.1s;
+        }
+        .btn:hover { border-color:var(--accent-border); color:var(--accent); }
+
+        /* ── MOBILE NAV ── */
+        .mobile-nav {
+            display:none; position:fixed; bottom:0; left:0; right:0; z-index:200;
+            background:var(--bg-1); border-top:1px solid var(--border-strong);
+            padding:6px 4px; padding-bottom:max(6px, env(safe-area-inset-bottom));
+            overflow-x:auto; white-space:nowrap;
+        }
+        .mobile-nav::-webkit-scrollbar { display:none; }
+        .mobile-nav a {
+            display:inline-flex; flex-direction:column; align-items:center; gap:1px;
+            padding:4px 8px; color:var(--text-2); font-size:0.6rem; font-weight:500;
+            text-decoration:none; border-radius:2px; min-width:48px;
+        }
+        .mobile-nav a.active { color:var(--accent); background:var(--accent-dim); }
+
+        /* ── FOOTER ── */
+        .footer {
+            padding:14px 20px; text-align:center; font-size:0.65rem; color:var(--text-2);
+            letter-spacing:1px; text-transform:uppercase; border-top:1px solid var(--border);
+            font-family:var(--mono);
+        }
+
+        /* ── SCROLLBAR ── */
+        ::-webkit-scrollbar { width:4px; height:4px; }
+        ::-webkit-scrollbar-track { background:var(--bg-0); }
+        ::-webkit-scrollbar-thumb { background:var(--bg-4); border-radius:2px; }
+
+        /* ── RESPONSIVE ── */
+        @media(max-width:900px) {
+            .top-bar { display:none; }
+            .mobile-nav { display:flex; justify-content:space-around; }
+            .main { padding:10px; padding-bottom:calc(56px + env(safe-area-inset-bottom)); }
+            .metrics { grid-template-columns:repeat(2,1fr); }
+            .detail-grid { grid-template-columns:1fr; }
+            .deal-stats { grid-template-columns:repeat(2,1fr); }
+            div[style*="grid-template-columns:1fr 1fr"] { display:block !important; }
+            div[style*="grid-template-columns:1fr 1fr"] > .card { margin-bottom:8px; }
+            .tbl { min-width:600px; }
+        }
+        @media(max-width:480px) {
+            .main { padding:8px; }
+            .metrics { grid-template-columns:1fr 1fr; }
+            .metric .val { font-size:1.2rem; }
+            html { font-size:12px; }
+        }
+
+        @keyframes fadeIn { from{opacity:0;transform:translateY(3px)} to{opacity:1;transform:translateY(0)} }
+        .fade-in { animation:fadeIn 0.2s ease-out; }
+        .refreshing { opacity:0.5; pointer-events:none; }
+    </style>
+</head>
+<body>
+<div class="app">
+    <!-- TOP BAR -->
+    <header class="top-bar">
+        <a class="logo" onclick="showPage('dashboard')">MK<span> OPULENCE</span></a>
+        <input type="text" class="top-search" placeholder="e.g. daytona panda, 126500..." id="headerSearch"
+               onkeydown="if(event.key==='Enter'){showPage('lookup');$('#ref-search').value=this.value;doLookup();}">
+        <nav class="nav" id="mainNav">
+            <a data-page="dashboard" class="active" onclick="showPage('dashboard')">Overview</a>
+            <a data-page="lookup" onclick="showPage('lookup')">Prices</a>
+            <a data-page="portfolio" onclick="showPage('portfolio')">Portfolio</a>
+            <a data-page="deals" onclick="showPage('deals')">Deals <span class="badge" id="deals-count">0</span></a>
+            <a data-page="arbitrage" onclick="showPage('arbitrage')">Arbitrage</a>
+            <a data-page="browse" onclick="showPage('browse')">Market</a>
+        </nav>
+    </header>
+
+    <!-- TICKER -->
+    <div class="ticker-bar"><div class="ticker-inner" id="ticker-track"></div></div>
+
+    <!-- MOBILE NAV -->
+    <nav class="mobile-nav" id="mobile-nav">
+        <a data-page="dashboard" class="active" onclick="showPage('dashboard')">Overview</a>
+        <a data-page="deals" onclick="showPage('deals')">Deals</a>
+        <a data-page="arbitrage" onclick="showPage('arbitrage')">Arb</a>
+        <a data-page="lookup" onclick="showPage('lookup')">Lookup</a>
+        <a data-page="portfolio" onclick="showPage('portfolio')">Portfolio</a>
+        <a data-page="browse" onclick="showPage('browse')">Market</a>
+    </nav>
+
+    <div class="main">
+        <!-- ═══ DASHBOARD ═══ -->
+        <div class="page active" id="page-dashboard">
+            <div class="page-head">
+                <h1>Market Overview</h1>
+                <p id="summary-subtitle">Loading...</p>
+            </div>
+            <div class="metrics" id="metrics-grid"></div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div class="card">
+                    <div class="card-head"><span>Top Deals</span><a class="link" onclick="showPage('deals')">View all</a></div>
+                    <div class="tbl-wrap"><table class="tbl" id="dash-deals"><tbody></tbody></table></div>
+                </div>
+                <div class="card">
+                    <div class="card-head"><span>Arbitrage</span><a class="link" onclick="showPage('arbitrage')">View all</a></div>
+                    <div class="tbl-wrap"><table class="tbl" id="dash-arb"><tbody></tbody></table></div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top:8px;">
+                <div class="card-head"><span>Portfolio Snapshot</span><a class="link" onclick="showPage('portfolio')">Details</a></div>
+                <div class="card-body"><div class="pf-grid" id="portfolio-snapshot"></div></div>
+            </div>
+
+            <!-- Full Portfolio Table -->
+            <div class="card" style="margin-top:8px;">
+                <div class="card-head"><span>Inventory Positions</span><a class="link" onclick="showPage('portfolio')">Full Analysis</a></div>
+                <div class="tbl-wrap" style="max-height:400px;overflow-y:auto;"><table class="tbl" id="dash-inventory"><thead><tr>
+                    <th>Ref</th><th>Details</th><th class="right">Cost</th><th class="right">Market</th><th class="right">P&L</th><th class="right">%</th><th class="right">Held</th><th>Status</th>
+                </tr></thead><tbody><tr><td colspan="8" class="dim" style="text-align:center;padding:12px;">Loading...</td></tr></tbody></table></div>
+            </div>
+
+            <!-- News -->
+            <div class="card" style="margin-top:8px;">
+                <div class="card-head"><span>Industry News</span><span style="font-size:0.65rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;" id="news-ts"></span></div>
+                <div id="news-feed" style="max-height:320px;overflow-y:auto;padding:0 10px 10px;"></div>
+            </div>
+        </div>
+
+        <!-- ═══ DEALS ═══ -->
+        <div class="page" id="page-deals">
+            <div class="page-head">
+                <h1>Deal Scanner</h1>
+                <p>Below-market opportunities ranked by confidence and expected profit.</p>
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:10px;">
+                <input class="input" id="deals-search" placeholder="Filter ref, model, dial, seller..." oninput="filterDeals()" style="flex:1;">
+                <select class="input" id="deals-tier" onchange="filterDeals()" style="width:100px;">
+                    <option value="">All Tiers</option><option value="A">A-Tier</option><option value="B">B-Tier</option><option value="C">C-Tier</option>
+                </select>
+            </div>
+            <div class="tabs">
+                <div class="tab active" onclick="setDealsRegion('all',this)">All</div>
+                <div class="tab" onclick="setDealsRegion('US',this)">US</div>
+                <div class="tab" onclick="setDealsRegion('HK',this)">HK Import</div>
+            </div>
+            <div id="deals-cards"></div>
+        </div>
+
+        <!-- ═══ ARBITRAGE ═══ -->
+        <div class="page" id="page-arbitrage">
+            <div class="page-head">
+                <h1>Cross-Region Arbitrage</h1>
+                <p>Regional price differentials net of import costs, wire fees, and shipping.</p>
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;">
+                <select class="input" id="arb-direction" onchange="renderArbitrage()" style="width:160px;">
+                    <option value="hk_to_us">HK → US (Import)</option>
+                    <option value="us_to_hk">US → HK (Export)</option>
+                    <option value="all">All Directions</option>
+                </select>
+                <input class="input" id="arb-search" placeholder="Filter ref, model..." oninput="renderArbitrage()" style="flex:1;max-width:240px;">
+                <span class="dim" style="font-size:0.72rem;font-family:var(--mono);" id="arb-summary"></span>
+            </div>
+            <div class="card"><div class="tbl-wrap"><table class="tbl" id="arb-table"><thead><tr>
+                <th>Reference</th><th>Model</th><th class="right" id="arb-th-buy">Buy (HK)</th><th class="right" id="arb-th-sell">Sell (US)</th><th class="right">Fees</th><th class="right">Net Profit</th><th class="right">Margin</th><th>Conf</th><th>Depth</th>
+            </tr></thead><tbody></tbody></table></div></div>
+
+            <!-- Arbitrage Detail Panel -->
+            <div id="arb-detail" style="display:none;margin-top:8px;"></div>
+        </div>
+
+        <!-- ═══ PRICE LOOKUP ═══ -->
+        <div class="page" id="page-lookup">
+            <div class="page-head">
+                <h1>Price Intelligence</h1>
+                <p>Search by ref, nickname, or natural language — e.g. "daytona panda", "black sub", "126334 blue jubilee"</p>
+            </div>
+            <input class="input" id="ref-search" placeholder="e.g. 126500, daytona panda, black sub, gmt pepsi jubilee..." oninput="debounceSearch()" style="max-width:480px;">
+            <div id="lookup-result" style="margin-top:12px;"></div>
+        </div>
+
+        <!-- ═══ PORTFOLIO ═══ -->
+        <div class="page" id="page-portfolio">
+            <div class="page-head">
+                <h1>Portfolio Intelligence</h1>
+                <p>Inventory vs. market — P&L, exposure, and position analysis.</p>
+            </div>
+            <div class="tabs" id="portfolio-tabs">
+                <div class="tab active" onclick="setPfView('summary',this)">Summary</div>
+                <div class="tab" onclick="setPfView('positions',this)">Positions</div>
+                <div class="tab" onclick="setPfView('exposure',this)">Exposure</div>
+                <div class="tab" onclick="setPfView('pipeline',this)">Pipeline</div>
+                <div class="tab" onclick="setPfView('aging',this)">Aging</div>
+            </div>
+            <div id="portfolio-content"><p style="color:var(--text-2);padding:20px 0;">Loading portfolio data...</p></div>
+        </div>
+
+        <!-- ═══ MARKET BROWSE ═══ -->
+        <div class="page" id="page-browse">
+            <div class="page-head">
+                <h1>Market Data</h1>
+                <p id="browse-subtitle">Full listing database.</p>
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:10px;">
+                <input class="input" id="browse-search" placeholder="Search ref, dial, seller, group..." oninput="filterBrowse()" style="flex:1;">
+                <select class="input" id="browse-region" onchange="filterBrowse()" style="width:90px;"><option value="">All</option><option value="US">US</option><option value="HK">HK</option><option value="EU">EU</option></select>
+                <select class="input" id="browse-cond" onchange="filterBrowse()" style="width:110px;"><option value="">All</option><option value="BNIB">BNIB</option><option value="Like New">Like New</option><option value="Pre-owned">Pre-owned</option></select>
+                <select class="input" id="browse-sort" onchange="filterBrowse()" style="width:110px;"><option value="price-asc">Price Asc</option><option value="price-desc">Price Desc</option><option value="ref">Ref A-Z</option></select>
+            </div>
+            <div class="card">
+                <div class="tbl-wrap"><table class="tbl" id="browse-table"><thead><tr>
+                    <th>Ref</th><th>Model</th><th>Dial</th><th>Bracelet</th><th class="right">Price</th><th>Cond</th><th>Set</th><th>Region</th><th>Seller</th><th>Group</th>
+                </tr></thead><tbody></tbody></table></div>
+                <div style="text-align:center;padding:8px;"><button class="btn" onclick="loadMoreBrowse()" id="browse-more">Load More</button></div>
+            </div>
+        </div>
+
+        <footer class="footer">MK Opulence &middot; Market Intelligence &middot; <span id="update-time">—</span></footer>
+    </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const fmt = n => n == null || isNaN(n) ? '—' : '$' + Math.round(n).toLocaleString('en-US');
+const pct = n => n == null || isNaN(n) ? '—' : n.toFixed(1) + '%';
+const condTag = c => c==='BNIB'?'tag-green':c==='Like New'?'tag-blue':'tag-gold';
+const regionLabel = r => r==='HK'?'HK':r==='EU'?'EU':'US';
+
+const DIAL_ALIASES = {'azzuro':'blue','azzurro':'blue','tiffany':'turquoise blue','pistachio':'green','candy pink':'pink','rhodium':'slate','mop':'mother of pearl'};
+function searchTerms(q) {
+    if (!q) return [];
+    const ql = q.toLowerCase().trim(), terms = [ql];
+    for (const [a,c] of Object.entries(DIAL_ALIASES)) { if (ql.includes(a)) terms.push(c); if (ql.includes(c)) terms.push(a); }
+    return terms;
+}
+function matchesSearch(text, terms) { const tl = text.toLowerCase(); return terms.some(t => tl.includes(t)); }
+
+let DATA = { deals:[], arbitrage:[], topRefs:[], portfolio:null, refs:{}, listings:[] };
+let allListings = [];
+let browseOffset = 0;
+const BROWSE_PAGE = 80;
+let currentDealsRegion = 'all';
+
+const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals',arbitrage:'Arbitrage',browse:'Market'};
+
+function showPage(name) {
+    $$('.page').forEach(p => p.classList.remove('active'));
+    $$('.nav a, #mobile-nav a').forEach(n => n.classList.remove('active'));
+    $(`#page-${name}`)?.classList.add('active');
+    $$(`[data-page="${name}"]`).forEach(n => n.classList.add('active'));
+    if (name === 'browse' && !allListings.length) loadListings();
+    if (name === 'portfolio') { if (DATA.portfolio) renderPortfolio(); else loadPortfolio(); }
+    window.scrollTo(0, 0);
+}
+
+// ── DATA ──
+async function loadData() {
+    try {
+        const [dealsR, arbR, topR, syncR] = await Promise.all([fetch('/api/deals'), fetch('/api/arbitrage'), fetch('/api/top_refs'), fetch('/api/sync_info')]);
+        DATA.deals = await dealsR.json();
+        DATA.arbitrage = await arbR.json();
+        DATA.topRefs = await topR.json();
+        try { DATA.syncInfo = await syncR.json(); } catch(e) {}
+        try { const br = await fetch('/data/bundle.json'); if (br.ok) { const b = await br.json(); if (b.refs) DATA.refs=b.refs; if (b.sellers) DATA.sellers=b.sellers; if (b.summary) DATA.summary=b.summary; } } catch(e) {}
+        renderAll();
+    } catch(e) { console.error('Load failed:', e); $('#summary-subtitle').textContent = 'Failed to load data.'; }
+}
+async function loadPortfolio() { try { const r = await fetch('/api/portfolio_insights'); DATA.portfolio = await r.json(); renderPortfolio(); } catch(e) { console.error(e); } }
+async function loadListings() {
+    try {
+        let r = await fetch('/data/listings.json'); if (!r.ok) r = await fetch('/api/search?q=');
+        if (r.ok) {
+            allListings = (await r.json()).map(l => ({ref:l.ref||'',model:l.model||'',dial:l.dial||'',bracelet:l.bracelet||'',price:l.price_usd||l.price||0,condition:l.condition||'',completeness:l.completeness||'',region:l.region||'',seller:l.seller||'',group:l.group||'',brand:l.brand||'Rolex',year:l.year||''}));
+            allListings.sort((a,b)=>a.price-b.price);
+            $('#browse-subtitle').textContent = allListings.length.toLocaleString()+' listings in database';
+            browseOffset=0; renderBrowse();
+        }
+    } catch(e) { console.error(e); }
+}
+async function refreshData() {
+    try { await fetch('/api/refresh',{method:'POST'}); document.querySelector('.main').classList.add('refreshing'); setTimeout(()=>{loadData();document.querySelector('.main').classList.remove('refreshing');},3000); } catch(e){}
+}
+
+// ── RENDER ──
+function renderAll() { renderTicker(); renderDashboard(); renderDeals(); renderArbitrage(); }
+
+function renderTicker() {
+    const refs = DATA.refs || DATA.topRefs || [];
+    const items = (Array.isArray(refs)?refs:Object.values(refs)).filter(r=>(r.b25||r.median)&&r.count>=5).sort((a,b)=>(b.count||0)-(a.count||0)).slice(0,30);
+    if (!items.length) return;
+    const f=n=>n>=1000?'$'+(n/1000).toFixed(n>=100000?0:1)+'K':'$'+n.toLocaleString();
+    const html = items.map(r=>`<span class="ticker-item"><span class="t-ref">${r.ref||''}</span> ${f(r.b25||r.median||0)} <span class="t-ct">${r.count} lst</span></span>`).join('');
+    document.getElementById('ticker-track').innerHTML = html + html;
+}
+
+function renderDashboard() {
+    const s = DATA.summary||{};
+    const nDeals = DATA.deals?.length||0;
+    const nArb = DATA.arbitrage?.length||0;
+    const totalProfit = DATA.arbitrage?.reduce((a,x)=>a+(x.profit||0),0)||0;
+    const ts = new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:false});
+
+    const syncDate = DATA.syncInfo?.latest_chat_sync || '';
+    const syncLabel = syncDate && syncDate !== 'Unknown' ? ` · Chat sync: ${syncDate}` : '';
+    const parseTs = DATA.syncInfo?.parse_timestamp ? new Date(DATA.syncInfo.parse_timestamp*1000).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:false}) : '';
+    const parseLabel = parseTs ? ` · Parsed: ${parseTs}` : '';
+    $('#summary-subtitle').textContent = `${(s.total_listings||0).toLocaleString()} listings · ${s.unique_refs||Object.keys(DATA.refs).length||'—'} refs${syncLabel}${parseLabel}`;
+    $('#update-time').textContent = syncDate && syncDate !== 'Unknown' ? `Chat sync: ${syncDate} · ${ts}` : ts;
+    const dc = $('#deals-count'); if (dc) dc.textContent = nDeals;
+
+    $('#metrics-grid').innerHTML = `
+        <div class="metric"><div class="label">Listings</div><div class="val">${(s.total_listings||0).toLocaleString()}</div><div class="sub">${Object.entries(s.brands||{}).map(([k,v])=>k+':'+v).join(' · ')||'—'}</div></div>
+        <div class="metric"><div class="label">References</div><div class="val">${s.unique_refs||Object.keys(DATA.refs).length||'—'}</div><div class="sub">${Object.entries(s.regions||{}).map(([k,v])=>k+':'+v).join(' · ')||'—'}</div></div>
+        <div class="metric"><div class="label">Deals</div><div class="val" style="color:var(--green)">${nDeals}</div><div class="sub">below market</div></div>
+        <div class="metric"><div class="label">Arb Potential</div><div class="val" style="color:var(--accent)">${fmt(totalProfit)}</div><div class="sub">${nArb} opportunities</div></div>
+    `;
+
+    const tierMark = {A:'\u25CF',B:'\u25CB',C:'\u25CB'};
+    const tierColor = {A:'var(--green)',B:'var(--accent)',C:'var(--text-2)'};
+    $('#dash-deals tbody').innerHTML = (DATA.deals||[]).slice(0,6).map(d=>`<tr>
+        <td style="color:${tierColor[d.tier]||'var(--text-2)'};font-size:0.7rem;width:16px;">${tierMark[d.tier]||''}</td>
+        <td class="ref" onclick="lookupRef('${d.ref}')">${d.ref}</td>
+        <td class="dim" style="max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.dial||''}</td>
+        <td class="right">${fmt(d.price_usd||d.price)}</td>
+        <td class="right green">+${fmt(d.est_profit||0)}</td>
+    </tr>`).join('');
+
+    $('#dash-arb tbody').innerHTML = (DATA.arbitrage||[]).slice(0,6).map(a=>{
+        const np = a.realistic_profit||a.profit||0;
+        const dir = a.direction==='us_to_hk'?'US→HK':'HK→US';
+        return `<tr style="cursor:pointer" onclick="showPage('arbitrage')">
+            <td class="ref">${a.ref}</td>
+            <td class="dim" style="max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${a.model||''}</td>
+            <td class="right green">+${fmt(np)}</td>
+            <td class="right dim">${pct(a.realistic_pct||a.profit_pct)}</td>
+            <td class="dim" style="font-size:0.65rem;">${dir}</td>
+        </tr>`;
+    }).join('');
+
+    if (DATA.portfolio) renderPortfolioSnapshot();
+    loadDashInventory();
+}
+
+function renderPortfolioSnapshot() {
+    const p = DATA.portfolio; if (!p) return;
+    const cls = p.total_pnl >= 0 ? 'green' : 'red';
+    $('#portfolio-snapshot').innerHTML = `
+        <div class="pf-stat"><div class="pf-val" style="color:var(--accent)">${fmt(p.total_invested)}</div><div class="pf-label">Capital</div></div>
+        <div class="pf-stat"><div class="pf-val">${fmt(p.total_market_value)}</div><div class="pf-label">Market Value</div></div>
+        <div class="pf-stat"><div class="pf-val" style="color:var(--${cls})">${fmt(p.total_pnl)}</div><div class="pf-label">Unrealized P&L</div></div>
+        <div class="pf-stat"><div class="pf-val" style="color:var(--${cls})">${p.roi_pct}%</div><div class="pf-label">ROI</div></div>
+        <div class="pf-stat"><div class="pf-val">${p.total_pieces}</div><div class="pf-label">Positions</div></div>
+        <div class="pf-stat"><div class="pf-val">${p.avg_days_held}d</div><div class="pf-label">Avg Hold</div></div>
+    `;
+}
+
+async function loadDashInventory() {
+    try {
+        const r = await fetch('/api/inventory');
+        if (!r.ok) return;
+        const items = await r.json();
+        items.sort((a,b) => (b.profit_pct||0) - (a.profit_pct||0));
+        const tbody = $('#dash-inventory tbody');
+        if (!tbody) return;
+        tbody.innerHTML = items.map(i => {
+            const pnl = i.profit_loss||0, pnlCls = pnl>=0?'green':'red';
+            const pctStr = i.profit_pct!=null ? `${i.profit_pct>0?'+':''}${i.profit_pct.toFixed(1)}%` : '—';
+            const mkt = i.market_value ? fmt(i.market_value) : '<span class="dim">—</span>';
+            let status = 'IN HAND';
+            if (i.sold) status='SOLD'; else if (i.shipped) status='SHIPPED'; else if (i.posted) status='LISTED';
+            else if (i.at_store) status='AT STORE'; else if (i.arrived===false) status='IN TRANSIT';
+            const sCls = status==='SOLD'?'tag-red':status==='LISTED'?'tag-green':status==='SHIPPED'?'tag-blue':status==='IN TRANSIT'?'tag-blue':'tag-gold';
+            return `<tr>
+                <td class="ref" onclick="lookupRef('${i.ref}')">${i.ref}</td>
+                <td class="dim" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${[i.bracelet,i.dial].filter(Boolean).join(' | ')}</td>
+                <td class="right">${fmt(i.cost_price)}</td>
+                <td class="right">${mkt}</td>
+                <td class="right ${pnlCls}" style="font-weight:600;">${pnl?(pnl>0?'+':'')+fmt(pnl):'—'}</td>
+                <td class="right ${pnlCls}">${pctStr}</td>
+                <td class="right dim">${i.days_held||0}d</td>
+                <td><span class="tag ${sCls}">${status}</span></td>
+            </tr>`;
+        }).join('') || '<tr><td colspan="8" class="dim" style="text-align:center;">No inventory</td></tr>';
+    } catch(e) { console.error(e); }
+}
+
+// ── DEALS ──
+function renderDeals() { applyDealsFilter(); }
+function setDealsRegion(r,el) { currentDealsRegion=r; $$('#page-deals .tab').forEach(t=>t.classList.remove('active')); el?.classList.add('active'); applyDealsFilter(); }
+function filterDeals() { applyDealsFilter(); }
+
+function applyDealsFilter() {
+    const q = ($('#deals-search')?.value||'').toLowerCase();
+    const tierFilter = $('#deals-tier')?.value||'';
+    let f = DATA.deals||[];
+    if (currentDealsRegion !== 'all') f = f.filter(d=>d.region===currentDealsRegion);
+    if (tierFilter) f = f.filter(d=>d.tier===tierFilter);
+    if (q) { const terms=searchTerms(q); f=f.filter(d=>matchesSearch([d.ref,d.model,d.dial,d.seller,d.group].join(' '),terms)); }
+
+    const tierLabel = {A:'A',B:'B',C:'C'};
+    const tierBorder = {A:'var(--green)',B:'var(--accent)',C:'var(--border)'};
+
+    $('#deals-cards').innerHTML = f.slice(0,30).map(d => {
+        const disc = d.discount_pct||d.gap_pct||0;
+        const price = d.price_usd||d.price||0;
+        const tier = d.tier||'C';
+        const estProfit = d.est_profit||0;
+        const estMargin = d.est_margin_pct||0;
+        const estSell = d.est_sell_price||0;
+        const trueCost = d.true_cost||price;
+        const hkFric = d.hk_friction||0;
+        const nSellers = d.unique_sellers||0;
+        const n = d.total_listings||0;
+        const traded = d.traded_before;
+        const profitColor = estProfit>0?'var(--green)':'var(--red)';
+        const tradeBadge = traded?`<span class="tag tag-green">Traded ${d.times_traded}x | ${d.hist_avg_margin}% avg</span>`:`<span class="tag" style="background:var(--bg-4);color:var(--text-2);">New</span>`;
+
+        return `<div class="deal-card ${tier==='A'?'tier-a':tier==='B'?'tier-b':''}">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                <div>
+                    <span style="color:${tierBorder[tier]};font-weight:700;font-size:0.7rem;font-family:var(--mono);margin-right:6px;">${tierLabel[tier]}</span>
+                    <span class="ref" onclick="lookupRef('${d.ref}')" style="font-size:0.95rem;">${d.ref}</span>
+                    <span style="color:var(--text-2);font-size:0.8rem;margin-left:6px;">${d.model||''}</span>
+                </div>
+                <div style="text-align:right;font-family:var(--mono);">
+                    <span style="color:var(--red);font-size:1rem;font-weight:700;">-${disc.toFixed(1)}%</span>
+                    ${d.saving_usd ? `<div style="font-size:0.68rem;color:var(--text-2);">Save ${fmt(d.saving_usd)}</div>` : ''}
+                </div>
+            </div>
+            <div style="display:flex;gap:4px;margin:6px 0;flex-wrap:wrap;align-items:center;">
+                <span class="tag ${condTag(d.condition||d.condition_bucket)}">${d.condition||d.condition_bucket||'—'}</span>
+                <span class="tag tag-gold">${d.completeness_bucket||d.completeness||'—'}</span>
+                <span style="font-size:0.72rem;color:var(--text-1);">${d.dial||''}</span>
+                <span style="font-size:0.72rem;color:var(--text-2);">${regionLabel(d.region)}</span>
+                ${tradeBadge}
+            </div>
+            <div class="deal-stats">
+                <div class="deal-stat"><div class="ds-val" style="color:var(--green)">${fmt(price)}</div><div class="ds-label">Deal Price${hkFric?` (+${fmt(hkFric)} import)`:''}</div></div>
+                <div class="deal-stat"><div class="ds-val">${fmt(d.avg_price)}</div><div class="ds-label">Avg B25 (${n} listings, ${nSellers} sellers)</div></div>
+                <div class="deal-stat"><div class="ds-val">${fmt(estSell)}</div><div class="ds-label">Est Sell ${traded?'(your avg)':'(98% B25)'}</div></div>
+                <div class="deal-stat"><div class="ds-val" style="color:${profitColor}">${fmt(estProfit)}</div><div class="ds-label">Est Profit (${estMargin}%)</div></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-2);font-family:var(--mono);">
+                <span>${d.seller||'?'} (${d.seller_listings||0}) | ${d.group||''}</span>
+                <span>Conf: ${d.confidence||0}</span>
+            </div>
+        </div>`;
+    }).join('') || '<div style="text-align:center;padding:24px;color:var(--text-2);">No deals match filters.</div>';
+}
+
+// ── ARBITRAGE ──
+function fmtTs(ts) {
+    if (!ts) return '';
+    // Parse various date formats to "Mon DD"
+    try {
+        const parts = ts.split(' ')[0];
+        let d;
+        if (parts.includes('/')) {
+            const segs = parts.split('/');
+            if (segs[2] && segs[2].length === 2) {
+                // dd/mm/yy or mm/dd/yy
+                const hasDotsInTime = ts.includes('.');
+                if (hasDotsInTime) { d = new Date(2000+parseInt(segs[2]), parseInt(segs[1])-1, parseInt(segs[0])); }
+                else { d = new Date(2000+parseInt(segs[2]), parseInt(segs[0])-1, parseInt(segs[1])); }
+            }
+        }
+        if (!d || isNaN(d.getTime())) d = new Date(ts);
+        if (!isNaN(d.getTime())) return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    } catch(e) {}
+    return '';
+}
+
+function renderArbitrage() {
+    const dir = $('#arb-direction')?.value || 'hk_to_us';
+    const q = ($('#arb-search')?.value||'').toLowerCase();
+    let arbs = DATA.arbitrage||[];
+
+    // Filter direction
+    if (dir !== 'all') arbs = arbs.filter(a => a.direction === dir);
+    if (q) arbs = arbs.filter(a => [a.ref,a.model,a.dial||'',a.bracelet||''].join(' ').toLowerCase().includes(q));
+
+    // Update headers based on direction
+    const isHkToUs = dir !== 'us_to_hk';
+    const buyLabel = dir === 'us_to_hk' ? 'Buy (US)' : 'Buy (HK)';
+    const sellLabel = dir === 'us_to_hk' ? 'Sell (HK)' : 'Sell (US)';
+    $('#arb-th-buy').textContent = buyLabel;
+    $('#arb-th-sell').textContent = sellLabel;
+
+    // Summary
+    const totalProfit = arbs.reduce((s,a)=>s+(a.realistic_profit||a.profit||0),0);
+    $('#arb-summary').textContent = `${arbs.length} opportunities | ${fmt(totalProfit)} total profit`;
+
+    $('#arb-table tbody').innerHTML = arbs.map((a,idx) => {
+        const conf = a.arb_confidence||50;
+        const dots = [1,2,3,4,5].map(n=>`<div class="d ${conf>=n*20?'on':conf>=n*15?'med':''}"></div>`).join('');
+        const margin = a.realistic_pct||a.profit_pct||0;
+        const buyP = a.buy_price || (a.direction==='us_to_hk' ? a.us_price : a.hk_price) || 0;
+        const sellP = a.sell_price || (a.direction==='us_to_hk' ? a.hk_price : a.us_price) || 0;
+        const netProfit = a.realistic_profit || a.profit || 0;
+        const dirArrow = a.direction==='us_to_hk' ? 'US→HK' : 'HK→US';
+        const profitCls = netProfit > 0 ? 'green' : 'red';
+
+        return `<tr style="cursor:pointer;" onclick="showArbDetail(${idx},'${dir}')">
+            <td class="ref">${a.ref}${a.dial?`<br><span class="dim" style="font-size:0.66rem">${a.dial}${a.bracelet?' | '+a.bracelet:''}</span>`:''}</td>
+            <td class="dim">${a.model||''} ${dir==='all'?'<span class="tag tag-gold" style="font-size:0.58rem;">'+dirArrow+'</span>':''}</td>
+            <td class="right">${fmt(buyP)}</td>
+            <td class="right">${fmt(sellP)}</td>
+            <td class="right dim">${fmt(a.import_fee)}</td>
+            <td class="right ${profitCls}" style="font-weight:700">${fmt(netProfit)}</td>
+            <td class="right"><span class="pill ${netProfit>0?'pos':'neg'}">${pct(margin)}</span></td>
+            <td><div class="conf-dots">${dots}</div></td>
+            <td class="dim">${a.direction==='us_to_hk'?(a.us_count||0)+'/'+(a.hk_count||0):(a.hk_count||0)+'/'+(a.us_count||0)}</td>
+        </tr>`;
+    }).join('');
+
+    // Hide detail when re-rendering
+    $('#arb-detail').style.display = 'none';
+}
+
+function showArbDetail(idx, dirFilter) {
+    const dir = dirFilter || $('#arb-direction')?.value || 'hk_to_us';
+    let arbs = DATA.arbitrage||[];
+    if (dir !== 'all') arbs = arbs.filter(a => a.direction === dir);
+    const q = ($('#arb-search')?.value||'').toLowerCase();
+    if (q) arbs = arbs.filter(a => [a.ref,a.model,a.dial||'',a.bracelet||''].join(' ').toLowerCase().includes(q));
+    const a = arbs[idx];
+    if (!a) return;
+
+    const panel = $('#arb-detail');
+    panel.style.display = 'block';
+    panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+    const isExport = a.direction === 'us_to_hk';
+    const buyRegion = isExport ? 'US' : 'HK';
+    const sellRegion = isExport ? 'HK' : 'US';
+    const buyListings = isExport ? (a.us_listings||[]) : (a.hk_listings||[]);
+    const sellListings = isExport ? (a.hk_listings||[]) : (a.us_listings||[]);
+    const buyAvg2 = isExport ? a.us_avg2 : a.hk_avg2;
+    const sellAvg2 = isExport ? a.hk_avg2 : a.us_avg2;
+    const buyP = a.buy_price || 0;
+    const sellP = a.sell_price || 0;
+    const netProfit = a.realistic_profit || a.profit || 0;
+    const netPct = a.realistic_pct || a.profit_pct || 0;
+    const fees = a.import_fee_breakdown || {};
+
+    // Fee breakdown
+    let feeHtml = `<div class="detail-row"><span>Wire transfer</span><span style="font-family:var(--mono)">${fmt(fees.wire||40)}</span></div>`;
+    feeHtml += `<div class="detail-row"><span>Shipping</span><span style="font-family:var(--mono)">${fmt(fees.shipping||200)}</span></div>`;
+    if (fees.box) feeHtml += `<div class="detail-row"><span>Box/Packaging</span><span style="font-family:var(--mono)">${fmt(fees.box)}</span></div>`;
+    feeHtml += `<div class="detail-row" style="border-top:1px solid var(--border-strong);padding-top:4px;font-weight:600;"><span>Total Fees</span><span style="font-family:var(--mono)">${fmt(a.import_fee)}</span></div>`;
+
+    // Build order book tables
+    function renderListings(listings, label, region) {
+        if (!listings || !listings.length) return `<div style="color:var(--text-2);padding:8px;">No ${label} listings</div>`;
+        return `<div class="tbl-wrap" style="max-height:300px;overflow-y:auto;"><table class="tbl"><thead><tr>
+            <th class="right">Price</th><th>Seller</th><th>Phone</th><th>Year</th><th>Cond</th><th>Date</th>
+        </tr></thead><tbody>${listings.map(l => {
+            const phone = l.phone ? `<a href="https://wa.me/${l.phone.replace(/[^0-9]/g,'')}" target="_blank" style="color:var(--green);text-decoration:none;font-family:var(--mono);font-size:0.7rem;">${l.phone}</a>` : '<span class="dim">—</span>';
+            return `<tr>
+                <td class="right" style="font-weight:600;">${fmt(l.price)}</td>
+                <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.seller||''}</td>
+                <td>${phone}</td>
+                <td class="dim">${l.year||''}</td>
+                <td><span class="tag ${condTag(l.condition)}">${l.condition||'—'}</span></td>
+                <td class="dim">${fmtTs(l.ts)}</td>
+            </tr>`;
+        }).join('')}</tbody></table></div>`;
+    }
+
+    // Exit scenarios — what if you sell at different points
+    const exitPoints = [
+        {label: 'Best case (cheapest sell)', price: sellListings[0]?.price || sellP},
+        {label: 'Avg 2 cheapest', price: sellAvg2 || sellP},
+        {label: 'Avg market', price: sellListings.length ? sellListings.reduce((s,l)=>s+l.price,0)/sellListings.length : sellP},
+    ];
+
+    let exitHtml = exitPoints.map(ep => {
+        const cost = buyP + (a.import_fee||0);
+        const profit = ep.price - cost;
+        const margin = cost > 0 ? (profit/cost*100) : 0;
+        const cls = profit >= 0 ? 'green' : 'red';
+        return `<div class="detail-row"><span>${ep.label}</span><span style="font-family:var(--mono);">${fmt(ep.price)} → <span class="${cls}" style="font-weight:600;">${profit>=0?'+':''}${fmt(profit)} (${margin.toFixed(1)}%)</span></span></div>`;
+    }).join('');
+
+    panel.innerHTML = `<div class="card fade-in">
+        <div class="card-head">
+            <span>${a.ref} — ${a.model||''} ${a.dial?'| '+a.dial:''} ${a.bracelet?'| '+a.bracelet:''}</span>
+            <button class="btn" onclick="$('#arb-detail').style.display='none'" style="font-size:0.7rem;padding:2px 8px;">Close</button>
+        </div>
+        <div class="card-body">
+            <!-- Deal summary -->
+            <div class="metrics" style="margin-bottom:12px;">
+                <div class="metric"><div class="label">Buy (${buyRegion})</div><div class="val" style="color:var(--text-0)">${fmt(buyP)}</div><div class="sub">Avg2: ${fmt(buyAvg2)}</div></div>
+                <div class="metric"><div class="label">Sell (${sellRegion})</div><div class="val" style="color:var(--accent)">${fmt(sellP)}</div><div class="sub">Avg2: ${fmt(sellAvg2)}</div></div>
+                <div class="metric"><div class="label">Total Fees</div><div class="val dim">${fmt(a.import_fee)}</div></div>
+                <div class="metric"><div class="label">Net Profit</div><div class="val ${netProfit>=0?'green':'red'}">${netProfit>=0?'+':''}${fmt(netProfit)}</div><div class="sub">${pct(netPct)} return</div></div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <!-- Buy side -->
+                <div>
+                    <div style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);margin-bottom:6px;">BUY SIDE — ${buyRegion} (${buyListings.length} listings)</div>
+                    ${renderListings(buyListings, 'buy', buyRegion)}
+                </div>
+                <!-- Sell side -->
+                <div>
+                    <div style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);margin-bottom:6px;">SELL SIDE — ${sellRegion} (${sellListings.length} listings)</div>
+                    ${renderListings(sellListings, 'sell', sellRegion)}
+                </div>
+            </div>
+
+            <!-- Fee breakdown + Exit scenarios -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+                <div>
+                    <div style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);margin-bottom:6px;">FEE BREAKDOWN</div>
+                    ${feeHtml}
+                </div>
+                <div>
+                    <div style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);margin-bottom:6px;">EXIT SCENARIOS</div>
+                    ${exitHtml}
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+// ── PRICE LOOKUP ──
+let searchTimeout;
+function debounceSearch() { clearTimeout(searchTimeout); searchTimeout=setTimeout(doLookup,300); }
+function lookupRef(ref,dial) { showPage('lookup'); $('#ref-search').value=dial?ref+' '+dial:ref; doLookup(); }
+
+async function doLookup() {
+    const q = ($('#ref-search')?.value||'').trim();
+    const c = $('#lookup-result');
+    if (!q) { c.innerHTML=''; return; }
+    c.innerHTML = '<p style="padding:20px;color:var(--text-2);">Loading...</p>';
+
+    try {
+        const url = `/api/smart_search?q=${encodeURIComponent(q)}`;
+        const r = await fetch(url);
+        const d = await r.json();
+        if (!r.ok || d.error) throw new Error(d.error||'Not found');
+
+        // smart_search returns {price_summary, fair_value, dial_breakdown, listings, ...}
+        const ps = d.price_summary||{};
+        const fv = d.fair_value?.primary||{};
+        const b25 = ps.b25||fv.b25||fv.value||ps.median||0;
+        const low = ps.low||fv.low||0, high = ps.high||fv.high||0;
+        const count = ps.count||d.total_matches||0;
+        const usB25 = ps.us_b25||ps.us_median||0, hkB25 = ps.hk_b25||ps.hk_median||0;
+        const ref = d.parsed_filters?.ref||q;
+        const model = fv.label||'';
+        const dialBreak = d.dial_breakdown||{};
+        const dials = Object.keys(dialBreak).filter(x=>x!=='Unknown');
+        const condBreak = d.condition_breakdown||{};
+        const condTags = Object.keys(condBreak).map(cc=>`<span class="tag ${condTag(cc)}">${cc} <span style="font-family:var(--mono);font-size:0.62rem;">(${condBreak[cc].count})</span></span>`).join(' ');
+
+        let regionalHtml = '';
+        if (usB25) regionalHtml += `<div class="detail-row"><span>US Avg B25</span><span style="font-family:var(--mono);color:var(--accent)">${fmt(usB25)}</span></div>`;
+        if (hkB25) regionalHtml += `<div class="detail-row"><span>HK Avg B25</span><span style="font-family:var(--mono);color:var(--accent)">${fmt(hkB25)}</span></div>`;
+        if (usB25 && hkB25) { const sp=((usB25-hkB25)/hkB25*100).toFixed(1); regionalHtml += `<div class="detail-row"><span>HK-US Spread</span><span class="${parseFloat(sp)>0?'green':'red'}" style="font-family:var(--mono)">${sp}%</span></div>`; }
+        if (ps.cheaper_region) regionalHtml += `<div class="detail-row"><span>Cheaper</span><span style="font-family:var(--mono);color:var(--green)">${ps.cheaper_region}</span></div>`;
+
+        const cheapest = (d.listings||d.cheapest_listings||[]).slice(0,10).map(l=>`
+            <div class="listing-card"><div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-family:var(--mono);font-weight:700;color:var(--green)">${fmt(l.price_usd||l.price)}</span>
+                <span><span class="tag ${condTag(l.condition)}">${l.condition||'—'}</span> ${regionLabel(l.region)}</span>
+            </div><div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">${l.dial||''} ${l.bracelet||''} ${l.year?'('+l.year+')':''} | ${l.completeness||''} | ${l.seller||''}</div></div>
+        `).join('');
+
+        let dialTable = '';
+        if (dials.length > 1) {
+            dialTable = `<div style="margin-top:12px;">
+                <div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:600;">Per-Dial Pricing</div>
+                <table class="tbl"><thead><tr><th>Dial</th><th class="right">Avg B25</th><th class="right">Low</th><th class="right">High</th><th class="right">Count</th></tr></thead><tbody>
+                ${Object.entries(dialBreak).filter(([n])=>n!=='Unknown').sort((a,b)=>b[1].count-a[1].count).map(([name,info])=>`<tr style="cursor:pointer" onclick="$('#ref-search').value='${ref} ${name.toLowerCase()}';doLookup();"><td style="color:var(--accent)">${name}</td><td class="right">${fmt(info.b25||info.median)}</td><td class="right green">${fmt(info.low)}</td><td class="right">${fmt(info.high)}</td><td class="right dim">${info.count}</td></tr>`).join('')}
+                </tbody></table></div>`;
+        }
+
+        // Related searches
+        let relatedHtml = '';
+        if (d.related?.length) {
+            relatedHtml = `<div style="margin-top:10px;display:flex;gap:4px;flex-wrap:wrap;"><span style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;align-self:center;margin-right:4px;">Related:</span>${d.related.map(r=>`<span class="tag tag-gold" style="cursor:pointer;" onclick="$('#ref-search').value='${r.query}';doLookup();">${r.label}</span>`).join('')}</div>`;
+        }
+
+        // Signals
+        let signalHtml = '';
+        if (d.signals?.length) {
+            signalHtml = `<div style="margin-top:10px;padding:8px;background:var(--bg-3);border-radius:var(--radius);"><div style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;font-weight:600;">Signals</div>${d.signals.map(s=>`<div style="font-size:0.72rem;color:var(--text-1);padding:2px 0;">${s}</div>`).join('')}</div>`;
+        }
+
+        c.innerHTML = `<div class="fade-in">
+            <div class="card"><div class="card-body">
+                <h2 style="font-size:1.1rem;margin-bottom:2px;">${ref} <span style="color:var(--text-2);font-size:0.85rem;font-weight:400;">${model}</span></h2>
+                <p style="margin-bottom:10px;">${condTags} <span style="color:var(--text-2);font-size:0.72rem;margin-left:6px;">${count} listings${dials.length?' | '+dials.length+' dials':''}</span></p>
+                <div class="metrics" style="margin-bottom:10px;">
+                    <div class="metric"><div class="label">Low</div><div class="val green">${fmt(low)}</div></div>
+                    <div class="metric"><div class="label">Avg B25</div><div class="val" style="color:var(--accent)">${fmt(b25)}</div></div>
+                    <div class="metric"><div class="label">High</div><div class="val">${fmt(high)}</div></div>
+                    <div class="metric"><div class="label">Spread</div><div class="val">${b25>0?pct((high-low)/b25*100):'—'}</div></div>
+                </div>
+                <div class="detail-grid">
+                    <div><div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:600;">Regional Pricing</div>${regionalHtml||'<div style="color:var(--text-2)">Single region</div>'}</div>
+                    <div><div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:600;">Available Dials</div>${dials.map(d=>`<span class="tag tag-gold" style="margin:1px;cursor:pointer;" onclick="$('#ref-search').value='${ref} ${d.toLowerCase()}';doLookup();">${d}</span>`).join(' ')||'—'}</div>
+                </div>
+                ${dialTable}
+                ${signalHtml}
+                ${relatedHtml}
+            </div></div>
+            <div class="card" style="margin-top:8px;"><div class="card-head"><span>Cheapest Listings</span></div><div class="card-body">${cheapest||'<div style="color:var(--text-2)">No listings</div>'}</div></div>
+        </div>`;
+    } catch(e) { c.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-2);">${e.message||'No data for "'+q+'"'}</div>`; }
+}
+
+// ── PORTFOLIO ──
+async function renderPortfolio() {
+    const p = DATA.portfolio; if (!p) return;
+    const items = await ensureInventory();
+    const c = $('#portfolio-content');
+
+    if (currentPfView === 'summary') renderPfSummary(c, p, items);
+    else if (currentPfView === 'positions') renderPfPositions(c, p, items);
+    else if (currentPfView === 'exposure') renderPfExposure(c, p, items);
+    else if (currentPfView === 'pipeline') renderPfPipeline(c, p, items);
+    else if (currentPfView === 'aging') renderPfAging(c, p, items);
+}
+
+function getStatus(i) {
+    if (i.sold) return 'SOLD';
+    if (i.shipped) return 'SHIPPED';
+    if (i.posted) return 'LISTED';
+    if (i.at_store) return 'AT STORE';
+    if (i.arrived===false) return 'IN TRANSIT';
+    return 'IN HAND';
+}
+function statusTag(s) {
+    const cls = s==='SOLD'?'tag-red':s==='LISTED'?'tag-green':s==='SHIPPED'?'tag-blue':s==='IN TRANSIT'?'tag-blue':'tag-gold';
+    return `<span class="tag ${cls}">${s}</span>`;
+}
+
+function renderPfSummary(c, p, items) {
+    const cls = p.total_pnl>=0?'green':'red';
+    const statusHtml = Object.entries(p.by_status||{}).map(([k,v])=>`<div class="detail-row"><span>${k.replace(/_/g,' ')}</span><span style="font-family:var(--mono)">${v}</span></div>`).join('');
+    const bestHtml = p.best_performer?`<div class="listing-card"><div style="display:flex;justify-content:space-between"><span class="ref" onclick="lookupRef('${p.best_performer.ref}')">${p.best_performer.ref}</span><span class="green" style="font-family:var(--mono);font-weight:700">+${fmt(p.best_performer.profit)} (${p.best_performer.pct}%)</span></div></div>`:'<div class="dim">—</div>';
+    const worstHtml = p.worst_performer?`<div class="listing-card"><div style="display:flex;justify-content:space-between"><span class="ref" onclick="lookupRef('${p.worst_performer.ref}')">${p.worst_performer.ref}</span><span class="red" style="font-family:var(--mono);font-weight:700">${fmt(p.worst_performer.loss)} (${p.worst_performer.pct}%)</span></div></div>`:'<div class="dim">—</div>';
+
+    c.innerHTML = `<div class="fade-in">
+        <div class="metrics">
+            <div class="metric"><div class="label">Capital Deployed</div><div class="val" style="color:var(--accent)">${fmt(p.total_invested)}</div></div>
+            <div class="metric"><div class="label">Market Value</div><div class="val">${fmt(p.total_market_value)}</div></div>
+            <div class="metric"><div class="label">Unrealized P&L</div><div class="val ${cls}">${fmt(p.total_pnl)}</div></div>
+            <div class="metric"><div class="label">ROI</div><div class="val ${cls}">${p.roi_pct}%</div></div>
+            <div class="metric"><div class="label">Positions</div><div class="val">${p.total_pieces}</div></div>
+            <div class="metric"><div class="label">Capital at Risk</div><div class="val red">${fmt(p.capital_at_risk)}</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="card"><div class="card-head"><span>Position Status</span></div><div class="card-body">
+                ${statusHtml}
+                <div class="detail-row" style="margin-top:6px;border-top:1px solid var(--border-strong);padding-top:6px;"><span>Profitable</span><span class="green" style="font-family:var(--mono)">${p.profitable_count}/${p.total_pieces}</span></div>
+                <div class="detail-row"><span>Underwater</span><span class="red" style="font-family:var(--mono)">${p.underwater_count}</span></div>
+                <div class="detail-row"><span>Avg Hold</span><span style="font-family:var(--mono)">${p.avg_days_held}d</span></div>
+            </div></div>
+            <div class="card"><div class="card-head"><span>Performance</span></div><div class="card-body">
+                <div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;font-weight:600;">Best</div>${bestHtml}
+                <div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin:8px 0 4px;font-weight:600;">Worst</div>${worstHtml}
+            </div></div>
+        </div>
+    </div>`;
+}
+
+let posView = 'table';
+let posSortField = 'pnl';
+
+function renderPfPositions(c, p, items) {
+    applySortToItems(items);
+
+    // View toggle + sort buttons
+    const viewBar = `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        <div style="display:flex;gap:2px;background:var(--bg-3);border-radius:2px;padding:1px;">
+            <button class="btn" onclick="setPosView('table')" style="font-size:0.68rem;padding:2px 8px;${posView==='table'?'color:var(--accent);border-color:var(--accent-border);':''}">Table</button>
+            <button class="btn" onclick="setPosView('cards')" style="font-size:0.68rem;padding:2px 8px;${posView==='cards'?'color:var(--accent);border-color:var(--accent-border);':''}">Cards</button>
+            <button class="btn" onclick="setPosView('heatmap')" style="font-size:0.68rem;padding:2px 8px;${posView==='heatmap'?'color:var(--accent);border-color:var(--accent-border);':''}">Heatmap</button>
+            <button class="btn" onclick="setPosView('grouped')" style="font-size:0.68rem;padding:2px 8px;${posView==='grouped'?'color:var(--accent);border-color:var(--accent-border);':''}">By Ref</button>
+        </div>
+        <div style="display:flex;gap:2px;margin-left:auto;">
+            <button class="btn" onclick="sortPfBy('pnl')" style="font-size:0.68rem;padding:2px 8px;${posSortField==='pnl'?'color:var(--accent);':''}">P&L</button>
+            <button class="btn" onclick="sortPfBy('cost')" style="font-size:0.68rem;padding:2px 8px;${posSortField==='cost'?'color:var(--accent);':''}">Cost</button>
+            <button class="btn" onclick="sortPfBy('held')" style="font-size:0.68rem;padding:2px 8px;${posSortField==='held'?'color:var(--accent);':''}">Held</button>
+            <button class="btn" onclick="sortPfBy('ref')" style="font-size:0.68rem;padding:2px 8px;${posSortField==='ref'?'color:var(--accent);':''}">Ref</button>
+        </div>
+    </div>`;
+
+    let body = '';
+    if (posView === 'table') body = renderPosTable(items);
+    else if (posView === 'cards') body = renderPosCards(items);
+    else if (posView === 'heatmap') body = renderPosHeatmap(items, p);
+    else if (posView === 'grouped') body = renderPosGrouped(items);
+
+    c.innerHTML = `<div class="fade-in">
+        <div style="margin-bottom:8px;">${viewBar}</div>
+        ${body}
+    </div>`;
+}
+
+function setPosView(v) { posView = v; renderPortfolio(); }
+function sortPfBy(field) { posSortField = field; if (inventoryItems) { applySortToItems(inventoryItems); renderPortfolio(); } }
+function applySortToItems(items) {
+    if (posSortField==='pnl') items.sort((a,b)=>(b.profit_pct||0)-(a.profit_pct||0));
+    else if (posSortField==='cost') items.sort((a,b)=>(b.cost_price||0)-(a.cost_price||0));
+    else if (posSortField==='held') items.sort((a,b)=>(b.days_held||0)-(a.days_held||0));
+    else if (posSortField==='ref') items.sort((a,b)=>(a.ref||'').localeCompare(b.ref||''));
+    else if (posSortField==='hk') items.sort((a,b)=>(b.hk_wholesale||0)-(a.hk_wholesale||0));
+    else if (posSortField==='us') items.sort((a,b)=>(b.us_wholesale||0)-(a.us_wholesale||0));
+}
+
+// ── TABLE VIEW ──
+function renderPosTable(items) {
+    const rows = items.map(i => {
+        const pnl=i.profit_loss||0, pnlCls=pnl>=0?'green':'red';
+        const pctStr=i.profit_pct!=null?`${i.profit_pct>0?'+':''}${i.profit_pct.toFixed(1)}%`:'—';
+        const mkt=i.market_value?fmt(i.market_value):'<span class="dim">—</span>';
+        const status=getStatus(i);
+        const conf=i.price_confidence||'';
+        const confCls=conf==='high'?'tag-green':conf==='medium'?'tag-gold':'tag-blue';
+        const hk=i.hk_wholesale?fmt(i.hk_wholesale):'<span class="dim">—</span>';
+        const us=i.us_wholesale?fmt(i.us_wholesale):'<span class="dim">—</span>';
+        const hkN=i.hk_count||0, usN=i.us_count||0;
+        return `<tr>
+            <td class="ref" onclick="lookupRef('${i.ref}')">${i.ref}</td>
+            <td class="dim" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${[i.bracelet,i.dial].filter(Boolean).join(' | ')}</td>
+            <td class="right">${fmt(i.cost_price)}</td>
+            <td class="right">${mkt}</td>
+            <td class="right" style="color:var(--gold);font-size:0.78rem;">${hk}${hkN?`<div class="dim" style="font-size:0.65rem;">${hkN}</div>`:''}</td>
+            <td class="right" style="color:var(--accent);font-size:0.78rem;">${us}${usN?`<div class="dim" style="font-size:0.65rem;">${usN}</div>`:''}</td>
+            <td class="right ${pnlCls}" style="font-weight:600">${pnl?(pnl>0?'+':'')+fmt(pnl):'—'}</td>
+            <td class="right ${pnlCls}">${pctStr}</td>
+            <td class="right dim">${i.days_held||0}d</td>
+            <td>${statusTag(status)}</td>
+            <td class="right dim"><span class="tag ${confCls}">${i.comparable_count||0}</span></td>
+        </tr>`;
+    }).join('');
+    return `<div class="card"><div class="card-head"><span>All Positions (${items.length})</span></div>
+        <div class="tbl-wrap"><table class="tbl"><thead><tr>
+            <th>Ref</th><th>Details</th><th class="right">Cost</th><th class="right">Market</th><th class="right" style="color:var(--gold);">🇭🇰 HK</th><th class="right" style="color:var(--accent);">🇺🇸 US</th><th class="right">P&L</th><th class="right">%</th><th class="right">Held</th><th>Status</th><th class="right">Comps</th>
+        </tr></thead><tbody>${rows||'<tr><td colspan="11" class="dim" style="text-align:center;padding:16px;">No data</td></tr>'}</tbody></table></div></div>`;
+}
+
+// ── CARD VIEW ──
+function renderPosCards(items) {
+    const cards = items.map(i => {
+        const pnl=i.profit_loss||0, pnlCls=pnl>=0?'green':'red';
+        const pctStr=i.profit_pct!=null?`${i.profit_pct>0?'+':''}${i.profit_pct.toFixed(1)}%`:'—';
+        const mkt=i.market_value?fmt(i.market_value):'—';
+        const status=getStatus(i);
+        const sCls=status==='SOLD'?'tag-red':status==='LISTED'?'tag-green':status==='SHIPPED'?'tag-blue':status==='IN TRANSIT'?'tag-blue':'tag-gold';
+        const borderColor = pnl>0?'var(--green)':pnl<0?'var(--red)':'var(--border)';
+        return `<div style="background:var(--bg-2);border:1px solid var(--border);border-left:3px solid ${borderColor};border-radius:var(--radius);padding:10px 12px;display:flex;flex-direction:column;gap:6px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                <div>
+                    <span class="ref" onclick="lookupRef('${i.ref}')" style="font-size:0.95rem;">${i.ref}</span>
+                    <div style="font-size:0.72rem;color:var(--text-2);margin-top:1px;">${[i.bracelet,i.dial].filter(Boolean).join(' | ')}</div>
+                </div>
+                <span class="tag ${sCls}">${status}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+                <div><div style="font-size:0.6rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.3px;">Cost</div><div style="font-family:var(--mono);font-size:0.85rem;">${fmt(i.cost_price)}</div></div>
+                <div><div style="font-size:0.6rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.3px;">Market</div><div style="font-family:var(--mono);font-size:0.85rem;">${mkt}</div></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:5px;">
+                <span style="font-family:var(--mono);font-weight:700;font-size:0.9rem;" class="${pnlCls}">${pnl?(pnl>0?'+':'')+fmt(pnl):'—'} <span style="font-weight:400;font-size:0.75rem;">${pctStr}</span></span>
+                <span style="font-family:var(--mono);font-size:0.72rem;color:var(--text-2);">${i.days_held||0}d held</span>
+            </div>
+        </div>`;
+    }).join('');
+    return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;">${cards||'<div class="dim">No data</div>'}</div>`;
+}
+
+// ── HEATMAP VIEW ──
+function renderPosHeatmap(items, p) {
+    // Treemap-style blocks: size = capital weight, color = P&L performance
+    const totalCap = items.reduce((s,i)=>s+(i.cost_price||0),0) || 1;
+    const maxPct = Math.max(1, ...items.map(i=>Math.abs(i.profit_pct||0)));
+
+    const blocks = items.map(i => {
+        const pnl=i.profit_loss||0;
+        const pctVal=i.profit_pct||0;
+        const weight = (i.cost_price||0)/totalCap;
+        // Size: minimum 60px, proportional to capital
+        const area = Math.max(60, Math.round(weight * 2000));
+
+        // Color intensity based on P&L %
+        let bg, textColor;
+        if (pctVal > 0) {
+            const intensity = Math.min(1, pctVal / 20); // saturate at +20%
+            bg = `rgba(0,200,83,${0.08 + intensity * 0.25})`;
+            textColor = 'var(--green)';
+        } else if (pctVal < 0) {
+            const intensity = Math.min(1, Math.abs(pctVal) / 20);
+            bg = `rgba(255,23,68,${0.08 + intensity * 0.25})`;
+            textColor = 'var(--red)';
+        } else {
+            bg = 'var(--bg-3)';
+            textColor = 'var(--text-2)';
+        }
+
+        return `<div onclick="lookupRef('${i.ref}')" style="
+            background:${bg};border:1px solid var(--border);border-radius:2px;
+            padding:8px;cursor:pointer;display:flex;flex-direction:column;justify-content:center;align-items:center;
+            min-width:60px;min-height:60px;flex:${Math.max(1,Math.round(weight*20))} 0 ${area}px;
+            transition:transform 0.1s;
+        " title="${i.ref} | Cost: ${fmt(i.cost_price)} | P&L: ${pctVal>0?'+':''}${pctVal?.toFixed(1)}%">
+            <div style="font-family:var(--mono);font-weight:700;font-size:${weight>0.04?'0.9rem':'0.75rem'};color:var(--accent);">${i.ref}</div>
+            <div style="font-family:var(--mono);font-size:0.72rem;color:${textColor};font-weight:600;">${pctVal>0?'+':''}${pctVal?.toFixed(1)||0}%</div>
+            <div style="font-family:var(--mono);font-size:0.65rem;color:var(--text-2);">${fmt(i.cost_price)}</div>
+        </div>`;
+    }).join('');
+
+    // Legend
+    const legend = `<div style="display:flex;gap:12px;align-items:center;font-size:0.68rem;color:var(--text-2);margin-bottom:8px;">
+        <span>Size = capital weight</span>
+        <span style="display:flex;align-items:center;gap:3px;"><span style="width:10px;height:10px;border-radius:1px;background:rgba(255,23,68,0.3);"></span> Loss</span>
+        <span style="display:flex;align-items:center;gap:3px;"><span style="width:10px;height:10px;border-radius:1px;background:var(--bg-3);"></span> Flat</span>
+        <span style="display:flex;align-items:center;gap:3px;"><span style="width:10px;height:10px;border-radius:1px;background:rgba(0,200,83,0.3);"></span> Profit</span>
+        <span>| Intensity = % return</span>
+    </div>`;
+
+    return `${legend}<div style="display:flex;flex-wrap:wrap;gap:3px;">${blocks||'<div class="dim">No data</div>'}</div>`;
+}
+
+// ── GROUPED BY REF VIEW ──
+function renderPosGrouped(items) {
+    const byRef = {};
+    items.forEach(i => {
+        const ref = i.ref||'?';
+        if (!byRef[ref]) byRef[ref] = {ref, items:[], totalCost:0, totalMarket:0, totalPnl:0};
+        byRef[ref].items.push(i);
+        byRef[ref].totalCost += (i.cost_price||0);
+        byRef[ref].totalMarket += (i.market_value||0);
+        byRef[ref].totalPnl += (i.profit_loss||0);
+    });
+
+    const groups = Object.values(byRef);
+    if (posSortField==='cost') groups.sort((a,b)=>b.totalCost-a.totalCost);
+    else if (posSortField==='pnl') groups.sort((a,b)=>b.totalPnl-a.totalPnl);
+    else groups.sort((a,b)=>b.items.length-a.items.length || b.totalCost-a.totalCost);
+
+    let html = '';
+    for (const g of groups) {
+        const pnlCls = g.totalPnl>=0?'green':'red';
+        const pnlPct = g.totalCost>0 ? (g.totalPnl/g.totalCost*100).toFixed(1) : '0';
+        const borderColor = g.totalPnl>0?'var(--green)':g.totalPnl<0?'var(--red)':'var(--border)';
+
+        // Subrows
+        const subRows = g.items.map(i => {
+            const pnl=i.profit_loss||0, pc=pnl>=0?'green':'red';
+            const status=getStatus(i);
+            return `<tr style="font-size:0.75rem;">
+                <td style="padding-left:24px;color:var(--text-2);">${[i.bracelet,i.dial||'—'].filter(Boolean).join(' | ')}</td>
+                <td class="right">${fmt(i.cost_price)}</td>
+                <td class="right">${i.market_value?fmt(i.market_value):'<span class="dim">—</span>'}</td>
+                <td class="right ${pc}">${pnl?(pnl>0?'+':'')+fmt(pnl):'—'}</td>
+                <td class="right dim">${i.days_held||0}d</td>
+                <td>${statusTag(status)}</td>
+            </tr>`;
+        }).join('');
+
+        html += `<div class="card" style="margin-bottom:6px;border-left:3px solid ${borderColor};">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;cursor:pointer;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span class="ref" onclick="event.stopPropagation();lookupRef('${g.ref}')" style="font-size:1rem;">${g.ref}</span>
+                    <span style="font-family:var(--mono);font-size:0.78rem;color:var(--text-2);">${g.items.length}x</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:16px;font-family:var(--mono);font-size:0.82rem;">
+                    <span style="color:var(--text-2);">${fmt(g.totalCost)}</span>
+                    <span class="${pnlCls}" style="font-weight:700;">${g.totalPnl>0?'+':''}${fmt(g.totalPnl)}</span>
+                    <span class="${pnlCls}" style="font-size:0.75rem;">${pnlPct>0?'+':''}${pnlPct}%</span>
+                </div>
+            </div>
+            <div style="display:none;"><table class="tbl"><thead><tr>
+                <th style="padding-left:24px;">Details</th><th class="right">Cost</th><th class="right">Market</th><th class="right">P&L</th><th class="right">Held</th><th>Status</th>
+            </tr></thead><tbody>${subRows}</tbody></table></div>
+        </div>`;
+    }
+
+    return html || '<div class="dim" style="padding:16px;">No data</div>';
+}
+
+function renderPfExposure(c, p, items) {
+    // Group by reference
+    const byRef = {};
+    items.forEach(i => {
+        const ref = i.ref || '?';
+        if (!byRef[ref]) byRef[ref] = {ref, count:0, totalCost:0, totalMarket:0, totalPnl:0};
+        byRef[ref].count++;
+        byRef[ref].totalCost += (i.cost_price||0);
+        byRef[ref].totalMarket += (i.market_value||0);
+        byRef[ref].totalPnl += (i.profit_loss||0);
+    });
+    const sorted = Object.values(byRef).sort((a,b) => b.totalCost - a.totalCost);
+    const totalCapital = sorted.reduce((s,r)=>s+r.totalCost, 0);
+
+    const rows = sorted.map(r => {
+        const pnlCls = r.totalPnl>=0?'green':'red';
+        const pctOfPort = totalCapital>0 ? (r.totalCost/totalCapital*100).toFixed(1) : '0';
+        const barWidth = totalCapital>0 ? Math.round(r.totalCost/totalCapital*100) : 0;
+        return `<tr>
+            <td class="ref" onclick="lookupRef('${r.ref}')">${r.ref}</td>
+            <td class="right">${r.count}</td>
+            <td class="right">${fmt(r.totalCost)}</td>
+            <td class="right">${r.totalMarket?fmt(r.totalMarket):'<span class="dim">—</span>'}</td>
+            <td class="right ${pnlCls}">${r.totalPnl?(r.totalPnl>0?'+':'')+fmt(r.totalPnl):'—'}</td>
+            <td class="right">${pctOfPort}%</td>
+            <td style="width:120px;"><div style="background:var(--bg-4);border-radius:1px;height:6px;"><div style="background:var(--accent);height:6px;border-radius:1px;width:${barWidth}%;"></div></div></td>
+        </tr>`;
+    }).join('');
+
+    c.innerHTML = `<div class="fade-in">
+        <div class="card"><div class="card-head"><span>Capital Concentration by Reference</span></div>
+        <div class="tbl-wrap"><table class="tbl"><thead><tr>
+            <th>Ref</th><th class="right">Qty</th><th class="right">Capital</th><th class="right">Market</th><th class="right">P&L</th><th class="right">% of Port</th><th>Weight</th>
+        </tr></thead><tbody>${rows}</tbody></table></div></div>
+    </div>`;
+}
+
+function renderPfPipeline(c, p, items) {
+    const stages = {'IN TRANSIT':[],'IN HAND':[],'AT STORE':[],'LISTED':[],'SHIPPED':[],'SOLD':[]};
+    items.forEach(i => { const s=getStatus(i); if(stages[s]) stages[s].push(i); });
+
+    const stageColors = {'IN TRANSIT':'var(--blue)','IN HAND':'var(--text-1)','AT STORE':'var(--orange)','LISTED':'var(--green)','SHIPPED':'var(--accent)','SOLD':'var(--red)'};
+
+    let html = '<div class="fade-in">';
+
+    // Pipeline summary bar
+    const total = items.length || 1;
+    html += '<div class="card"><div class="card-head"><span>Inventory Pipeline</span></div><div class="card-body">';
+    html += '<div style="display:flex;height:24px;border-radius:2px;overflow:hidden;margin-bottom:12px;">';
+    for (const [stage, arr] of Object.entries(stages)) {
+        if (!arr.length) continue;
+        const w = (arr.length/total*100).toFixed(1);
+        html += `<div style="width:${w}%;background:${stageColors[stage]};display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;color:var(--bg-0);min-width:${arr.length>0?'20px':'0'};" title="${stage}: ${arr.length}">${arr.length}</div>`;
+    }
+    html += '</div>';
+
+    // Legend
+    html += '<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:0.7rem;">';
+    for (const [stage, arr] of Object.entries(stages)) {
+        html += `<div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;border-radius:1px;background:${stageColors[stage]};"></div><span style="color:var(--text-2)">${stage}</span><span style="font-family:var(--mono);font-weight:600;">${arr.length}</span></div>`;
+    }
+    html += '</div></div></div>';
+
+    // Per-stage cards
+    for (const [stage, arr] of Object.entries(stages)) {
+        if (!arr.length) continue;
+        const totalCost = arr.reduce((s,i)=>s+(i.cost_price||0),0);
+        html += `<div class="card" style="margin-top:6px;"><div class="card-head"><span>${stage} (${arr.length})</span><span style="font-family:var(--mono);font-size:0.75rem;color:var(--text-1);font-weight:400;">${fmt(totalCost)} deployed</span></div>`;
+        html += '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Ref</th><th>Details</th><th class="right">Cost</th><th class="right">Market</th><th class="right">P&L</th><th class="right">Held</th></tr></thead><tbody>';
+        arr.sort((a,b)=>(b.cost_price||0)-(a.cost_price||0));
+        for (const i of arr) {
+            const pnl=i.profit_loss||0, pnlCls=pnl>=0?'green':'red';
+            html += `<tr>
+                <td class="ref" onclick="lookupRef('${i.ref}')">${i.ref}</td>
+                <td class="dim" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${[i.bracelet,i.dial].filter(Boolean).join(' | ')}</td>
+                <td class="right">${fmt(i.cost_price)}</td>
+                <td class="right">${i.market_value?fmt(i.market_value):'<span class="dim">—</span>'}</td>
+                <td class="right ${pnlCls}">${pnl?(pnl>0?'+':'')+fmt(pnl):'—'}</td>
+                <td class="right dim">${i.days_held||0}d</td>
+            </tr>`;
+        }
+        html += '</tbody></table></div></div>';
+    }
+
+    html += '</div>';
+    c.innerHTML = html;
+}
+
+function renderPfAging(c, p, items) {
+    // Group by age buckets
+    const buckets = [
+        {label:'0-7 days', min:0, max:7, items:[]},
+        {label:'8-14 days', min:8, max:14, items:[]},
+        {label:'15-30 days', min:15, max:30, items:[]},
+        {label:'31-60 days', min:31, max:60, items:[]},
+        {label:'60+ days', min:61, max:9999, items:[]},
+    ];
+    const active = items.filter(i => !i.sold);
+    active.forEach(i => {
+        const d = i.days_held||0;
+        for (const b of buckets) { if (d>=b.min && d<=b.max) { b.items.push(i); break; } }
+    });
+
+    let html = '<div class="fade-in">';
+
+    // Aging summary
+    html += '<div class="metrics" style="margin-bottom:8px;">';
+    for (const b of buckets) {
+        const capital = b.items.reduce((s,i)=>s+(i.cost_price||0),0);
+        const color = b.min<=7?'var(--green)':b.min<=14?'var(--text-0)':b.min<=30?'var(--accent)':b.min<=60?'var(--orange)':'var(--red)';
+        html += `<div class="metric"><div class="label">${b.label}</div><div class="val" style="color:${color}">${b.items.length}</div><div class="sub">${fmt(capital)} capital</div></div>`;
+    }
+    html += '</div>';
+
+    // Stale positions detail (30+ days)
+    const stale = active.filter(i => (i.days_held||0) >= 30).sort((a,b)=>(b.days_held||0)-(a.days_held||0));
+    if (stale.length) {
+        const staleCap = stale.reduce((s,i)=>s+(i.cost_price||0),0);
+        html += `<div class="card"><div class="card-head"><span>Stale Positions — 30+ Days (${stale.length})</span><span style="font-family:var(--mono);font-size:0.75rem;color:var(--red);font-weight:600;">${fmt(staleCap)} at risk</span></div>`;
+        html += '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Ref</th><th>Details</th><th class="right">Cost</th><th class="right">Market</th><th class="right">P&L</th><th class="right">Days</th><th>Status</th></tr></thead><tbody>';
+        for (const i of stale) {
+            const pnl=i.profit_loss||0, pnlCls=pnl>=0?'green':'red';
+            html += `<tr>
+                <td class="ref" onclick="lookupRef('${i.ref}')">${i.ref}</td>
+                <td class="dim" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i.dial||''}</td>
+                <td class="right">${fmt(i.cost_price)}</td>
+                <td class="right">${i.market_value?fmt(i.market_value):'<span class="dim">—</span>'}</td>
+                <td class="right ${pnlCls}">${pnl?(pnl>0?'+':'')+fmt(pnl):'—'}</td>
+                <td class="right" style="color:var(--red);font-weight:600;">${i.days_held||0}d</td>
+                <td>${statusTag(getStatus(i))}</td>
+            </tr>`;
+        }
+        html += '</tbody></table></div></div>';
+    }
+
+    // Fresh positions
+    const fresh = active.filter(i => (i.days_held||0) < 30).sort((a,b)=>(b.days_held||0)-(a.days_held||0));
+    if (fresh.length) {
+        html += `<div class="card" style="margin-top:6px;"><div class="card-head"><span>Active Positions Under 30 Days (${fresh.length})</span></div>`;
+        html += '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Ref</th><th>Details</th><th class="right">Cost</th><th class="right">Market</th><th class="right">P&L</th><th class="right">Days</th><th>Status</th></tr></thead><tbody>';
+        for (const i of fresh) {
+            const pnl=i.profit_loss||0, pnlCls=pnl>=0?'green':'red';
+            html += `<tr>
+                <td class="ref" onclick="lookupRef('${i.ref}')">${i.ref}</td>
+                <td class="dim" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i.dial||''}</td>
+                <td class="right">${fmt(i.cost_price)}</td>
+                <td class="right">${i.market_value?fmt(i.market_value):'<span class="dim">—</span>'}</td>
+                <td class="right ${pnlCls}">${pnl?(pnl>0?'+':'')+fmt(pnl):'—'}</td>
+                <td class="right">${i.days_held||0}d</td>
+                <td>${statusTag(getStatus(i))}</td>
+            </tr>`;
+        }
+        html += '</tbody></table></div></div>';
+    }
+
+    html += '</div>';
+    c.innerHTML = html;
+}
+
+// ── BROWSE ──
+function renderBrowse(append) {
+    const f = getFilteredBrowse();
+    const slice = f.slice(browseOffset, browseOffset+BROWSE_PAGE);
+    const html = slice.map(l=>`<tr>
+        <td class="ref" onclick="lookupRef('${l.ref}')">${l.ref}</td>
+        <td class="dim" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.model}</td>
+        <td>${l.dial}</td><td class="dim">${l.bracelet}</td><td class="right">${fmt(l.price)}</td>
+        <td><span class="tag ${condTag(l.condition)}">${l.condition||'—'}</span></td>
+        <td class="dim">${l.completeness}</td><td class="dim">${regionLabel(l.region)}</td>
+        <td class="dim" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.seller}</td>
+        <td class="dim" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.group}</td>
+    </tr>`).join('');
+    const tbody = $('#browse-table tbody');
+    if (append) tbody.innerHTML+=html; else tbody.innerHTML=html;
+    browseOffset+=BROWSE_PAGE;
+    $('#browse-more').style.display = browseOffset>=f.length?'none':'';
+}
+function getFilteredBrowse() {
+    const q=($('#browse-search')?.value||'').toLowerCase(),region=$('#browse-region')?.value||'',cond=$('#browse-cond')?.value||'',sort=$('#browse-sort')?.value||'price-asc';
+    let f=allListings.filter(l=>{if(region&&l.region!==region)return false;if(cond&&l.condition!==cond)return false;if(q&&!matchesSearch([l.ref,l.dial,l.seller,l.group,l.model].join(' '),searchTerms(q)))return false;return true;});
+    if(sort==='price-desc')f.sort((a,b)=>b.price-a.price);else if(sort==='ref')f.sort((a,b)=>a.ref.localeCompare(b.ref));else f.sort((a,b)=>a.price-b.price);
+    return f;
+}
+function filterBrowse(){browseOffset=0;renderBrowse();}
+function loadMoreBrowse(){renderBrowse(true);}
+
+// ── KEYBOARD ──
+document.addEventListener('keydown',e=>{
+    if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;
+    const map={'1':'dashboard','2':'lookup','3':'portfolio','4':'deals','5':'arbitrage','6':'browse'};
+    if(map[e.key])showPage(map[e.key]);
+    if(e.key==='/'||e.key==='s'){e.preventDefault();showPage('lookup');$('#ref-search').focus();}
+    if(e.key==='r')refreshData();
+});
+
+// ── NEWS ──
+async function loadNews() {
+    try {
+        const r = await fetch('/data/news.json');
+        if (!r.ok) return;
+        const data = await r.json();
+        DATA.news = data.articles || [];
+        const tsEl = $('#news-ts');
+        if (tsEl && data.fetched_at) {
+            const d = new Date(data.fetched_at);
+            tsEl.textContent = d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:false});
+        }
+        renderNews();
+    } catch(e) { console.error('News load error:', e); }
+}
+
+function renderNews() {
+    const feed = $('#news-feed');
+    if (!feed || !DATA.news) return;
+    const articles = DATA.news.slice(0, 12);
+    feed.innerHTML = articles.map(a => {
+        const d = new Date(a.date);
+        const ago = timeAgo(d);
+        const srcColor = {'HODINKEE':'var(--accent)','MONOCHROME':'var(--blue)','FRATELLO':'var(--green)','REVOLUTION':'var(--orange)'}[a.source]||'var(--text-2)';
+        return `<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="window.open('${a.link}','_blank')">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:0.8rem;font-weight:500;color:var(--text-0);line-height:1.3;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${a.title}</div>
+                    <div style="font-size:0.68rem;color:var(--text-2);display:flex;gap:6px;align-items:center;">
+                        <span style="color:${srcColor};font-weight:600;font-family:var(--mono);font-size:0.62rem;">${a.source}</span>
+                        <span>${ago}</span>
+                        ${a.relevance >= 20 ? '<span style="color:var(--accent);font-size:0.6rem;">RELEVANT</span>' : ''}
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }).join('') || '<div style="color:var(--text-2);padding:12px;">No news available</div>';
+}
+
+function timeAgo(date) {
+    const s = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (s < 3600) return Math.floor(s/60) + 'm ago';
+    if (s < 86400) return Math.floor(s/3600) + 'h ago';
+    return Math.floor(s/86400) + 'd ago';
+}
+
+// ── PORTFOLIO VIEWS ──
+let currentPfView = 'summary';
+let inventoryItems = null;
+
+function setPfView(view, el) {
+    currentPfView = view;
+    $$('#portfolio-tabs .tab').forEach(t => t.classList.remove('active'));
+    el?.classList.add('active');
+    renderPortfolio();
+}
+
+async function ensureInventory() {
+    if (inventoryItems) return inventoryItems;
+    try {
+        const r = await fetch('/api/inventory');
+        if (r.ok) inventoryItems = await r.json();
+    } catch(e) {}
+    return inventoryItems || [];
+}
+
+// ── INIT ──
+loadData();
+loadNews();
+fetch('/api/portfolio_insights').then(r=>r.json()).then(d=>{DATA.portfolio=d;renderPortfolioSnapshot();}).catch(()=>{});
+</script>
+</body>
+</html>
