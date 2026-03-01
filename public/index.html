@@ -268,6 +268,7 @@
             .metrics { grid-template-columns:1fr 1fr; }
             .metric .val { font-size:1.2rem; }
             html { font-size:12px; }
+            #ship-layout { grid-template-columns:1fr !important; }
         }
 
         @keyframes fadeIn { from{opacity:0;transform:translateY(3px)} to{opacity:1;transform:translateY(0)} }
@@ -290,6 +291,7 @@
             <a data-page="arbitrage" onclick="showPage('arbitrage')">Arbitrage</a>
             <a data-page="browse" onclick="showPage('browse')">Market</a>
             <a data-page="invoices" onclick="showPage('invoices')">Invoices</a>
+            <a data-page="shipping" onclick="showPage('shipping')">Shipping</a>
         </nav>
     </header>
 
@@ -304,6 +306,7 @@
         <a data-page="lookup" onclick="showPage('lookup')">Lookup</a>
         <a data-page="portfolio" onclick="showPage('portfolio')">Portfolio</a>
         <a data-page="invoices" onclick="showPage('invoices')">Invoices</a>
+        <a data-page="shipping" onclick="showPage('shipping')">Ship</a>
         <a data-page="browse" onclick="showPage('browse')">Market</a>
     </nav>
 
@@ -453,6 +456,92 @@
             </div>
         </div>
 
+        <!-- ═══ SHIPPING ═══ -->
+        <div class="page" id="page-shipping">
+            <div class="page-head">
+                <h1>FedEx Shipping</h1>
+                <p>Create labels via IFS</p>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" id="ship-layout">
+                <!-- Create Label Form -->
+                <div class="card">
+                    <div class="card-head"><span>Create Label</span></div>
+                    <div class="card-body" style="display:grid;gap:10px;">
+                        <!-- Preset selector -->
+                        <div><label style="font-size:0.72rem;color:var(--text-2);text-transform:uppercase;">Quick Preset</label>
+                            <select class="input" id="ship-preset" onchange="applyShipPreset()" style="width:100%;margin-top:4px;">
+                                <option value="">Custom Address</option>
+                            </select>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <div><label style="font-size:0.68rem;color:var(--text-2);">Recipient Name</label>
+                                <input class="input" id="ship-contact" placeholder="Name" style="width:100%;margin-top:3px;"></div>
+                            <div><label style="font-size:0.68rem;color:var(--text-2);">Company</label>
+                                <input class="input" id="ship-company" placeholder="Company (optional)" style="width:100%;margin-top:3px;"></div>
+                        </div>
+                        <div><label style="font-size:0.68rem;color:var(--text-2);">Address</label>
+                            <input class="input" id="ship-address" placeholder="Street address" style="width:100%;margin-top:3px;"></div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <div><label style="font-size:0.68rem;color:var(--text-2);">Apt/Suite</label>
+                                <input class="input" id="ship-apt" placeholder="Apt, Suite, etc." style="width:100%;margin-top:3px;"></div>
+                            <div><label style="font-size:0.68rem;color:var(--text-2);">Phone</label>
+                                <input class="input" id="ship-phone" placeholder="Phone" style="width:100%;margin-top:3px;"></div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;">
+                            <div><label style="font-size:0.68rem;color:var(--text-2);">City</label>
+                                <input class="input" id="ship-city" placeholder="City" style="width:100%;margin-top:3px;"></div>
+                            <div><label style="font-size:0.68rem;color:var(--text-2);">State</label>
+                                <input class="input" id="ship-state" placeholder="State" style="width:100%;margin-top:3px;"></div>
+                            <div><label style="font-size:0.68rem;color:var(--text-2);">ZIP</label>
+                                <input class="input" id="ship-zip" placeholder="ZIP" style="width:100%;margin-top:3px;"></div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <div><label style="font-size:0.68rem;color:var(--text-2);">Declared Value ($)</label>
+                                <input class="input" id="ship-value" type="number" placeholder="0" style="width:100%;margin-top:3px;"></div>
+                            <div><label style="font-size:0.68rem;color:var(--text-2);">Weight (lbs)</label>
+                                <input class="input" id="ship-weight" type="number" value="1" style="width:100%;margin-top:3px;"></div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <div><label style="font-size:0.68rem;color:var(--text-2);">Service</label>
+                                <select class="input" id="ship-service" style="width:100%;margin-top:3px;">
+                                    <option value="Priority Overnight">Priority Overnight</option>
+                                    <option value="Standard Overnight">Standard Overnight</option>
+                                    <option value="FedEx 2Day">FedEx 2Day</option>
+                                    <option value="FedEx Ground">Ground</option>
+                                </select></div>
+                            <div><label style="font-size:0.68rem;color:var(--text-2);">Signature</label>
+                                <select class="input" id="ship-signature" style="width:100%;margin-top:3px;">
+                                    <option value="Direct Signature">Direct Signature</option>
+                                    <option value="Adult Signature">Adult Signature</option>
+                                    <option value="Indirect Signature">Indirect Signature</option>
+                                    <option value="Signature Not Required">No Signature</option>
+                                </select></div>
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <label style="font-size:0.72rem;display:flex;align-items:center;gap:4px;cursor:pointer;">
+                                <input type="checkbox" id="ship-residential"> Residential
+                            </label>
+                            <label style="font-size:0.72rem;display:flex;align-items:center;gap:4px;cursor:pointer;">
+                                <input type="checkbox" id="ship-hal"> Hold at Location
+                            </label>
+                        </div>
+                        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
+                            <button class="btn" onclick="clearShipForm()" style="opacity:0.6;">Clear</button>
+                            <button class="btn" onclick="submitShipLabel()" style="background:var(--green);color:var(--bg-1);" id="ship-submit-btn">Create Label</button>
+                        </div>
+                        <div id="ship-status" style="display:none;padding:10px;border-radius:var(--radius);margin-top:4px;"></div>
+                    </div>
+                </div>
+                <!-- Recent Labels -->
+                <div class="card">
+                    <div class="card-head"><span>Recent Labels</span></div>
+                    <div class="card-body" id="ship-recent">
+                        <p style="color:var(--text-2);text-align:center;padding:12px;">Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- ═══ INVOICES ═══ -->
         <div class="page" id="page-invoices">
             <div class="page-head">
@@ -546,7 +635,7 @@ let browseOffset = 0;
 const BROWSE_PAGE = 80;
 let currentDealsRegion = 'all';
 
-const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals',arbitrage:'Arbitrage',browse:'Market',invoices:'Invoices'};
+const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals',arbitrage:'Arbitrage',browse:'Market',invoices:'Invoices',shipping:'Shipping'};
 
 function showPage(name, pushState=true) {
     $$('.page').forEach(p => p.classList.remove('active'));
@@ -556,6 +645,7 @@ function showPage(name, pushState=true) {
     if (name === 'browse' && !allListings.length) loadListings();
     if (name === 'portfolio') { if (DATA.portfolio) renderPortfolio(); else loadPortfolio(); }
     if (name === 'invoices') loadInvoicePage();
+    if (name === 'shipping') loadShippingPage();
     if (pushState) {
         const params = new URLSearchParams(window.location.search);
         params.set('p', name);
@@ -1976,6 +2066,12 @@ fetch('/api/portfolio_insights').then(r=>r.json()).then(d=>{DATA.portfolio=d;ren
         if (pg && pg.classList.contains('active') && tbody && (!tbody.children.length || tbody.innerHTML.includes('Loading'))) {
             loadInvoicePage();
         }
+        // Also check shipping page
+        const shipPg = document.getElementById('page-shipping');
+        const shipRecent = document.getElementById('ship-recent');
+        if (shipPg && shipPg.classList.contains('active') && shipRecent && shipRecent.innerHTML.includes('Loading')) {
+            loadShippingPage();
+        }
         if (_invRetry >= 5) clearInterval(_invCheck);
     }, 500);
 }
@@ -2066,6 +2162,208 @@ function updateDevotion(){
 }
 updateDevotion();
 setInterval(updateDevotion,60000);
+
+// ── SHIPPING ──
+let shipConfigLoaded = false;
+
+async function loadShippingPage() {
+    loadRecentLabels();
+    if (!shipConfigLoaded) {
+        try {
+            const r = await fetch('/api/ifs/config');
+            if (r.ok) {
+                const cfg = await r.json();
+                const sel = document.getElementById('ship-preset');
+                if (sel && cfg.presets) {
+                    Object.entries(cfg.presets).forEach(([name, p]) => {
+                        if (name === 'home') return; // skip alias
+                        const opt = document.createElement('option');
+                        opt.value = name;
+                        opt.textContent = `${name.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase())} — ${p.address}`;
+                        sel.appendChild(opt);
+                    });
+                }
+                shipConfigLoaded = true;
+            }
+        } catch(e) { console.error('Ship config error:', e); }
+    }
+}
+
+function applyShipPreset() {
+    const name = document.getElementById('ship-preset')?.value;
+    if (!name) {
+        clearShipForm(true);
+        return;
+    }
+    fetch('/api/ifs/config').then(r=>r.json()).then(cfg => {
+        const p = cfg.presets[name];
+        if (!p) return;
+        const parts = p.address.split(',');
+        document.getElementById('ship-contact').value = p.contact || '';
+        document.getElementById('ship-company').value = '';
+        document.getElementById('ship-address').value = parts[0]?.trim() || '';
+        document.getElementById('ship-apt').value = parts[1]?.trim() || '';
+        document.getElementById('ship-city').value = p.city || '';
+        document.getElementById('ship-state').value = p.state || '';
+        document.getElementById('ship-zip').value = p.zip || '';
+        document.getElementById('ship-residential').checked = p.residential || false;
+    });
+}
+
+function clearShipForm(keepPreset) {
+    if (!keepPreset) document.getElementById('ship-preset').value = '';
+    ['ship-contact','ship-company','ship-address','ship-apt','ship-city','ship-state','ship-zip','ship-value','ship-phone'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    document.getElementById('ship-weight').value = '1';
+    document.getElementById('ship-service').value = 'Priority Overnight';
+    document.getElementById('ship-signature').value = 'Direct Signature';
+    document.getElementById('ship-residential').checked = false;
+    document.getElementById('ship-hal').checked = false;
+    document.getElementById('ship-status').style.display = 'none';
+}
+
+async function submitShipLabel() {
+    const g = id => document.getElementById(id)?.value?.trim() || '';
+    const data = {
+        contact: g('ship-contact'),
+        company: g('ship-company') || g('ship-contact'),
+        address: g('ship-address'),
+        apt: g('ship-apt'),
+        city: g('ship-city'),
+        state: g('ship-state'),
+        zip: g('ship-zip'),
+        phone: g('ship-phone') || '424-502-9600',
+        value: g('ship-value'),
+        weight: g('ship-weight') || '1',
+        service: g('ship-service'),
+        signature: g('ship-signature'),
+        residential: document.getElementById('ship-residential')?.checked || false,
+        hal: document.getElementById('ship-hal')?.checked || false,
+        preset: document.getElementById('ship-preset')?.value || '',
+    };
+    
+    if (!data.contact) { alert('Recipient name is required'); return; }
+    if (!data.address) { alert('Address is required'); return; }
+    if (!data.value || data.value === '0') { alert('Declared value is required'); return; }
+    
+    const btn = document.getElementById('ship-submit-btn');
+    const status = document.getElementById('ship-status');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+    status.style.display = 'block';
+    status.style.background = 'var(--bg-3)';
+    status.style.color = 'var(--text-1)';
+    status.innerHTML = 'Sending label request to Mochie...';
+    
+    try {
+        const r = await fetch('/api/ifs/create', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data),
+        });
+        const d = await r.json();
+        if (d.error) {
+            status.style.background = 'rgba(255,59,48,0.15)';
+            status.style.color = 'var(--red)';
+            status.innerHTML = `Error: ${d.error}`;
+        } else {
+            status.style.background = 'rgba(48,209,88,0.15)';
+            status.style.color = 'var(--green)';
+            status.innerHTML = `Label request queued (${d.job?.id}). Mochie is creating it now — tracking + PDF will appear shortly.`;
+            // Poll for completion
+            if (d.job?.id) pollLabelStatus(d.job.id);
+        }
+    } catch(e) {
+        status.style.background = 'rgba(255,59,48,0.15)';
+        status.style.color = 'var(--red)';
+        status.innerHTML = `Error: ${e.message}`;
+    }
+    btn.disabled = false;
+    btn.textContent = 'Create Label';
+}
+
+async function pollLabelStatus(jobId) {
+    let attempts = 0;
+    const poll = setInterval(async () => {
+        attempts++;
+        try {
+            const r = await fetch('/api/ifs/pending');
+            const d = await r.json();
+            const completed = (d.completed||[]).find(j => j.id === jobId);
+            if (completed) {
+                clearInterval(poll);
+                const status = document.getElementById('ship-status');
+                status.style.background = 'rgba(48,209,88,0.15)';
+                status.style.color = 'var(--green)';
+                status.innerHTML = `Label created! Tracking: <strong style="font-family:var(--mono);">${completed.tracking}</strong>${completed.cost?' | Cost: $'+completed.cost:''} <a onclick="downloadShipPdf('${completed.tracking}')" style="cursor:pointer;color:var(--accent);margin-left:8px;">Download PDF</a>`;
+                loadRecentLabels();
+            }
+        } catch(e) {}
+        if (attempts >= 60) clearInterval(poll); // Stop after 5 min
+    }, 5000);
+}
+
+async function loadRecentLabels() {
+    const container = document.getElementById('ship-recent');
+    if (!container) return;
+    try {
+        const r = await fetch('/api/ifs/labels');
+        if (!r.ok) { container.innerHTML = '<p style="color:var(--text-2);text-align:center;">Could not load labels</p>'; return; }
+        const d = await r.json();
+        const labels = d.labels || [];
+        const pending = d.pending || [];
+        
+        let html = '';
+        
+        // Show pending jobs
+        if (pending.length) {
+            html += pending.map(j => `
+                <div class="listing-card" style="border-left:3px solid var(--accent);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span style="color:var(--accent);font-weight:600;">Processing...</span>
+                        <span style="font-size:0.72rem;color:var(--text-2);">${j.created}</span>
+                    </div>
+                    <div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">${j.config?.contact||''} | ${j.config?.address||''} | $${j.config?.value||0}</div>
+                </div>
+            `).join('');
+        }
+        
+        // Show completed/recent labels
+        if (labels.length) {
+            html += labels.map(l => `
+                <div class="listing-card" style="cursor:pointer;" onclick="downloadShipPdf('${l.tracking}')">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span style="font-family:var(--mono);font-weight:600;color:var(--green);">${l.tracking}</span>
+                        <span style="font-size:0.72rem;color:var(--text-2);">${l.created}</span>
+                    </div>
+                    <div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">${l.size_kb}KB ${l.is_real_label?'':'(wrapper)'} | Click to download</div>
+                </div>
+            `).join('');
+        } else if (!pending.length) {
+            html = '<p style="color:var(--text-2);text-align:center;padding:12px;">No recent labels found</p>';
+        }
+        
+        container.innerHTML = html;
+    } catch(e) {
+        container.innerHTML = `<p style="color:var(--red);text-align:center;">Error: ${e.message}</p>`;
+    }
+}
+
+async function downloadShipPdf(tracking) {
+    try {
+        const r = await fetch(`/api/ifs/labels/${tracking}/pdf`);
+        if (!r.ok) throw new Error('PDF not found');
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${tracking}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch(e) { alert('PDF download failed: ' + e.message); }
+}
 
 // ── INVOICES ──
 let invSearchTimeout;
