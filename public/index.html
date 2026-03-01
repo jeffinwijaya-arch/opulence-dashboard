@@ -575,8 +575,8 @@
                 <button class="btn" onclick="showAddWatchModal()" style="background:var(--green);color:var(--bg-1);white-space:nowrap;">+ Add Watch</button>
                 <button class="btn" onclick="loadInventoryPage()" style="opacity:0.6;">Refresh</button>
             </div>
-            <!-- Table -->
-            <div style="overflow-x:auto;">
+            <!-- Table (desktop) -->
+            <div id="im-table-wrap" style="overflow-x:auto;">
                 <table class="tbl" id="im-table">
                     <thead><tr>
                         <th style="cursor:pointer;" onclick="sortInventory('description')">Description <span id="imh-description"></span></th>
@@ -590,6 +590,8 @@
                     <tbody id="im-tbody"></tbody>
                 </table>
             </div>
+            <!-- Cards (mobile) -->
+            <div id="im-cards" style="display:none;"></div>
         </div>
 
         <!-- Add/Edit Watch Modal -->
@@ -2212,24 +2214,32 @@ fetch('/api/portfolio_insights').then(r=>r.json()).then(d=>{DATA.portfolio=d;ren
         showPage(_initPage, false);
     }
 }
-// Guaranteed invoice load: check every 500ms until data appears (max 5 attempts)
+// Guaranteed page data load: check every 1s until data appears (max 10 attempts)
+// Handles slow API responses (Zoho token refresh, Apps Script cold start)
 {
-    let _invRetry = 0;
-    const _invCheck = setInterval(() => {
-        _invRetry++;
-        const pg = document.getElementById('page-invoices');
-        const tbody = document.getElementById('inv-tbody');
-        if (pg && pg.classList.contains('active') && tbody && (!tbody.children.length || tbody.innerHTML.includes('Loading'))) {
+    let _retryCount = 0;
+    const _pageCheck = setInterval(() => {
+        _retryCount++;
+        // Invoices page
+        const invPg = document.getElementById('page-invoices');
+        const invTbody = document.getElementById('inv-tbody');
+        if (invPg && invPg.classList.contains('active') && invTbody && (!invTbody.children.length || invTbody.innerHTML.includes('Loading'))) {
             loadInvoicePage();
         }
-        // Also check shipping page
+        // Shipping page
         const shipPg = document.getElementById('page-shipping');
         const shipRecent = document.getElementById('ship-recent');
         if (shipPg && shipPg.classList.contains('active') && shipRecent && shipRecent.innerHTML.includes('Loading')) {
             loadShippingPage();
         }
-        if (_invRetry >= 5) clearInterval(_invCheck);
-    }, 500);
+        // Inventory page
+        const invMgmtPg = document.getElementById('page-inventory');
+        const imTbody = document.getElementById('im-tbody');
+        if (invMgmtPg && invMgmtPg.classList.contains('active') && imTbody && (!imTbody.children.length || imTbody.innerHTML.includes('Loading'))) {
+            loadInventoryPage();
+        }
+        if (_retryCount >= 10) clearInterval(_pageCheck);
+    }, 1000);
 }
 
 // ═══ AUTO-REFRESH (every 2 min) ═══
@@ -2411,40 +2421,98 @@ function filterInventory() {
 }
 
 function renderInventoryTable(rows) {
-    const tbody = document.getElementById('im-tbody');
-    if (!tbody) return;
-    if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:20px;color:var(--text-2);">No watches found</td></tr>';
-        return;
-    }
-    const yn = v => v === 'Yes' ? '<span style="color:var(--green);">Y</span>' : '<span style="color:var(--text-2);">-</span>';
+    const isMobile = window.innerWidth < 768;
+    const tableWrap = document.getElementById('im-table-wrap');
+    const cardsEl = document.getElementById('im-cards');
+    if (tableWrap) tableWrap.style.display = isMobile ? 'none' : 'block';
+    if (cardsEl) cardsEl.style.display = isMobile ? 'block' : 'none';
+    
     const price = v => { if (!v) return '-'; const n = parseFloat(String(v).replace(/[$,]/g,'')); return isNaN(n)?v:'$'+n.toLocaleString(); };
-    const pnl = r => {
-        if (r.sold !== 'Yes') return '<span style="color:var(--text-2);">—</span>';
+    const pnlCalc = r => {
+        if (r.sold !== 'Yes') return null;
         const cost = parseFloat(String(r.cost_price||'0').replace(/[$,]/g,''));
         const sold = parseFloat(String(r.sold_price||'0').replace(/[$,]/g,''));
-        if (!cost || !sold) return '<span style="color:var(--text-2);">—</span>';
-        const diff = sold - cost;
+        if (!cost || !sold) return null;
+        return sold - cost;
+    };
+    const pnlHtml = r => {
+        const diff = pnlCalc(r);
+        if (diff === null) return '<span style="color:var(--text-2);">—</span>';
         const color = diff >= 0 ? 'var(--green)' : 'var(--red)';
         return `<span style="color:${color};">${diff>=0?'+':''}$${Math.round(diff).toLocaleString()}</span>`;
     };
+    const yn = v => v === 'Yes' ? '<span style="color:var(--green);">Y</span>' : '<span style="color:var(--text-2);">-</span>';
+    const statusTags = r => {
+        const tags = [];
+        if (r.arrived==='Yes') tags.push('<span style="color:var(--green);font-size:0.6rem;">ARR</span>');
+        if (r.posted==='Yes') tags.push('<span style="color:var(--accent);font-size:0.6rem;">POST</span>');
+        if (r.sold==='Yes') tags.push('<span style="color:var(--green);font-size:0.6rem;">SOLD</span>');
+        if (r.shipped==='Yes') tags.push('<span style="color:var(--accent);font-size:0.6rem;">SHIP</span>');
+        if (r.paid_after_sold==='Yes') tags.push('<span style="color:var(--green);font-size:0.6rem;">PAID</span>');
+        return tags.join(' ');
+    };
+    const actions = r => {
+        let html = '';
+        if (r.arrived!=='Yes') html += `<a onclick="quickAction(${r.row},'arrived')" style="cursor:pointer;color:var(--accent);margin-right:6px;padding:4px 8px;border:1px solid var(--accent);border-radius:4px;font-size:0.7rem;">Arr</a>`;
+        if (r.sold!=='Yes') html += `<a onclick="showSellModal(${r.row})" style="cursor:pointer;color:var(--green);margin-right:6px;padding:4px 8px;border:1px solid var(--green);border-radius:4px;font-size:0.7rem;">Sell</a>`;
+        if (r.sold==='Yes'&&r.shipped!=='Yes') html += `<a onclick="showShipModal(${r.row})" style="cursor:pointer;color:var(--accent);margin-right:6px;padding:4px 8px;border:1px solid var(--accent);border-radius:4px;font-size:0.7rem;">Ship</a>`;
+        if (r.sold==='Yes'&&r.paid_after_sold!=='Yes') html += `<a onclick="quickAction(${r.row},'paid')" style="cursor:pointer;color:var(--green);margin-right:6px;padding:4px 8px;border:1px solid var(--green);border-radius:4px;font-size:0.7rem;">Paid</a>`;
+        html += `<a onclick="editWatch(${r.row})" style="cursor:pointer;color:var(--text-2);padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:0.7rem;">Edit</a>`;
+        return html;
+    };
     
-    tbody.innerHTML = rows.map(r => `<tr style="cursor:pointer;" ondblclick="editWatch(${r.row})">
-        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(r.description||'').replace(/"/g,'&quot;')}">${r.description||''}</td>
-        <td style="font-size:0.72rem;">${r.bought_from||'-'}</td>
-        <td style="font-size:0.72rem;">${r.sold_to||'-'}</td>
-        <td class="right" style="font-size:0.72rem;">${price(r.cost_price)}</td>
-        <td class="right" style="font-size:0.72rem;">${price(r.sold_price)}</td>
-        <td class="right" style="font-size:0.72rem;">${pnl(r)}</td>
-        <td>${yn(r.arrived)}</td><td>${yn(r.posted)}</td><td>${yn(r.sold)}</td><td>${yn(r.shipped)}</td><td>${yn(r.paid_after_sold)}</td>
-        <td style="white-space:nowrap;font-size:0.68rem;">
-            ${r.arrived!=='Yes'?`<a onclick="quickAction(${r.row},'arrived')" style="cursor:pointer;color:var(--accent);margin-right:4px;">Arr</a>`:''}
-            ${r.sold!=='Yes'?`<a onclick="showSellModal(${r.row})" style="cursor:pointer;color:var(--green);margin-right:4px;">Sell</a>`:''}
-            ${r.sold==='Yes'&&r.shipped!=='Yes'?`<a onclick="showShipModal(${r.row})" style="cursor:pointer;color:var(--accent);margin-right:4px;">Ship</a>`:''}
-            ${r.sold==='Yes'&&r.paid_after_sold!=='Yes'?`<a onclick="quickAction(${r.row},'paid')" style="cursor:pointer;color:var(--green);margin-right:4px;">Paid</a>`:''}
-            <a onclick="editWatch(${r.row})" style="cursor:pointer;color:var(--text-2);">Edit</a>
-        </td>
-    </tr>`).join('');
+    if (!rows.length) {
+        const emptyMsg = '<div style="text-align:center;padding:20px;color:var(--text-2);">No watches found</div>';
+        const tbody = document.getElementById('im-tbody');
+        if (tbody) tbody.innerHTML = `<tr><td colspan="12">${emptyMsg}</td></tr>`;
+        if (cardsEl) cardsEl.innerHTML = emptyMsg;
+        return;
+    }
+    
+    // Desktop table
+    const tbody = document.getElementById('im-tbody');
+    if (tbody) {
+        tbody.innerHTML = rows.map(r => `<tr style="cursor:pointer;" ondblclick="editWatch(${r.row})">
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(r.description||'').replace(/"/g,'&quot;')}">${r.description||''}</td>
+            <td style="font-size:0.72rem;">${r.bought_from||'-'}</td>
+            <td style="font-size:0.72rem;">${r.sold_to||'-'}</td>
+            <td class="right" style="font-size:0.72rem;">${price(r.cost_price)}</td>
+            <td class="right" style="font-size:0.72rem;">${price(r.sold_price)}</td>
+            <td class="right" style="font-size:0.72rem;">${pnlHtml(r)}</td>
+            <td>${yn(r.arrived)}</td><td>${yn(r.posted)}</td><td>${yn(r.sold)}</td><td>${yn(r.shipped)}</td><td>${yn(r.paid_after_sold)}</td>
+            <td style="white-space:nowrap;font-size:0.68rem;">
+                ${r.arrived!=='Yes'?`<a onclick="quickAction(${r.row},'arrived')" style="cursor:pointer;color:var(--accent);margin-right:4px;">Arr</a>`:''}
+                ${r.sold!=='Yes'?`<a onclick="showSellModal(${r.row})" style="cursor:pointer;color:var(--green);margin-right:4px;">Sell</a>`:''}
+                ${r.sold==='Yes'&&r.shipped!=='Yes'?`<a onclick="showShipModal(${r.row})" style="cursor:pointer;color:var(--accent);margin-right:4px;">Ship</a>`:''}
+                ${r.sold==='Yes'&&r.paid_after_sold!=='Yes'?`<a onclick="quickAction(${r.row},'paid')" style="cursor:pointer;color:var(--green);margin-right:4px;">Paid</a>`:''}
+                <a onclick="editWatch(${r.row})" style="cursor:pointer;color:var(--text-2);">Edit</a>
+            </td>
+        </tr>`).join('');
+    }
+    
+    // Mobile cards
+    if (cardsEl) {
+        cardsEl.innerHTML = rows.map(r => {
+            const diff = pnlCalc(r);
+            const pnlStr = diff !== null ? `<span style="color:${diff>=0?'var(--green)':'var(--red)'};">${diff>=0?'+':''}$${Math.round(diff).toLocaleString()}</span>` : '';
+            return `<div style="background:var(--bg-2);border-radius:var(--radius);padding:10px;margin-bottom:6px;" onclick="editWatch(${r.row})">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+                    <div style="font-size:0.78rem;font-weight:600;flex:1;margin-right:8px;">${r.description||''}</div>
+                    <div style="font-size:0.62rem;white-space:nowrap;">${statusTags(r)}</div>
+                </div>
+                <div style="display:flex;gap:12px;font-size:0.72rem;color:var(--text-2);margin-bottom:6px;">
+                    ${r.bought_from?`<span>From: ${r.bought_from}</span>`:''}
+                    ${r.sold_to?`<span>To: ${r.sold_to}</span>`:''}
+                </div>
+                <div style="display:flex;gap:12px;font-size:0.72rem;margin-bottom:8px;">
+                    <span>Cost: ${price(r.cost_price)}</span>
+                    ${r.sold==='Yes'?`<span>Sold: ${price(r.sold_price)}</span>`:''}
+                    ${pnlStr?`<span>P&L: ${pnlStr}</span>`:''}
+                </div>
+                <div style="display:flex;gap:4px;flex-wrap:wrap;" onclick="event.stopPropagation();">${actions(r)}</div>
+            </div>`;
+        }).join('');
+    }
 }
 
 async function quickAction(row, action) {
@@ -2849,9 +2917,12 @@ let invSearchTimeout;
 let invCurrentPage = 1;
 let invPageLoaded = false;
 
+let _invPageLoading = false;
 async function loadInvoicePage() {
-    loadInvoiceSummary();
-    loadInvoices();
+    if (_invPageLoading) return;
+    _invPageLoading = true;
+    try { await Promise.all([loadInvoiceSummary(), loadInvoices()]); }
+    finally { _invPageLoading = false; }
 }
 
 async function loadInvoiceSummary() {
