@@ -563,11 +563,7 @@ function showPage(name, pushState=true) {
     }
     window.scrollTo(0, 0);
 }
-// Restore page from URL on load
-(function(){
-    const p = new URLSearchParams(window.location.search).get('p');
-    if (p && document.getElementById('page-'+p)) showPage(p, false);
-})();
+// Page restore happens in INIT section below (after all functions are defined)
 
 // ── DATA ──
 async function loadData() {
@@ -1963,8 +1959,13 @@ async function loadPortfolioChart() {
 loadData();
 loadNews();
 fetch('/api/portfolio_insights').then(r=>r.json()).then(d=>{DATA.portfolio=d;renderPortfolioSnapshot();}).catch(()=>{});
-// Ensure invoices load if that page is active on refresh
-if (document.getElementById('page-invoices')?.classList.contains('active')) loadInvoicePage();
+// Restore page from URL AFTER init (the earlier IIFE may race with DOM/fetch)
+{
+    const _initPage = new URLSearchParams(window.location.search).get('p');
+    if (_initPage && _initPage !== 'dashboard') {
+        showPage(_initPage, false);
+    }
+}
 
 // ═══ AUTO-REFRESH (every 2 min) ═══
 let _lastLoadTs = Date.now();
