@@ -1104,6 +1104,7 @@ async function doLookup() {
                     <div><div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:600;">Regional Pricing</div>${regionalHtml||'<div style="color:var(--text-2)">Single region</div>'}</div>
                     <div><div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:600;">Available Dials</div>${dials.map(d=>`<span class="tag tag-gold" style="margin:1px;cursor:pointer;" onclick="$('#ref-search').value='${ref} ${d.toLowerCase()}';doLookup();">${d}</span>`).join(' ')||'—'}</div>
                 </div>
+                <div id="ref-info-panel"></div>
                 ${dialTable}
                 ${signalHtml}
                 ${relatedHtml}
@@ -1125,6 +1126,57 @@ async function doLookup() {
                 }
             }
         } catch(e2) {}
+
+        // Load official reference info (AP/Patek catalog)
+        try {
+            const ri = await fetch(`/api/ref_info/${encodeURIComponent(ref)}`);
+            if (ri.ok) {
+                const info = await ri.json();
+                const panel = document.getElementById('ref-info-panel');
+                if (panel && info.brand) {
+                    let html = `<div style="margin-top:12px;padding:10px 12px;background:var(--bg-3);border-radius:var(--radius);border-left:3px solid var(--accent);">`;
+                    html += `<div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:600;">Official Reference Data</div>`;
+                    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:0.78rem;">`;
+                    html += `<div class="detail-row"><span style="color:var(--text-2)">Brand</span><span>${info.brand}</span></div>`;
+                    html += `<div class="detail-row"><span style="color:var(--text-2)">Model</span><span>${info.model||'—'}</span></div>`;
+                    if (info.family) html += `<div class="detail-row"><span style="color:var(--text-2)">Family</span><span>${info.family}</span></div>`;
+                    if (info.case_mm) html += `<div class="detail-row"><span style="color:var(--text-2)">Case</span><span>${info.case_mm}mm</span></div>`;
+                    if (info.retail) html += `<div class="detail-row"><span style="color:var(--text-2)">Retail</span><span style="font-family:var(--mono);color:var(--accent)">$${info.retail.toLocaleString()}</span></div>`;
+                    html += `</div>`;
+                    // Official dial variants
+                    if (info.dials?.length) {
+                        html += `<div style="margin-top:8px;font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Official Dial Variants (${info.dials.length})</div>`;
+                        html += `<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:3px;">`;
+                        info.dials.forEach(d => {
+                            html += `<span class="tag" style="cursor:pointer;background:var(--bg-2);border:1px solid var(--border);" onclick="$('#ref-search').value='${ref} ${d.toLowerCase()}';doLookup();">${d}</span>`;
+                        });
+                        html += `</div>`;
+                    }
+                    // Suffix mapping for AP
+                    if (info.suffix_map && Object.keys(info.suffix_map).length > 0) {
+                        html += `<div style="margin-top:8px;font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Suffix Reference</div>`;
+                        html += `<div style="margin-top:4px;display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:2px;font-size:0.72rem;">`;
+                        Object.entries(info.suffix_map).sort().forEach(([s,c]) => {
+                            html += `<div style="padding:2px 0;"><span style="color:var(--text-2);font-family:var(--mono);">.${s}</span> <span style="color:var(--text-1);">${c}</span></div>`;
+                        });
+                        html += `</div>`;
+                    }
+                    // Dial distribution from listings
+                    if (info.dial_distribution) {
+                        const total = Object.values(info.dial_distribution).reduce((a,b)=>a+b,0);
+                        html += `<div style="margin-top:8px;font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Market Distribution (${total} listings)</div>`;
+                        html += `<div style="margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;font-size:0.72rem;">`;
+                        Object.entries(info.dial_distribution).sort((a,b)=>b[1]-a[1]).forEach(([d,n]) => {
+                            const pctVal = (n/total*100).toFixed(0);
+                            html += `<span style="color:var(--text-1);">${d}: <span style="font-family:var(--mono);color:var(--accent);">${n}</span> <span style="color:var(--text-2);">(${pctVal}%)</span></span>`;
+                        });
+                        html += `</div>`;
+                    }
+                    html += `</div>`;
+                    panel.innerHTML = html;
+                }
+            }
+        } catch(e3) {}
     } catch(e) { c.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-2);">${e.message||'No data for "'+q+'"'}</div>`; }
 }
 
