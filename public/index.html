@@ -438,7 +438,7 @@
             </div>
         </div>
 
-        <footer class="footer">MK Opulence &middot; Market Intelligence &middot; <span id="update-time">—</span></footer>
+        <footer class="footer">MK Opulence &middot; Market Intelligence &middot; <span id="update-time">—</span> <span class="kbd-hint" style="margin-left:12px;opacity:0.4;font-size:0.58rem;">Keys: 1-6 nav · / search · R refresh</span></footer>
     </div>
 </div>
 
@@ -467,15 +467,25 @@ let currentDealsRegion = 'all';
 
 const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals',arbitrage:'Arbitrage',browse:'Market'};
 
-function showPage(name) {
+function showPage(name, pushState=true) {
     $$('.page').forEach(p => p.classList.remove('active'));
     $$('.nav a, #mobile-nav a').forEach(n => n.classList.remove('active'));
     $(`#page-${name}`)?.classList.add('active');
     $$(`[data-page="${name}"]`).forEach(n => n.classList.add('active'));
     if (name === 'browse' && !allListings.length) loadListings();
     if (name === 'portfolio') { if (DATA.portfolio) renderPortfolio(); else loadPortfolio(); }
+    if (pushState) {
+        const params = new URLSearchParams(window.location.search);
+        params.set('p', name);
+        history.replaceState(null, '', '?' + params.toString());
+    }
     window.scrollTo(0, 0);
 }
+// Restore page from URL on load
+(function(){
+    const p = new URLSearchParams(window.location.search).get('p');
+    if (p && document.getElementById('page-'+p)) showPage(p, false);
+})();
 
 // ── DATA ──
 async function loadData() {
@@ -487,6 +497,7 @@ async function loadData() {
         try { DATA.syncInfo = await syncR.json(); } catch(e) {}
         try { const br = await fetch('/data/bundle.json'); if (br.ok) { const b = await br.json(); if (b.refs) DATA.refs=b.refs; if (b.sellers) DATA.sellers=b.sellers; if (b.summary) DATA.summary=b.summary; } } catch(e) {}
         renderAll();
+        checkStale();
     } catch(e) { console.error('Load failed:', e); $('#summary-subtitle').textContent = 'Failed to load data.'; }
 }
 async function loadPortfolio() { try { const r = await fetch('/api/portfolio_insights'); DATA.portfolio = await r.json(); renderPortfolio(); } catch(e) { console.error(e); } }
@@ -1478,6 +1489,50 @@ async function ensureInventory() {
 loadData();
 loadNews();
 fetch('/api/portfolio_insights').then(r=>r.json()).then(d=>{DATA.portfolio=d;renderPortfolioSnapshot();}).catch(()=>{});
+
+// ═══ AUTO-REFRESH (every 2 min) ═══
+let _lastLoadTs = Date.now();
+setInterval(()=>{
+    _lastLoadTs = Date.now();
+    loadData();
+    fetch('/api/portfolio_insights').then(r=>r.json()).then(d=>{DATA.portfolio=d;}).catch(()=>{});
+}, 120000);
+
+// ═══ STALE DATA WARNING ═══
+function checkStale() {
+    const si = DATA.syncInfo;
+    if (!si || !si.parse_timestamp) return;
+    const parseAge = (Date.now()/1000) - si.parse_timestamp;
+    const hoursOld = parseAge / 3600;
+    let banner = document.getElementById('stale-banner');
+    if (hoursOld > 24) {
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.id = 'stale-banner';
+            banner.style.cssText = 'background:rgba(255,23,68,0.12);border:1px solid rgba(255,23,68,0.25);color:var(--red);padding:8px 16px;font-size:0.78rem;font-family:var(--mono);text-align:center;cursor:pointer;';
+            banner.onclick = () => refreshData();
+            document.querySelector('.main').prepend(banner);
+        }
+        const days = Math.floor(hoursOld / 24);
+        const label = days === 1 ? '1 day' : days + ' days';
+        banner.textContent = 'DATA IS ' + label + ' OLD — click to refresh or check chat sync';
+    } else if (banner) {
+        banner.remove();
+    }
+}
+setInterval(checkStale, 30000);
+
+// ═══ LIVE UPDATE COUNTER ═══
+setInterval(()=>{
+    const el = document.getElementById('update-time');
+    if (!el) return;
+    const ago = Math.round((Date.now() - _lastLoadTs) / 1000);
+    const base = el.textContent.split(' · Updated')[0];
+    el.textContent = base + ' · Updated ' + (ago < 60 ? ago + 's ago' : Math.floor(ago/60) + 'm ago');
+}, 10000);
+
+// ═══ MOBILE: default to cards view ═══
+if (window.innerWidth <= 900) posView = 'cards';
 // ═══ HOURLY DEVOTION ═══
 const VERSES=[
 {v:"Trust in the LORD with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.",r:"Proverbs 3:5-6"},
