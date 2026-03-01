@@ -435,7 +435,7 @@
             </div>
             <div class="card">
                 <div class="tbl-wrap"><table class="tbl" id="browse-table"><thead><tr>
-                    <th>Ref</th><th>Model</th><th>Dial</th><th>Bracelet</th><th class="right">Price</th><th>Cond</th><th>Set</th><th>Region</th><th>Seller</th><th>Group</th>
+                    <th>Ref</th><th>Model</th><th>Dial</th><th>Bracelet</th><th class="right">Price</th><th>Cond</th><th>Year</th><th>Set</th><th>Region</th><th>Seller</th><th>Group</th>
                 </tr></thead><tbody></tbody></table></div>
                 <div style="text-align:center;padding:8px;"><button class="btn" onclick="loadMoreBrowse()" id="browse-more">Load More</button></div>
             </div>
@@ -508,7 +508,7 @@ async function loadListings() {
     try {
         let r = await fetch('/data/listings.json'); if (!r.ok) r = await fetch('/api/search?q=');
         if (r.ok) {
-            allListings = (await r.json()).map(l => ({ref:l.ref||'',model:l.model||'',dial:l.dial||'',bracelet:l.bracelet||'',price:l.price_usd||l.price||0,condition:l.condition||'',completeness:l.completeness||'',region:l.region||'',seller:l.seller||'',group:l.group||'',brand:l.brand||'Rolex',year:l.year||''}));
+            allListings = (await r.json()).map(l => ({ref:l.ref||'',model:l.model||'',dial:l.dial||'',bracelet:l.bracelet||'',price:l.price_usd||l.price||0,condition:l.condition||'',completeness:l.completeness||'',region:l.region||'',seller:l.seller||'',group:l.group||'',brand:l.brand||'Rolex',year:l.year||'',source_text:l.source_text||''}));
             allListings.sort((a,b)=>a.price-b.price);
             $('#browse-subtitle').textContent = allListings.length.toLocaleString()+' listings in database';
             browseOffset=0; renderBrowse();
@@ -1426,15 +1426,26 @@ function renderPfAging(c, p, items) {
 function renderBrowse(append) {
     const f = getFilteredBrowse();
     const slice = f.slice(browseOffset, browseOffset+BROWSE_PAGE);
-    const html = slice.map(l=>`<tr>
+    const html = slice.map((l,idx)=>{
+        const yearCell = l.year
+            ? `<td class="dim">${l.year}</td>`
+            : (l.source_text
+                ? `<td style="cursor:pointer;color:var(--accent);font-size:0.7rem;" onclick="toggleSource(this)" title="Click to see original listing text">src</td>`
+                : `<td class="dim" style="opacity:0.3">N/A</td>`);
+        const srcRow = (!l.year && l.source_text)
+            ? `<tr class="source-row" style="display:none;"><td colspan="11" style="padding:8px 12px;background:var(--bg-3);font-size:0.72rem;color:var(--text-1);white-space:pre-wrap;line-height:1.5;border-left:2px solid var(--accent);">${l.source_text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td></tr>`
+            : '';
+        return `<tr>
         <td class="ref" onclick="lookupRef('${l.ref}')">${l.ref}</td>
         <td class="dim" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.model}</td>
         <td>${l.dial}</td><td class="dim">${l.bracelet}</td><td class="right">${fmt(l.price)}</td>
         <td><span class="tag ${condTag(l.condition)}">${l.condition||'—'}</span></td>
+        ${yearCell}
         <td class="dim">${l.completeness}</td><td class="dim">${regionLabel(l.region)}</td>
         <td class="dim" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.seller}</td>
         <td class="dim" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.group}</td>
-    </tr>`).join('');
+    </tr>${srcRow}`;
+    }).join('');
     const tbody = $('#browse-table tbody');
     if (append) tbody.innerHTML+=html; else tbody.innerHTML=html;
     browseOffset+=BROWSE_PAGE;
@@ -1445,6 +1456,13 @@ function getFilteredBrowse() {
     let f=allListings.filter(l=>{if(region&&l.region!==region)return false;if(cond&&l.condition!==cond)return false;if(q&&!matchesSearch([l.ref,l.dial,l.seller,l.group,l.model].join(' '),searchTerms(q)))return false;return true;});
     if(sort==='price-desc')f.sort((a,b)=>b.price-a.price);else if(sort==='ref')f.sort((a,b)=>a.ref.localeCompare(b.ref));else f.sort((a,b)=>a.price-b.price);
     return f;
+}
+function toggleSource(el) {
+    const srcRow = el.closest('tr').nextElementSibling;
+    if (srcRow && srcRow.classList.contains('source-row')) {
+        srcRow.style.display = srcRow.style.display === 'none' ? '' : 'none';
+        el.textContent = srcRow.style.display === 'none' ? 'src' : 'hide';
+    }
 }
 function filterBrowse(){browseOffset=0;renderBrowse();}
 function loadMoreBrowse(){renderBrowse(true);}
