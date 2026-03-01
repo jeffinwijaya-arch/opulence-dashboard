@@ -2184,8 +2184,32 @@ async function showInvDetail(id) {
                 <table class="tbl"><thead><tr><th>Item</th><th>Description</th><th class="right">Qty</th><th class="right">Rate</th><th class="right">Total</th></tr></thead><tbody>${itemsHtml}</tbody></table>
             </div>
             ${inv.notes?`<div style="margin-bottom:12px;padding:8px;background:var(--bg-3);border-radius:var(--radius);font-size:0.78rem;"><strong style="color:var(--text-2);">Notes:</strong> ${inv.notes}</div>`:''}
+            ${inv.balance>0?`
+            <div id="inv-payment-form" style="display:none;margin-top:16px;padding:12px;background:var(--bg-3);border-radius:var(--radius);border:1px solid var(--border);">
+                <div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;font-weight:600;">Record Payment</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    <div><label style="font-size:0.68rem;color:var(--text-2);">Amount ($)</label>
+                        <input class="input" id="inv-pay-amount" type="number" value="${inv.balance}" style="width:100%;margin-top:3px;"></div>
+                    <div><label style="font-size:0.68rem;color:var(--text-2);">Date</label>
+                        <input class="input" id="inv-pay-date" type="date" value="${new Date().toISOString().split('T')[0]}" style="width:100%;margin-top:3px;"></div>
+                </div>
+                <div style="margin-top:8px;"><label style="font-size:0.68rem;color:var(--text-2);">Payment Mode</label>
+                    <select class="input" id="inv-pay-mode" style="width:100%;margin-top:3px;">
+                        <option value="banktransfer">Bank Transfer / Wire</option>
+                        <option value="check">Check</option>
+                        <option value="cash">Cash</option>
+                        <option value="creditcard">Credit Card</option>
+                        <option value="">Other</option>
+                    </select>
+                </div>
+                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">
+                    <button class="btn" onclick="document.getElementById('inv-payment-form').style.display='none'" style="font-size:0.75rem;opacity:0.6;">Cancel</button>
+                    <button class="btn" onclick="submitPayment('${inv.invoice_id}')" style="font-size:0.75rem;background:var(--green);color:var(--bg-1);">Confirm Payment</button>
+                </div>
+            </div>`:''}
             <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
                 ${canDelete?`<button class="btn" onclick="deleteInvoice('${inv.invoice_id}','${inv.invoice_number}')" style="font-size:0.78rem;background:var(--red);color:var(--bg-1);">Delete</button>`:''}
+                ${inv.balance>0?`<button class="btn" onclick="document.getElementById('inv-payment-form').style.display='block'" style="font-size:0.78rem;background:var(--accent);color:var(--bg-1);">Record Payment</button>`:''}
                 <button class="btn" onclick="downloadInvPdf('${inv.invoice_id}','${inv.invoice_number}')" style="font-size:0.78rem;">Download PDF</button>
                 ${inv.status==='draft'?`<button class="btn" onclick="sendInvoice('${inv.invoice_id}')" style="font-size:0.78rem;background:var(--green);color:var(--bg-1);">Mark as Sent</button>`:''}
             </div>
@@ -2219,6 +2243,24 @@ async function sendInvoice(id) {
         await fetch(`/api/zoho/invoices/${id}/send`, {method:'POST'});
         loadInvoicePage();
     } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function submitPayment(invoiceId) {
+    const amount = parseFloat(document.getElementById('inv-pay-amount')?.value) || 0;
+    const date = document.getElementById('inv-pay-date')?.value || '';
+    const mode = document.getElementById('inv-pay-mode')?.value || '';
+    if (!amount) { alert('Enter a payment amount'); return; }
+    try {
+        const r = await fetch(`/api/zoho/invoices/${invoiceId}/payment`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ amount, date, payment_mode: mode })
+        });
+        const d = await r.json();
+        if (d.error) { alert('Error: ' + d.error); return; }
+        closeInvDetail();
+        loadInvoicePage();
+    } catch(e) { alert('Payment error: ' + e.message); }
 }
 
 async function deleteInvoice(id, num) {
