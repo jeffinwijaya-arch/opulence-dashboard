@@ -699,6 +699,27 @@
             </div>
         </div>
 
+        <!-- Post Watch Modal -->
+        <div id="post-modal" style="display:none;position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+            <div style="background:var(--bg-2);border-radius:var(--radius);padding:20px;max-width:400px;width:90%;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <h3 style="margin:0;">Mark Posted</h3>
+                    <button onclick="closePostModal()" style="background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;">X</button>
+                </div>
+                <input type="hidden" id="pm-row">
+                <div id="pm-watch-info" style="font-size:0.75rem;color:var(--text-2);margin-bottom:10px;padding:8px;background:var(--bg-3);border-radius:var(--radius);"></div>
+                <div style="display:grid;gap:8px;">
+                    <div><label style="font-size:0.68rem;color:var(--text-2);">Asking Price ($)</label>
+                        <input class="input" id="pm-price" type="number" style="width:100%;margin-top:3px;" placeholder="e.g. 21800"></div>
+                    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
+                        <button class="btn" onclick="closePostModal()" style="opacity:0.6;">Cancel</button>
+                        <button class="btn" id="pm-submit" onclick="submitPost()" style="background:#f0c040;color:var(--bg-1);">Post</button>
+                    </div>
+                    <div id="pm-status" style="display:none;padding:8px;border-radius:var(--radius);font-size:0.75rem;"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- ═══ INVOICES ═══ -->
         <div class="page" id="page-invoices">
             <div class="page-head">
@@ -2454,6 +2475,7 @@ function renderInventoryTable(rows) {
     const actions = r => {
         let html = '';
         if (r.arrived!=='Yes') html += `<a onclick="quickAction(${r.row},'arrived')" style="cursor:pointer;color:var(--accent);margin-right:6px;padding:4px 8px;border:1px solid var(--accent);border-radius:4px;font-size:0.7rem;">Arr</a>`;
+        if (r.arrived==='Yes'&&r.posted!=='Yes'&&r.sold!=='Yes') html += `<a onclick="showPostModal(${r.row})" style="cursor:pointer;color:#f0c040;margin-right:6px;padding:4px 8px;border:1px solid #f0c040;border-radius:4px;font-size:0.7rem;">Post</a>`;
         if (r.sold!=='Yes') html += `<a onclick="showSellModal(${r.row})" style="cursor:pointer;color:var(--green);margin-right:6px;padding:4px 8px;border:1px solid var(--green);border-radius:4px;font-size:0.7rem;">Sell</a>`;
         if (r.sold==='Yes'&&r.shipped!=='Yes') html += `<a onclick="showShipModal(${r.row})" style="cursor:pointer;color:var(--accent);margin-right:6px;padding:4px 8px;border:1px solid var(--accent);border-radius:4px;font-size:0.7rem;">Ship</a>`;
         if (r.sold==='Yes'&&r.paid_after_sold!=='Yes') html += `<a onclick="quickAction(${r.row},'paid')" style="cursor:pointer;color:var(--green);margin-right:6px;padding:4px 8px;border:1px solid var(--green);border-radius:4px;font-size:0.7rem;">Paid</a>`;
@@ -2482,6 +2504,7 @@ function renderInventoryTable(rows) {
             <td>${yn(r.arrived)}</td><td>${yn(r.posted)}</td><td>${yn(r.sold)}</td><td>${yn(r.shipped)}</td><td>${yn(r.paid_after_sold)}</td>
             <td style="white-space:nowrap;font-size:0.68rem;">
                 ${r.arrived!=='Yes'?`<a onclick="quickAction(${r.row},'arrived')" style="cursor:pointer;color:var(--accent);margin-right:4px;">Arr</a>`:''}
+                ${r.arrived==='Yes'&&r.posted!=='Yes'&&r.sold!=='Yes'?`<a onclick="showPostModal(${r.row})" style="cursor:pointer;color:#f0c040;margin-right:4px;">Post</a>`:''}
                 ${r.sold!=='Yes'?`<a onclick="showSellModal(${r.row})" style="cursor:pointer;color:var(--green);margin-right:4px;">Sell</a>`:''}
                 ${r.sold==='Yes'&&r.shipped!=='Yes'?`<a onclick="showShipModal(${r.row})" style="cursor:pointer;color:var(--accent);margin-right:4px;">Ship</a>`:''}
                 ${r.sold==='Yes'&&r.paid_after_sold!=='Yes'?`<a onclick="quickAction(${r.row},'paid')" style="cursor:pointer;color:var(--green);margin-right:4px;">Paid</a>`:''}
@@ -2513,6 +2536,38 @@ function renderInventoryTable(rows) {
             </div>`;
         }).join('');
     }
+}
+
+// ── Post Modal ──
+function showPostModal(row) {
+    const watch = invMgmtData.find(r => r.row === row);
+    if (!watch) return;
+    document.getElementById('pm-row').value = row;
+    document.getElementById('pm-watch-info').textContent = watch.description || `Row ${row}`;
+    document.getElementById('pm-price').value = watch.sale_price ? parseFloat(String(watch.sale_price).replace(/[$,]/g,'')) : '';
+    document.getElementById('pm-status').style.display = 'none';
+    document.getElementById('post-modal').style.display = 'flex';
+    setTimeout(() => document.getElementById('pm-price').focus(), 100);
+}
+function closePostModal() { document.getElementById('post-modal').style.display = 'none'; }
+async function submitPost() {
+    const row = document.getElementById('pm-row').value;
+    const salePrice = document.getElementById('pm-price').value.trim();
+    const status = document.getElementById('pm-status');
+    const btn = document.getElementById('pm-submit');
+    btn.disabled = true; btn.textContent = 'Saving...';
+    status.style.display = 'block'; status.style.color = 'var(--text-1)'; status.textContent = 'Marking as posted...';
+    try {
+        const body = salePrice ? {sale_price: salePrice} : {};
+        const r = await fetch(`/api/inventory/${row}/posted`, {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(body)
+        });
+        const d = await r.json();
+        if (d.ok) { status.style.color='var(--green)'; status.textContent='Posted!'; setTimeout(()=>{closePostModal();loadInventoryPage();},600); }
+        else { status.style.color='var(--red)'; status.textContent='Error: '+(d.error||'Unknown'); }
+    } catch(e) { status.style.color='var(--red)'; status.textContent='Error: '+e.message; }
+    btn.disabled = false; btn.textContent = 'Post';
 }
 
 async function quickAction(row, action) {
