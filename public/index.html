@@ -579,7 +579,12 @@
             <div style="overflow-x:auto;">
                 <table class="tbl" id="im-table">
                     <thead><tr>
-                        <th>Description</th><th>From</th><th>To</th><th class="right">Cost</th><th class="right">Sold $</th><th class="right">P&L</th>
+                        <th style="cursor:pointer;" onclick="sortInventory('description')">Description <span id="imh-description"></span></th>
+                        <th style="cursor:pointer;" onclick="sortInventory('bought_from')">From <span id="imh-bought_from"></span></th>
+                        <th style="cursor:pointer;" onclick="sortInventory('sold_to')">To <span id="imh-sold_to"></span></th>
+                        <th class="right" style="cursor:pointer;" onclick="sortInventory('cost_price')">Cost <span id="imh-cost_price"></span></th>
+                        <th class="right" style="cursor:pointer;" onclick="sortInventory('sold_price')">Sold $ <span id="imh-sold_price"></span></th>
+                        <th class="right" style="cursor:pointer;" onclick="sortInventory('pnl')">P&L <span id="imh-pnl"></span></th>
                         <th>Arr</th><th>Post</th><th>Sold</th><th>Ship</th><th>Paid</th><th>Actions</th>
                     </tr></thead>
                     <tbody id="im-tbody"></tbody>
@@ -636,7 +641,8 @@
                         <label style="font-size:0.72rem;display:flex;align-items:center;gap:4px;cursor:pointer;">
                             <input type="checkbox" id="wm-wt"> WT</label>
                     </div>
-                    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
+                    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;align-items:center;">
+                        <button class="btn" id="wm-delete" onclick="deleteWatch()" style="background:rgba(255,59,48,0.15);color:var(--red);display:none;margin-right:auto;">Delete</button>
                         <button class="btn" onclick="closeWatchModal()" style="opacity:0.6;">Cancel</button>
                         <button class="btn" id="wm-submit" onclick="submitWatchForm()" style="background:var(--green);color:var(--bg-1);">Save</button>
                     </div>
@@ -2316,6 +2322,8 @@ setInterval(updateDevotion,60000);
 // ── INVENTORY MANAGEMENT ──
 let invMgmtData = [];
 let invMgmtLoaded = false;
+let invSortCol = 'description';
+let invSortAsc = true;
 
 async function loadInventoryPage() {
     const tbody = document.getElementById('im-tbody');
@@ -2353,10 +2361,20 @@ function updateInventorySummary() {
     profitEl.style.color = totalProfit >= 0 ? 'var(--green)' : 'var(--red)';
 }
 
+function sortInventory(col) {
+    if (invSortCol === col) invSortAsc = !invSortAsc;
+    else { invSortCol = col; invSortAsc = true; }
+    // Update sort indicators
+    document.querySelectorAll('[id^="imh-"]').forEach(el => el.textContent = '');
+    const ind = document.getElementById('imh-' + col);
+    if (ind) ind.textContent = invSortAsc ? '\u25B2' : '\u25BC';
+    filterInventory();
+}
+
 function filterInventory() {
     const q = (document.getElementById('im-search')?.value || '').toLowerCase();
     const f = document.getElementById('im-filter')?.value || 'all';
-    let rows = invMgmtData;
+    let rows = [...invMgmtData];
     
     if (q) rows = rows.filter(r => 
         (r.description||'').toLowerCase().includes(q) ||
@@ -2371,6 +2389,23 @@ function filterInventory() {
     else if (f === 'not-shipped') rows = rows.filter(r => r.sold === 'Yes' && r.shipped !== 'Yes');
     else if (f === 'not-paid') rows = rows.filter(r => r.sold === 'Yes' && r.paid_after_sold !== 'Yes');
     else if (f === 'not-posted') rows = rows.filter(r => r.sold !== 'Yes' && r.posted !== 'Yes');
+    
+    // Apply sorting
+    const p = v => { const n = parseFloat(String(v||'0').replace(/[$,]/g,'')); return isNaN(n)?0:n; };
+    rows.sort((a, b) => {
+        let va, vb;
+        if (invSortCol === 'cost_price' || invSortCol === 'sold_price') {
+            va = p(a[invSortCol]); vb = p(b[invSortCol]);
+        } else if (invSortCol === 'pnl') {
+            va = a.sold==='Yes' ? p(a.sold_price) - p(a.cost_price) : -Infinity;
+            vb = b.sold==='Yes' ? p(b.sold_price) - p(b.cost_price) : -Infinity;
+        } else {
+            va = (a[invSortCol]||'').toLowerCase(); vb = (b[invSortCol]||'').toLowerCase();
+        }
+        if (va < vb) return invSortAsc ? -1 : 1;
+        if (va > vb) return invSortAsc ? 1 : -1;
+        return 0;
+    });
     
     renderInventoryTable(rows);
 }
@@ -2492,9 +2527,26 @@ async function submitShip() {
     btn.disabled = false; btn.textContent = 'Ship';
 }
 
+async function deleteWatch() {
+    const row = document.getElementById('wm-row').value;
+    if (!row) return;
+    const watch = invMgmtData.find(r => r.row == row);
+    const desc = watch ? watch.description : `Row ${row}`;
+    if (!confirm(`DELETE "${desc}"? This cannot be undone.`)) return;
+    const status = document.getElementById('wm-status');
+    status.style.display = 'block'; status.style.color = 'var(--text-1)'; status.textContent = 'Deleting...';
+    try {
+        const r = await fetch(`/api/inventory/${row}/delete`, {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+        const d = await r.json();
+        if (d.ok) { status.style.color='var(--green)'; status.textContent='Deleted.'; setTimeout(()=>{closeWatchModal();loadInventoryPage();},600); }
+        else { status.style.color='var(--red)'; status.textContent='Error: '+(d.error||'Unknown'); }
+    } catch(e) { status.style.color='var(--red)'; status.textContent='Error: '+e.message; }
+}
+
 function showAddWatchModal() {
     document.getElementById('watch-modal-title').textContent = 'Add Watch';
     document.getElementById('wm-row').value = '';
+    document.getElementById('wm-delete').style.display = 'none';
     ['wm-desc','wm-from','wm-cost','wm-to','wm-sold-price','wm-sale-price','wm-serial','wm-card-date'].forEach(id => {
         const el = document.getElementById(id); if(el) el.value = '';
     });
@@ -2510,6 +2562,7 @@ function editWatch(row) {
     const w = invMgmtData.find(r => r.row === row);
     if (!w) return;
     document.getElementById('watch-modal-title').textContent = 'Edit Watch (Row ' + row + ')';
+    document.getElementById('wm-delete').style.display = 'inline-block';
     document.getElementById('wm-row').value = row;
     document.getElementById('wm-desc').value = w.description || '';
     document.getElementById('wm-from').value = w.bought_from || '';
