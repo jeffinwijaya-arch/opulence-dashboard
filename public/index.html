@@ -106,8 +106,8 @@
         .card-head {
             display:flex; align-items:center; justify-content:space-between;
             padding:10px 14px; border-bottom:1px solid var(--border);
-            font-size:0.72rem; font-weight:600; text-transform:uppercase;
-            letter-spacing:0.8px; color:var(--text-1);
+            font-size:0.68rem; font-weight:600; text-transform:uppercase;
+            letter-spacing:0.8px; color:var(--text-1); font-family:var(--mono);
         }
         .card-head .link { color:var(--accent); cursor:pointer; font-weight:500; text-decoration:none; text-transform:none; letter-spacing:0; font-size:0.75rem; }
         .card-head .link:hover { text-decoration:underline; }
@@ -119,17 +119,18 @@
             background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius);
             padding:12px 14px;
         }
-        .metric .label { font-size:0.65rem; color:var(--text-2); text-transform:uppercase; letter-spacing:0.8px; font-weight:600; margin-bottom:2px; }
-        .metric .val { font-size:1.6rem; font-weight:700; font-family:var(--mono); line-height:1.1; }
-        .metric .sub { font-size:0.72rem; color:var(--text-2); margin-top:2px; font-family:var(--mono); }
+        .metric .label { font-size:0.62rem; color:var(--text-2); text-transform:uppercase; letter-spacing:0.8px; font-weight:600; margin-bottom:2px; font-family:var(--mono); }
+        .metric .val { font-size:1.4rem; font-weight:700; font-family:var(--mono); line-height:1.1; }
+        .metric .sub { font-size:0.68rem; color:var(--text-2); margin-top:2px; font-family:var(--mono); }
 
         /* ── TABLES ── */
         .tbl { width:100%; border-collapse:collapse; font-size:0.8rem; }
         .tbl th {
-            text-align:left; padding:7px 10px; color:var(--text-2); font-size:0.68rem;
+            text-align:left; padding:7px 10px; color:var(--text-2); font-size:0.65rem;
             font-weight:600; text-transform:uppercase; letter-spacing:0.5px;
             border-bottom:1px solid var(--border-strong); background:var(--bg-2);
             position:sticky; top:0; cursor:pointer; user-select:none;
+            font-family:var(--mono);
         }
         .tbl th:hover { color:var(--text-1); }
         .tbl td { padding:6px 10px; border-bottom:1px solid var(--border); font-family:var(--mono); font-size:0.78rem; }
@@ -189,8 +190,10 @@
 
         /* ── DETAIL GRID ── */
         .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-        .detail-row { display:flex; align-items:center; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border); font-size:0.8rem; }
-        .listing-card { background:var(--bg-3); border:1px solid var(--border); border-radius:var(--radius); padding:8px 10px; margin-bottom:6px; }
+        .detail-row { display:flex; align-items:center; justify-content:space-between; padding:5px 0; border-bottom:1px solid var(--border); font-size:0.78rem; font-family:var(--mono); }
+        .detail-row span:first-child { color:var(--text-1); text-transform:capitalize; }
+        .detail-row span:last-child { font-weight:600; }
+        .listing-card { background:var(--bg-3); border:1px solid var(--border); border-radius:var(--radius); padding:8px 10px; margin-bottom:6px; font-family:var(--mono); }
 
         /* ── INPUTS ── */
         .input {
@@ -1006,9 +1009,9 @@ function statusTag(s) {
 
 function renderPfSummary(c, p, items) {
     const cls = p.total_pnl>=0?'green':'red';
-    const statusHtml = Object.entries(p.by_status||{}).map(([k,v])=>`<div class="detail-row"><span>${k.replace(/_/g,' ')}</span><span style="font-family:var(--mono)">${v}</span></div>`).join('');
-    const bestHtml = p.best_performer?`<div class="listing-card"><div style="display:flex;justify-content:space-between"><span class="ref" onclick="lookupRef('${p.best_performer.ref}')">${p.best_performer.ref}</span><span class="green" style="font-family:var(--mono);font-weight:700">+${fmt(p.best_performer.profit)} (${p.best_performer.pct}%)</span></div></div>`:'<div class="dim">—</div>';
-    const worstHtml = p.worst_performer?`<div class="listing-card"><div style="display:flex;justify-content:space-between"><span class="ref" onclick="lookupRef('${p.worst_performer.ref}')">${p.worst_performer.ref}</span><span class="red" style="font-family:var(--mono);font-weight:700">${fmt(p.worst_performer.loss)} (${p.worst_performer.pct}%)</span></div></div>`:'<div class="dim">—</div>';
+    const statusHtml = Object.entries(p.by_status||{}).map(([k,v])=>`<div class="detail-row"><span>${k.replace(/_/g,' ')}</span><span>${v}</span></div>`).join('');
+    const bestHtml = p.best_performer?`<div class="listing-card"><div style="display:flex;justify-content:space-between;align-items:center;"><span class="ref" onclick="lookupRef('${p.best_performer.ref}')" style="font-size:0.85rem;">${p.best_performer.ref}</span><span class="green" style="font-weight:700;font-size:0.82rem;">+${fmt(p.best_performer.profit)} (${p.best_performer.pct}%)</span></div></div>`:'<div class="dim">—</div>';
+    const worstHtml = p.worst_performer?`<div class="listing-card"><div style="display:flex;justify-content:space-between;align-items:center;"><span class="ref" onclick="lookupRef('${p.worst_performer.ref}')" style="font-size:0.85rem;">${p.worst_performer.ref}</span><span class="red" style="font-weight:700;font-size:0.82rem;">${fmt(p.worst_performer.loss)} (${p.worst_performer.pct}%)</span></div></div>`:'<div class="dim">—</div>';
 
     c.innerHTML = `<div class="fade-in">
         <div class="metrics">
@@ -1023,13 +1026,13 @@ function renderPfSummary(c, p, items) {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
             <div class="card"><div class="card-head"><span>Position Status</span></div><div class="card-body">
                 ${statusHtml}
-                <div class="detail-row" style="margin-top:6px;border-top:1px solid var(--border-strong);padding-top:6px;"><span>Profitable</span><span class="green" style="font-family:var(--mono)">${p.profitable_count}/${p.total_pieces}</span></div>
-                <div class="detail-row"><span>Underwater</span><span class="red" style="font-family:var(--mono)">${p.underwater_count}</span></div>
-                <div class="detail-row"><span>Avg Hold</span><span style="font-family:var(--mono)">${p.avg_days_held}d</span></div>
+                <div class="detail-row" style="margin-top:6px;border-top:1px solid var(--border-strong);padding-top:6px;"><span>Profitable</span><span class="green">${p.profitable_count}/${p.total_pieces}</span></div>
+                <div class="detail-row"><span>Underwater</span><span class="red">${p.underwater_count}</span></div>
+                <div class="detail-row"><span>Avg Hold</span><span>${p.avg_days_held}d</span></div>
             </div></div>
             <div class="card"><div class="card-head"><span>Performance</span></div><div class="card-body">
-                <div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;font-weight:600;">Best</div>${bestHtml}
-                <div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin:8px 0 4px;font-weight:600;">Worst</div>${worstHtml}
+                <div style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;font-weight:600;font-family:var(--mono);">Best</div>${bestHtml}
+                <div style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.8px;margin:10px 0 6px;font-weight:600;font-family:var(--mono);">Worst</div>${worstHtml}
             </div></div>
         </div>
     </div>`;
