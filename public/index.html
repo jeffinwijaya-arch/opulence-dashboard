@@ -1963,6 +1963,8 @@ async function loadPortfolioChart() {
 loadData();
 loadNews();
 fetch('/api/portfolio_insights').then(r=>r.json()).then(d=>{DATA.portfolio=d;renderPortfolioSnapshot();}).catch(()=>{});
+// Ensure invoices load if that page is active on refresh
+if (document.getElementById('page-invoices')?.classList.contains('active')) loadInvoicePage();
 
 // ═══ AUTO-REFRESH (every 2 min) ═══
 let _lastLoadTs = Date.now();
