@@ -372,6 +372,7 @@
                 <div class="tab" onclick="setDealsRegion('HK',this)">HK Import</div>
             </div>
             <div id="deals-cards"></div>
+            <div id="deals-detail" style="display:none;margin-top:8px;"></div>
         </div>
 
         <!-- ═══ ARBITRAGE ═══ -->
@@ -656,7 +657,8 @@ function applyDealsFilter() {
     const tierLabel = {A:'A',B:'B',C:'C'};
     const tierBorder = {A:'var(--green)',B:'var(--accent)',C:'var(--border)'};
 
-    $('#deals-cards').innerHTML = f.slice(0,30).map(d => {
+    _dealsFiltered = f; // store for detail view
+    $('#deals-cards').innerHTML = f.slice(0,30).map((d,idx) => {
         const disc = d.discount_pct||d.gap_pct||0;
         const price = d.price_usd||d.price||0;
         const tier = d.tier||'C';
@@ -670,12 +672,13 @@ function applyDealsFilter() {
         const traded = d.traded_before;
         const profitColor = estProfit>0?'var(--green)':'var(--red)';
         const tradeBadge = traded?`<span class="tag tag-green">Traded ${d.times_traded}x | ${d.hist_avg_margin}% avg</span>`:`<span class="tag" style="background:var(--bg-4);color:var(--text-2);">New</span>`;
+        const yearBadge = d.year ? `<span style="font-size:0.72rem;color:var(--text-2);font-family:var(--mono);">${d.year}</span>` : '';
 
-        return `<div class="deal-card ${tier==='A'?'tier-a':tier==='B'?'tier-b':''}">
+        return `<div class="deal-card ${tier==='A'?'tier-a':tier==='B'?'tier-b':''}" onclick="showDealDetail(${idx})" style="cursor:pointer;">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;">
                 <div>
                     <span style="color:${tierBorder[tier]};font-weight:700;font-size:0.7rem;font-family:var(--mono);margin-right:6px;">${tierLabel[tier]}</span>
-                    <span class="ref" onclick="lookupRef('${d.ref}')" style="font-size:0.95rem;">${d.ref}</span>
+                    <span class="ref" style="font-size:0.95rem;">${d.ref}</span>
                     <span style="color:var(--text-2);font-size:0.8rem;margin-left:6px;">${d.model||''}</span>
                 </div>
                 <div style="text-align:right;font-family:var(--mono);">
@@ -687,6 +690,7 @@ function applyDealsFilter() {
                 <span class="tag ${condTag(d.condition||d.condition_bucket)}">${d.condition||d.condition_bucket||'—'}</span>
                 <span class="tag tag-gold">${d.completeness_bucket||d.completeness||'—'}</span>
                 <span style="font-size:0.72rem;color:var(--text-1);">${d.dial||''}</span>
+                ${yearBadge}
                 <span style="font-size:0.72rem;color:var(--text-2);">${regionLabel(d.region)}</span>
                 ${tradeBadge}
             </div>
@@ -702,6 +706,91 @@ function applyDealsFilter() {
             </div>
         </div>`;
     }).join('') || '<div style="text-align:center;padding:24px;color:var(--text-2);">No deals match filters.</div>';
+    $('#deals-detail').style.display='none';
+}
+let _dealsFiltered = [];
+function showDealDetail(idx) {
+    const d = _dealsFiltered[idx];
+    if (!d) return;
+    const panel = $('#deals-detail');
+    panel.style.display = 'block';
+    panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+    const price = d.price_usd||d.price||0;
+    const comps = d.comparable_listings||[];
+    const estProfit = d.est_profit||0;
+    const estSell = d.est_sell_price||0;
+    const estMargin = d.est_margin_pct||0;
+    const avgB25 = d.avg_price||0;
+
+    // Comparable listings table
+    function renderComps(listings) {
+        if (!listings || !listings.length) return '<div style="color:var(--text-2);padding:8px;">No comparable listings</div>';
+        return `<div class="tbl-wrap" style="max-height:350px;overflow-y:auto;"><table class="tbl"><thead><tr>
+            <th class="right">Price</th><th>Seller</th><th>Phone</th><th>Year</th><th>Dial</th><th>Cond</th><th>Region</th><th>Date</th>
+        </tr></thead><tbody>${listings.map(l => {
+            const isDeal = l.price === price;
+            const rowStyle = isDeal ? 'background:rgba(212,175,55,0.08);' : '';
+            const phone = l.phone ? `<a href="https://wa.me/${l.phone.replace(/[^0-9]/g,'')}" target="_blank" style="color:var(--green);text-decoration:none;font-family:var(--mono);font-size:0.7rem;">${l.phone}</a>` : '<span class="dim">—</span>';
+            const yearCell = l.year ? l.year : (l.source_text ? `<span style="cursor:pointer;color:var(--accent);font-size:0.68rem;" onclick="event.stopPropagation();this.parentElement.nextElementSibling||alert(this.dataset.src)" data-src="${(l.source_text||'').replace(/"/g,'&quot;').replace(/</g,'&lt;')}">src</span>` : '<span style="opacity:0.3">N/A</span>');
+            return `<tr style="${rowStyle}">
+                <td class="right" style="font-weight:600;${isDeal?'color:var(--green);':''}font-family:var(--mono);">${fmt(l.price)}${isDeal?' *':''}</td>
+                <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.seller||''}</td>
+                <td>${phone}</td>
+                <td class="dim">${yearCell}</td>
+                <td class="dim">${l.dial||''}</td>
+                <td><span class="tag ${condTag(l.condition)}">${l.condition||'—'}</span></td>
+                <td class="dim">${regionLabel(l.region)}</td>
+                <td class="dim">${fmtTs(l.ts)}</td>
+            </tr>`;
+        }).join('')}</tbody></table></div>`;
+    }
+
+    // Price distribution
+    const compPrices = comps.map(l=>l.price).sort((a,b)=>a-b);
+    const dealPricePos = compPrices.filter(p => p < price).length;
+    const dealPercentile = compPrices.length > 0 ? Math.round(dealPricePos / compPrices.length * 100) : 0;
+
+    // Exit scenarios
+    const exits = [
+        {label: 'Cheapest sell (match 2nd)', price: d.second_cheapest||0},
+        {label: 'Est sell (98% B25)', price: estSell},
+        {label: 'Avg B25 market', price: avgB25},
+    ];
+    const exitHtml = exits.map(ep => {
+        const cost = price + (d.hk_friction||0);
+        const profit = ep.price - cost;
+        const margin = cost > 0 ? (profit/cost*100) : 0;
+        const cls = profit >= 0 ? 'green' : 'red';
+        return `<div class="detail-row"><span>${ep.label}</span><span style="font-family:var(--mono);">${fmt(ep.price)} → <span class="${cls}" style="font-weight:600;">${profit>=0?'+':''}${fmt(profit)} (${margin.toFixed(1)}%)</span></span></div>`;
+    }).join('');
+
+    panel.innerHTML = `<div class="card fade-in">
+        <div class="card-head">
+            <span>${d.ref} — ${d.model||''} ${d.dial?'| '+d.dial:''} ${d.bracelet?'| '+d.bracelet:''} ${d.year?'| '+d.year:''}</span>
+            <button class="btn" onclick="$('#deals-detail').style.display='none'" style="font-size:0.7rem;padding:2px 8px;">Close</button>
+        </div>
+        <div class="card-body">
+            <div class="metrics" style="margin-bottom:12px;">
+                <div class="metric"><div class="label">Deal Price</div><div class="val" style="color:var(--green)">${fmt(price)}</div><div class="sub">${d.seller||''} | ${d.group||''}</div></div>
+                <div class="metric"><div class="label">Avg B25</div><div class="val">${fmt(avgB25)}</div><div class="sub">${comps.length} listings, ${d.unique_sellers||0} sellers</div></div>
+                <div class="metric"><div class="label">Est Sell</div><div class="val" style="color:var(--accent)">${fmt(estSell)}</div><div class="sub">${d.traded_before?'Your avg (traded '+d.times_traded+'x)':'98% of B25'}</div></div>
+                <div class="metric"><div class="label">Net Profit</div><div class="val ${estProfit>=0?'green':'red'}">${estProfit>=0?'+':''}${fmt(estProfit)}</div><div class="sub">${estMargin}% margin</div></div>
+            </div>
+            <div style="font-size:0.72rem;color:var(--text-2);margin-bottom:8px;font-family:var(--mono);">
+                Deal is cheaper than ${dealPercentile}% of ${compPrices.length} comparable listings | Price spread: ${fmt(compPrices[0]||0)} — ${fmt(compPrices[compPrices.length-1]||0)}
+            </div>
+            <div style="margin-bottom:12px;">
+                <div style="font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);margin-bottom:6px;">EXIT SCENARIOS</div>
+                ${exitHtml}
+            </div>
+            <div>
+                <div style="font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);margin-bottom:6px;">COMPARABLE LISTINGS (${comps.length}) — same ref + condition + completeness</div>
+                ${renderComps(comps)}
+                <div style="font-size:0.65rem;color:var(--text-2);margin-top:4px;font-family:var(--mono);">* = deal listing | Sorted by price ascending</div>
+            </div>
+        </div>
+    </div>`;
 }
 
 // ── ARBITRAGE ──
