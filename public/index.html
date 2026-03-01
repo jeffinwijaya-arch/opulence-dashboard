@@ -1959,12 +1959,25 @@ async function loadPortfolioChart() {
 loadData();
 loadNews();
 fetch('/api/portfolio_insights').then(r=>r.json()).then(d=>{DATA.portfolio=d;renderPortfolioSnapshot();}).catch(()=>{});
-// Restore page from URL AFTER init (the earlier IIFE may race with DOM/fetch)
+// Restore page from URL AFTER init
 {
     const _initPage = new URLSearchParams(window.location.search).get('p');
     if (_initPage && _initPage !== 'dashboard') {
         showPage(_initPage, false);
     }
+}
+// Guaranteed invoice load: check every 500ms until data appears (max 5 attempts)
+{
+    let _invRetry = 0;
+    const _invCheck = setInterval(() => {
+        _invRetry++;
+        const pg = document.getElementById('page-invoices');
+        const tbody = document.getElementById('inv-tbody');
+        if (pg && pg.classList.contains('active') && tbody && (!tbody.children.length || tbody.innerHTML.includes('Loading'))) {
+            loadInvoicePage();
+        }
+        if (_invRetry >= 5) clearInterval(_invCheck);
+    }, 500);
 }
 
 // ═══ AUTO-REFRESH (every 2 min) ═══
