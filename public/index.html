@@ -1037,16 +1037,20 @@ function renderPosTable(items) {
         const status=getStatus(i);
         const conf=i.price_confidence||'';
         const confCls=conf==='high'?'tag-green':conf==='medium'?'tag-gold':'tag-blue';
-        const hk=i.hk_wholesale?fmt(i.hk_wholesale):'<span class="dim">—</span>';
-        const us=i.us_wholesale?fmt(i.us_wholesale):'<span class="dim">—</span>';
+        const hkB25=i.hk_wholesale?fmt(i.hk_wholesale):'<span class="dim">—</span>';
+        const usB25=i.us_wholesale?fmt(i.us_wholesale):'<span class="dim">—</span>';
+        const hkC2=i.hk_cheapest2?fmt(i.hk_cheapest2):'—';
+        const usC2=i.us_cheapest2?fmt(i.us_cheapest2):'—';
+        const hkLow=i.hk_lowest?fmt(i.hk_lowest):'—';
+        const usLow=i.us_lowest?fmt(i.us_lowest):'—';
         const hkN=i.hk_count||0, usN=i.us_count||0;
         return `<tr>
             <td class="ref" onclick="lookupRef('${i.ref}')">${i.ref}</td>
             <td class="dim" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${[i.bracelet,i.dial].filter(Boolean).join(' | ')}</td>
             <td class="right">${fmt(i.cost_price)}</td>
             <td class="right">${mkt}</td>
-            <td class="right" style="color:var(--gold);font-size:0.78rem;">${hk}${hkN?`<div class="dim" style="font-size:0.65rem;">${hkN}</div>`:''}</td>
-            <td class="right" style="color:var(--accent);font-size:0.78rem;">${us}${usN?`<div class="dim" style="font-size:0.65rem;">${usN}</div>`:''}</td>
+            <td class="right" style="font-size:0.75rem;"><div style="color:var(--gold);">${hkB25}</div><div class="dim" style="font-size:0.65rem;">C2: ${hkC2}</div><div class="dim" style="font-size:0.65rem;">Low: ${hkLow}</div></td>
+            <td class="right" style="font-size:0.75rem;"><div style="color:var(--accent);">${usB25}</div><div class="dim" style="font-size:0.65rem;">C2: ${usC2}</div><div class="dim" style="font-size:0.65rem;">Low: ${usLow}</div></td>
             <td class="right ${pnlCls}" style="font-weight:600">${pnl?(pnl>0?'+':'')+fmt(pnl):'—'}</td>
             <td class="right ${pnlCls}">${pctStr}</td>
             <td class="right dim">${i.days_held||0}d</td>
@@ -1056,7 +1060,7 @@ function renderPosTable(items) {
     }).join('');
     return `<div class="card"><div class="card-head"><span>All Positions (${items.length})</span></div>
         <div class="tbl-wrap"><table class="tbl"><thead><tr>
-            <th>Ref</th><th>Details</th><th class="right">Cost</th><th class="right">Market</th><th class="right" style="color:var(--gold);">🇭🇰 HK</th><th class="right" style="color:var(--accent);">🇺🇸 US</th><th class="right">P&L</th><th class="right">%</th><th class="right">Held</th><th>Status</th><th class="right">Comps</th>
+            <th>Ref</th><th>Details</th><th class="right">Cost</th><th class="right">Market</th><th class="right" style="color:var(--gold);">🇭🇰 HK B25</th><th class="right" style="color:var(--accent);">🇺🇸 US B25</th><th class="right">P&L</th><th class="right">%</th><th class="right">Held</th><th>Status</th><th class="right">Comps</th>
         </tr></thead><tbody>${rows||'<tr><td colspan="11" class="dim" style="text-align:center;padding:16px;">No data</td></tr>'}</tbody></table></div></div>`;
 }
 
