@@ -814,7 +814,7 @@ function showArbDetail(idx, dirFilter) {
                 <td class="right" style="font-weight:600;">${fmt(l.price)}</td>
                 <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.seller||''}</td>
                 <td>${phone}</td>
-                <td class="dim">${l.year||''}</td>
+                <td class="dim">${l.year||'<span style="opacity:0.3">N/A</span>'}</td>
                 <td><span class="tag ${condTag(l.condition)}">${l.condition||'—'}</span></td>
                 <td class="dim">${fmtTs(l.ts)}</td>
             </tr>`;
