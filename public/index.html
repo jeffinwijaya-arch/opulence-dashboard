@@ -289,6 +289,7 @@
             <a data-page="deals" onclick="showPage('deals')">Deals <span class="badge" id="deals-count">0</span></a>
             <a data-page="arbitrage" onclick="showPage('arbitrage')">Arbitrage</a>
             <a data-page="browse" onclick="showPage('browse')">Market</a>
+            <a data-page="invoices" onclick="showPage('invoices')">Invoices</a>
         </nav>
     </header>
 
@@ -302,6 +303,7 @@
         <a data-page="arbitrage" onclick="showPage('arbitrage')">Arb</a>
         <a data-page="lookup" onclick="showPage('lookup')">Lookup</a>
         <a data-page="portfolio" onclick="showPage('portfolio')">Portfolio</a>
+        <a data-page="invoices" onclick="showPage('invoices')">Invoices</a>
         <a data-page="browse" onclick="showPage('browse')">Market</a>
     </nav>
 
@@ -451,7 +453,73 @@
             </div>
         </div>
 
-        <footer class="footer">MK Opulence &middot; Market Intelligence &middot; <span id="update-time">—</span> <span class="kbd-hint" style="margin-left:12px;opacity:0.4;font-size:0.58rem;">Keys: 1-6 nav · / search · R refresh</span></footer>
+        <!-- ═══ INVOICES ═══ -->
+        <div class="page" id="page-invoices">
+            <div class="page-head">
+                <h1>Invoices</h1>
+                <p>Zoho Invoice — Create, track, and manage invoices</p>
+            </div>
+            <!-- Summary cards -->
+            <div class="metrics" id="inv-summary" style="margin-bottom:12px;">
+                <div class="metric"><div class="label">Outstanding</div><div class="val" id="inv-outstanding">—</div></div>
+                <div class="metric"><div class="label">Overdue</div><div class="val red" id="inv-overdue">—</div></div>
+                <div class="metric"><div class="label">Paid This Month</div><div class="val green" id="inv-paid-month">—</div></div>
+                <div class="metric"><div class="label">Draft</div><div class="val" id="inv-draft-count">—</div></div>
+            </div>
+            <!-- Controls -->
+            <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+                <select class="input" id="inv-filter" onchange="loadInvoices()" style="width:130px;">
+                    <option value="">All</option>
+                    <option value="draft">Draft</option>
+                    <option value="sent">Sent</option>
+                    <option value="unpaid">Unpaid</option>
+                    <option value="overdue">Overdue</option>
+                    <option value="paid">Paid</option>
+                    <option value="void">Void</option>
+                </select>
+                <input class="input" id="inv-search" placeholder="Search customer..." oninput="debounceInvSearch()" style="flex:1;min-width:150px;">
+                <button class="btn" onclick="showCreateInvoice()" style="white-space:nowrap;">+ New Invoice</button>
+            </div>
+            <!-- Invoice list -->
+            <div class="card">
+                <div class="tbl-wrap"><table class="tbl" id="inv-table"><thead><tr>
+                    <th>Invoice</th><th>Customer</th><th class="right">Amount</th><th class="right">Balance</th><th>Date</th><th>Status</th><th>Actions</th>
+                </tr></thead><tbody id="inv-tbody"></tbody></table></div>
+                <div style="text-align:center;padding:8px;" id="inv-pagination"></div>
+            </div>
+            <!-- Invoice detail modal -->
+            <div id="inv-detail-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:1000;overflow-y:auto;" onclick="if(event.target===this)closeInvDetail()">
+                <div style="max-width:700px;margin:40px auto;background:var(--bg-2);border-radius:var(--radius);padding:20px;position:relative;" id="inv-detail-content"></div>
+            </div>
+            <!-- Create invoice modal -->
+            <div id="inv-create-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:1000;overflow-y:auto;" onclick="if(event.target===this)closeCreateInvoice()">
+                <div style="max-width:600px;margin:40px auto;background:var(--bg-2);border-radius:var(--radius);padding:20px;position:relative;">
+                    <h2 style="margin-bottom:12px;">New Invoice</h2>
+                    <div style="display:grid;gap:10px;">
+                        <div><label style="font-size:0.72rem;color:var(--text-2);text-transform:uppercase;">Customer Name</label>
+                            <input class="input" id="inv-new-customer" placeholder="Customer name or address" style="width:100%;margin-top:4px;" list="inv-customer-list">
+                            <datalist id="inv-customer-list"></datalist>
+                        </div>
+                        <div><label style="font-size:0.72rem;color:var(--text-2);text-transform:uppercase;">Reference / Watch</label>
+                            <input class="input" id="inv-new-ref" placeholder="e.g. Rolex 126610LN" style="width:100%;margin-top:4px;"></div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <div><label style="font-size:0.72rem;color:var(--text-2);text-transform:uppercase;">Amount ($)</label>
+                                <input class="input" id="inv-new-amount" type="number" placeholder="0" style="width:100%;margin-top:4px;"></div>
+                            <div><label style="font-size:0.72rem;color:var(--text-2);text-transform:uppercase;">Date</label>
+                                <input class="input" id="inv-new-date" type="date" style="width:100%;margin-top:4px;"></div>
+                        </div>
+                        <div><label style="font-size:0.72rem;color:var(--text-2);text-transform:uppercase;">Notes</label>
+                            <textarea class="input" id="inv-new-notes" rows="2" placeholder="Optional notes..." style="width:100%;margin-top:4px;"></textarea></div>
+                        <div style="display:flex;gap:8px;justify-content:flex-end;">
+                            <button class="btn" onclick="closeCreateInvoice()" style="opacity:0.6;">Cancel</button>
+                            <button class="btn" onclick="submitCreateInvoice()" style="background:var(--green);color:var(--bg-1);">Create Invoice</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">MK Opulence &middot; Market Intelligence &middot; <span id="update-time">—</span> <span class="kbd-hint" style="margin-left:12px;opacity:0.4;font-size:0.58rem;">Keys: 1-7 nav · / search · R refresh</span></footer>
     </div>
 </div>
 
@@ -478,7 +546,7 @@ let browseOffset = 0;
 const BROWSE_PAGE = 80;
 let currentDealsRegion = 'all';
 
-const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals',arbitrage:'Arbitrage',browse:'Market'};
+const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals',arbitrage:'Arbitrage',browse:'Market',invoices:'Invoices'};
 
 function showPage(name, pushState=true) {
     $$('.page').forEach(p => p.classList.remove('active'));
@@ -487,6 +555,7 @@ function showPage(name, pushState=true) {
     $$(`[data-page="${name}"]`).forEach(n => n.classList.add('active'));
     if (name === 'browse' && !allListings.length) loadListings();
     if (name === 'portfolio') { if (DATA.portfolio) renderPortfolio(); else loadPortfolio(); }
+    if (name === 'invoices') loadInvoicePage();
     if (pushState) {
         const params = new URLSearchParams(window.location.search);
         params.set('p', name);
@@ -1981,6 +2050,237 @@ function updateDevotion(){
 }
 updateDevotion();
 setInterval(updateDevotion,60000);
+
+// ── INVOICES ──
+let invSearchTimeout;
+let invCurrentPage = 1;
+let invPageLoaded = false;
+
+async function loadInvoicePage() {
+    if (!invPageLoaded) {
+        loadInvoiceSummary();
+        invPageLoaded = true;
+    }
+    loadInvoices();
+}
+
+async function loadInvoiceSummary() {
+    try {
+        const r = await fetch('/api/zoho/summary');
+        if (!r.ok) return;
+        const s = await r.json();
+        const el = id => document.getElementById(id);
+        el('inv-outstanding').textContent = fmt(s.total_outstanding);
+        el('inv-overdue').textContent = fmt(s.total_overdue);
+        el('inv-paid-month').textContent = fmt(s.paid_this_month);
+        // Count drafts from recent
+        const drafts = (s.recent_invoices||[]).filter(i=>i.status==='draft').length;
+        el('inv-draft-count').textContent = drafts;
+    } catch(e) { console.error('Invoice summary error:', e); }
+}
+
+async function loadInvoices(page) {
+    invCurrentPage = page || 1;
+    const status = document.getElementById('inv-filter')?.value || '';
+    const search = document.getElementById('inv-search')?.value || '';
+    const tbody = document.getElementById('inv-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-2);">Loading...</td></tr>';
+    
+    try {
+        let url = `/api/zoho/invoices?page=${invCurrentPage}&per_page=25`;
+        if (status) url += `&status=${status}`;
+        if (search) url += `&q=${encodeURIComponent(search)}`;
+        const r = await fetch(url);
+        const d = await r.json();
+        const invoices = d.invoices || [];
+        
+        if (!invoices.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-2);">No invoices found</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = invoices.map(inv => {
+            const statusClass = inv.status==='paid'?'green':inv.status==='overdue'?'red':inv.status==='draft'?'dim':inv.status==='sent'?'':'dim';
+            const statusBg = inv.status==='paid'?'var(--green)':inv.status==='overdue'?'var(--red)':inv.status==='draft'?'var(--text-2)':inv.status==='sent'?'var(--accent)':'var(--text-2)';
+            return `<tr style="cursor:pointer;" onclick="showInvDetail('${inv.invoice_id}')">
+                <td style="font-family:var(--mono);color:var(--accent);font-weight:600;">${inv.invoice_number}</td>
+                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${inv.customer_name}</td>
+                <td class="right" style="font-family:var(--mono);font-weight:600;">$${Number(inv.total).toLocaleString('en-US',{minimumFractionDigits:2})}</td>
+                <td class="right" style="font-family:var(--mono);">${inv.balance>0?'$'+Number(inv.balance).toLocaleString('en-US',{minimumFractionDigits:2}):'—'}</td>
+                <td style="font-size:0.78rem;">${inv.date}</td>
+                <td><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.68rem;text-transform:uppercase;font-weight:600;color:var(--bg-1);background:${statusBg};">${inv.status}</span></td>
+                <td style="white-space:nowrap;">
+                    <a onclick="event.stopPropagation();downloadInvPdf('${inv.invoice_id}','${inv.invoice_number}')" style="cursor:pointer;color:var(--accent);font-size:0.78rem;margin-right:8px;" title="Download PDF">PDF</a>
+                    ${inv.status==='draft'?`<a onclick="event.stopPropagation();sendInvoice('${inv.invoice_id}')" style="cursor:pointer;color:var(--green);font-size:0.78rem;" title="Mark Sent">Send</a>`:''}
+                </td>
+            </tr>`;
+        }).join('');
+        
+        // Pagination
+        const ctx = d.page_context || {};
+        const totalPages = Math.ceil((ctx.total||invoices.length) / 25);
+        const pg = document.getElementById('inv-pagination');
+        if (pg && totalPages > 1) {
+            let phtml = '';
+            for (let i = 1; i <= Math.min(totalPages, 10); i++) {
+                phtml += `<button class="btn" style="margin:2px;${i===invCurrentPage?'background:var(--accent);color:var(--bg-1);':''}" onclick="loadInvoices(${i})">${i}</button>`;
+            }
+            pg.innerHTML = phtml;
+        } else if (pg) {
+            pg.innerHTML = '';
+        }
+    } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--red);">Error: ${e.message}</td></tr>`;
+    }
+}
+
+function debounceInvSearch() {
+    clearTimeout(invSearchTimeout);
+    invSearchTimeout = setTimeout(() => loadInvoices(), 400);
+}
+
+async function showInvDetail(id) {
+    const overlay = document.getElementById('inv-detail-overlay');
+    const content = document.getElementById('inv-detail-content');
+    if (!overlay || !content) return;
+    content.innerHTML = '<p style="text-align:center;padding:20px;color:var(--text-2);">Loading...</p>';
+    overlay.style.display = 'block';
+    
+    try {
+        const r = await fetch(`/api/zoho/invoices/${id}`);
+        const d = await r.json();
+        const inv = d.invoice || d;
+        
+        const statusBg = inv.status==='paid'?'var(--green)':inv.status==='overdue'?'var(--red)':inv.status==='draft'?'var(--text-2)':inv.status==='sent'?'var(--accent)':'var(--text-2)';
+        
+        let itemsHtml = (inv.line_items||[]).map(li => `
+            <tr>
+                <td>${li.name||''}</td>
+                <td style="font-size:0.78rem;color:var(--text-2);">${li.description||''}</td>
+                <td class="right" style="font-family:var(--mono);">${li.quantity||1}</td>
+                <td class="right" style="font-family:var(--mono);">$${Number(li.rate||0).toLocaleString('en-US',{minimumFractionDigits:2})}</td>
+                <td class="right" style="font-family:var(--mono);font-weight:600;">$${Number(li.item_total||0).toLocaleString('en-US',{minimumFractionDigits:2})}</td>
+            </tr>
+        `).join('');
+        
+        content.innerHTML = `
+            <button onclick="closeInvDetail()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;">✕</button>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <div>
+                    <h2 style="margin:0;">${inv.invoice_number}</h2>
+                    <div style="font-size:0.82rem;color:var(--text-2);margin-top:2px;">${inv.customer_name||''}</div>
+                </div>
+                <span style="padding:4px 12px;border-radius:4px;font-size:0.72rem;text-transform:uppercase;font-weight:700;color:var(--bg-1);background:${statusBg};">${inv.status}</span>
+            </div>
+            <div class="detail-grid" style="margin-bottom:16px;">
+                <div class="detail-row"><span style="color:var(--text-2)">Date</span><span>${inv.date||'—'}</span></div>
+                <div class="detail-row"><span style="color:var(--text-2)">Due Date</span><span>${inv.due_date||'—'}</span></div>
+                <div class="detail-row"><span style="color:var(--text-2)">Total</span><span style="font-family:var(--mono);font-weight:700;font-size:1.1rem;">$${Number(inv.total||0).toLocaleString('en-US',{minimumFractionDigits:2})}</span></div>
+                <div class="detail-row"><span style="color:var(--text-2)">Balance Due</span><span style="font-family:var(--mono);color:${inv.balance>0?'var(--red)':'var(--green)'};">$${Number(inv.balance||0).toLocaleString('en-US',{minimumFractionDigits:2})}</span></div>
+                ${inv.reference_number?`<div class="detail-row"><span style="color:var(--text-2)">Reference</span><span>${inv.reference_number}</span></div>`:''}
+            </div>
+            <div style="margin-bottom:16px;">
+                <div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:600;">Line Items</div>
+                <table class="tbl"><thead><tr><th>Item</th><th>Description</th><th class="right">Qty</th><th class="right">Rate</th><th class="right">Total</th></tr></thead><tbody>${itemsHtml}</tbody></table>
+            </div>
+            ${inv.notes?`<div style="margin-bottom:12px;padding:8px;background:var(--bg-3);border-radius:var(--radius);font-size:0.78rem;"><strong style="color:var(--text-2);">Notes:</strong> ${inv.notes}</div>`:''}
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+                <button class="btn" onclick="downloadInvPdf('${inv.invoice_id}','${inv.invoice_number}')" style="font-size:0.78rem;">Download PDF</button>
+                ${inv.status==='draft'?`<button class="btn" onclick="sendInvoice('${inv.invoice_id}')" style="font-size:0.78rem;background:var(--green);color:var(--bg-1);">Mark as Sent</button>`:''}
+            </div>
+        `;
+    } catch(e) {
+        content.innerHTML = `<p style="text-align:center;padding:20px;color:var(--red);">Error loading invoice: ${e.message}</p>`;
+    }
+}
+
+function closeInvDetail() {
+    document.getElementById('inv-detail-overlay').style.display = 'none';
+}
+
+async function downloadInvPdf(id, num) {
+    try {
+        const r = await fetch(`/api/zoho/invoices/${id}/pdf`);
+        if (!r.ok) throw new Error('PDF download failed');
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${num||'invoice'}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch(e) { alert('PDF download failed: ' + e.message); }
+}
+
+async function sendInvoice(id) {
+    if (!confirm('Mark this invoice as sent?')) return;
+    try {
+        await fetch(`/api/zoho/invoices/${id}/send`, {method:'POST'});
+        loadInvoices();
+        loadInvoiceSummary();
+    } catch(e) { alert('Error: ' + e.message); }
+}
+
+function showCreateInvoice() {
+    document.getElementById('inv-create-overlay').style.display = 'block';
+    document.getElementById('inv-new-date').value = new Date().toISOString().split('T')[0];
+    // Load customer suggestions
+    loadCustomerSuggestions();
+}
+
+function closeCreateInvoice() {
+    document.getElementById('inv-create-overlay').style.display = 'none';
+}
+
+async function loadCustomerSuggestions() {
+    try {
+        const r = await fetch('/api/zoho/customers');
+        const d = await r.json();
+        const list = document.getElementById('inv-customer-list');
+        if (list && d.contacts) {
+            list.innerHTML = d.contacts.slice(0,50).map(c => `<option value="${c.contact_name}">`).join('');
+        }
+    } catch(e) {}
+}
+
+async function submitCreateInvoice() {
+    const customer = document.getElementById('inv-new-customer')?.value?.trim();
+    const ref = document.getElementById('inv-new-ref')?.value?.trim();
+    const amount = parseFloat(document.getElementById('inv-new-amount')?.value) || 0;
+    const date = document.getElementById('inv-new-date')?.value || '';
+    const notes = document.getElementById('inv-new-notes')?.value?.trim() || '';
+    
+    if (!customer) { alert('Customer name is required'); return; }
+    if (!amount) { alert('Amount is required'); return; }
+    
+    try {
+        const r = await fetch('/api/zoho/invoices', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                customer_name: customer,
+                line_items: [{name: ref || 'Watch', rate: amount, quantity: 1}],
+                date: date,
+                notes: notes,
+                reference_number: ref || '',
+            })
+        });
+        const d = await r.json();
+        if (d.invoice) {
+            closeCreateInvoice();
+            invPageLoaded = false;
+            loadInvoicePage();
+            // Clear form
+            document.getElementById('inv-new-customer').value = '';
+            document.getElementById('inv-new-ref').value = '';
+            document.getElementById('inv-new-amount').value = '';
+            document.getElementById('inv-new-notes').value = '';
+        } else {
+            alert('Error: ' + (d.message || d.error || 'Unknown error'));
+        }
+    } catch(e) { alert('Error creating invoice: ' + e.message); }
+}
 </script>
 </body>
 </html>
