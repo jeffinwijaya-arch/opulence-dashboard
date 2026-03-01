@@ -942,8 +942,23 @@ async function doLookup() {
                 ${signalHtml}
                 ${relatedHtml}
             </div></div>
+            <div class="card" style="margin-top:8px;"><div class="card-head"><span>Price History (14d)</span></div><div class="card-body" style="padding:8px;"><canvas id="lookup-chart"></canvas><div id="lookup-chart-empty" class="dim" style="text-align:center;padding:12px;display:none;">No history available</div></div></div>
             <div class="card" style="margin-top:8px;"><div class="card-head"><span>Cheapest Listings</span></div><div class="card-body">${cheapest||'<div style="color:var(--text-2)">No listings</div>'}</div></div>
         </div>`;
+        // Load price history chart
+        try {
+            const hr = await fetch(`/api/price_history/${encodeURIComponent(ref)}`);
+            if (hr.ok) {
+                const hist = await hr.json();
+                if (hist.length >= 2) {
+                    const chartData = hist.map(h => ({value: h.b25, label: h.d?.slice(5)}));
+                    setTimeout(() => renderChart('lookup-chart', chartData), 50);
+                } else {
+                    const empty = document.getElementById('lookup-chart-empty');
+                    if (empty) empty.style.display = 'block';
+                }
+            }
+        } catch(e2) {}
     } catch(e) { c.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-2);">${e.message||'No data for "'+q+'"'}</div>`; }
 }
 
@@ -988,6 +1003,7 @@ function renderPfSummary(c, p, items) {
             <div class="metric"><div class="label">Positions</div><div class="val">${p.total_pieces}</div></div>
             <div class="metric"><div class="label">Capital at Risk</div><div class="val red">${fmt(p.capital_at_risk)}</div></div>
         </div>
+        <div class="card" style="margin-bottom:8px;"><div class="card-head"><span>Portfolio Value</span><span style="font-size:0.65rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;">14-day trend</span></div><div class="card-body" style="padding:8px;"><canvas id="portfolio-chart"></canvas></div></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
             <div class="card"><div class="card-head"><span>Position Status</span></div><div class="card-body">
                 ${statusHtml}
@@ -1001,6 +1017,8 @@ function renderPfSummary(c, p, items) {
             </div></div>
         </div>
     </div>`;
+    // Load portfolio chart
+    loadPortfolioChart();
 }
 
 let posView = 'table';
@@ -1064,11 +1082,13 @@ function renderPosTable(items) {
         const hkLow=i.hk_lowest?fmt(i.hk_lowest):'—';
         const usLow=i.us_lowest?fmt(i.us_lowest):'—';
         const hkN=i.hk_count||0, usN=i.us_count||0;
+        const spark = _sparkData[i.ref] ? sparkline(_sparkData[i.ref], 56, 18) : '';
         return `<tr>
             <td class="ref" onclick="lookupRef('${i.ref}')">${i.ref}</td>
             <td class="dim" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${[i.bracelet,i.dial].filter(Boolean).join(' | ')}</td>
             <td class="right">${fmt(i.cost_price)}</td>
             <td class="right">${mkt}</td>
+            <td style="text-align:center;padding:2px 4px;">${spark}</td>
             <td class="right" style="font-size:0.75rem;"><div style="color:var(--gold);">${hkB25}</div><div class="dim" style="font-size:0.65rem;">C2: ${hkC2}</div><div class="dim" style="font-size:0.65rem;">Low: ${hkLow}</div></td>
             <td class="right" style="font-size:0.75rem;"><div style="color:var(--accent);">${usB25}</div><div class="dim" style="font-size:0.65rem;">C2: ${usC2}</div><div class="dim" style="font-size:0.65rem;">Low: ${usLow}</div></td>
             <td class="right ${pnlCls}" style="font-weight:600">${pnl?(pnl>0?'+':'')+fmt(pnl):'—'}</td>
@@ -1080,7 +1100,7 @@ function renderPosTable(items) {
     }).join('');
     return `<div class="card"><div class="card-head"><span>All Positions (${items.length})</span></div>
         <div class="tbl-wrap"><table class="tbl"><thead><tr>
-            <th>Ref</th><th>Details</th><th class="right">Cost</th><th class="right">Market</th><th class="right" style="color:var(--gold);">🇭🇰 HK B25</th><th class="right" style="color:var(--accent);">🇺🇸 US B25</th><th class="right">P&L</th><th class="right">%</th><th class="right">Held</th><th>Status</th><th class="right">Comps</th>
+            <th>Ref</th><th>Details</th><th class="right">Cost</th><th class="right">Market</th><th style="text-align:center;">Trend</th><th class="right" style="color:var(--gold);">HK B25</th><th class="right" style="color:var(--accent);">US B25</th><th class="right">P&L</th><th class="right">%</th><th class="right">Held</th><th>Status</th><th class="right">Comps</th>
         </tr></thead><tbody>${rows||'<tr><td colspan="11" class="dim" style="text-align:center;padding:16px;">No data</td></tr>'}</tbody></table></div></div>`;
 }
 
@@ -1483,6 +1503,151 @@ async function ensureInventory() {
         if (r.ok) inventoryItems = await r.json();
     } catch(e) {}
     return inventoryItems || [];
+}
+
+// ═══ SPARKLINE SVG GENERATOR ═══
+function sparkline(values, w=60, h=20, color) {
+    if (!values || values.length < 2) return '';
+    const min = Math.min(...values), max = Math.max(...values);
+    const range = max - min || 1;
+    const autoColor = color || (values[values.length-1] >= values[0] ? 'var(--green)' : 'var(--red)');
+    const pts = values.map((v,i) => {
+        const x = (i / (values.length-1)) * w;
+        const y = h - ((v - min) / range) * (h - 2) - 1;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    return `<svg width="${w}" height="${h}" style="vertical-align:middle;"><polyline points="${pts}" fill="none" stroke="${autoColor}" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+// ═══ PRICE HISTORY CACHE ═══
+let _sparkData = {};  // ref -> [b25 values]
+async function loadSparklines() {
+    try {
+        const r = await fetch('/api/price_history_bulk');
+        if (r.ok) _sparkData = await r.json();
+    } catch(e) {}
+}
+loadSparklines();
+
+// ═══ CHART RENDERER (canvas-based, no dependencies) ═══
+function renderChart(canvasId, data, opts={}) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || !data.length) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width = canvas.parentElement.offsetWidth;
+    const H = canvas.height = opts.height || 180;
+    const pad = {top:20, right:60, bottom:30, left:10};
+    const cW = W - pad.left - pad.right;
+    const cH = H - pad.top - pad.bottom;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Extract values
+    const vals = data.map(d => d.value);
+    const min = Math.min(...vals), max = Math.max(...vals);
+    const range = max - min || 1;
+
+    // Grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+        const y = pad.top + (cH / 4) * i;
+        ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+        // Label
+        const val = max - (range / 4) * i;
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.font = '10px JetBrains Mono, monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('$' + Math.round(val).toLocaleString(), W - pad.right + 4, y + 3);
+    }
+
+    // Date labels
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '9px JetBrains Mono, monospace';
+    ctx.textAlign = 'center';
+    const step = Math.max(1, Math.floor(data.length / 5));
+    for (let i = 0; i < data.length; i += step) {
+        const x = pad.left + (i / (data.length - 1)) * cW;
+        const label = data[i].label || data[i].d?.slice(5) || '';
+        ctx.fillText(label, x, H - 5);
+    }
+
+    // Area fill
+    const gradient = ctx.createLinearGradient(0, pad.top, 0, H - pad.bottom);
+    const isUp = vals[vals.length-1] >= vals[0];
+    if (isUp) {
+        gradient.addColorStop(0, 'rgba(0,200,83,0.15)');
+        gradient.addColorStop(1, 'rgba(0,200,83,0)');
+    } else {
+        gradient.addColorStop(0, 'rgba(255,23,68,0.15)');
+        gradient.addColorStop(1, 'rgba(255,23,68,0)');
+    }
+    ctx.beginPath();
+    ctx.moveTo(pad.left, H - pad.bottom);
+    data.forEach((d, i) => {
+        const x = pad.left + (i / (data.length - 1)) * cW;
+        const y = pad.top + cH - ((d.value - min) / range) * cH;
+        ctx.lineTo(x, y);
+    });
+    ctx.lineTo(pad.left + cW, H - pad.bottom);
+    ctx.closePath();
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    // Line
+    ctx.beginPath();
+    ctx.strokeStyle = isUp ? '#00c853' : '#ff1744';
+    ctx.lineWidth = 2;
+    data.forEach((d, i) => {
+        const x = pad.left + (i / (data.length - 1)) * cW;
+        const y = pad.top + cH - ((d.value - min) / range) * cH;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Current value dot
+    if (data.length) {
+        const last = data[data.length-1];
+        const x = pad.left + cW;
+        const y = pad.top + cH - ((last.value - min) / range) * cH;
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = isUp ? '#00c853' : '#ff1744';
+        ctx.fill();
+    }
+
+    // Optional second line (e.g. cost line)
+    if (opts.costLine && opts.costLine > 0) {
+        const y = pad.top + cH - ((opts.costLine - min) / range) * cH;
+        if (y >= pad.top && y <= H - pad.bottom) {
+            ctx.setLineDash([4, 4]);
+            ctx.strokeStyle = 'rgba(201,168,76,0.5)';
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = 'rgba(201,168,76,0.7)';
+            ctx.font = '9px JetBrains Mono, monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText('Cost $' + Math.round(opts.costLine).toLocaleString(), W - pad.right + 4, y - 4);
+        }
+    }
+}
+
+// ═══ PORTFOLIO CHART LOADER ═══
+async function loadPortfolioChart() {
+    try {
+        const r = await fetch('/api/portfolio_history');
+        if (!r.ok) return;
+        const hist = await r.json();
+        if (hist.length < 2) return;
+        const chartData = hist.map(h => ({
+            value: h.market,
+            label: h.d?.slice(5) || ''
+        }));
+        setTimeout(() => renderChart('portfolio-chart', chartData, {
+            costLine: hist[hist.length-1]?.capital || 0
+        }), 50);
+    } catch(e) {}
 }
 
 // ── INIT ──
