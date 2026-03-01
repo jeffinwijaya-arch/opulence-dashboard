@@ -309,6 +309,15 @@
             </div>
             <div class="metrics" id="metrics-grid"></div>
 
+            <!-- Daily Devotion -->
+            <div class="card" id="devotion-card" style="margin-bottom:8px;text-align:center;background:linear-gradient(135deg,var(--card) 0%,rgba(212,175,55,0.05) 100%);border:1px solid rgba(212,175,55,0.15);">
+                <div class="card-head"><span>✝️ Hourly Devotion</span><span id="devotion-time" style="font-size:0.6rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;"></span></div>
+                <div class="card-body" style="padding:16px 20px;">
+                    <div id="devotion-verse" style="font-size:1rem;line-height:1.6;color:var(--text-1);font-style:italic;"></div>
+                    <div id="devotion-ref" style="margin-top:8px;font-size:0.75rem;color:var(--gold);font-weight:600;letter-spacing:0.5px;"></div>
+                </div>
+            </div>
+
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                 <div class="card">
                     <div class="card-head"><span>Top Deals</span><a class="link" onclick="showPage('deals')">View all</a></div>
@@ -1469,6 +1478,48 @@ async function ensureInventory() {
 loadData();
 loadNews();
 fetch('/api/portfolio_insights').then(r=>r.json()).then(d=>{DATA.portfolio=d;renderPortfolioSnapshot();}).catch(()=>{});
+// ═══ HOURLY DEVOTION ═══
+const VERSES=[
+{v:"Trust in the LORD with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.",r:"Proverbs 3:5-6"},
+{v:"For I know the plans I have for you, declares the LORD, plans to prosper you and not to harm you, plans to give you hope and a future.",r:"Jeremiah 29:11"},
+{v:"I can do all this through him who gives me strength.",r:"Philippians 4:13"},
+{v:"The LORD is my shepherd, I lack nothing.",r:"Psalm 23:1"},
+{v:"Be strong and courageous. Do not be afraid; do not be discouraged, for the LORD your God will be with you wherever you go.",r:"Joshua 1:9"},
+{v:"And we know that in all things God works for the good of those who love him, who have been called according to his purpose.",r:"Romans 8:28"},
+{v:"The LORD is my light and my salvation — whom shall I fear? The LORD is the stronghold of my life — of whom shall I be afraid?",r:"Psalm 27:1"},
+{v:"Commit to the LORD whatever you do, and he will establish your plans.",r:"Proverbs 16:3"},
+{v:"Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God.",r:"Philippians 4:6"},
+{v:"But those who hope in the LORD will renew their strength. They will soar on wings like eagles; they will run and not grow weary, they will walk and not be faint.",r:"Isaiah 40:31"},
+{v:"The name of the LORD is a fortified tower; the righteous run to it and are safe.",r:"Proverbs 18:10"},
+{v:"Delight yourself in the LORD, and he will give you the desires of your heart.",r:"Psalm 37:4"},
+{v:"Have I not commanded you? Be strong and courageous. Do not be afraid; do not be discouraged, for the LORD your God will be with you wherever you go.",r:"Joshua 1:9"},
+{v:"Cast all your anxiety on him because he cares for you.",r:"1 Peter 5:7"},
+{v:"The LORD bless you and keep you; the LORD make his face shine on you and be gracious to you.",r:"Numbers 6:24-25"},
+{v:"No weapon forged against you will prevail, and you will refute every tongue that accuses you.",r:"Isaiah 54:17"},
+{v:"For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.",r:"John 3:16"},
+{v:"Be still, and know that I am God.",r:"Psalm 46:10"},
+{v:"The steadfast love of the LORD never ceases; his mercies never come to an end; they are new every morning; great is your faithfulness.",r:"Lamentations 3:22-23"},
+{v:"Whatever you do, work at it with all your heart, as working for the Lord, not for human masters.",r:"Colossians 3:23"},
+{v:"But seek first his kingdom and his righteousness, and all these things will be given to you as well.",r:"Matthew 6:33"},
+{v:"God is our refuge and strength, an ever-present help in trouble.",r:"Psalm 46:1"},
+{v:"Come to me, all you who are weary and burdened, and I will give you rest.",r:"Matthew 11:28"},
+{v:"The fear of the LORD is the beginning of wisdom, and knowledge of the Holy One is understanding.",r:"Proverbs 9:10"},
+];
+function updateDevotion(){
+  const now=new Date();
+  const dayOfYear=Math.floor((now-new Date(now.getFullYear(),0,0))/(1000*60*60*24));
+  const hour=now.getHours();
+  const idx=(dayOfYear*24+hour)%VERSES.length;
+  const v=VERSES[idx];
+  const el=document.getElementById('devotion-verse');
+  const ref=document.getElementById('devotion-ref');
+  const ts=document.getElementById('devotion-time');
+  if(el)el.textContent='"'+v.v+'"';
+  if(ref)ref.textContent='— '+v.r;
+  if(ts){const h=hour%12||12;const ap=hour>=12?'PM':'AM';ts.textContent=h+':00 '+ap+' hour';}
+}
+updateDevotion();
+setInterval(updateDevotion,60000);
 </script>
 </body>
 </html>
