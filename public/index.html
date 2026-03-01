@@ -2057,23 +2057,22 @@ let invCurrentPage = 1;
 let invPageLoaded = false;
 
 async function loadInvoicePage() {
-    if (!invPageLoaded) {
-        loadInvoiceSummary();
-        invPageLoaded = true;
-    }
+    loadInvoiceSummary();
     loadInvoices();
 }
 
 async function loadInvoiceSummary() {
+    const el = id => document.getElementById(id);
+    // Show loading
+    ['inv-outstanding','inv-overdue','inv-paid-month','inv-draft-count'].forEach(id => { if(el(id)) el(id).textContent = '...'; });
     try {
         const r = await fetch('/api/zoho/summary');
         if (!r.ok) return;
         const s = await r.json();
-        const el = id => document.getElementById(id);
+        if (s.error) return;
         el('inv-outstanding').textContent = fmt(s.total_outstanding);
-        el('inv-overdue').textContent = fmt(s.total_overdue);
-        el('inv-paid-month').textContent = fmt(s.paid_this_month);
-        // Count drafts from recent
+        el('inv-overdue').textContent = s.total_overdue > 0 ? fmt(s.total_overdue) : '$0';
+        el('inv-paid-month').textContent = s.paid_this_month > 0 ? fmt(s.paid_this_month) : '$0';
         const drafts = (s.recent_invoices||[]).filter(i=>i.status==='draft').length;
         el('inv-draft-count').textContent = drafts;
     } catch(e) { console.error('Invoice summary error:', e); }
@@ -2101,8 +2100,8 @@ async function loadInvoices(page) {
         }
         
         tbody.innerHTML = invoices.map(inv => {
-            const statusClass = inv.status==='paid'?'green':inv.status==='overdue'?'red':inv.status==='draft'?'dim':inv.status==='sent'?'':'dim';
             const statusBg = inv.status==='paid'?'var(--green)':inv.status==='overdue'?'var(--red)':inv.status==='draft'?'var(--text-2)':inv.status==='sent'?'var(--accent)':'var(--text-2)';
+            const canDelete = inv.status==='draft'||inv.status==='void';
             return `<tr style="cursor:pointer;" onclick="showInvDetail('${inv.invoice_id}')">
                 <td style="font-family:var(--mono);color:var(--accent);font-weight:600;">${inv.invoice_number}</td>
                 <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${inv.customer_name}</td>
@@ -2110,9 +2109,10 @@ async function loadInvoices(page) {
                 <td class="right" style="font-family:var(--mono);">${inv.balance>0?'$'+Number(inv.balance).toLocaleString('en-US',{minimumFractionDigits:2}):'—'}</td>
                 <td style="font-size:0.78rem;">${inv.date}</td>
                 <td><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.68rem;text-transform:uppercase;font-weight:600;color:var(--bg-1);background:${statusBg};">${inv.status}</span></td>
-                <td style="white-space:nowrap;">
-                    <a onclick="event.stopPropagation();downloadInvPdf('${inv.invoice_id}','${inv.invoice_number}')" style="cursor:pointer;color:var(--accent);font-size:0.78rem;margin-right:8px;" title="Download PDF">PDF</a>
-                    ${inv.status==='draft'?`<a onclick="event.stopPropagation();sendInvoice('${inv.invoice_id}')" style="cursor:pointer;color:var(--green);font-size:0.78rem;" title="Mark Sent">Send</a>`:''}
+                <td style="white-space:nowrap;" onclick="event.stopPropagation()">
+                    <a onclick="downloadInvPdf('${inv.invoice_id}','${inv.invoice_number}')" style="cursor:pointer;color:var(--accent);font-size:0.78rem;margin-right:6px;" title="Download PDF">PDF</a>
+                    ${inv.status==='draft'?`<a onclick="sendInvoice('${inv.invoice_id}')" style="cursor:pointer;color:var(--green);font-size:0.78rem;margin-right:6px;" title="Mark Sent">Send</a>`:''}
+                    ${canDelete?`<a onclick="deleteInvoice('${inv.invoice_id}','${inv.invoice_number}')" style="cursor:pointer;color:var(--red);font-size:0.78rem;" title="Delete">Del</a>`:''}
                 </td>
             </tr>`;
         }).join('');
@@ -2127,9 +2127,7 @@ async function loadInvoices(page) {
                 phtml += `<button class="btn" style="margin:2px;${i===invCurrentPage?'background:var(--accent);color:var(--bg-1);':''}" onclick="loadInvoices(${i})">${i}</button>`;
             }
             pg.innerHTML = phtml;
-        } else if (pg) {
-            pg.innerHTML = '';
-        }
+        } else if (pg) { pg.innerHTML = ''; }
     } catch(e) {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--red);">Error: ${e.message}</td></tr>`;
     }
@@ -2153,6 +2151,7 @@ async function showInvDetail(id) {
         const inv = d.invoice || d;
         
         const statusBg = inv.status==='paid'?'var(--green)':inv.status==='overdue'?'var(--red)':inv.status==='draft'?'var(--text-2)':inv.status==='sent'?'var(--accent)':'var(--text-2)';
+        const canDelete = inv.status==='draft'||inv.status==='void';
         
         let itemsHtml = (inv.line_items||[]).map(li => `
             <tr>
@@ -2173,7 +2172,7 @@ async function showInvDetail(id) {
                 </div>
                 <span style="padding:4px 12px;border-radius:4px;font-size:0.72rem;text-transform:uppercase;font-weight:700;color:var(--bg-1);background:${statusBg};">${inv.status}</span>
             </div>
-            <div class="detail-grid" style="margin-bottom:16px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin-bottom:16px;font-size:0.82rem;">
                 <div class="detail-row"><span style="color:var(--text-2)">Date</span><span>${inv.date||'—'}</span></div>
                 <div class="detail-row"><span style="color:var(--text-2)">Due Date</span><span>${inv.due_date||'—'}</span></div>
                 <div class="detail-row"><span style="color:var(--text-2)">Total</span><span style="font-family:var(--mono);font-weight:700;font-size:1.1rem;">$${Number(inv.total||0).toLocaleString('en-US',{minimumFractionDigits:2})}</span></div>
@@ -2186,6 +2185,7 @@ async function showInvDetail(id) {
             </div>
             ${inv.notes?`<div style="margin-bottom:12px;padding:8px;background:var(--bg-3);border-radius:var(--radius);font-size:0.78rem;"><strong style="color:var(--text-2);">Notes:</strong> ${inv.notes}</div>`:''}
             <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+                ${canDelete?`<button class="btn" onclick="deleteInvoice('${inv.invoice_id}','${inv.invoice_number}')" style="font-size:0.78rem;background:var(--red);color:var(--bg-1);">Delete</button>`:''}
                 <button class="btn" onclick="downloadInvPdf('${inv.invoice_id}','${inv.invoice_number}')" style="font-size:0.78rem;">Download PDF</button>
                 ${inv.status==='draft'?`<button class="btn" onclick="sendInvoice('${inv.invoice_id}')" style="font-size:0.78rem;background:var(--green);color:var(--bg-1);">Mark as Sent</button>`:''}
             </div>
@@ -2217,15 +2217,27 @@ async function sendInvoice(id) {
     if (!confirm('Mark this invoice as sent?')) return;
     try {
         await fetch(`/api/zoho/invoices/${id}/send`, {method:'POST'});
-        loadInvoices();
-        loadInvoiceSummary();
+        loadInvoicePage();
     } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function deleteInvoice(id, num) {
+    if (!confirm(`Delete invoice ${num||''}? This cannot be undone.`)) return;
+    try {
+        const r = await fetch(`/api/zoho/invoices/${id}`, {method:'DELETE'});
+        const d = await r.json();
+        if (d.message) {
+            closeInvDetail();
+            loadInvoicePage();
+        } else {
+            alert('Error: ' + (d.error || 'Unknown error'));
+        }
+    } catch(e) { alert('Error deleting: ' + e.message); }
 }
 
 function showCreateInvoice() {
     document.getElementById('inv-create-overlay').style.display = 'block';
     document.getElementById('inv-new-date').value = new Date().toISOString().split('T')[0];
-    // Load customer suggestions
     loadCustomerSuggestions();
 }
 
@@ -2269,9 +2281,7 @@ async function submitCreateInvoice() {
         const d = await r.json();
         if (d.invoice) {
             closeCreateInvoice();
-            invPageLoaded = false;
             loadInvoicePage();
-            // Clear form
             document.getElementById('inv-new-customer').value = '';
             document.getElementById('inv-new-ref').value = '';
             document.getElementById('inv-new-amount').value = '';
