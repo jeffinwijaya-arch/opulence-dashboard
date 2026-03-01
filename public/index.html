@@ -292,6 +292,7 @@
             <a data-page="browse" onclick="showPage('browse')">Market</a>
             <a data-page="invoices" onclick="showPage('invoices')">Invoices</a>
             <a data-page="shipping" onclick="showPage('shipping')">Shipping</a>
+            <a data-page="inventory" onclick="showPage('inventory')">Inventory</a>
         </nav>
     </header>
 
@@ -307,6 +308,7 @@
         <a data-page="portfolio" onclick="showPage('portfolio')">Portfolio</a>
         <a data-page="invoices" onclick="showPage('invoices')">Invoices</a>
         <a data-page="shipping" onclick="showPage('shipping')">Ship</a>
+        <a data-page="inventory" onclick="showPage('inventory')">Inv</a>
         <a data-page="browse" onclick="showPage('browse')">Market</a>
     </nav>
 
@@ -542,6 +544,104 @@
             </div>
         </div>
 
+        <!-- ═══ INVENTORY ═══ -->
+        <div class="page" id="page-inventory">
+            <div class="page-head">
+                <h1>Inventory</h1>
+                <p>Bot Sheet — Add, edit, and manage watches</p>
+            </div>
+            <!-- Summary -->
+            <div class="metrics" id="inv-mgmt-summary" style="margin-bottom:12px;">
+                <div class="metric"><div class="label">Total</div><div class="val" id="im-total">—</div></div>
+                <div class="metric"><div class="label">Unsold</div><div class="val" id="im-unsold">—</div></div>
+                <div class="metric"><div class="label">In Transit</div><div class="val" id="im-transit">—</div></div>
+                <div class="metric"><div class="label">Unposted</div><div class="val" id="im-unposted">—</div></div>
+            </div>
+            <!-- Controls -->
+            <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
+                <input class="input" id="im-search" placeholder="Search ref, seller, buyer..." style="flex:1;min-width:150px;" oninput="filterInventory()">
+                <select class="input" id="im-filter" style="width:auto;" onchange="filterInventory()">
+                    <option value="all">All</option>
+                    <option value="unsold">Unsold</option>
+                    <option value="sold">Sold</option>
+                    <option value="not-arrived">Not Arrived</option>
+                    <option value="not-shipped">Sold Not Shipped</option>
+                    <option value="not-paid">Sold Not Paid</option>
+                    <option value="not-posted">Not Posted</option>
+                </select>
+                <button class="btn" onclick="showAddWatchModal()" style="background:var(--green);color:var(--bg-1);white-space:nowrap;">+ Add Watch</button>
+                <button class="btn" onclick="loadInventoryPage()" style="opacity:0.6;">Refresh</button>
+            </div>
+            <!-- Table -->
+            <div style="overflow-x:auto;">
+                <table class="tbl" id="im-table">
+                    <thead><tr>
+                        <th>Description</th><th>From</th><th>To</th><th>Cost</th><th>Sold $</th>
+                        <th>Arr</th><th>Post</th><th>Sold</th><th>Ship</th><th>Paid</th><th>Actions</th>
+                    </tr></thead>
+                    <tbody id="im-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Add/Edit Watch Modal -->
+        <div id="watch-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;">
+            <div style="background:var(--bg-2);border-radius:var(--radius);padding:20px;max-width:500px;width:90%;max-height:85vh;overflow-y:auto;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <h3 id="watch-modal-title" style="margin:0;">Add Watch</h3>
+                    <button onclick="closeWatchModal()" style="background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;">X</button>
+                </div>
+                <input type="hidden" id="wm-row">
+                <div style="display:grid;gap:8px;">
+                    <div><label style="font-size:0.68rem;color:var(--text-2);">Description (e.g. 126300 Jubilee Black 02/2026)</label>
+                        <input class="input" id="wm-desc" style="width:100%;margin-top:3px;" placeholder="Ref Bracelet Dial MM/YYYY"></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                        <div><label style="font-size:0.68rem;color:var(--text-2);">Bought From</label>
+                            <input class="input" id="wm-from" style="width:100%;margin-top:3px;"></div>
+                        <div><label style="font-size:0.68rem;color:var(--text-2);">Cost Price ($)</label>
+                            <input class="input" id="wm-cost" type="number" style="width:100%;margin-top:3px;"></div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                        <div><label style="font-size:0.68rem;color:var(--text-2);">Sold To</label>
+                            <input class="input" id="wm-to" style="width:100%;margin-top:3px;"></div>
+                        <div><label style="font-size:0.68rem;color:var(--text-2);">Sold Price ($)</label>
+                            <input class="input" id="wm-sold-price" type="number" style="width:100%;margin-top:3px;"></div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                        <div><label style="font-size:0.68rem;color:var(--text-2);">Sale/Asking Price ($)</label>
+                            <input class="input" id="wm-sale-price" type="number" style="width:100%;margin-top:3px;"></div>
+                        <div><label style="font-size:0.68rem;color:var(--text-2);">Buy Date</label>
+                            <input class="input" id="wm-buy-date" type="date" style="width:100%;margin-top:3px;"></div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                        <div><label style="font-size:0.68rem;color:var(--text-2);">Serial</label>
+                            <input class="input" id="wm-serial" style="width:100%;margin-top:3px;"></div>
+                        <div><label style="font-size:0.68rem;color:var(--text-2);">Card Date</label>
+                            <input class="input" id="wm-card-date" style="width:100%;margin-top:3px;" placeholder="MM/YYYY"></div>
+                    </div>
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                        <label style="font-size:0.72rem;display:flex;align-items:center;gap:4px;cursor:pointer;">
+                            <input type="checkbox" id="wm-arrived"> Arrived</label>
+                        <label style="font-size:0.72rem;display:flex;align-items:center;gap:4px;cursor:pointer;">
+                            <input type="checkbox" id="wm-posted"> Posted</label>
+                        <label style="font-size:0.72rem;display:flex;align-items:center;gap:4px;cursor:pointer;">
+                            <input type="checkbox" id="wm-sold"> Sold</label>
+                        <label style="font-size:0.72rem;display:flex;align-items:center;gap:4px;cursor:pointer;">
+                            <input type="checkbox" id="wm-shipped"> Shipped</label>
+                        <label style="font-size:0.72rem;display:flex;align-items:center;gap:4px;cursor:pointer;">
+                            <input type="checkbox" id="wm-paid-m"> Paid</label>
+                        <label style="font-size:0.72rem;display:flex;align-items:center;gap:4px;cursor:pointer;">
+                            <input type="checkbox" id="wm-wt"> WT</label>
+                    </div>
+                    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
+                        <button class="btn" onclick="closeWatchModal()" style="opacity:0.6;">Cancel</button>
+                        <button class="btn" id="wm-submit" onclick="submitWatchForm()" style="background:var(--green);color:var(--bg-1);">Save</button>
+                    </div>
+                    <div id="wm-status" style="display:none;padding:8px;border-radius:var(--radius);font-size:0.75rem;"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- ═══ INVOICES ═══ -->
         <div class="page" id="page-invoices">
             <div class="page-head">
@@ -635,7 +735,7 @@ let browseOffset = 0;
 const BROWSE_PAGE = 80;
 let currentDealsRegion = 'all';
 
-const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals',arbitrage:'Arbitrage',browse:'Market',invoices:'Invoices',shipping:'Shipping'};
+const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals',arbitrage:'Arbitrage',browse:'Market',invoices:'Invoices',shipping:'Shipping',inventory:'Inventory'};
 
 function showPage(name, pushState=true) {
     $$('.page').forEach(p => p.classList.remove('active'));
@@ -646,6 +746,7 @@ function showPage(name, pushState=true) {
     if (name === 'portfolio') { if (DATA.portfolio) renderPortfolio(); else loadPortfolio(); }
     if (name === 'invoices') loadInvoicePage();
     if (name === 'shipping') loadShippingPage();
+    if (name === 'inventory') loadInventoryPage();
     if (pushState) {
         const params = new URLSearchParams(window.location.search);
         params.set('p', name);
@@ -2162,6 +2263,208 @@ function updateDevotion(){
 }
 updateDevotion();
 setInterval(updateDevotion,60000);
+
+// ── INVENTORY MANAGEMENT ──
+let invMgmtData = [];
+let invMgmtLoaded = false;
+
+async function loadInventoryPage() {
+    const tbody = document.getElementById('im-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-2);">Loading...</td></tr>';
+    try {
+        const r = await fetch('/api/inventory/rows');
+        const d = await r.json();
+        if (!d.ok) { tbody.innerHTML = `<tr><td colspan="11" style="color:var(--red);">${d.error}</td></tr>`; return; }
+        invMgmtData = d.rows || [];
+        invMgmtLoaded = true;
+        updateInventorySummary();
+        filterInventory();
+    } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="11" style="color:var(--red);">Error: ${e.message}</td></tr>`;
+    }
+}
+
+function updateInventorySummary() {
+    const d = invMgmtData;
+    const el = id => document.getElementById(id);
+    el('im-total').textContent = d.length;
+    el('im-unsold').textContent = d.filter(r => r.sold !== 'Yes').length;
+    el('im-transit').textContent = d.filter(r => r.sold === 'Yes' && r.shipped !== 'Yes').length;
+    el('im-unposted').textContent = d.filter(r => r.sold !== 'Yes' && r.posted !== 'Yes' && r.arrived === 'Yes').length;
+}
+
+function filterInventory() {
+    const q = (document.getElementById('im-search')?.value || '').toLowerCase();
+    const f = document.getElementById('im-filter')?.value || 'all';
+    let rows = invMgmtData;
+    
+    if (q) rows = rows.filter(r => 
+        (r.description||'').toLowerCase().includes(q) ||
+        (r.bought_from||'').toLowerCase().includes(q) ||
+        (r.sold_to||'').toLowerCase().includes(q) ||
+        (r.serial||'').toLowerCase().includes(q)
+    );
+    
+    if (f === 'unsold') rows = rows.filter(r => r.sold !== 'Yes');
+    else if (f === 'sold') rows = rows.filter(r => r.sold === 'Yes');
+    else if (f === 'not-arrived') rows = rows.filter(r => r.arrived !== 'Yes');
+    else if (f === 'not-shipped') rows = rows.filter(r => r.sold === 'Yes' && r.shipped !== 'Yes');
+    else if (f === 'not-paid') rows = rows.filter(r => r.sold === 'Yes' && r.paid_after_sold !== 'Yes');
+    else if (f === 'not-posted') rows = rows.filter(r => r.sold !== 'Yes' && r.posted !== 'Yes');
+    
+    renderInventoryTable(rows);
+}
+
+function renderInventoryTable(rows) {
+    const tbody = document.getElementById('im-tbody');
+    if (!tbody) return;
+    if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-2);">No watches found</td></tr>';
+        return;
+    }
+    const yn = v => v === 'Yes' ? '<span style="color:var(--green);">Y</span>' : '<span style="color:var(--text-2);">-</span>';
+    const price = v => { if (!v) return '-'; const n = parseFloat(String(v).replace(/[$,]/g,'')); return isNaN(n)?v:'$'+n.toLocaleString(); };
+    
+    tbody.innerHTML = rows.map(r => `<tr style="cursor:pointer;" ondblclick="editWatch(${r.row})">
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(r.description||'').replace(/"/g,'&quot;')}">${r.description||''}</td>
+        <td style="font-size:0.72rem;">${r.bought_from||'-'}</td>
+        <td style="font-size:0.72rem;">${r.sold_to||'-'}</td>
+        <td style="font-family:var(--mono);font-size:0.72rem;">${price(r.cost_price)}</td>
+        <td style="font-family:var(--mono);font-size:0.72rem;">${price(r.sold_price)}</td>
+        <td>${yn(r.arrived)}</td><td>${yn(r.posted)}</td><td>${yn(r.sold)}</td><td>${yn(r.shipped)}</td><td>${yn(r.paid_after_sold)}</td>
+        <td style="white-space:nowrap;font-size:0.68rem;">
+            ${r.arrived!=='Yes'?`<a onclick="quickAction(${r.row},'arrived')" style="cursor:pointer;color:var(--accent);margin-right:4px;">Arr</a>`:''}
+            ${r.sold!=='Yes'?`<a onclick="showSoldModal(${r.row})" style="cursor:pointer;color:var(--green);margin-right:4px;">Sell</a>`:''}
+            ${r.sold==='Yes'&&r.shipped!=='Yes'?`<a onclick="quickAction(${r.row},'shipped')" style="cursor:pointer;color:var(--accent);margin-right:4px;">Ship</a>`:''}
+            ${r.sold==='Yes'&&r.paid_after_sold!=='Yes'?`<a onclick="quickAction(${r.row},'paid')" style="cursor:pointer;color:var(--green);margin-right:4px;">Paid</a>`:''}
+            <a onclick="editWatch(${r.row})" style="cursor:pointer;color:var(--text-2);">Edit</a>
+        </td>
+    </tr>`).join('');
+}
+
+async function quickAction(row, action) {
+    if (!confirm(`Mark row ${row} as ${action}?`)) return;
+    try {
+        const r = await fetch(`/api/inventory/${row}/${action}`, {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+        const d = await r.json();
+        if (d.ok) loadInventoryPage();
+        else alert('Error: ' + (d.error||'Unknown'));
+    } catch(e) { alert('Error: ' + e.message); }
+}
+
+function showSoldModal(row) {
+    const watch = invMgmtData.find(r => r.row === row);
+    if (!watch) return;
+    const soldTo = prompt(`Sold "${watch.description}" to:`);
+    if (!soldTo) return;
+    const soldPrice = prompt('Sold price ($):');
+    if (!soldPrice) return;
+    fetch(`/api/inventory/${row}/sold`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({sold_to: soldTo, sold_price: soldPrice})
+    }).then(r=>r.json()).then(d => {
+        if (d.ok) loadInventoryPage();
+        else alert('Error: ' + (d.error||'Unknown'));
+    }).catch(e => alert('Error: ' + e.message));
+}
+
+function showAddWatchModal() {
+    document.getElementById('watch-modal-title').textContent = 'Add Watch';
+    document.getElementById('wm-row').value = '';
+    ['wm-desc','wm-from','wm-cost','wm-to','wm-sold-price','wm-sale-price','wm-serial','wm-card-date'].forEach(id => {
+        const el = document.getElementById(id); if(el) el.value = '';
+    });
+    document.getElementById('wm-buy-date').value = new Date().toISOString().split('T')[0];
+    ['wm-arrived','wm-posted','wm-sold','wm-shipped','wm-paid-m','wm-wt'].forEach(id => {
+        const el = document.getElementById(id); if(el) el.checked = false;
+    });
+    document.getElementById('wm-status').style.display = 'none';
+    document.getElementById('watch-modal').style.display = 'flex';
+}
+
+function editWatch(row) {
+    const w = invMgmtData.find(r => r.row === row);
+    if (!w) return;
+    document.getElementById('watch-modal-title').textContent = 'Edit Watch (Row ' + row + ')';
+    document.getElementById('wm-row').value = row;
+    document.getElementById('wm-desc').value = w.description || '';
+    document.getElementById('wm-from').value = w.bought_from || '';
+    document.getElementById('wm-cost').value = parseFloat(String(w.cost_price||'0').replace(/[$,]/g,'')) || '';
+    document.getElementById('wm-to').value = w.sold_to || '';
+    document.getElementById('wm-sold-price').value = parseFloat(String(w.sold_price||'0').replace(/[$,]/g,'')) || '';
+    document.getElementById('wm-sale-price').value = parseFloat(String(w.sale_price||'0').replace(/[$,]/g,'')) || '';
+    document.getElementById('wm-serial').value = w.serial || '';
+    document.getElementById('wm-card-date').value = w.date_on_card || '';
+    document.getElementById('wm-buy-date').value = w.bought_date || '';
+    document.getElementById('wm-arrived').checked = w.arrived === 'Yes';
+    document.getElementById('wm-posted').checked = w.posted === 'Yes';
+    document.getElementById('wm-sold').checked = w.sold === 'Yes';
+    document.getElementById('wm-shipped').checked = w.shipped === 'Yes';
+    document.getElementById('wm-paid-m').checked = w.paid_after_sold === 'Yes';
+    document.getElementById('wm-wt').checked = w.wt === 'Yes';
+    document.getElementById('wm-status').style.display = 'none';
+    document.getElementById('watch-modal').style.display = 'flex';
+}
+
+function closeWatchModal() {
+    document.getElementById('watch-modal').style.display = 'none';
+}
+
+async function submitWatchForm() {
+    const row = document.getElementById('wm-row').value;
+    const status = document.getElementById('wm-status');
+    const btn = document.getElementById('wm-submit');
+    btn.disabled = true; btn.textContent = 'Saving...';
+    status.style.display = 'block'; status.style.background = 'var(--bg-3)'; status.style.color = 'var(--text-1)';
+    status.textContent = 'Saving to Bot Sheet...';
+    
+    const yn = id => document.getElementById(id)?.checked ? 'Yes' : 'No';
+    
+    if (row) {
+        // Update existing
+        const data = {
+            description: document.getElementById('wm-desc').value,
+            bought_from: document.getElementById('wm-from').value,
+            cost_price: document.getElementById('wm-cost').value,
+            sold_to: document.getElementById('wm-to').value,
+            sold_price: document.getElementById('wm-sold-price').value,
+            sale_price: document.getElementById('wm-sale-price').value,
+            serial: document.getElementById('wm-serial').value,
+            date_on_card: document.getElementById('wm-card-date').value,
+            bought_date: document.getElementById('wm-buy-date').value,
+            arrived: yn('wm-arrived'), posted: yn('wm-posted'), sold: yn('wm-sold'),
+            shipped: yn('wm-shipped'), paid_after_sold: yn('wm-paid-m'), wt: yn('wm-wt'),
+            at_store: 'No',
+        };
+        try {
+            const r = await fetch(`/api/inventory/${row}/update`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+            const d = await r.json();
+            if (d.ok) { status.style.background='rgba(48,209,88,0.15)'; status.style.color='var(--green)'; status.textContent='Updated!'; setTimeout(()=>{closeWatchModal();loadInventoryPage();},800); }
+            else { status.style.background='rgba(255,59,48,0.15)'; status.style.color='var(--red)'; status.textContent='Error: '+(d.error||'Unknown'); }
+        } catch(e) { status.style.color='var(--red)'; status.textContent='Error: '+e.message; }
+    } else {
+        // Add new
+        const data = {
+            description: document.getElementById('wm-desc').value,
+            bought_from: document.getElementById('wm-from').value,
+            cost_price: document.getElementById('wm-cost').value,
+            bought_date: document.getElementById('wm-buy-date').value,
+            serial: document.getElementById('wm-serial').value,
+            date_on_card: document.getElementById('wm-card-date').value,
+            sale_price: document.getElementById('wm-sale-price').value,
+            wt: yn('wm-wt'),
+        };
+        if (!data.description) { status.style.color='var(--red)'; status.textContent='Description required'; btn.disabled=false; btn.textContent='Save'; return; }
+        try {
+            const r = await fetch('/api/inventory/add', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+            const d = await r.json();
+            if (d.ok) { status.style.background='rgba(48,209,88,0.15)'; status.style.color='var(--green)'; status.textContent='Added!'; setTimeout(()=>{closeWatchModal();loadInventoryPage();},800); }
+            else { status.style.background='rgba(255,59,48,0.15)'; status.style.color='var(--red)'; status.textContent='Error: '+(d.error||'Unknown'); }
+        } catch(e) { status.style.color='var(--red)'; status.textContent='Error: '+e.message; }
+    }
+    btn.disabled = false; btn.textContent = 'Save';
+}
 
 // ── SHIPPING ──
 let shipConfigLoaded = false;
