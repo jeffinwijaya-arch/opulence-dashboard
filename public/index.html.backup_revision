@@ -314,6 +314,15 @@
             </div>
             <div class="metrics" id="metrics-grid"></div>
 
+            <!-- Daily Devotion -->
+            <div class="card" id="devotion-card" style="margin-bottom:8px;text-align:center;background:linear-gradient(135deg,var(--card) 0%,rgba(212,175,55,0.05) 100%);border:1px solid rgba(212,175,55,0.15);">
+                <div class="card-head"><span>Hourly Devotion</span><span id="devotion-time" style="font-size:0.6rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;"></span></div>
+                <div class="card-body" style="padding:16px 20px;">
+                    <div id="devotion-verse" style="font-size:1rem;line-height:1.6;color:var(--text-1);font-style:italic;"></div>
+                    <div id="devotion-ref" style="margin-top:8px;font-size:0.75rem;color:var(--gold);font-weight:600;letter-spacing:0.5px;"></div>
+                </div>
+            </div>
+
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                 <div class="card">
                     <div class="card-head"><span>Top Deals</span><a class="link" onclick="showPage('deals')">View all</a></div>
@@ -325,17 +334,9 @@
                 </div>
             </div>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
-                <div class="card">
-                    <div class="card-head"><span>Portfolio Snapshot</span><a class="link" onclick="showPage('portfolio')">Details</a></div>
-                    <div class="card-body"><div class="pf-grid" id="portfolio-snapshot"></div></div>
-                </div>
-                <div class="card">
-                    <div class="card-head"><span>Action Items</span></div>
-                    <div class="card-body" id="action-items" style="font-size:0.78rem;">
-                        <div class="dim" style="text-align:center;padding:8px;">Loading...</div>
-                    </div>
-                </div>
+            <div class="card" style="margin-top:8px;">
+                <div class="card-head"><span>Portfolio Snapshot</span><a class="link" onclick="showPage('portfolio')">Details</a></div>
+                <div class="card-body"><div class="pf-grid" id="portfolio-snapshot"></div></div>
             </div>
 
             <!-- Full Portfolio Table -->
@@ -346,19 +347,10 @@
                 </tr></thead><tbody><tr><td colspan="8" class="dim" style="text-align:center;padding:12px;">Loading...</td></tr></tbody></table></div>
             </div>
 
-            <!-- News + Devotion side by side -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
-                <div class="card">
-                    <div class="card-head"><span>Industry News</span><span style="font-size:0.65rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;" id="news-ts"></span></div>
-                    <div id="news-feed" style="max-height:320px;overflow-y:auto;padding:0 10px 10px;"></div>
-                </div>
-                <div class="card" id="devotion-card" style="text-align:center;background:linear-gradient(135deg,var(--bg-2) 0%,rgba(212,175,55,0.05) 100%);border:1px solid rgba(212,175,55,0.15);">
-                    <div class="card-head"><span>Hourly Devotion</span><span id="devotion-time" style="font-size:0.6rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;"></span></div>
-                    <div class="card-body" style="padding:24px 20px;display:flex;flex-direction:column;justify-content:center;min-height:200px;">
-                        <div id="devotion-verse" style="font-size:1rem;line-height:1.6;color:var(--text-1);font-style:italic;"></div>
-                        <div id="devotion-ref" style="margin-top:12px;font-size:0.75rem;color:var(--accent);font-weight:600;letter-spacing:0.5px;"></div>
-                    </div>
-                </div>
+            <!-- News -->
+            <div class="card" style="margin-top:8px;">
+                <div class="card-head"><span>Industry News</span><span style="font-size:0.65rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;" id="news-ts"></span></div>
+                <div id="news-feed" style="max-height:320px;overflow-y:auto;padding:0 10px 10px;"></div>
             </div>
         </div>
 
@@ -604,7 +596,6 @@ function renderDashboard() {
 
     if (DATA.portfolio) renderPortfolioSnapshot();
     loadDashInventory();
-    loadActionItems();
 }
 
 function renderPortfolioSnapshot() {
@@ -647,33 +638,6 @@ async function loadDashInventory() {
                 <td><span class="tag ${sCls}">${status}</span></td>
             </tr>`;
         }).join('') || '<tr><td colspan="8" class="dim" style="text-align:center;">No inventory</td></tr>';
-    } catch(e) { console.error(e); }
-}
-
-// ── ACTION ITEMS ──
-async function loadActionItems() {
-    try {
-        const r = await fetch('/api/inventory');
-        if (!r.ok) return;
-        const items = await r.json();
-        const el = document.getElementById('action-items');
-        if (!el) return;
-        const actions = [];
-        items.forEach(i => {
-            const s = getStatus(i);
-            if (i.sold && !i.shipped) actions.push({icon:'tag-red', text:`${i.ref} sold to ${i.sold_to||'?'} — needs shipping label`, ref:i.ref});
-            else if (i.shipped && !i.paid) actions.push({icon:'tag-gold', text:`${i.ref} shipped — awaiting payment from ${i.sold_to||'?'}`, ref:i.ref});
-            else if (i.arrived && !i.posted && !i.sold) actions.push({icon:'tag-blue', text:`${i.ref} ${i.dial||''} sitting unposted — idle capital`, ref:i.ref});
-            else if (!i.arrived && !i.sold && i.buy_date) actions.push({icon:'tag-gold', text:`${i.ref} from ${i.bought_from||'?'} — still in transit`, ref:i.ref});
-        });
-        if (!actions.length) {
-            el.innerHTML = '<div style="text-align:center;padding:12px;color:var(--green);">All clear — nothing needs attention</div>';
-            return;
-        }
-        el.innerHTML = actions.slice(0,8).map(a => `<div style="padding:5px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;">
-            <span class="tag ${a.icon}" style="min-width:16px;text-align:center;">!</span>
-            <span style="flex:1;font-family:var(--mono);font-size:0.72rem;">${a.text}</span>
-        </div>`).join('') + (actions.length > 8 ? `<div style="text-align:center;padding:6px;color:var(--text-2);font-size:0.7rem;">+${actions.length-8} more</div>` : '');
     } catch(e) { console.error(e); }
 }
 
@@ -738,7 +702,7 @@ function applyDealsFilter() {
             </div>
             <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-2);font-family:var(--mono);">
                 <span>${d.seller||'?'} (${d.seller_listings||0}) | ${d.group||''}</span>
-                <span>${fmtTs(d.ts)} | ${regionLabel(d.region)} | Conf: ${d.confidence||0}</span>
+                <span>Conf: ${d.confidence||0}</span>
             </div>
         </div>`;
     }).join('') || '<div style="text-align:center;padding:24px;color:var(--text-2);">No deals match filters.</div>';
@@ -768,8 +732,7 @@ function showDealDetail(idx) {
             const isDeal = l.price === price;
             const rowStyle = isDeal ? 'background:rgba(212,175,55,0.08);' : '';
             const phone = l.phone ? `<a href="https://wa.me/${l.phone.replace(/[^0-9]/g,'')}" target="_blank" style="color:var(--green);text-decoration:none;font-family:var(--mono);font-size:0.7rem;">${l.phone}</a>` : '<span class="dim">—</span>';
-            const yearCell = l.year ? l.year : (l.source_text ? `<span style="cursor:pointer;color:var(--accent);font-size:0.68rem;" onclick="event.stopPropagation();const r=this.closest('tr').nextElementSibling;if(r&&r.classList.contains('src-expand')){r.style.display=r.style.display==='none'?'':'none';this.textContent=r.style.display==='none'?'src':'hide';}">src</span>` : '<span style="opacity:0.3">N/A</span>');
-            const srcExpand = (!l.year && l.source_text) ? `<tr class="src-expand" style="display:none;"><td colspan="8" style="padding:6px 12px;background:var(--bg-3);font-size:0.7rem;color:var(--text-1);white-space:pre-wrap;line-height:1.4;border-left:2px solid var(--accent);">${(l.source_text||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td></tr>` : '';
+            const yearCell = l.year ? l.year : (l.source_text ? `<span style="cursor:pointer;color:var(--accent);font-size:0.68rem;" onclick="event.stopPropagation();this.parentElement.nextElementSibling||alert(this.dataset.src)" data-src="${(l.source_text||'').replace(/"/g,'&quot;').replace(/</g,'&lt;')}">src</span>` : '<span style="opacity:0.3">N/A</span>');
             return `<tr style="${rowStyle}">
                 <td class="right" style="font-weight:600;${isDeal?'color:var(--green);':''}font-family:var(--mono);">${fmt(l.price)}${isDeal?' *':''}</td>
                 <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.seller||''}</td>
@@ -779,7 +742,7 @@ function showDealDetail(idx) {
                 <td><span class="tag ${condTag(l.condition)}">${l.condition||'—'}</span></td>
                 <td class="dim">${regionLabel(l.region)}</td>
                 <td class="dim">${fmtTs(l.ts)}</td>
-            </tr>${srcExpand}`;
+            </tr>`;
         }).join('')}</tbody></table></div>`;
     }
 
@@ -809,7 +772,7 @@ function showDealDetail(idx) {
         </div>
         <div class="card-body">
             <div class="metrics" style="margin-bottom:12px;">
-                <div class="metric"><div class="label">Deal Price</div><div class="val" style="color:var(--green)">${fmt(price)}</div><div class="sub">${d.seller||''}${d.phone?` <a href="https://wa.me/${d.phone.replace(/[^0-9]/g,'')}" target="_blank" style="color:var(--green);text-decoration:none;font-weight:600;">WhatsApp</a>`:''}</div></div>
+                <div class="metric"><div class="label">Deal Price</div><div class="val" style="color:var(--green)">${fmt(price)}</div><div class="sub">${d.seller||''} | ${d.group||''}</div></div>
                 <div class="metric"><div class="label">Avg B25</div><div class="val">${fmt(avgB25)}</div><div class="sub">${comps.length} listings, ${d.unique_sellers||0} sellers</div></div>
                 <div class="metric"><div class="label">Est Sell</div><div class="val" style="color:var(--accent)">${fmt(estSell)}</div><div class="sub">${d.traded_before?'Your avg (traded '+d.times_traded+'x)':'98% of B25'}</div></div>
                 <div class="metric"><div class="label">Net Profit</div><div class="val ${estProfit>=0?'green':'red'}">${estProfit>=0?'+':''}${fmt(estProfit)}</div><div class="sub">${estMargin}% margin</div></div>
@@ -874,7 +837,7 @@ function renderArbitrage() {
 
     $('#arb-table tbody').innerHTML = arbs.map((a,idx) => {
         const conf = a.arb_confidence||50;
-        const dots = [1,2,3,4,5].map(n=>{const thresh=[30,45,60,75,90]; return `<div class="d ${conf>=thresh[n-1]?'on':conf>=thresh[n-1]-10?'med':''}"></div>`;}).join('');
+        const dots = [1,2,3,4,5].map(n=>`<div class="d ${conf>=n*20?'on':conf>=n*15?'med':''}"></div>`).join('');
         const margin = a.realistic_pct||a.profit_pct||0;
         const buyP = a.buy_price || (a.direction==='us_to_hk' ? a.us_price : a.hk_price) || 0;
         const sellP = a.sell_price || (a.direction==='us_to_hk' ? a.hk_price : a.us_price) || 0;
@@ -1089,7 +1052,7 @@ async function doLookup() {
                 ${signalHtml}
                 ${relatedHtml}
             </div></div>
-            <div class="card" style="margin-top:8px;" id="lookup-chart-card"><div class="card-head"><span>Price History (14d)</span></div><div class="card-body" style="padding:8px;"><canvas id="lookup-chart"></canvas><div id="lookup-chart-empty" class="dim" style="text-align:center;padding:12px;display:none;">No history available</div></div></div>
+            <div class="card" style="margin-top:8px;"><div class="card-head"><span>Price History (14d)</span></div><div class="card-body" style="padding:8px;"><canvas id="lookup-chart"></canvas><div id="lookup-chart-empty" class="dim" style="text-align:center;padding:12px;display:none;">No history available</div></div></div>
             <div class="card" style="margin-top:8px;"><div class="card-head"><span>Cheapest Listings</span></div><div class="card-body">${cheapest||'<div style="color:var(--text-2)">No listings</div>'}</div></div>
         </div>`;
         // Load price history chart
@@ -1101,8 +1064,8 @@ async function doLookup() {
                     const chartData = hist.map(h => ({value: h.b25, label: h.d?.slice(5)}));
                     setTimeout(() => renderChart('lookup-chart', chartData), 50);
                 } else {
-                    const chartCard = document.getElementById('lookup-chart-card');
-                    if (chartCard) chartCard.style.display = 'none';
+                    const empty = document.getElementById('lookup-chart-empty');
+                    if (empty) empty.style.display = 'block';
                 }
             }
         } catch(e2) {}
@@ -1623,11 +1586,7 @@ async function loadNews() {
 function renderNews() {
     const feed = $('#news-feed');
     if (!feed || !DATA.news) return;
-    // Prioritize Rolex/AP/Patek articles, then general watch news
-    const watchTerms = ['rolex','patek','audemars','ap ','submariner','daytona','gmt','datejust','day-date','nautilus','royal oak','market','price','auction','invest'];
-    const scored = DATA.news.map(a => ({...a, _score: watchTerms.filter(t => (a.title||'').toLowerCase().includes(t)).length}));
-    scored.sort((a,b) => b._score - a._score || new Date(b.date) - new Date(a.date));
-    const articles = scored.slice(0, 10);
+    const articles = DATA.news.slice(0, 12);
     feed.innerHTML = articles.map(a => {
         const d = new Date(a.date);
         const ago = timeAgo(d);
@@ -1881,7 +1840,7 @@ const VERSES=[
 {v:"But those who hope in the LORD will renew their strength. They will soar on wings like eagles; they will run and not grow weary, they will walk and not be faint.",r:"Isaiah 40:31"},
 {v:"The name of the LORD is a fortified tower; the righteous run to it and are safe.",r:"Proverbs 18:10"},
 {v:"Delight yourself in the LORD, and he will give you the desires of your heart.",r:"Psalm 37:4"},
-{v:"The LORD himself goes before you and will be with you; he will never leave you nor forsake you. Do not be afraid; do not be discouraged.",r:"Deuteronomy 31:8"},
+{v:"Have I not commanded you? Be strong and courageous. Do not be afraid; do not be discouraged, for the LORD your God will be with you wherever you go.",r:"Joshua 1:9"},
 {v:"Cast all your anxiety on him because he cares for you.",r:"1 Peter 5:7"},
 {v:"The LORD bless you and keep you; the LORD make his face shine on you and be gracious to you.",r:"Numbers 6:24-25"},
 {v:"No weapon forged against you will prevail, and you will refute every tongue that accuses you.",r:"Isaiah 54:17"},
