@@ -548,6 +548,7 @@ function renderDashboard() {
         <div class="metric"><div class="label">References</div><div class="val">${s.unique_refs||Object.keys(DATA.refs).length||'—'}</div><div class="sub">${Object.entries(s.regions||{}).map(([k,v])=>k+':'+v).join(' · ')||'—'}</div></div>
         <div class="metric"><div class="label">Deals</div><div class="val" style="color:var(--green)">${nDeals}</div><div class="sub">below market</div></div>
         <div class="metric"><div class="label">Arb Potential</div><div class="val" style="color:var(--accent)">${fmt(totalProfit)}</div><div class="sub">${nArb} opportunities</div></div>
+        <div class="metric"><div class="label">HKD/USD Rate</div><div class="val" style="font-size:1.2rem;" id="fx-rate-val">—</div><div class="sub" id="fx-rate-age">—</div></div>
     `;
 
     const tierMark = {A:'\u25CF',B:'\u25CB',C:'\u25CB'};
@@ -571,6 +572,21 @@ function renderDashboard() {
             <td class="dim" style="font-size:0.65rem;">${dir}</td>
         </tr>`;
     }).join('');
+
+    // FX rate display
+    const si = DATA.syncInfo || {};
+    const fxEl = document.getElementById('fx-rate-val');
+    const fxAge = document.getElementById('fx-rate-age');
+    if (fxEl && si.fx_hkd_per_usd) {
+        fxEl.textContent = si.fx_hkd_per_usd.toFixed(2);
+        const ageLabel = si.fx_age_hrs != null ? (si.fx_age_hrs < 1 ? 'Live' : Math.round(si.fx_age_hrs) + 'h old') : '';
+        const stale = si.fx_age_hrs > 12;
+        if (fxAge) {
+            fxAge.textContent = ageLabel;
+            if (stale) fxAge.style.color = 'var(--red)';
+        }
+        if (stale) fxEl.style.color = 'var(--red)';
+    }
 
     if (DATA.portfolio) renderPortfolioSnapshot();
     loadDashInventory();
