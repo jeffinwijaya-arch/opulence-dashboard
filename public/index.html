@@ -40,14 +40,58 @@
             --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             --mono: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
         }
+        /* ── LIGHT THEME ── */
+        html.light {
+            --bg-0: #f5f4f0;
+            --bg-1: #edecea;
+            --bg-2: #e4e3df;
+            --bg-3: #dddcd8;
+            --bg-4: #d3d2ce;
+            --bg-hover: rgba(160,130,40,0.06);
+            --text-0: #1a1a1a;
+            --text-1: #4a4a48;
+            --text-2: #8a8a86;
+            --text-3: #b0b0aa;
+            --accent: #a07820;
+            --accent-light: #c49a2a;
+            --accent-dim: rgba(160,120,32,0.08);
+            --accent-border: rgba(160,120,32,0.22);
+            --accent-glow: rgba(160,120,32,0.12);
+            --green: #0d8a40;
+            --green-dim: rgba(13,138,64,0.08);
+            --red: #d42020;
+            --red-dim: rgba(212,32,32,0.08);
+            --blue: #2563eb;
+            --blue-dim: rgba(37,99,235,0.08);
+            --orange: #c2650a;
+            --border: rgba(0,0,0,0.06);
+            --border-strong: rgba(0,0,0,0.10);
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
+        }
         * { margin:0; padding:0; box-sizing:border-box; }
         html { font-size:13px; scroll-behavior:smooth; -webkit-font-smoothing:antialiased; }
         body {
             background:var(--bg-0); color:var(--text-0); font-family:var(--font); min-height:100vh;
             background-image: radial-gradient(rgba(255,255,255,0.015) 1px, transparent 1px);
             background-size: 4px 4px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        html.light body {
+            background-image: radial-gradient(rgba(0,0,0,0.02) 1px, transparent 1px);
         }
         ::selection { background:rgba(212,175,55,0.2); }
+        html.light ::selection { background:rgba(160,120,32,0.2); }
+
+        /* ── THEME TOGGLE ── */
+        .theme-toggle {
+            background:var(--bg-3); border:1px solid var(--border); border-radius:var(--radius);
+            width:36px; height:36px; display:flex; align-items:center; justify-content:center;
+            cursor:pointer; font-size:1rem; transition:all 0.2s ease; margin-left:12px;
+            flex-shrink:0;
+        }
+        .theme-toggle:hover { border-color:var(--accent); background:var(--bg-4); }
 
         /* ── LAYOUT ── */
         .app { display:flex; flex-direction:column; min-height:100vh; }
@@ -65,6 +109,7 @@
             color:var(--accent); cursor:pointer; text-decoration:none; white-space:nowrap;
             margin-right:28px; text-shadow:0 0 12px rgba(212,175,55,0.4), 0 0 30px rgba(212,175,55,0.15), 0 0 60px rgba(212,175,55,0.08);
         }
+        html.light .logo { text-shadow:none; }
         .logo span { color:var(--text-0); font-weight:300; letter-spacing:1px; }
         .top-search {
             background:var(--bg-3); border:1px solid var(--border); border-radius:var(--radius);
@@ -454,6 +499,34 @@
             border-radius:50%; animation:spin 0.6s linear infinite; display:inline-block; margin-bottom:8px;
         }
         @keyframes spin { to { transform:rotate(360deg); } }
+
+        /* ── LIGHT MODE OVERRIDES ── */
+        html.light .top-bar {
+            background:linear-gradient(180deg, var(--bg-1) 0%, rgba(237,236,234,0.97) 100%);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        html.light .nav a:hover { background:rgba(0,0,0,0.03); }
+        html.light .nav a.active::after { box-shadow:0 0 6px rgba(160,120,32,0.3); }
+        html.light .card {
+            box-shadow:var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.5);
+        }
+        html.light .card:hover {
+            box-shadow:var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.5);
+        }
+        html.light .tbl tr:nth-child(even) td { background:rgba(0,0,0,0.02); }
+        html.light .tbl tr:hover td { background:rgba(0,0,0,0.04) !important; }
+        html.light .tab:hover { background:rgba(0,0,0,0.03); }
+        html.light .widget-titlebar .wt-btn:hover { background:rgba(0,0,0,0.06); }
+        html.light ::-webkit-scrollbar-thumb { background:rgba(0,0,0,0.1); }
+        html.light ::-webkit-scrollbar-thumb:hover { background:rgba(0,0,0,0.2); }
+        html.light * { scrollbar-color:rgba(0,0,0,0.1) transparent; }
+        html.light .metric { border-color: var(--border); }
+        html.light .ticker-bar { background:var(--bg-1); }
+        html.light .btn { color:var(--text-0); }
+        html.light input, html.light select, html.light textarea {
+            background:var(--bg-2); color:var(--text-0); border-color:var(--border-strong);
+        }
+        html.light .footer { background:var(--bg-1); }
     </style>
 </head>
 <body>
@@ -478,6 +551,7 @@
             <a data-page="alerts" onclick="showPage('alerts')">Alerts <span class="badge" id="alerts-count">0</span></a>
             <a data-page="analytics" onclick="showPage('analytics')">Analytics</a>
         </nav>
+        <div class="theme-toggle" onclick="toggleTheme()" id="themeToggle" title="Toggle light/dark mode">🌙</div>
     </header>
 
     <!-- TICKER -->
@@ -1213,6 +1287,27 @@
 </div>
 
 <script>
+// ── Theme Toggle ──
+function toggleTheme() {
+    const html = document.documentElement;
+    const isLight = html.classList.toggle('light');
+    localStorage.setItem('mk-theme', isLight ? 'light' : 'dark');
+    const btn = document.getElementById('themeToggle');
+    if (btn) btn.textContent = isLight ? '☀️' : '🌙';
+}
+// Apply saved theme on load
+(function() {
+    const saved = localStorage.getItem('mk-theme');
+    if (saved === 'light') {
+        document.documentElement.classList.add('light');
+    }
+    // Update button after DOM ready
+    document.addEventListener('DOMContentLoaded', function() {
+        const btn = document.getElementById('themeToggle');
+        if (btn) btn.textContent = document.documentElement.classList.contains('light') ? '☀️' : '🌙';
+    });
+})();
+
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 const fmt = n => n == null || isNaN(n) ? '—' : '$' + Math.round(n).toLocaleString('en-US');

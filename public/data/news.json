@@ -1,6 +1,26 @@
 {
   "articles": [
     {
+      "id": "79e47f630bf2",
+      "title": "Introducing \u2013 A Ruby Stone Dial for the Armin Strom Mirrored Force Resonance",
+      "link": "https://monochrome-watches.com/armin-strom-mirrored-force-resonance-ruby-stone-dial-introducing-price/",
+      "desc": "In 2016, Armin Strom rocked the watchmaking scene with the release of its Mirrored Force Resonance, an incredible technical breakthrough that miniaturised the centuries-old concept of synchronised mot",
+      "date": "2026-03-02T16:01:14+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/02/Armin-Strom-Mirrored-Force-Resonance-Ruby-8-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "b487e9404136",
+      "title": "One To Watch: The Ardra Labs Delta Type Offers A Unique GMT Display For All Time Zones",
+      "link": "https://www.hodinkee.com/articles/the-ardra-labs-delta-type-offers-a-unique-gmt-display-for-all-time-zones",
+      "desc": "A distinctive travel watch featuring a clever new system that accommodates both thirty-minute and forty-five-minute offset time zones.",
+      "date": "2026-03-02T11:01:00-05:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/967eda00-bf1f-4f34-a0db-4d4fe302438d/tan2h-ardralabs-gmt-complete-07602-header.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "relevance": 0
+    },
+    {
       "id": "002c73696abb",
       "title": "Introducing \u2013 The New H. Moser & Cie. Streamliner Alpine Drivers Pink Edition is Performance, Exposed",
       "link": "https://monochrome-watches.com/moser-streamliner-alpine-drivers-and-mechanics-pink-edition-2026-btw-alpine-f1-team-watch-introducing-price/",
@@ -18,6 +38,16 @@
       "date": "2026-03-02T10:00:05+00:00",
       "source": "FRATELLO",
       "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "77e122e3831b",
+      "title": "Introducing: The Benrus Sky Chief Returns In Awesome Vintage Style",
+      "link": "https://www.hodinkee.com/articles/intro-benrus-sky-chief",
+      "desc": "Vintage sizing, a slim profile, and all the good looks that made the vintage Sky Chief a vintage Hodinkee favorite, now back in action.",
+      "date": "2026-03-02T09:00:00-05:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/7925b7d1-85a6-44b6-add3-e55a1e46f3d1/Hero_BenrusSkyChief.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
       "relevance": 0
     },
     {
@@ -241,16 +271,6 @@
       "relevance": 10
     },
     {
-      "id": "d7c055aea30a",
-      "title": "First Look \u2013 The IWC Portugieser Chronograph Ceratanium, the Icon in Dark Mode",
-      "link": "https://monochrome-watches.com/iwc-portugieser-chronograph-ceratanium-all-black-iw371631-limited-edition-price-review/",
-      "desc": "Since its introduction in 1998, the classic IWC Portugieser Chronograph (ref. IW3914) has barely evolved visually. It has only undergone a technical upgrade in 2020, with the introduction of a new gen",
-      "date": "2026-02-26T12:01:15+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/02/2026-IWC-Portugieser-Chronograph-Ceratanium-Limited-Edition-IW371631-review-4-600x237.jpg",
-      "relevance": 10
-    },
-    {
       "id": "b58a3dfb497b",
       "title": "The IWC Portugieser Chronograph Ceratanium emerges from the shadows",
       "link": "https://revolutionwatch.com/the-iwc-portugieser-chronograph-ceratanium-emerges-from-the-shadows/",
@@ -321,16 +341,6 @@
       "relevance": 0
     },
     {
-      "id": "c536077b5847",
-      "title": "Business News: Rolex And Cartier Are In Another League \u2013 A Deep Dive On The Pains And Gains In Morgan Stanley's \"Swiss Watcher\" Report",
-      "link": "https://www.hodinkee.com/articles/with-rolex-and-cartier-in-another-league-a-deep-dive-on-whos-making-gains-and-whos-feeling-pain-in-t",
-      "desc": "The full key takeaways, including exclusive charts, from an analysis of the annual Morgan Stanley and LuxeConsult Swiss Watcher report.",
-      "date": "2026-02-25T09:00:00-05:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/a3a28dc2-3c2e-4f4b-a1a5-a50471707e8f/morgan-stanleyreporthero.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 10
-    },
-    {
       "id": "c1c69c68c544",
       "title": "A Closer Look: H. Moser & Cie. Streamliner Perpetual Moon Concept Meteorite",
       "link": "https://revolutionwatch.com/a-closer-look-h-moser-cie-streamliner-perpetual-moon-concept-meteorite/",
@@ -339,16 +349,6 @@
       "source": "REVOLUTION",
       "image": "",
       "relevance": 10
-    },
-    {
-      "id": "aae014e3a3c4",
-      "title": "Hands-On: The G-SHOCK Nano DWN5600 Ring Watch",
-      "link": "https://www.hodinkee.com/articles/the-g-shock-nano-dwn5600-ring-watch",
-      "desc": "36mm dress watches be damned, a 23mm G-SHOCK is where it's at.",
-      "date": "2026-02-24T13:00:00-05:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/e086b7f3-91e8-4dda-b7da-ef7b6e6cc434/tan2h-g-shock-dwn5600-9-07538-header.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
     },
     {
       "id": "990295ccc9da",
@@ -361,7 +361,7 @@
       "relevance": 0
     }
   ],
-  "fetched_at": "2026-03-02T12:33:12.839155+00:00",
+  "fetched_at": "2026-03-02T16:33:13.346602+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
