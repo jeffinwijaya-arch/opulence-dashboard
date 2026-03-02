@@ -37,12 +37,20 @@ def load_listings():
         listings = json.load(f)
     
     # Merge wholesale offers with enrichment
-    if WHOLESALE_FILE.exists():
+    # NOTE: Wholesale merge disabled — wholesale index (rolex_wholesale.json) is derived
+    # from rolex_listings.json and may have stale/wrong prices. All data comes from
+    # rolex_listings.json which has the authoritative currency-corrected prices.
+    if False and WHOLESALE_FILE.exists():
         with open(WHOLESALE_FILE) as f:
             wholesale = json.load(f)
         for ref, data in wholesale.items():
             if not isinstance(data, dict) or "offers" not in data:
                 continue
+            # Skip refs with no valid price data
+            valid_offers = [o for o in data["offers"] if o.get("price_usd") or o.get("pusd") or o.get("price")]
+            if not valid_offers:
+                continue
+            data["offers"] = valid_offers
             model = data.get("model", "")
             brand = data.get("brand", "Rolex")
             for offer in data["offers"]:
@@ -84,21 +92,23 @@ def load_listings():
                             if not dial or len(extracted_dial) > len(dial):
                                 dial = extracted_dial
                 
-                listings.append({
-                    "ref": ref,
-                    "model": model,
-                    "brand": brand,
-                    "price_usd": offer.get("price_usd", 0),
-                    "dial": dial,
-                    "bracelet": offer.get("bracelet", ""),
-                    "condition": condition,
-                    "completeness": completeness,
-                    "region": offer.get("region", ""),
-                    "seller": offer.get("seller", ""),
-                    "group": offer.get("group", ""),
-                    "year": offer.get("year", ""),
-                    "source": "wholesale",
-                })
+                pusd = offer.get("price_usd") or offer.get("pusd") or offer.get("price") or 0
+                if pusd and pusd >= 2500:  # Skip entries with no/impossible price
+                    listings.append({
+                        "ref": ref,
+                        "model": model,
+                        "brand": brand,
+                        "price_usd": pusd,
+                        "dial": dial,
+                        "bracelet": offer.get("bracelet", ""),
+                        "condition": condition,
+                        "completeness": completeness,
+                        "region": offer.get("region", ""),
+                        "seller": offer.get("seller", ""),
+                        "group": offer.get("group", ""),
+                        "year": offer.get("year", ""),
+                        "source": "wholesale",
+                    })
     
     return listings
 
@@ -336,7 +346,7 @@ def build_listings_index(listings):
         "model": l.get("model", ""),
         "brand": l.get("brand", "Rolex"),
         "year": l.get("year", ""),
-    } for l in listings if l.get("price_usd")]
+    } for l in listings if l.get("price_usd") and l.get("price_usd") >= 3000]
 
 def export_all():
     print("📊 Loading listings...")
