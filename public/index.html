@@ -1770,7 +1770,10 @@ async function loadPostingPhotoPreviews(row) {
         const preview = document.getElementById('posting-photo-preview');
         if (!preview || !data.photos?.length) return;
         preview.innerHTML = data.photos.map(p =>
-            `<img src="/api/watch-photos/${row}/images/${p.filename}" style="width:70px;height:70px;object-fit:cover;border-radius:4px;border:1px solid var(--border);" />`
+            `<div style="position:relative;display:inline-block;">
+                <img src="/api/watch-photos/${row}/images/${p.filename}" style="width:70px;height:70px;object-fit:cover;border-radius:4px;border:1px solid var(--border);" />
+                <button onclick="deletePostingPhoto(${row},'${p.filename}')" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;border:none;font-size:0.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">x</button>
+            </div>`
         ).join('');
     } catch(e) { console.error(e); }
 }
@@ -1808,10 +1811,19 @@ async function uploadPostingPhotos(row, desc, files) {
             }
         } catch(e) { console.error(e); }
     }
-    // Remove "Uploading..." text
-    preview.querySelectorAll('div').forEach(d => d.remove());
-    // Update the photo count for submit
-    window._postingPhotoCount = (window._postingPhotoCount || 0) + files.length;
+    // Reload previews to get proper delete buttons
+    await loadPostingPhotoPreviews(row);
+}
+
+async function deletePostingPhoto(row, filename) {
+    try {
+        const r = await fetch(`/api/watch-photos/${row}/images/${filename}`, { method: 'DELETE' });
+        if (r.ok) {
+            await loadPostingPhotoPreviews(row);
+        } else {
+            alert('Failed to delete photo');
+        }
+    } catch(e) { console.error(e); }
 }
 
 async function submitPosting(row) {
