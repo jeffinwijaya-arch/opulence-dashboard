@@ -1558,7 +1558,7 @@ async function loadDashInventory() {
 // ── ACTION ITEMS ──
 async function loadActionItems() {
     try {
-        const r = await fetch('/api/inventory');
+        const r = await fetch('/api/inventory/all');
         if (!r.ok) return;
         const items = await r.json();
         const el = document.getElementById('action-items');
@@ -1606,7 +1606,7 @@ async function handleActionItem(idx) {
 // ── READY TO POST ──
 async function loadReadyToPost() {
     try {
-        const r = await fetch('/api/inventory');
+        const r = await fetch('/api/inventory/all');
         if (!r.ok) return;
         const items = await r.json();
         const unposted = items.filter(i => i.arrived && !i.posted && !i.sold);
