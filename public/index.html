@@ -604,6 +604,7 @@
             </div>
             <input class="input" id="ref-search" placeholder="e.g. 126500, daytona panda, black sub, gmt pepsi jubilee..." oninput="debounceSearch()" style="max-width:480px;">
             <div id="lookup-result" style="margin-top:12px;"></div>
+            <div id="lookup-market-summary" style="margin-top:24px;"></div>
         </div>
 
         <!-- ═══ PORTFOLIO ═══ -->
@@ -2736,16 +2737,21 @@ async function initLookupPage() {
     if (!resultDiv) return;
 
     const popularRefs = [
-        {ref:'126500', model:'Daytona', family:'Cosmograph'},
+        {ref:'126500', model:'Daytona Steel', family:'Cosmograph'},
         {ref:'126610LN', model:'Submariner Date', family:'Diver'},
-        {ref:'126710BLNR', model:'GMT-Master II', family:'Travel'},
+        {ref:'126710BLNR', model:'GMT Batman', family:'GMT'},
         {ref:'126334', model:'Datejust 41', family:'Classic'},
-        {ref:'228235', model:'Day-Date 40', family:'President'},
-        {ref:'5711/1A', model:'Nautilus', family:'Patek'},
-        {ref:'15500ST', model:'Royal Oak', family:'AP'},
-        {ref:'126610LV', model:'Submariner Starbucks', family:'Diver'},
-        {ref:'126710BLRO', model:'GMT Pepsi', family:'Travel'},
-        {ref:'124300', model:'Oyster Perpetual 41', family:'Entry'},
+        {ref:'228235', model:'Day-Date 40 RG', family:'President'},
+        {ref:'126710BLRO', model:'GMT Pepsi', family:'GMT'},
+        {ref:'336934', model:'Sky-Dweller', family:'Complication'},
+        {ref:'126610LV', model:'Sub Starbucks', family:'Diver'},
+        {ref:'124300', model:'OP 41', family:'Entry'},
+        {ref:'126518LN', model:'Daytona YG Strap', family:'Cosmograph'},
+        {ref:'5711/1A', model:'Nautilus Steel', family:'Patek'},
+        {ref:'5167A', model:'Aquanaut', family:'Patek'},
+        {ref:'15500ST', model:'Royal Oak 41', family:'AP'},
+        {ref:'26240ST', model:'Royal Oak Chrono', family:'AP'},
+        {ref:'126508', model:'Daytona YG', family:'Cosmograph'},
     ];
 
     // Try to get prices from topRefs data or spark data
@@ -2792,6 +2798,36 @@ async function initLookupPage() {
     html += '</div></div>';
     resultDiv.innerHTML = html;
     _lookupInitialized = true;
+
+    // Render market summary table below the grid
+    const sumDiv = document.getElementById('lookup-market-summary');
+    if (sumDiv && DATA.refs) {
+        const refs = Object.entries(DATA.refs)
+            .filter(([r,v]) => v && (v.count||0) >= 5)
+            .map(([r,v]) => ({ref:r, ...v}))
+            .sort((a,b) => (b.count||0) - (a.count||0))
+            .slice(0, 50);
+        if (refs.length) {
+            let thtml = '<div class="card"><div class="card-head"><span>Market Snapshot — Top 50 References by Volume</span></div><div class="tbl-wrap" style="max-height:500px;overflow-y:auto;"><table class="tbl"><thead><tr>';
+            thtml += '<th>Ref</th><th>Model</th><th style="text-align:right">Low</th><th style="text-align:right">Median</th><th style="text-align:right">High</th><th style="text-align:right">Spread</th><th style="text-align:right">Listings</th>';
+            thtml += '</tr></thead><tbody>';
+            for (const r of refs) {
+                const low = r.low || 0, med = r.median || r.b25 || 0, high = r.high || 0;
+                const spread = med > 0 ? (((high - low) / med) * 100).toFixed(1) : '0.0';
+                const model = r.model || '';
+                thtml += `<tr onclick="$('#ref-search').value='${r.ref}';doLookup();" style="cursor:pointer;">`;
+                thtml += `<td class="ref">${r.ref}</td><td>${model}</td>`;
+                thtml += `<td class="right" style="font-family:var(--mono);">$${Math.round(low).toLocaleString()}</td>`;
+                thtml += `<td class="right" style="font-family:var(--mono);font-weight:600;">$${Math.round(med).toLocaleString()}</td>`;
+                thtml += `<td class="right" style="font-family:var(--mono);">$${Math.round(high).toLocaleString()}</td>`;
+                thtml += `<td class="right" style="font-family:var(--mono);color:var(--text-2);">${spread}%</td>`;
+                thtml += `<td class="right" style="font-family:var(--mono);">${r.count || 0}</td>`;
+                thtml += '</tr>';
+            }
+            thtml += '</tbody></table></div></div>';
+            sumDiv.innerHTML = thtml;
+        }
+    }
 
     // Draw sparklines — try immediately + retry after spark data loads
     function drawPopularSparklines() {
