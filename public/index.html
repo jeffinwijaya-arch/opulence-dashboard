@@ -1816,14 +1816,17 @@ async function uploadPostingPhotos(row, desc, files) {
 }
 
 async function deletePostingPhoto(row, filename) {
+    if (!confirm('Remove this photo?')) return;
     try {
-        const r = await fetch(`/api/watch-photos/${row}/images/${filename}`, { method: 'DELETE' });
+        const r = await fetch(`/api/watch-photos/${row}/images/${encodeURIComponent(filename)}`, { method: 'DELETE', credentials: 'same-origin' });
         if (r.ok) {
             await loadPostingPhotoPreviews(row);
         } else {
-            alert('Failed to delete photo');
+            const err = await r.text();
+            console.error('Delete failed:', r.status, err);
+            alert('Failed to delete photo: ' + r.status);
         }
-    } catch(e) { console.error(e); }
+    } catch(e) { console.error(e); alert('Delete error: ' + e.message); }
 }
 
 async function submitPosting(row) {
