@@ -1698,14 +1698,37 @@ function openPostingModal(item, photoCount) {
     // Show modal
     const overlay = document.createElement('div');
     overlay.id = 'posting-modal';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;';
     overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
 
-    overlay.innerHTML = `<div style="background:var(--bg-1);border:1px solid var(--border-strong);border-radius:var(--radius-lg);max-width:500px;width:90%;padding:20px;font-family:var(--font);">
+    const photoSection = photoCount > 0
+        ? `<div style="margin-bottom:10px;">
+            <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Arrival Photos</label>
+            <div id="posting-photo-preview" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;min-height:60px;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);padding:8px;">
+                <div style="color:var(--text-2);font-size:0.7rem;">Loading ${photoCount} photo${photoCount>1?'s':''}...</div>
+            </div>
+            <div style="margin-top:6px;display:flex;align-items:center;gap:8px;">
+                <label style="font-size:0.68rem;color:var(--green);cursor:pointer;border:1px dashed var(--green);border-radius:var(--radius);padding:4px 10px;" for="posting-upload-extra">+ Add more photos</label>
+                <input type="file" id="posting-upload-extra" accept="image/*" multiple style="display:none" onchange="handlePostingUpload(${item.row}, '${item.description?.replace(/'/g,"\\'")||''}')"/>
+            </div>
+        </div>`
+        : `<div style="margin-bottom:10px;">
+            <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Photos</label>
+            <div id="posting-photo-preview" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;min-height:80px;background:var(--bg-2);border:2px dashed var(--accent-border);border-radius:var(--radius);padding:12px;align-items:center;justify-content:center;cursor:pointer;" onclick="document.getElementById('posting-upload').click()">
+                <div style="text-align:center;">
+                    <div style="color:var(--accent);font-size:0.8rem;font-weight:600;">Upload Photos</div>
+                    <div style="color:var(--text-2);font-size:0.68rem;margin-top:4px;">Click or drag photos here</div>
+                </div>
+            </div>
+            <input type="file" id="posting-upload" accept="image/*" multiple style="display:none" onchange="handlePostingUpload(${item.row}, '${item.description?.replace(/'/g,"\\'")||''}')"/>
+        </div>`;
+
+    overlay.innerHTML = `<div style="background:var(--bg-1);border:1px solid var(--border-strong);border-radius:var(--radius-lg);max-width:520px;width:90%;padding:20px;font-family:var(--font);">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
             <span style="font-size:0.9rem;font-weight:600;color:var(--text-0);">Post to My Postings</span>
             <button onclick="document.getElementById('posting-modal').remove()" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:1.1rem;">x</button>
         </div>
+        ${photoSection}
         <div style="margin-bottom:10px;">
             <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Caption</label>
             <textarea id="posting-caption" rows="3" style="width:100%;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);color:var(--text-0);padding:8px;font-family:var(--mono);font-size:0.75rem;resize:vertical;margin-top:4px;">${postingText}</textarea>
@@ -1714,38 +1737,110 @@ function openPostingModal(item, photoCount) {
             <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Asking Price</label>
             <input id="posting-price" type="text" placeholder="e.g. 15000" style="width:100%;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);color:var(--text-0);padding:8px;font-family:var(--mono);font-size:0.82rem;margin-top:4px;" />
         </div>
-        <div style="margin-bottom:14px;font-size:0.72rem;color:${photoCount > 0 ? 'var(--green)' : 'var(--red)'};">
-            ${photoCount > 0 ? photoCount + ' arrival photo' + (photoCount>1?'s':'') + ' ready to attach' : 'No photos saved — will post caption only'}
-        </div>
         <div style="display:flex;gap:8px;justify-content:flex-end;">
             <button class="btn" onclick="document.getElementById('posting-modal').remove()" style="font-size:0.75rem;padding:6px 14px;">Cancel</button>
-            <button class="btn" onclick="submitPosting(${item.row}, ${photoCount})" style="font-size:0.75rem;padding:6px 14px;background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);font-weight:600;">Post</button>
+            <button class="btn" id="posting-submit-btn" onclick="submitPosting(${item.row})" style="font-size:0.75rem;padding:6px 14px;background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);font-weight:600;">Post</button>
         </div>
     </div>`;
     document.body.appendChild(overlay);
+
+    // Load existing photo thumbnails
+    if (photoCount > 0) {
+        loadPostingPhotoPreviews(item.row);
+    }
+
+    // Setup drag-and-drop on the photo area
+    const dropZone = document.getElementById('posting-photo-preview');
+    if (dropZone) {
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = 'var(--accent)'; });
+        dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = photoCount > 0 ? 'var(--border-strong)' : 'var(--accent-border)'; });
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.style.borderColor = photoCount > 0 ? 'var(--border-strong)' : 'var(--accent-border)';
+            if (e.dataTransfer.files.length) uploadPostingPhotos(item.row, item.description || '', e.dataTransfer.files);
+        });
+    }
 }
 
-async function submitPosting(row, photoCount) {
+async function loadPostingPhotoPreviews(row) {
+    try {
+        const r = await fetch('/api/watch-photos/' + row);
+        if (!r.ok) return;
+        const data = await r.json();
+        const preview = document.getElementById('posting-photo-preview');
+        if (!preview || !data.photos?.length) return;
+        preview.innerHTML = data.photos.map(p =>
+            `<img src="/api/watch-photos/${row}/images/${p.filename}" style="width:70px;height:70px;object-fit:cover;border-radius:4px;border:1px solid var(--border);" />`
+        ).join('');
+    } catch(e) { console.error(e); }
+}
+
+function handlePostingUpload(row, desc) {
+    const input = document.getElementById('posting-upload') || document.getElementById('posting-upload-extra');
+    if (input?.files?.length) uploadPostingPhotos(row, desc, input.files);
+}
+
+async function uploadPostingPhotos(row, desc, files) {
+    const preview = document.getElementById('posting-photo-preview');
+    if (!preview) return;
+
+    // Show uploading state
+    const existingImgs = preview.querySelectorAll('img');
+    let html = Array.from(existingImgs).map(img => img.outerHTML).join('');
+    html += '<div style="color:var(--accent);font-size:0.68rem;padding:4px;">Uploading...</div>';
+    preview.innerHTML = html;
+
+    for (const file of files) {
+        const fd = new FormData();
+        fd.append('photo', file);
+        fd.append('row', row);
+        fd.append('description', desc);
+        fd.append('source', 'manual');
+        try {
+            const r = await fetch('/api/watch-photos/upload', { method: 'POST', body: fd });
+            if (r.ok) {
+                const result = await r.json();
+                // Add thumbnail
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.style.cssText = 'width:70px;height:70px;object-fit:cover;border-radius:4px;border:1px solid var(--accent-border);';
+                preview.appendChild(img);
+            }
+        } catch(e) { console.error(e); }
+    }
+    // Remove "Uploading..." text
+    preview.querySelectorAll('div').forEach(d => d.remove());
+    // Update the photo count for submit
+    window._postingPhotoCount = (window._postingPhotoCount || 0) + files.length;
+}
+
+async function submitPosting(row) {
     const caption = document.getElementById('posting-caption')?.value || '';
     const price = document.getElementById('posting-price')?.value || '';
     if (!caption) return alert('Caption is required');
     if (!price) return alert('Asking price is required');
 
-    const btn = document.querySelector('#posting-modal .btn:last-child');
+    const btn = document.getElementById('posting-submit-btn');
     if (btn) { btn.textContent = 'Posting...'; btn.disabled = true; }
 
     try {
-        const fullCaption = caption + '\\n$' + price.replace(/[^0-9]/g,'').replace(/(\d)(?=(\d{3})+$)/g,'$1,') + ' + label';
+        const fullCaption = caption + '\n$' + price.replace(/[^0-9]/g,'').replace(/(\d)(?=(\d{3})+$)/g,'$1,') + ' + label';
+
+        // Always check if photos exist (user may have just uploaded)
+        let hasPhotos = false;
+        try {
+            const pr = await fetch('/api/watch-photos/' + row);
+            if (pr.ok) { const pd = await pr.json(); hasPhotos = pd.photos?.length > 0; }
+        } catch(e) {}
 
         const r = await fetch('/api/telegram/post-to-my-postings', {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ row, caption: fullCaption, price, use_photos: photoCount > 0 })
+            body: JSON.stringify({ row, caption: fullCaption, price, use_photos: hasPhotos })
         });
         const result = await r.json();
         if (result.ok || result.success) {
             document.getElementById('posting-modal')?.remove();
-            // Refresh the ready-to-post section
             loadReadyToPost();
             loadActionItems();
         } else {
