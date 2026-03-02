@@ -1567,7 +1567,7 @@ async function loadActionItems() {
         items.forEach(i => {
             const s = getStatus(i);
             const itemJson = JSON.stringify(i).replace(/'/g,"\\'");
-            if (i.sold && !i.shipped) actions.push({icon:'tag-red', text:`${i.ref} sold to ${i.sold_to||'?'} — needs shipping label`, ref:i.ref, action:'shipping', item:i, label:'Ship'});
+            if (i.sold && !i.shipped) actions.push({icon:'tag-red', text:`${i.ref} sold to ${i.sold_to||'?'} — needs shipping`, ref:i.ref, action:'shipping', item:i, label:'Ship'});
             else if (i.shipped && !i.paid) actions.push({icon:'tag-gold', text:`${i.ref} shipped — awaiting payment from ${i.sold_to||'?'}`, ref:i.ref, action:'payment', item:i, label:'Track'});
             else if (i.arrived && !i.posted && !i.sold) actions.push({icon:'tag-blue', text:`${i.ref} ${i.dial||''} sitting unposted — idle capital`, ref:i.ref, action:'post', item:i, label:'Post'});
             else if (!i.arrived && !i.sold && i.buy_date) actions.push({icon:'tag-gold', text:`${i.ref} from ${i.bought_from||'?'} — still in transit`, ref:i.ref, action:'transit', item:i, label:'Track'});
@@ -1595,11 +1595,151 @@ async function handleActionItem(idx) {
         try { const pr = await fetch('/api/watch-photos/' + a.item.row); if (pr.ok) { const pd = await pr.json(); photoCount = pd.photos?.length || 0; } } catch(e){}
         openPostingModal(a.item, photoCount);
     } else if (a.action === 'shipping') {
-        showPage('shipping');
+        openShippingModal(a.item);
     } else if (a.action === 'payment') {
         showPage('payments');
     } else if (a.action === 'transit') {
         showWatchDetail(a.item);
+    }
+}
+
+// ── SHIPPING MODAL ──
+function openShippingModal(item) {
+    const overlay = document.createElement('div');
+    overlay.id = 'shipping-modal';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;';
+    overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+
+    overlay.innerHTML = `<div style="background:var(--bg-1);border:1px solid var(--border-strong);border-radius:var(--radius-lg);max-width:480px;width:90%;padding:20px;font-family:var(--font);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:0.9rem;font-weight:600;color:var(--text-0);">Ship Watch</span>
+            <button onclick="document.getElementById('shipping-modal').remove()" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:1.1rem;">x</button>
+        </div>
+        <div style="font-family:var(--mono);font-size:0.78rem;color:var(--text-1);margin-bottom:14px;">
+            ${item.ref} ${item.dial||''} ${item.bracelet||''} → ${item.sold_to||'?'}
+        </div>
+
+        <div id="ship-options" style="display:flex;flex-direction:column;gap:8px;">
+            <button class="btn" onclick="showShipForm('create-label', ${item.row})" style="width:100%;padding:12px;text-align:left;border:1px solid var(--border-strong);font-size:0.78rem;">
+                <span style="font-weight:600;color:var(--accent);">Create FedEx Label</span>
+                <div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">Generate a new shipping label via dashboard</div>
+            </button>
+            <button class="btn" onclick="showShipForm('local', ${item.row})" style="width:100%;padding:12px;text-align:left;border:1px solid var(--border-strong);font-size:0.78rem;">
+                <span style="font-weight:600;color:var(--green);">Local Delivery</span>
+                <div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">Hand delivery or local drop-off</div>
+            </button>
+            <button class="btn" onclick="showShipForm('external', ${item.row})" style="width:100%;padding:12px;text-align:left;border:1px solid var(--border-strong);font-size:0.78rem;">
+                <span style="font-weight:600;color:var(--blue);">External Label / Buyer's Label</span>
+                <div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">Attach a label PDF or enter tracking from buyer</div>
+            </button>
+        </div>
+
+        <div id="ship-form" style="display:none;margin-top:12px;"></div>
+    </div>`;
+    document.body.appendChild(overlay);
+}
+
+function showShipForm(type, row) {
+    const form = document.getElementById('ship-form');
+    const options = document.getElementById('ship-options');
+    if (!form) return;
+    options.style.display = 'none';
+    form.style.display = 'block';
+
+    if (type === 'create-label') {
+        // Redirect to shipping page for label creation
+        document.getElementById('shipping-modal')?.remove();
+        showPage('shipping');
+        return;
+    }
+
+    if (type === 'local') {
+        form.innerHTML = `
+            <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Delivery Address / Notes</label>
+            <input id="ship-local-addr" type="text" placeholder="e.g. 47th St booth 64, hand delivery to Asher" style="width:100%;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);color:var(--text-0);padding:8px;font-family:var(--mono);font-size:0.78rem;margin-top:4px;margin-bottom:12px;" />
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+                <button class="btn" onclick="showShipForm('back', ${row})" style="font-size:0.75rem;padding:6px 14px;">Back</button>
+                <button class="btn" id="ship-submit-btn" onclick="submitShipping(${row}, 'local')" style="font-size:0.75rem;padding:6px 14px;background:var(--green);color:#000;border:none;font-weight:600;">Mark Shipped</button>
+            </div>`;
+        return;
+    }
+
+    if (type === 'external') {
+        form.innerHTML = `
+            <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Tracking Number</label>
+            <input id="ship-tracking" type="text" placeholder="Enter tracking number" style="width:100%;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);color:var(--text-0);padding:8px;font-family:var(--mono);font-size:0.78rem;margin-top:4px;margin-bottom:10px;" />
+            <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Label PDF (optional)</label>
+            <div id="ship-label-preview" style="min-height:50px;background:var(--bg-2);border:2px dashed var(--border-strong);border-radius:var(--radius);padding:10px;margin-top:4px;margin-bottom:12px;text-align:center;cursor:pointer;" onclick="document.getElementById('ship-label-upload').click()">
+                <div style="color:var(--text-2);font-size:0.72rem;">Click to attach label PDF</div>
+            </div>
+            <input type="file" id="ship-label-upload" accept=".pdf,image/*" style="display:none" onchange="previewShipLabel(this)" />
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+                <button class="btn" onclick="showShipForm('back', ${row})" style="font-size:0.75rem;padding:6px 14px;">Back</button>
+                <button class="btn" id="ship-submit-btn" onclick="submitShipping(${row}, 'external')" style="font-size:0.75rem;padding:6px 14px;background:var(--blue);color:#fff;border:none;font-weight:600;">Mark Shipped</button>
+            </div>`;
+        return;
+    }
+
+    if (type === 'back') {
+        form.style.display = 'none';
+        options.style.display = 'flex';
+        return;
+    }
+}
+
+function previewShipLabel(input) {
+    const preview = document.getElementById('ship-label-preview');
+    if (!preview || !input.files?.length) return;
+    const file = input.files[0];
+    preview.innerHTML = `<div style="color:var(--green);font-size:0.72rem;">${file.name} (${(file.size/1024).toFixed(0)} KB)</div>
+        <button onclick="document.getElementById('ship-label-upload').value='';document.getElementById('ship-label-preview').innerHTML='<div style=\\'color:var(--text-2);font-size:0.72rem;\\'>Click to attach label PDF</div>'" style="background:none;border:none;color:var(--red);font-size:0.65rem;cursor:pointer;margin-top:4px;">Remove</button>`;
+}
+
+async function submitShipping(row, type) {
+    const btn = document.getElementById('ship-submit-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Updating...'; }
+
+    try {
+        let tracking = '';
+        let labelFile = null;
+
+        if (type === 'local') {
+            const addr = document.getElementById('ship-local-addr')?.value || '';
+            tracking = 'Local: ' + (addr || 'hand delivery');
+        } else if (type === 'external') {
+            tracking = document.getElementById('ship-tracking')?.value || '';
+            if (!tracking) { alert('Tracking number is required'); if (btn) { btn.disabled = false; btn.textContent = 'Mark Shipped'; } return; }
+            const fileInput = document.getElementById('ship-label-upload');
+            if (fileInput?.files?.length) labelFile = fileInput.files[0];
+        }
+
+        // Update Bot Sheet
+        const r = await fetch('/api/inventory/ship', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ row, tracking, type })
+        });
+        const result = await r.json();
+
+        if (result.ok) {
+            // Upload label PDF if provided
+            if (labelFile) {
+                const fd = new FormData();
+                fd.append('label', labelFile);
+                fd.append('row', row);
+                fd.append('tracking', tracking);
+                await fetch('/api/watch-photos/upload-label', { method: 'POST', body: fd });
+            }
+            document.getElementById('shipping-modal')?.remove();
+            loadActionItems();
+            loadReadyToPost();
+        } else {
+            alert('Failed: ' + (result.error || 'Unknown error'));
+            if (btn) { btn.disabled = false; btn.textContent = 'Mark Shipped'; }
+        }
+    } catch(e) {
+        alert('Error: ' + e.message);
+        if (btn) { btn.disabled = false; btn.textContent = 'Mark Shipped'; }
     }
 }
 
