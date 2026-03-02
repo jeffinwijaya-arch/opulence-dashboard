@@ -4446,13 +4446,14 @@ document.addEventListener('DOMContentLoaded', () => setTimeout(initPopouts, 500)
     });
     const snapEl = document.getElementById('portfolio-snapshot');
     if (snapEl) snapObserver.observe(snapEl, {childList: true, subtree: true});
+})();
 
-    // ═══════════════════════════════════════════════════════════════════════════════
-    // 🚀 NEW FEATURE FUNCTIONS
-    // ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+// 🚀 NEW FEATURE FUNCTIONS (global scope for showPage access)
+// ═══════════════════════════════════════════════════════════════════════════════
 
-    // ── Payments & Collections ──
-    async function loadPayments() {
+// ── Payments & Collections ──
+async function loadPayments() {
         try {
             const response = await fetch('/api/payments/collections-dashboard');
             const data = await response.json();
@@ -4867,7 +4868,6 @@ document.addEventListener('DOMContentLoaded', () => setTimeout(initPopouts, 500)
         container.innerHTML = html;
     }
 
-})();
 </script>
 </body>
 </html>
