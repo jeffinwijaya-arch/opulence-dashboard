@@ -23,10 +23,10 @@
             --accent-dim: rgba(212,175,55,0.07);
             --accent-border: rgba(212,175,55,0.18);
             --accent-glow: rgba(212,175,55,0.12);
-            --green: #34d399;
-            --green-dim: rgba(52,211,153,0.08);
-            --red: #f43f5e;
-            --red-dim: rgba(244,63,94,0.08);
+            --green: #00e676;
+            --green-dim: rgba(0,230,118,0.08);
+            --red: #ff1744;
+            --red-dim: rgba(255,23,68,0.08);
             --blue: #60a5fa;
             --blue-dim: rgba(96,165,250,0.08);
             --orange: #fb923c;
@@ -59,7 +59,7 @@
         .logo {
             font-family:var(--mono); font-size:0.85rem; font-weight:700; letter-spacing:3px;
             color:var(--accent); cursor:pointer; text-decoration:none; white-space:nowrap;
-            margin-right:28px; text-shadow:0 0 20px rgba(212,175,55,0.15);
+            margin-right:28px; text-shadow:0 0 12px rgba(212,175,55,0.4), 0 0 30px rgba(212,175,55,0.15), 0 0 60px rgba(212,175,55,0.08);
         }
         .logo span { color:var(--text-0); font-weight:300; letter-spacing:1px; }
         .top-search {
@@ -130,10 +130,12 @@
             border:1px solid var(--border); border-radius:var(--radius-lg);
             padding:14px 16px; transition:all 0.2s ease; box-shadow:var(--shadow-sm);
         }
-        .metric:hover { border-color:var(--accent-border); transform:translateY(-1px); box-shadow:var(--shadow-md); }
-        .metric .label { font-size:0.6rem; color:var(--text-2); text-transform:uppercase; letter-spacing:1px; font-weight:600; margin-bottom:4px; font-family:var(--mono); }
-        .metric .val { font-size:1.4rem; font-weight:700; font-family:var(--mono); line-height:1.1; }
-        .metric .sub { font-size:0.66rem; color:var(--text-2); margin-top:4px; font-family:var(--mono); }
+        .metric:hover { border-color:var(--accent-border); transform:translateY(-2px); box-shadow:var(--shadow-md); }
+        .metric .label { font-size:0.56rem; color:var(--text-2); text-transform:uppercase; letter-spacing:1.2px; font-weight:600; margin-bottom:6px; font-family:var(--mono); }
+        .metric .val { font-size:1.65rem; font-weight:700; font-family:var(--mono); line-height:1.1; }
+        .metric .sub { font-size:0.62rem; color:var(--text-2); margin-top:6px; font-family:var(--mono); }
+        .metric .sparkline-wrap { margin-top:8px; height:28px; position:relative; }
+        .metric .sparkline-wrap canvas { width:100%; height:28px; display:block; }
 
         /* ── TABLES ── */
         .tbl { width:100%; border-collapse:collapse; font-size:0.8rem; }
@@ -145,8 +147,9 @@
             font-family:var(--mono); transition:color 0.15s;
         }
         .tbl th:hover { color:var(--accent); }
-        .tbl td { padding:7px 12px; border-bottom:1px solid var(--border); font-family:var(--mono); font-size:0.78rem; transition:background 0.1s; }
+        .tbl td { padding:7px 12px; border-bottom:1px solid var(--border); font-family:var(--mono); font-size:0.78rem; transition:all 0.15s ease; }
         .tbl tr:hover td { background:var(--bg-hover); }
+        .tbl tr:hover td:first-child { box-shadow:inset 3px 0 0 var(--accent); }
         .tbl tr:nth-child(even) td { background:rgba(255,255,255,0.01); }
         .tbl tr:nth-child(even):hover td { background:var(--bg-hover); }
         .tbl .ref { color:var(--accent); font-weight:600; cursor:pointer; transition:color 0.1s; }
@@ -158,19 +161,21 @@
         .tbl-wrap { overflow-x:auto; border-radius:var(--radius); }
 
         /* ── TAGS ── */
-        .tag { display:inline-block; padding:2px 7px; border-radius:4px; font-size:0.66rem; font-weight:600; font-family:var(--mono); letter-spacing:0.3px; }
-        .tag-green { background:var(--green-dim); color:var(--green); border:1px solid rgba(52,211,153,0.15); }
-        .tag-red { background:var(--red-dim); color:var(--red); border:1px solid rgba(244,63,94,0.15); }
-        .tag-blue { background:var(--blue-dim); color:var(--blue); border:1px solid rgba(96,165,250,0.15); }
-        .tag-gold { background:var(--accent-dim); color:var(--accent); border:1px solid var(--accent-border); }
+        .tag { display:inline-block; padding:2px 7px; border-radius:4px; font-size:0.66rem; font-weight:600; font-family:var(--mono); letter-spacing:0.3px; transition:box-shadow 0.2s ease; }
+        .tag-green { background:var(--green-dim); color:var(--green); border:1px solid rgba(0,230,118,0.18); box-shadow:0 0 6px rgba(0,230,118,0.1); }
+        .tag-red { background:var(--red-dim); color:var(--red); border:1px solid rgba(255,23,68,0.18); box-shadow:0 0 6px rgba(255,23,68,0.1); }
+        .tag-blue { background:var(--blue-dim); color:var(--blue); border:1px solid rgba(96,165,250,0.18); box-shadow:0 0 6px rgba(96,165,250,0.1); }
+        .tag-gold { background:var(--accent-dim); color:var(--accent); border:1px solid var(--accent-border); box-shadow:0 0 6px rgba(212,175,55,0.1); }
 
         /* ── PAGES ── */
-        .page { display:none; }
-        .page.active { display:block; animation:pageIn 0.25s ease-out; }
+        .page { display:none; opacity:0; }
+        .page.active { display:block; animation:pageIn 0.35s ease-out forwards; }
+        .page.page-exit { display:block; animation:pageOut 0.15s ease-in forwards; position:absolute; width:100%; }
         .page-head { margin-bottom:16px; }
-        .page-head h1 { font-size:1.2rem; font-weight:700; letter-spacing:-0.3px; }
+        .page-head h1 { font-size:1.3rem; font-weight:700; letter-spacing:-0.3px; }
         .page-head p { font-size:0.78rem; color:var(--text-2); margin-top:4px; }
-        @keyframes pageIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes pageIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes pageOut { from{opacity:1} to{opacity:0} }
 
         /* ── CONFIDENCE ── */
         .conf-dots { display:inline-flex; gap:1px; }
@@ -180,8 +185,8 @@
 
         /* ── PROFIT PILL ── */
         .pill { display:inline-block; padding:2px 8px; border-radius:4px; font-size:0.72rem; font-weight:600; font-family:var(--mono); }
-        .pill.pos { background:var(--green-dim); color:var(--green); border:1px solid rgba(52,211,153,0.12); }
-        .pill.neg { background:var(--red-dim); color:var(--red); border:1px solid rgba(244,63,94,0.12); }
+        .pill.pos { background:var(--green-dim); color:var(--green); border:1px solid rgba(0,230,118,0.15); box-shadow:0 0 8px rgba(0,230,118,0.08); }
+        .pill.neg { background:var(--red-dim); color:var(--red); border:1px solid rgba(255,23,68,0.15); box-shadow:0 0 8px rgba(255,23,68,0.08); }
 
         /* ── PORTFOLIO GRID ── */
         .pf-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; }
@@ -364,6 +369,57 @@
             border:2px dashed var(--accent-border); border-radius:var(--radius-lg);
             pointer-events:none; transition:all 0.15s ease;
         }
+
+        /* ── CHART TOOLTIP ── */
+        .chart-tooltip {
+            position:absolute; pointer-events:none; z-index:10;
+            background:rgba(10,10,18,0.92); border:1px solid var(--accent-border);
+            backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+            border-radius:6px; padding:6px 10px; font-family:var(--mono); font-size:0.72rem;
+            color:var(--text-0); white-space:nowrap; box-shadow:0 4px 16px rgba(0,0,0,0.5);
+            transition:opacity 0.15s ease, transform 0.1s ease; opacity:0;
+        }
+        .chart-tooltip.visible { opacity:1; }
+        .chart-tooltip .tt-date { color:var(--text-2); font-size:0.65rem; }
+        .chart-tooltip .tt-val { font-weight:700; font-size:0.82rem; }
+
+        /* ── DONUT CHART ── */
+        .donut-wrap { position:relative; display:inline-block; }
+        .donut-center {
+            position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+            text-align:center; pointer-events:none;
+        }
+        .donut-center .dc-val { font-family:var(--mono); font-size:1.1rem; font-weight:700; color:var(--text-0); }
+        .donut-center .dc-label { font-size:0.58rem; color:var(--text-2); text-transform:uppercase; letter-spacing:0.5px; }
+        .donut-legend { display:flex; flex-wrap:wrap; gap:8px 16px; margin-top:10px; }
+        .donut-legend-item { display:flex; align-items:center; gap:5px; font-size:0.72rem; font-family:var(--mono); }
+        .donut-legend-dot { width:8px; height:8px; border-radius:2px; }
+
+        /* ── COUNTER ANIMATION ── */
+        .counter-val { display:inline-block; }
+        @keyframes countPulse { 0%{transform:scale(1)} 50%{transform:scale(1.03)} 100%{transform:scale(1)} }
+        .counter-done { animation:countPulse 0.3s ease; }
+
+        /* ── LOOKUP POPULAR REFS ── */
+        .popular-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:8px; margin-top:14px; }
+        .popular-card {
+            background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg);
+            padding:12px 14px; cursor:pointer; transition:all 0.2s ease;
+        }
+        .popular-card:hover { border-color:var(--accent-border); transform:translateY(-2px); box-shadow:var(--shadow-md); }
+        .popular-card .pc-ref { color:var(--accent); font-family:var(--mono); font-weight:700; font-size:0.88rem; }
+        .popular-card .pc-model { font-size:0.72rem; color:var(--text-2); margin-top:2px; }
+        .popular-card .pc-price { font-family:var(--mono); font-weight:600; font-size:0.82rem; margin-top:6px; }
+        .popular-card .pc-spark { margin-top:6px; height:22px; }
+        .popular-card .pc-spark canvas { width:100%; height:22px; }
+
+        /* ── BROWSE LOADING STATE ── */
+        .browse-loading { text-align:center; padding:40px 20px; color:var(--text-2); }
+        .browse-loading .spinner {
+            width:24px; height:24px; border:2px solid var(--border-strong); border-top-color:var(--accent);
+            border-radius:50%; animation:spin 0.6s linear infinite; display:inline-block; margin-bottom:8px;
+        }
+        @keyframes spin { to { transform:rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -906,11 +962,24 @@ let currentDealsRegion = 'all';
 const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals',arbitrage:'Arbitrage',browse:'Market',invoices:'Invoices',shipping:'Shipping',inventory:'Inventory'};
 
 function showPage(name, pushState=true) {
-    $$('.page').forEach(p => p.classList.remove('active'));
+    // Cross-fade: exit current page
+    const currentPage = document.querySelector('.page.active');
+    if (currentPage && currentPage.id !== `page-${name}`) {
+        currentPage.classList.remove('active');
+        currentPage.classList.add('page-exit');
+        setTimeout(() => currentPage.classList.remove('page-exit'), 160);
+    } else if (currentPage) {
+        currentPage.classList.remove('active');
+    }
     $$('.nav a, #mobile-nav a').forEach(n => n.classList.remove('active'));
-    $(`#page-${name}`)?.classList.add('active');
+    // Small delay for exit animation, then show new page
+    setTimeout(() => {
+        $$('.page').forEach(p => p.classList.remove('active'));
+        $(`#page-${name}`)?.classList.add('active');
+    }, currentPage && currentPage.id !== `page-${name}` ? 80 : 0);
     $$(`[data-page="${name}"]`).forEach(n => n.classList.add('active'));
-    if (name === 'browse' && !allListings.length) loadListings();
+    if (name === 'browse') { if (!allListings.length) loadListings(); }
+    if (name === 'lookup' && !_lookupInitialized) initLookupPage();
     if (name === 'portfolio') { if (DATA.portfolio) renderPortfolio(); else loadPortfolio(); }
     if (name === 'invoices') loadInvoicePage();
     if (name === 'shipping') loadShippingPage();
@@ -1000,13 +1069,19 @@ function renderDashboard() {
     $('#update-time').textContent = syncDate && syncDate !== 'Unknown' ? `Chat sync: ${syncDate} · ${ts}` : ts;
     const dc = $('#deals-count'); if (dc) dc.textContent = nDeals;
 
+    const listingsNum = s.total_listings||0;
+    const refsNum = s.unique_refs||Object.keys(DATA.refs).length||0;
     $('#metrics-grid').innerHTML = `
-        <div class="metric"><div class="label">Listings</div><div class="val">${(s.total_listings||0).toLocaleString()}</div><div class="sub">${Object.entries(s.brands||{}).map(([k,v])=>k+':'+v).join(' · ')||'—'}</div></div>
-        <div class="metric"><div class="label">References</div><div class="val">${s.unique_refs||Object.keys(DATA.refs).length||'—'}</div><div class="sub">${Object.entries(s.regions||{}).map(([k,v])=>k+':'+v).join(' · ')||'—'}</div></div>
-        <div class="metric"><div class="label">Deals</div><div class="val" style="color:var(--green)">${nDeals}</div><div class="sub">below market</div></div>
-        <div class="metric"><div class="label">Arb Potential</div><div class="val" style="color:var(--accent)">${fmt(totalProfit)}</div><div class="sub">${nArb} opportunities</div></div>
+        <div class="metric"><div class="label">Listings</div><div class="val counter-val" data-target="${listingsNum}" data-format="num">${listingsNum.toLocaleString()}</div><div class="sub">${Object.entries(s.brands||{}).map(([k,v])=>k+':'+v).join(' · ')||'—'}</div><div class="sparkline-wrap"><canvas class="metric-spark" data-key="listings"></canvas></div></div>
+        <div class="metric"><div class="label">References</div><div class="val counter-val" data-target="${refsNum}" data-format="num">${refsNum}</div><div class="sub">${Object.entries(s.regions||{}).map(([k,v])=>k+':'+v).join(' · ')||'—'}</div><div class="sparkline-wrap"><canvas class="metric-spark" data-key="refs"></canvas></div></div>
+        <div class="metric"><div class="label">Deals</div><div class="val counter-val" style="color:var(--green)" data-target="${nDeals}" data-format="num">${nDeals}</div><div class="sub">below market</div><div class="sparkline-wrap"><canvas class="metric-spark" data-key="deals"></canvas></div></div>
+        <div class="metric"><div class="label">Arb Potential</div><div class="val counter-val" style="color:var(--accent)" data-target="${totalProfit}" data-format="dollar">${fmt(totalProfit)}</div><div class="sub">${nArb} opportunities</div><div class="sparkline-wrap"><canvas class="metric-spark" data-key="arb"></canvas></div></div>
         <div class="metric"><div class="label">HKD/USD Rate</div><div class="val" style="font-size:1.2rem;" id="fx-rate-val">—</div><div class="sub" id="fx-rate-age">—</div></div>
     `;
+    // Animate counters
+    requestAnimationFrame(() => animateAllCounters());
+    // Draw sparklines in metric cards
+    setTimeout(() => drawMetricSparklines(), 100);
 
     const tierMark = {A:'\u25CF',B:'\u25CB',C:'\u25CB'};
     const tierColor = {A:'var(--green)',B:'var(--accent)',C:'var(--text-2)'};
@@ -1457,7 +1532,7 @@ function lookupRef(ref,dial) { showPage('lookup'); $('#ref-search').value=dial?r
 async function doLookup() {
     const q = ($('#ref-search')?.value||'').trim();
     const c = $('#lookup-result');
-    if (!q) { c.innerHTML=''; return; }
+    if (!q) { _lookupInitialized = false; initLookupPage(); return; }
     c.innerHTML = '<p style="padding:20px;color:var(--text-2);">Loading...</p>';
 
     try {
@@ -1625,6 +1700,17 @@ function getStatus(i) {
     if (i.arrived===false) return 'IN TRANSIT';
     return 'IN HAND';
 }
+function detectBrand(ref) {
+    if (!ref) return 'Other';
+    const r = ref.toString().toUpperCase();
+    if (/^(1[12345]\d{4}|2[2-3]\d{4}|[A-Z]?\d{5,6}[A-Z]{0,4})$/.test(r) && !r.match(/^(5\d{3}|26\d{3}|15[0-9]{3})/)) return 'Rolex';
+    if (/^5[0-9]{3}/.test(r) || r.includes('NAUTILUS') || r.includes('AQUANAUT') || r.includes('CALATRAVA')) return 'Patek Philippe';
+    if (/^(15|26)\d{3}/.test(r) || r.includes('ROYAL OAK') || r.includes('OFFSHORE')) return 'Audemars Piguet';
+    if (/^(79|BB|M7)/.test(r)) return 'Tudor';
+    // Fallback: check common Rolex patterns more broadly
+    if (/^\d{5,6}/.test(r)) return 'Rolex';
+    return 'Other';
+}
 function statusTag(s) {
     const cls = s==='SOLD'?'tag-red':s==='LISTED'?'tag-green':s==='SHIPPED'?'tag-blue':s==='IN TRANSIT'?'tag-blue':'tag-gold';
     return `<span class="tag ${cls}">${s}</span>`;
@@ -1636,16 +1722,43 @@ function renderPfSummary(c, p, items) {
     const bestHtml = p.best_performer?`<div class="listing-card"><div style="display:flex;justify-content:space-between;align-items:center;"><span class="ref" onclick="lookupRef('${p.best_performer.ref}')" style="font-size:0.85rem;">${p.best_performer.ref}</span><span class="green" style="font-weight:700;font-size:0.82rem;">+${fmt(p.best_performer.profit)} (${p.best_performer.pct}%)</span></div></div>`:'<div class="dim">—</div>';
     const worstHtml = p.worst_performer?`<div class="listing-card"><div style="display:flex;justify-content:space-between;align-items:center;"><span class="ref" onclick="lookupRef('${p.worst_performer.ref}')" style="font-size:0.85rem;">${p.worst_performer.ref}</span><span class="red" style="font-weight:700;font-size:0.82rem;">${fmt(p.worst_performer.loss)} (${p.worst_performer.pct}%)</span></div></div>`:'<div class="dim">—</div>';
 
+    // Compute brand allocation from inventory items
+    const brandAlloc = {};
+    items.forEach(i => {
+        if (i.sold) return;
+        const brand = detectBrand(i.ref);
+        if (!brandAlloc[brand]) brandAlloc[brand] = {cost: 0, count: 0};
+        brandAlloc[brand].cost += (i.cost_price || 0);
+        brandAlloc[brand].count++;
+    });
+    const brandColors = {'Rolex':'#00e676','Patek Philippe':'#d4af37','Audemars Piguet':'#60a5fa','Tudor':'#fb923c','Other':'#8b5cf6'};
+    const brandSegments = Object.entries(brandAlloc).sort((a,b) => b[1].cost - a[1].cost).map(([name, data]) => ({
+        name, value: data.cost, count: data.count, color: brandColors[name] || '#8b5cf6'
+    }));
+    const totalBrandCost = brandSegments.reduce((s, seg) => s + seg.value, 0);
+    const brandLegend = brandSegments.map(seg => {
+        const pctVal = totalBrandCost > 0 ? (seg.value / totalBrandCost * 100).toFixed(0) : 0;
+        return `<div class="donut-legend-item"><div class="donut-legend-dot" style="background:${seg.color}"></div><span style="color:var(--text-1);">${seg.name}</span><span style="color:var(--text-2);">${seg.count}x · ${pctVal}%</span></div>`;
+    }).join('');
+
     c.innerHTML = `<div class="fade-in">
         <div class="metrics">
-            <div class="metric"><div class="label">Capital Deployed</div><div class="val" style="color:var(--accent)">${fmt(p.total_invested)}</div></div>
-            <div class="metric"><div class="label">Market Value</div><div class="val">${fmt(p.total_market_value)}</div></div>
-            <div class="metric"><div class="label">Unrealized P&L</div><div class="val ${cls}">${fmt(p.total_pnl)}</div></div>
+            <div class="metric"><div class="label">Capital Deployed</div><div class="val counter-val" style="color:var(--accent)" data-target="${p.total_invested}" data-format="dollar">${fmt(p.total_invested)}</div></div>
+            <div class="metric"><div class="label">Market Value</div><div class="val counter-val" data-target="${p.total_market_value}" data-format="dollar">${fmt(p.total_market_value)}</div></div>
+            <div class="metric"><div class="label">Unrealized P&L</div><div class="val counter-val ${cls}" data-target="${p.total_pnl}" data-format="dollar">${fmt(p.total_pnl)}</div></div>
             <div class="metric"><div class="label">ROI</div><div class="val ${cls}">${p.roi_pct}%</div></div>
             <div class="metric"><div class="label">Positions</div><div class="val">${p.total_pieces}</div></div>
             <div class="metric"><div class="label">Capital at Risk</div><div class="val red">${fmt(p.capital_at_risk)}</div></div>
         </div>
-        <div class="card" style="margin-bottom:8px;"><div class="card-head"><span>Portfolio Value</span><span style="font-size:0.65rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;">14-day trend</span></div><div class="card-body" style="padding:8px;"><canvas id="portfolio-chart"></canvas></div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+            <div class="card"><div class="card-head"><span>Portfolio Value</span><span style="font-size:0.65rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;">14-day trend</span></div><div class="card-body" style="padding:8px;"><canvas id="portfolio-chart"></canvas></div></div>
+            <div class="card"><div class="card-head"><span>Brand Allocation</span></div><div class="card-body" style="display:flex;flex-direction:column;align-items:center;padding:12px;">
+                <div class="donut-wrap"><canvas id="brand-donut"></canvas>
+                    <div class="donut-center"><div class="dc-val">${items.filter(i=>!i.sold).length}</div><div class="dc-label">positions</div></div>
+                </div>
+                <div class="donut-legend">${brandLegend}</div>
+            </div></div>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
             <div class="card"><div class="card-head"><span>Position Status</span></div><div class="card-body">
                 ${statusHtml}
@@ -1659,6 +1772,12 @@ function renderPfSummary(c, p, items) {
             </div></div>
         </div>
     </div>`;
+    // Draw donut chart
+    if (brandSegments.length) {
+        setTimeout(() => drawDonutChart('brand-donut', brandSegments, {size: 160}), 100);
+    }
+    // Animate portfolio counters
+    requestAnimationFrame(() => animateAllCounters());
     // Load portfolio chart
     loadPortfolioChart();
 }
@@ -2193,23 +2312,41 @@ async function loadSparklines() {
 }
 loadSparklines();
 
-// ═══ CHART RENDERER (canvas-based, no dependencies) ═══
+// ═══ CHART RENDERER (canvas-based, no dependencies) — gradient area + bezier + tooltips ═══
 function renderChart(canvasId, data, opts={}) {
     const canvas = document.getElementById(canvasId);
     if (!canvas || !data.length) return;
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.parentElement.offsetWidth;
+    const H = opts.height || 200;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
     const ctx = canvas.getContext('2d');
-    const W = canvas.width = canvas.parentElement.offsetWidth;
-    const H = canvas.height = opts.height || 180;
+    ctx.scale(dpr, dpr);
+
     const pad = {top:20, right:60, bottom:30, left:10};
     const cW = W - pad.left - pad.right;
     const cH = H - pad.top - pad.bottom;
 
     ctx.clearRect(0, 0, W, H);
 
-    // Extract values
+    // Extract values and compute points
     const vals = data.map(d => d.value);
     const min = Math.min(...vals), max = Math.max(...vals);
     const range = max - min || 1;
+    const isUp = vals[vals.length-1] >= vals[0];
+    const lineColor = isUp ? '#00e676' : '#ff1744';
+    const glowColor = isUp ? 'rgba(0,230,118,0.4)' : 'rgba(255,23,68,0.4)';
+
+    // Calculate all point positions
+    const points = data.map((d, i) => ({
+        x: pad.left + (i / Math.max(1, data.length - 1)) * cW,
+        y: pad.top + cH - ((d.value - min) / range) * cH,
+        value: d.value,
+        label: d.label || ''
+    }));
 
     // Grid lines
     ctx.strokeStyle = 'rgba(255,255,255,0.04)';
@@ -2217,70 +2354,90 @@ function renderChart(canvasId, data, opts={}) {
     for (let i = 0; i <= 4; i++) {
         const y = pad.top + (cH / 4) * i;
         ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
-        // Label
         const val = max - (range / 4) * i;
-        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
         ctx.font = '10px JetBrains Mono, monospace';
         ctx.textAlign = 'left';
         ctx.fillText('$' + Math.round(val).toLocaleString(), W - pad.right + 4, y + 3);
     }
 
     // Date labels
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
     ctx.font = '9px JetBrains Mono, monospace';
     ctx.textAlign = 'center';
     const step = Math.max(1, Math.floor(data.length / 5));
     for (let i = 0; i < data.length; i += step) {
-        const x = pad.left + (i / (data.length - 1)) * cW;
-        const label = data[i].label || data[i].d?.slice(5) || '';
-        ctx.fillText(label, x, H - 5);
+        ctx.fillText(points[i].label, points[i].x, H - 5);
     }
 
-    // Area fill
+    // Helper: draw smooth bezier path through points
+    function drawBezierPath() {
+        if (points.length < 2) return;
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 0; i < points.length - 1; i++) {
+            const p0 = points[Math.max(0, i - 1)];
+            const p1 = points[i];
+            const p2 = points[i + 1];
+            const p3 = points[Math.min(points.length - 1, i + 2)];
+            const tension = 0.3;
+            const cp1x = p1.x + (p2.x - p0.x) * tension;
+            const cp1y = p1.y + (p2.y - p0.y) * tension;
+            const cp2x = p2.x - (p3.x - p1.x) * tension;
+            const cp2y = p2.y - (p3.y - p1.y) * tension;
+            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+        }
+    }
+
+    // Gradient area fill
     const gradient = ctx.createLinearGradient(0, pad.top, 0, H - pad.bottom);
-    const isUp = vals[vals.length-1] >= vals[0];
     if (isUp) {
-        gradient.addColorStop(0, 'rgba(0,200,83,0.15)');
-        gradient.addColorStop(1, 'rgba(0,200,83,0)');
+        gradient.addColorStop(0, 'rgba(0,230,118,0.22)');
+        gradient.addColorStop(0.5, 'rgba(0,230,118,0.08)');
+        gradient.addColorStop(1, 'rgba(0,230,118,0)');
     } else {
-        gradient.addColorStop(0, 'rgba(255,23,68,0.15)');
+        gradient.addColorStop(0, 'rgba(255,23,68,0.22)');
+        gradient.addColorStop(0.5, 'rgba(255,23,68,0.08)');
         gradient.addColorStop(1, 'rgba(255,23,68,0)');
     }
     ctx.beginPath();
-    ctx.moveTo(pad.left, H - pad.bottom);
-    data.forEach((d, i) => {
-        const x = pad.left + (i / (data.length - 1)) * cW;
-        const y = pad.top + cH - ((d.value - min) / range) * cH;
-        ctx.lineTo(x, y);
-    });
-    ctx.lineTo(pad.left + cW, H - pad.bottom);
+    ctx.moveTo(points[0].x, H - pad.bottom);
+    ctx.lineTo(points[0].x, points[0].y);
+    drawBezierPath();
+    ctx.lineTo(points[points.length-1].x, H - pad.bottom);
     ctx.closePath();
     ctx.fillStyle = gradient;
     ctx.fill();
 
-    // Line
+    // Glow line
     ctx.beginPath();
-    ctx.strokeStyle = isUp ? '#00c853' : '#ff1744';
-    ctx.lineWidth = 2;
-    data.forEach((d, i) => {
-        const x = pad.left + (i / (data.length - 1)) * cW;
-        const y = pad.top + cH - ((d.value - min) / range) * cH;
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    });
+    ctx.moveTo(points[0].x, points[0].y);
+    drawBezierPath();
+    ctx.strokeStyle = glowColor;
+    ctx.lineWidth = 6;
     ctx.stroke();
 
-    // Current value dot
-    if (data.length) {
-        const last = data[data.length-1];
-        const x = pad.left + cW;
-        const y = pad.top + cH - ((last.value - min) / range) * cH;
+    // Main line
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    drawBezierPath();
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Current value dot with glow
+    if (points.length) {
+        const last = points[points.length-1];
         ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2);
-        ctx.fillStyle = isUp ? '#00c853' : '#ff1744';
+        ctx.arc(last.x, last.y, 6, 0, Math.PI * 2);
+        ctx.fillStyle = glowColor;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(last.x, last.y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = lineColor;
         ctx.fill();
     }
 
-    // Optional second line (e.g. cost line)
+    // Optional cost line
     if (opts.costLine && opts.costLine > 0) {
         const y = pad.top + cH - ((opts.costLine - min) / range) * cH;
         if (y >= pad.top && y <= H - pad.bottom) {
@@ -2295,6 +2452,49 @@ function renderChart(canvasId, data, opts={}) {
             ctx.fillText('Cost $' + Math.round(opts.costLine).toLocaleString(), W - pad.right + 4, y - 4);
         }
     }
+
+    // ── Hover tooltip ──
+    // Remove old tooltip if present
+    let tooltip = canvas.parentElement.querySelector('.chart-tooltip');
+    if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.className = 'chart-tooltip';
+        tooltip.innerHTML = '<div class="tt-date"></div><div class="tt-val"></div>';
+        canvas.parentElement.style.position = 'relative';
+        canvas.parentElement.appendChild(tooltip);
+    }
+    let vertLine = canvas.parentElement.querySelector('.chart-vert');
+    if (!vertLine) {
+        vertLine = document.createElement('div');
+        vertLine.className = 'chart-vert';
+        vertLine.style.cssText = 'position:absolute;top:0;width:1px;height:100%;background:rgba(212,175,55,0.2);pointer-events:none;opacity:0;transition:opacity 0.15s;';
+        canvas.parentElement.appendChild(vertLine);
+    }
+
+    canvas.onmousemove = function(e) {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        // Find nearest point
+        let closest = points[0], closestDist = Infinity;
+        for (const p of points) {
+            const dist = Math.abs(p.x - mx);
+            if (dist < closestDist) { closestDist = dist; closest = p; }
+        }
+        tooltip.querySelector('.tt-date').textContent = closest.label;
+        tooltip.querySelector('.tt-val').textContent = '$' + Math.round(closest.value).toLocaleString();
+        tooltip.querySelector('.tt-val').style.color = lineColor;
+        const tx = Math.min(W - 100, Math.max(0, closest.x - 40));
+        const ty = Math.max(0, closest.y - 42);
+        tooltip.style.left = tx + 'px';
+        tooltip.style.top = ty + 'px';
+        tooltip.classList.add('visible');
+        vertLine.style.left = closest.x + 'px';
+        vertLine.style.opacity = '1';
+    };
+    canvas.onmouseleave = function() {
+        tooltip.classList.remove('visible');
+        vertLine.style.opacity = '0';
+    };
 }
 
 // ═══ PORTFOLIO CHART LOADER ═══
@@ -2313,6 +2513,242 @@ async function loadPortfolioChart() {
         }), 50);
     } catch(e) {}
 }
+
+// ═══ ANIMATED NUMBER COUNTERS ═══
+function animateValue(el, start, end, duration, formatFn) {
+    const startTime = performance.now();
+    function tick(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease out cubic
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.round(start + (end - start) * eased);
+        el.textContent = formatFn(current);
+        if (progress < 1) requestAnimationFrame(tick);
+        else el.classList.add('counter-done');
+    }
+    requestAnimationFrame(tick);
+}
+
+function animateAllCounters() {
+    document.querySelectorAll('.counter-val[data-target]').forEach(el => {
+        const target = parseFloat(el.dataset.target) || 0;
+        const format = el.dataset.format || 'num';
+        const formatFn = format === 'dollar'
+            ? n => '$' + Math.round(n).toLocaleString('en-US')
+            : n => n.toLocaleString('en-US');
+        animateValue(el, 0, target, 1200, formatFn);
+    });
+}
+
+// ═══ CANVAS SPARKLINE FOR METRIC CARDS ═══
+function drawCanvasSparkline(canvas, values, opts={}) {
+    if (!canvas || !values || values.length < 2) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.parentElement.offsetWidth || 120;
+    const h = 28;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    const min = Math.min(...values), max = Math.max(...values);
+    const range = max - min || 1;
+    const isUp = values[values.length-1] >= values[0];
+    const color = opts.color || (isUp ? '#00e676' : '#ff1744');
+    const fillTop = isUp ? 'rgba(0,230,118,0.15)' : 'rgba(255,23,68,0.15)';
+
+    const points = values.map((v, i) => ({
+        x: (i / (values.length - 1)) * w,
+        y: h - ((v - min) / range) * (h - 4) - 2
+    }));
+
+    // Gradient fill
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, fillTop);
+    grad.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.moveTo(0, h);
+    ctx.lineTo(points[0].x, points[0].y);
+    for (let i = 0; i < points.length - 1; i++) {
+        const p1 = points[i], p2 = points[i+1];
+        const cpx = (p1.x + p2.x) / 2;
+        ctx.quadraticCurveTo(p1.x + (cpx - p1.x)*0.8, p1.y, cpx, (p1.y + p2.y) / 2);
+        ctx.quadraticCurveTo(p2.x - (p2.x - cpx)*0.8, p2.y, p2.x, p2.y);
+    }
+    ctx.lineTo(w, h);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Line
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 0; i < points.length - 1; i++) {
+        const p1 = points[i], p2 = points[i+1];
+        const cpx = (p1.x + p2.x) / 2;
+        ctx.quadraticCurveTo(p1.x + (cpx - p1.x)*0.8, p1.y, cpx, (p1.y + p2.y) / 2);
+        ctx.quadraticCurveTo(p2.x - (p2.x - cpx)*0.8, p2.y, p2.x, p2.y);
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // End dot
+    const last = points[points.length-1];
+    ctx.beginPath();
+    ctx.arc(last.x, last.y, 2, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+}
+
+function drawMetricSparklines() {
+    // Generate synthetic sparkline data from what we have
+    const sparkData = {
+        'listings': generateTrend(DATA.summary?.total_listings || 5000, 14, 0.02),
+        'refs': generateTrend(DATA.summary?.unique_refs || Object.keys(DATA.refs).length || 200, 14, 0.01),
+        'deals': generateTrend(DATA.deals?.length || 5, 14, 0.15),
+        'arb': generateTrend(DATA.arbitrage?.reduce((a,x)=>a+(x.profit||0),0) || 1000, 14, 0.1),
+    };
+    document.querySelectorAll('.metric-spark').forEach(canvas => {
+        const key = canvas.dataset.key;
+        if (sparkData[key]) drawCanvasSparkline(canvas, sparkData[key]);
+    });
+}
+
+function generateTrend(currentValue, days, volatility) {
+    // Walk backward from current value to generate a plausible trend
+    const values = [currentValue];
+    for (let i = 1; i < days; i++) {
+        const change = currentValue * volatility * (Math.random() - 0.45); // slight upward bias
+        values.unshift(Math.max(0, values[0] - change));
+    }
+    return values;
+}
+
+// ═══ DONUT CHART (Canvas, animated) ═══
+function drawDonutChart(canvasId, segments, opts={}) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || !segments.length) return;
+    const dpr = window.devicePixelRatio || 1;
+    const size = opts.size || 180;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    const cx = size / 2, cy = size / 2;
+    const outerR = size / 2 - 4;
+    const innerR = outerR * 0.62;
+    const total = segments.reduce((s, seg) => s + seg.value, 0);
+
+    // Animation
+    let animProgress = 0;
+    function draw() {
+        ctx.clearRect(0, 0, size, size);
+        let startAngle = -Math.PI / 2;
+        const targetAngle = animProgress * Math.PI * 2;
+
+        segments.forEach((seg, i) => {
+            const sliceAngle = (seg.value / total) * Math.PI * 2;
+            const endAngle = startAngle + Math.min(sliceAngle, Math.max(0, targetAngle - (startAngle + Math.PI / 2)));
+            if (endAngle <= startAngle) { startAngle += sliceAngle; return; }
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, outerR, startAngle, endAngle);
+            ctx.arc(cx, cy, innerR, endAngle, startAngle, true);
+            ctx.closePath();
+            ctx.fillStyle = seg.color;
+            ctx.fill();
+
+            // Subtle shadow between segments
+            ctx.strokeStyle = 'rgba(8,8,12,0.5)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            startAngle += sliceAngle;
+        });
+
+        if (animProgress < 1) {
+            animProgress = Math.min(1, animProgress + 0.03);
+            requestAnimationFrame(draw);
+        }
+    }
+    draw();
+}
+
+// ═══ LOOKUP PAGE INITIALIZER (popular refs) ═══
+let _lookupInitialized = false;
+async function initLookupPage() {
+    if (_lookupInitialized) return;
+    _lookupInitialized = true;
+    const resultDiv = document.getElementById('lookup-result');
+    if (!resultDiv || resultDiv.innerHTML.trim()) return;
+
+    // Show popular refs grid using topRefs or sparkline data
+    const popularRefs = [
+        {ref:'126500', model:'Daytona', icon:'⌚'},
+        {ref:'126610LN', model:'Submariner Date', icon:'🌊'},
+        {ref:'126710BLNR', model:'GMT-Master II', icon:'✈️'},
+        {ref:'126334', model:'Datejust 41', icon:'💎'},
+        {ref:'228235', model:'Day-Date 40', icon:'👑'},
+        {ref:'5711/1A', model:'Nautilus', icon:'⚓'},
+        {ref:'15500ST', model:'Royal Oak', icon:'🏛️'},
+        {ref:'126610LV', model:'Submariner Starbucks', icon:'🍀'},
+        {ref:'126710BLRO', model:'GMT Pepsi', icon:'🔴🔵'},
+        {ref:'124300', model:'Oyster Perpetual 41', icon:'⭕'},
+    ];
+
+    let html = '<div style="margin-top:16px;"><div style="font-size:0.72rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:10px;">Popular References</div>';
+    html += '<div class="popular-grid">';
+    for (const ref of popularRefs) {
+        const sparkVals = _sparkData[ref.ref];
+        const priceHtml = sparkVals ? '$' + Math.round(sparkVals[sparkVals.length-1]).toLocaleString() : '';
+        const changeHtml = sparkVals && sparkVals.length > 1
+            ? (() => {
+                const change = ((sparkVals[sparkVals.length-1] - sparkVals[0]) / sparkVals[0] * 100).toFixed(1);
+                const cls = change >= 0 ? 'green' : 'red';
+                return `<span style="color:var(--${cls});font-size:0.7rem;margin-left:6px;">${change >= 0?'+':''}${change}%</span>`;
+            })()
+            : '';
+        html += `<div class="popular-card" onclick="$('#ref-search').value='${ref.ref}';doLookup();">
+            <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:0.9rem;">${ref.icon}</span>
+                <span class="pc-ref">${ref.ref}</span>
+            </div>
+            <div class="pc-model">${ref.model}</div>
+            ${priceHtml ? `<div class="pc-price">${priceHtml}${changeHtml}</div>` : ''}
+            ${sparkVals ? `<div class="pc-spark"><canvas id="pop-spark-${ref.ref.replace(/[^a-zA-Z0-9]/g,'')}"></canvas></div>` : ''}
+        </div>`;
+    }
+    html += '</div></div>';
+    resultDiv.innerHTML = html;
+
+    // Draw sparklines for popular refs
+    setTimeout(() => {
+        for (const ref of popularRefs) {
+            const vals = _sparkData[ref.ref];
+            if (!vals) continue;
+            const canvasId = 'pop-spark-' + ref.ref.replace(/[^a-zA-Z0-9]/g,'');
+            const canvas = document.getElementById(canvasId);
+            if (canvas) drawCanvasSparkline(canvas, vals);
+        }
+    }, 100);
+}
+
+// ═══ BROWSE PAGE LOADING STATE ═══
+const _origLoadListings = loadListings;
+loadListings = async function() {
+    const tbody = document.querySelector('#browse-table tbody');
+    if (tbody && !allListings.length) {
+        tbody.innerHTML = '<tr><td colspan="11"><div class="browse-loading"><div class="spinner"></div><div>Loading market data...</div></div></td></tr>';
+    }
+    return _origLoadListings();
+};
 
 // ── INIT ──
 loadData();

@@ -1,6 +1,26 @@
 {
   "articles": [
     {
+      "id": "8bce8f5dc117",
+      "title": "Exploring the Micromilspec Milgraph T5",
+      "link": "https://revolutionwatch.com/exploring-the-micromilspec-milgraph-t5/",
+      "desc": "The post Exploring the Micromilspec Milgraph T5 appeared first on Revolution Watch.",
+      "date": "2026-03-02T04:28:54+00:00",
+      "source": "REVOLUTION",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "7fb715d73af0",
+      "title": "IFL Watches Celebrates D\u00eda De Los Muertos With The Citizen Tsuyosa Calavera Collection",
+      "link": "https://www.fratellowatches.com/ifl-watches-celebrates-dia-de-los-muertos-with-the-citizen-tsuyosa-calavera-collection/",
+      "desc": "Every year on November 1st and 2nd, Mexico celebrates D\u00eda de los Muertos, or the Day of the Dead. On that day, Mexican people welcome back the spirits of the departed. This tradition centers around th",
+      "date": "2026-03-02T04:00:40+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
       "id": "9447965eab39",
       "title": "Buying Guide \u2013 First-Class Travel, With Some Of Today\u2019s Most Elegant GMT Watches",
       "link": "https://monochrome-watches.com/buying-guide-travel-watches-gmt-dual-time-maurice-lacroix-grand-seiko-schwarz-etienne-moritz-grosmmann-louis-vuitton-armin-strom/",
@@ -271,16 +291,6 @@
       "relevance": 10
     },
     {
-      "id": "f021d6484a78",
-      "title": "This Is How Chronoswiss Sees The Moon: Introducing The Lunar Chronograph Aurora And Space Timer Gravity",
-      "link": "https://www.fratellowatches.com/how-chronoswiss-sees-the-moon/",
-      "desc": "The Moon is a source of inspiration for many. Art, music, movies, you name it \u2014 the Moon is everywhere. It\u2019s also in watches. Let me introduce two watches with a prominent role for our planet\u2019s satell",
-      "date": "2026-02-26T06:00:19+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 10
-    },
-    {
       "id": "f390bfd5e1ce",
       "title": "Piaget\u2019s Duo of 2026 Limelight Galas",
       "link": "https://revolutionwatch.com/piagets-duo-of-2026-limelight-galas/",
@@ -349,19 +359,9 @@
       "source": "REVOLUTION",
       "image": "",
       "relevance": 0
-    },
-    {
-      "id": "8eb41be1f51d",
-      "title": "Helvetus Straps: The Swiss Brand Redefining Luxury Watch Comfort",
-      "link": "https://revolutionwatch.com/helvetus-straps-the-swiss-brand-redefining-luxury-watch-comfort/",
-      "desc": "The post Helvetus Straps: The Swiss Brand Redefining Luxury Watch Comfort appeared first on Revolution Watch.",
-      "date": "2026-02-16T12:00:35+00:00",
-      "source": "REVOLUTION",
-      "image": "",
-      "relevance": 0
     }
   ],
-  "fetched_at": "2026-03-02T00:33:11.745475+00:00",
+  "fetched_at": "2026-03-02T04:33:17.001524+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
