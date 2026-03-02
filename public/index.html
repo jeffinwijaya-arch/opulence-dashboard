@@ -2227,8 +2227,8 @@ function renderPosTable(items) {
         const usLow=i.us_lowest?fmt(i.us_lowest):'—';
         const hkN=i.hk_count||0, usN=i.us_count||0;
         const spark = _sparkData[i.ref] ? sparkline(_sparkData[i.ref], 56, 18) : '';
-        return `<tr>
-            <td class="ref" onclick="lookupRef('${i.ref}')">${i.ref}</td>
+        return `<tr style="cursor:pointer;" onclick="showWatchDetail(${i.row})">
+            <td class="ref">${i.ref}</td>
             <td class="dim" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${[i.bracelet,i.dial].filter(Boolean).join(' | ')}</td>
             <td class="right">${fmt(i.cost_price)}</td>
             <td class="right">${mkt}</td>
@@ -2257,10 +2257,10 @@ function renderPosCards(items) {
         const status=getStatus(i);
         const sCls=status==='SOLD'?'tag-red':status==='LISTED'?'tag-green':status==='SHIPPED'?'tag-blue':status==='IN TRANSIT'?'tag-blue':'tag-gold';
         const borderColor = pnl>0?'var(--green)':pnl<0?'var(--red)':'var(--border)';
-        return `<div style="background:var(--bg-2);border:1px solid var(--border);border-left:3px solid ${borderColor};border-radius:var(--radius);padding:10px 12px;display:flex;flex-direction:column;gap:6px;">
+        return `<div style="background:var(--bg-2);border:1px solid var(--border);border-left:3px solid ${borderColor};border-radius:var(--radius);padding:10px 12px;display:flex;flex-direction:column;gap:6px;cursor:pointer;" onclick="showWatchDetail(${i.row})">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;">
                 <div>
-                    <span class="ref" onclick="lookupRef('${i.ref}')" style="font-size:0.95rem;">${i.ref}</span>
+                    <span class="ref" style="font-size:0.95rem;">${i.ref}</span>
                     <div style="font-size:0.72rem;color:var(--text-2);margin-top:1px;">${[i.bracelet,i.dial].filter(Boolean).join(' | ')}</div>
                 </div>
                 <span class="tag ${sCls}">${status}</span>
@@ -4542,6 +4542,103 @@ document.addEventListener('DOMContentLoaded', () => setTimeout(initPopouts, 500)
     const snapEl = document.getElementById('portfolio-snapshot');
     if (snapEl) snapObserver.observe(snapEl, {childList: true, subtree: true});
 })();
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 🔍 WATCH DETAIL OVERLAY
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function showWatchDetail(row) {
+    if (!inventoryItems) return;
+    const item = inventoryItems.find(i => i.row === row);
+    if (!item) return;
+
+    const status = getStatus(item);
+    const pnl = item.profit_loss || 0;
+    const pnlCls = pnl >= 0 ? 'green' : 'red';
+    const pctStr = item.profit_pct != null ? `${item.profit_pct > 0 ? '+' : ''}${item.profit_pct.toFixed(1)}%` : '—';
+    const mkt = item.market_value ? fmt(item.market_value) : '—';
+
+    const detailRows = [
+        ['Description', item.description],
+        ['Reference', item.ref],
+        ['Dial', item.dial || '—'],
+        ['Bracelet', item.bracelet || '—'],
+        ['Serial', item.serial || '—'],
+        ['Card Date', item.card_date || '—'],
+        ['Hang Tag (WT)', item.wt === 'Yes' ? '✅ Yes' : item.wt === 'No' ? '❌ No' : '—'],
+        ['divider'],
+        ['Bought From', item.bought_from || '—'],
+        ['Cost Price', fmt(item.cost_price)],
+        ['Buy Date', item.buy_date || '—'],
+        ['divider'],
+        ['Market Value', mkt],
+        ['P&L', `<span class="${pnlCls}" style="font-weight:700;">${pnl ? (pnl > 0 ? '+' : '') + fmt(pnl) : '—'} (${pctStr})</span>`],
+        ['Benchmark', item.benchmark || '—'],
+        ['Comparables', item.comparable_count || 0],
+        ['Days Held', (item.days_held || 0) + ' days'],
+        ['divider'],
+        ['Status', statusTag(status)],
+        ['Arrived', item.arrived ? '✅' : '❌'],
+        ['Posted', item.posted ? '✅' : '❌'],
+        ['Sold To', item.sold_to || '—'],
+        ['Sale Price', item.sold_price ? fmt(parseFloat(String(item.sold_price).replace(/[$,]/g, ''))) : '—'],
+        ['Shipped', item.shipped ? '✅' : '❌'],
+        ['Paid', item.paid === 'Yes' ? '✅' : item.paid === 'No' ? '❌' : '—'],
+    ].map(r => {
+        if (r[0] === 'divider') return '<div style="border-top:1px solid var(--border);margin:8px 0;"></div>';
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
+            <span style="color:var(--text-2);font-size:0.75rem;">${r[0]}</span>
+            <span style="font-size:0.8rem;font-weight:500;text-align:right;">${r[1]}</span>
+        </div>`;
+    }).join('');
+
+    // Market comparison section
+    const hkB25 = item.hk_wholesale ? fmt(item.hk_wholesale) : '—';
+    const usB25 = item.us_wholesale ? fmt(item.us_wholesale) : '—';
+    const hkLow = item.hk_lowest ? fmt(item.hk_lowest) : '—';
+    const usLow = item.us_lowest ? fmt(item.us_lowest) : '—';
+
+    const marketGrid = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+        <div style="background:var(--bg-3);border-radius:var(--radius);padding:10px;">
+            <div style="font-size:0.65rem;color:var(--gold);text-transform:uppercase;font-weight:600;margin-bottom:6px;">🇭🇰 Hong Kong</div>
+            <div style="display:flex;justify-content:space-between;font-size:0.75rem;"><span class="dim">B25</span><span>${hkB25}</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.75rem;"><span class="dim">Lowest</span><span>${hkLow}</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.75rem;"><span class="dim">Count</span><span>${item.hk_count || 0}</span></div>
+        </div>
+        <div style="background:var(--bg-3);border-radius:var(--radius);padding:10px;">
+            <div style="font-size:0.65rem;color:var(--accent);text-transform:uppercase;font-weight:600;margin-bottom:6px;">🇺🇸 United States</div>
+            <div style="display:flex;justify-content:space-between;font-size:0.75rem;"><span class="dim">B25</span><span>${usB25}</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.75rem;"><span class="dim">Lowest</span><span>${usLow}</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.75rem;"><span class="dim">Count</span><span>${item.us_count || 0}</span></div>
+        </div>
+    </div>`;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'watch-detail-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:1000;overflow-y:auto;display:flex;justify-content:center;padding:40px 16px;';
+    overlay.onclick = function(e) { if (e.target === this) closeWatchDetail(); };
+
+    overlay.innerHTML = `<div style="background:var(--bg-1);border:1px solid var(--border);border-radius:8px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;padding:24px;position:relative;">
+        <button onclick="closeWatchDetail()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;">✕</button>
+        <div style="margin-bottom:16px;">
+            <div style="font-size:1.1rem;font-weight:700;color:var(--accent);margin-bottom:4px;">${item.ref}</div>
+            <div style="font-size:0.8rem;color:var(--text-2);">${item.description}</div>
+        </div>
+        ${detailRows}
+        ${marketGrid}
+        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn" onclick="lookupRef('${item.ref}');closeWatchDetail();" style="font-size:0.72rem;">🔍 Market Lookup</button>
+            <button class="btn" onclick="showPage('inventory');closeWatchDetail();" style="font-size:0.72rem;">📋 Full Inventory</button>
+        </div>
+    </div>`;
+
+    document.body.appendChild(overlay);
+}
+
+function closeWatchDetail() {
+    const overlay = document.getElementById('watch-detail-overlay');
+    if (overlay) overlay.remove();
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 🚀 NEW FEATURE FUNCTIONS (global scope for showPage access)
