@@ -1136,7 +1136,7 @@
                      ondragover="event.preventDefault();this.style.borderColor='var(--accent)'" 
                      ondragleave="this.style.borderColor='var(--border)'"
                      ondrop="handlePhotoDrop(event)">
-                    <div style="font-size:0.9rem;color:var(--text-1);margin-bottom:8px;">📷 Drop photos here or click to upload</div>
+                    <div style="font-size:0.9rem;color:var(--text-1);margin-bottom:8px;">Drop photos here or click to upload</div>
                     <div style="font-size:0.7rem;color:var(--text-2);">Supports: JPG, PNG, WEBP (max 10MB each)</div>
                     <input type="file" id="photo-upload" multiple accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)">
                 </div>
@@ -4568,7 +4568,7 @@ function showWatchDetail(row) {
         ['Bracelet', item.bracelet || '—'],
         ['Serial', item.serial || '—'],
         ['Card Date', item.card_date || '—'],
-        ['Hang Tag (WT)', item.wt === 'Yes' ? '✅ Yes' : item.wt === 'No' ? '❌ No' : '—'],
+        ['Hang Tag (WT)', item.wt === 'Yes' ? '<span class="green">Yes</span>' : item.wt === 'No' ? '<span class="red">No</span>' : '—'],
         ['divider'],
         ['Bought From', item.bought_from || '—'],
         ['Cost Price', fmt(item.cost_price)],
@@ -4582,17 +4582,17 @@ function showWatchDetail(row) {
         ['Days Held', (item.days_held || 0) + ' days'],
         ['divider'],
         ['Status', statusTag(status)],
-        ['Arrived', item.arrived ? '✅' : '❌'],
-        ['Posted', item.posted ? '✅' : '❌'],
+        ['Arrived', item.arrived ? '<span class="green">Yes</span>' : '<span class="red">No</span>'],
+        ['Posted', item.posted ? '<span class="green">Yes</span>' : '<span class="red">No</span>'],
         ['Sold To', item.sold_to || '—'],
         ['Sale Price', item.sold_price ? fmt(parseFloat(String(item.sold_price).replace(/[$,]/g, ''))) : '—'],
-        ['Shipped', item.shipped ? '✅' : '❌'],
-        ['Paid', item.paid === 'Yes' ? '✅' : item.paid === 'No' ? '❌' : '—'],
+        ['Shipped', item.shipped ? '<span class="green">Yes</span>' : '<span class="red">No</span>'],
+        ['Paid', item.paid === 'Yes' ? '<span class="green">Yes</span>' : item.paid === 'No' ? '<span class="red">No</span>' : '—'],
     ].map(r => {
         if (r[0] === 'divider') return '<div style="border-top:1px solid var(--border);margin:8px 0;"></div>';
         return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
-            <span style="color:var(--text-2);font-size:0.75rem;">${r[0]}</span>
-            <span style="font-size:0.8rem;font-weight:500;text-align:right;">${r[1]}</span>
+            <span style="color:var(--text-2);font-size:0.75rem;font-family:var(--font);">${r[0]}</span>
+            <span style="font-size:0.8rem;font-weight:500;text-align:right;font-family:var(--mono);">${r[1]}</span>
         </div>`;
     }).join('');
 
@@ -4604,13 +4604,13 @@ function showWatchDetail(row) {
 
     const marketGrid = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
         <div style="background:var(--bg-3);border-radius:var(--radius);padding:10px;">
-            <div style="font-size:0.65rem;color:var(--gold);text-transform:uppercase;font-weight:600;margin-bottom:6px;">🇭🇰 Hong Kong</div>
+            <div style="font-size:0.65rem;color:var(--gold);text-transform:uppercase;font-weight:600;margin-bottom:6px;">HK — Hong Kong</div>
             <div style="display:flex;justify-content:space-between;font-size:0.75rem;"><span class="dim">B25</span><span>${hkB25}</span></div>
             <div style="display:flex;justify-content:space-between;font-size:0.75rem;"><span class="dim">Lowest</span><span>${hkLow}</span></div>
             <div style="display:flex;justify-content:space-between;font-size:0.75rem;"><span class="dim">Count</span><span>${item.hk_count || 0}</span></div>
         </div>
         <div style="background:var(--bg-3);border-radius:var(--radius);padding:10px;">
-            <div style="font-size:0.65rem;color:var(--accent);text-transform:uppercase;font-weight:600;margin-bottom:6px;">🇺🇸 United States</div>
+            <div style="font-size:0.65rem;color:var(--accent);text-transform:uppercase;font-weight:600;margin-bottom:6px;">US — United States</div>
             <div style="display:flex;justify-content:space-between;font-size:0.75rem;"><span class="dim">B25</span><span>${usB25}</span></div>
             <div style="display:flex;justify-content:space-between;font-size:0.75rem;"><span class="dim">Lowest</span><span>${usLow}</span></div>
             <div style="display:flex;justify-content:space-between;font-size:0.75rem;"><span class="dim">Count</span><span>${item.us_count || 0}</span></div>
@@ -4622,7 +4622,7 @@ function showWatchDetail(row) {
     overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:1000;overflow-y:auto;display:flex;justify-content:center;padding:40px 16px;';
     overlay.onclick = function(e) { if (e.target === this) closeWatchDetail(); };
 
-    overlay.innerHTML = `<div style="background:var(--bg-1);border:1px solid var(--border);border-radius:8px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;padding:24px;position:relative;">
+    overlay.innerHTML = `<div style="background:var(--bg-1);border:1px solid var(--border);border-radius:8px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;padding:24px;position:relative;font-family:var(--font);">
         <button onclick="closeWatchDetail()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;">✕</button>
         <div style="margin-bottom:16px;">
             <div style="font-size:1.1rem;font-weight:700;color:var(--accent);margin-bottom:4px;">${item.ref}</div>
@@ -4631,8 +4631,8 @@ function showWatchDetail(row) {
         ${detailRows}
         ${marketGrid}
         <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn" onclick="lookupRef('${item.ref}');closeWatchDetail();" style="font-size:0.72rem;">🔍 Market Lookup</button>
-            <button class="btn" onclick="showPage('inventory');closeWatchDetail();" style="font-size:0.72rem;">📋 Full Inventory</button>
+            <button class="btn" onclick="lookupRef('${item.ref}');closeWatchDetail();" style="font-size:0.72rem;">Market Lookup</button>
+            <button class="btn" onclick="showPage('inventory');closeWatchDetail();" style="font-size:0.72rem;">Full Inventory</button>
         </div>
     </div>`;
 
@@ -4796,7 +4796,7 @@ async function loadPayments() {
                                  
             html += `<div style="background:var(--bg-2);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);">
                 <div style="height:150px;background:var(--bg-3);display:flex;align-items:center;justify-content:center;color:var(--text-2);">
-                    📷 ${photo.original_filename}
+                    ${photo.original_filename}
                 </div>
                 <div style="padding:8px;">
                     <div style="font-size:0.7rem;color:${categoryColor};text-transform:uppercase;font-weight:600;">${photo.category}</div>
