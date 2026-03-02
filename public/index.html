@@ -2768,26 +2768,45 @@ async function submitWatchForm() {
 // ── SHIPPING ──
 let shipConfigLoaded = false;
 
+const SHIP_PRESETS = {
+    'hudson-yards': {
+        contact: 'Jeffin Wijaya',
+        company: 'Jeffin Wijaya',
+        address: '15 Hudson Yards',
+        apt: 'Apt 31B',
+        city: 'New York',
+        state: 'New York',
+        zip: '10001',
+        phone: '424-502-9600',
+        residential: true,
+    },
+    '37th': {
+        contact: 'Jeffin Wijaya',
+        company: 'MK Opulence Inc',
+        address: '505 W 37th St',
+        apt: 'Apt 2B',
+        city: 'New York',
+        state: 'New York',
+        zip: '10018',
+        phone: '424-502-9600',
+        residential: false,
+    },
+};
+
 async function loadShippingPage() {
     loadRecentLabels();
     if (!shipConfigLoaded) {
-        try {
-            const r = await fetch('/api/ifs/config');
-            if (r.ok) {
-                const cfg = await r.json();
-                const sel = document.getElementById('ship-preset');
-                if (sel && cfg.presets) {
-                    Object.entries(cfg.presets).forEach(([name, p]) => {
-                        if (name === 'home') return; // skip alias
-                        const opt = document.createElement('option');
-                        opt.value = name;
-                        opt.textContent = `${name.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase())} — ${p.address}`;
-                        sel.appendChild(opt);
-                    });
-                }
-                shipConfigLoaded = true;
-            }
-        } catch(e) { console.error('Ship config error:', e); }
+        // Populate presets from hardcoded addresses
+        const sel = document.getElementById('ship-preset');
+        if (sel) {
+            Object.entries(SHIP_PRESETS).forEach(([name, p]) => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = `${name.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase())} — ${p.address}, ${p.apt}`;
+                sel.appendChild(opt);
+            });
+        }
+        shipConfigLoaded = true;
     }
 }
 
@@ -2797,19 +2816,17 @@ function applyShipPreset() {
         clearShipForm(true);
         return;
     }
-    fetch('/api/ifs/config').then(r=>r.json()).then(cfg => {
-        const p = cfg.presets[name];
-        if (!p) return;
-        const parts = p.address.split(',');
-        document.getElementById('ship-contact').value = p.contact || '';
-        document.getElementById('ship-company').value = '';
-        document.getElementById('ship-address').value = parts[0]?.trim() || '';
-        document.getElementById('ship-apt').value = parts[1]?.trim() || '';
-        document.getElementById('ship-city').value = p.city || '';
-        document.getElementById('ship-state').value = p.state || '';
-        document.getElementById('ship-zip').value = p.zip || '';
-        document.getElementById('ship-residential').checked = p.residential || false;
-    });
+    const p = SHIP_PRESETS[name];
+    if (!p) return;
+    document.getElementById('ship-contact').value = p.contact || '';
+    document.getElementById('ship-company').value = p.company || '';
+    document.getElementById('ship-address').value = p.address || '';
+    document.getElementById('ship-apt').value = p.apt || '';
+    document.getElementById('ship-city').value = p.city || '';
+    document.getElementById('ship-state').value = p.state || '';
+    document.getElementById('ship-zip').value = p.zip || '';
+    document.getElementById('ship-phone').value = p.phone || '';
+    document.getElementById('ship-residential').checked = p.residential || false;
 }
 
 function clearShipForm(keepPreset) {
