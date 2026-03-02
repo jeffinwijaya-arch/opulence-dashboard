@@ -2227,10 +2227,12 @@ function renderPosTable(items) {
         const usLow=i.us_lowest?fmt(i.us_lowest):'—';
         const hkN=i.hk_count||0, usN=i.us_count||0;
         const spark = _sparkData[i.ref] ? sparkline(_sparkData[i.ref], 56, 18) : '';
+        const askPrice = i.sale_price ? fmt(parseFloat(String(i.sale_price).replace(/[$,]/g, ''))) : '<span class="dim">—</span>';
         return `<tr style="cursor:pointer;" onclick="showWatchDetail(${i.row})">
             <td class="ref">${i.ref}</td>
             <td class="dim" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${[i.bracelet,i.dial].filter(Boolean).join(' | ')}</td>
             <td class="right">${fmt(i.cost_price)}</td>
+            <td class="right" style="color:var(--accent-light);">${askPrice}</td>
             <td class="right">${mkt}</td>
             <td style="text-align:center;padding:2px 4px;">${spark}</td>
             <td class="right" style="font-size:0.75rem;"><div style="color:var(--gold);">${hkB25}</div><div class="dim" style="font-size:0.65rem;">C2: ${hkC2}</div><div class="dim" style="font-size:0.65rem;">Low: ${hkLow}</div></td>
@@ -2244,7 +2246,7 @@ function renderPosTable(items) {
     }).join('');
     return `<div class="card"><div class="card-head"><span>All Positions (${items.length})</span></div>
         <div class="tbl-wrap"><table class="tbl"><thead><tr>
-            <th>Ref</th><th>Details</th><th class="right">Cost</th><th class="right">Market</th><th style="text-align:center;">Trend</th><th class="right" style="color:var(--gold);">HK B25</th><th class="right" style="color:var(--accent);">US B25</th><th class="right">P&L</th><th class="right">%</th><th class="right">Held</th><th>Status</th><th class="right">Comps</th>
+            <th>Ref</th><th>Details</th><th class="right">Cost</th><th class="right" style="color:var(--accent-light);">Ask</th><th class="right">Market</th><th style="text-align:center;">Trend</th><th class="right" style="color:var(--gold);">HK B25</th><th class="right" style="color:var(--accent);">US B25</th><th class="right">P&L</th><th class="right">%</th><th class="right">Held</th><th>Status</th><th class="right">Comps</th>
         </tr></thead><tbody>${rows||'<tr><td colspan="11" class="dim" style="text-align:center;padding:16px;">No data</td></tr>'}</tbody></table></div></div>`;
 }
 
@@ -2265,8 +2267,9 @@ function renderPosCards(items) {
                 </div>
                 <span class="tag ${sCls}">${status}</span>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">
                 <div><div style="font-size:0.6rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.3px;">Cost</div><div style="font-family:var(--mono);font-size:0.85rem;">${fmt(i.cost_price)}</div></div>
+                <div><div style="font-size:0.6rem;color:var(--accent-light);text-transform:uppercase;letter-spacing:0.3px;">Ask</div><div style="font-family:var(--mono);font-size:0.85rem;">${i.sale_price ? fmt(parseFloat(String(i.sale_price).replace(/[$,]/g, ''))) : '—'}</div></div>
                 <div><div style="font-size:0.6rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.3px;">Market</div><div style="font-family:var(--mono);font-size:0.85rem;">${mkt}</div></div>
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:5px;">
@@ -4569,6 +4572,7 @@ function showWatchDetail(row) {
         ['divider'],
         ['Bought From', item.bought_from || '—'],
         ['Cost Price', fmt(item.cost_price)],
+        ['Listing Price', item.sale_price ? fmt(parseFloat(String(item.sale_price).replace(/[$,]/g, ''))) : '—'],
         ['Buy Date', item.buy_date || '—'],
         ['divider'],
         ['Market Value', mkt],
