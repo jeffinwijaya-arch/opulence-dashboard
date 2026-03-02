@@ -2857,7 +2857,7 @@ async function submitShipLabel() {
     status.style.display = 'block';
     status.style.background = 'var(--bg-3)';
     status.style.color = 'var(--text-1)';
-    status.innerHTML = 'Sending label request to Mochie...';
+    status.innerHTML = 'Starting IFS automation...';
     
     try {
         const r = await fetch('/api/ifs/create', {
@@ -2873,7 +2873,7 @@ async function submitShipLabel() {
         } else {
             status.style.background = 'rgba(48,209,88,0.15)';
             status.style.color = 'var(--green)';
-            status.innerHTML = `Label request queued (${d.job?.id}). Mochie is creating it now — tracking + PDF will appear shortly.`;
+            status.innerHTML = `Creating label... automation running`;
             // Poll for completion
             if (d.job?.id) pollLabelStatus(d.job.id);
         }
@@ -2888,23 +2888,32 @@ async function submitShipLabel() {
 
 async function pollLabelStatus(jobId) {
     let attempts = 0;
+    const status = document.getElementById('ship-status');
     const poll = setInterval(async () => {
         attempts++;
         try {
-            const r = await fetch('/api/ifs/pending');
-            const d = await r.json();
-            const completed = (d.completed||[]).find(j => j.id === jobId);
-            if (completed) {
+            const r = await fetch(`/api/ifs/status/${jobId}`);
+            const job = await r.json();
+            if (job.status === 'completed' && job.tracking) {
                 clearInterval(poll);
-                const status = document.getElementById('ship-status');
                 status.style.background = 'rgba(48,209,88,0.15)';
                 status.style.color = 'var(--green)';
-                status.innerHTML = `Label created! Tracking: <strong style="font-family:var(--mono);">${completed.tracking}</strong>${completed.cost?' | Cost: $'+completed.cost:''} <a onclick="downloadShipPdf('${completed.tracking}')" style="cursor:pointer;color:var(--accent);margin-left:8px;">Download PDF</a>`;
+                status.innerHTML = `Label created! Tracking: <strong style="font-family:var(--mono);">${job.tracking}</strong> <a onclick="downloadShipPdf('${job.tracking}')" style="cursor:pointer;color:var(--accent);margin-left:8px;">Download PDF</a>`;
                 loadRecentLabels();
+            } else if (job.status === 'failed') {
+                clearInterval(poll);
+                status.style.background = 'rgba(255,59,48,0.15)';
+                status.style.color = 'var(--red)';
+                status.innerHTML = `Label creation failed: ${job.error||'Unknown error'}. Try creating manually via IFS.`;
+            } else if (job.status === 'processing') {
+                status.innerHTML = `Creating label... automation running (${attempts * 3}s)`;
             }
         } catch(e) {}
-        if (attempts >= 60) clearInterval(poll); // Stop after 5 min
-    }, 5000);
+        if (attempts >= 40) { // Stop after 2 min
+            clearInterval(poll);
+            status.innerHTML += ' <span style="color:var(--text-2);">(stopped polling — check Recent Labels)</span>';
+        }
+    }, 3000);
 }
 
 async function loadRecentLabels() {
@@ -2919,17 +2928,22 @@ async function loadRecentLabels() {
         
         let html = '';
         
-        // Show pending jobs
+        // Show pending/processing/failed jobs
         if (pending.length) {
-            html += pending.map(j => `
-                <div class="listing-card" style="border-left:3px solid var(--accent);">
+            html += pending.map(j => {
+                const isFailed = j.status === 'failed';
+                const borderColor = isFailed ? 'var(--red)' : 'var(--accent)';
+                const statusText = isFailed ? `Failed: ${j.error||'Unknown'}` : 'Creating label...';
+                const statusColor = isFailed ? 'var(--red)' : 'var(--accent)';
+                return `
+                <div class="listing-card" style="border-left:3px solid ${borderColor};">
                     <div style="display:flex;justify-content:space-between;align-items:center;">
-                        <span style="color:var(--accent);font-weight:600;">Processing...</span>
+                        <span style="color:${statusColor};font-weight:600;">${statusText}</span>
                         <span style="font-size:0.72rem;color:var(--text-2);">${j.created}</span>
                     </div>
                     <div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">${j.config?.contact||''} | ${j.config?.address||''} | $${j.config?.value||0}</div>
                 </div>
-            `).join('');
+            `}).join('');
         }
         
         // Show completed/recent labels
