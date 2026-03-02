@@ -300,6 +300,70 @@
         [id$="-modal"] > div, [id$="-overlay"] > div {
             backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
         }
+
+        /* ── POP-OUT WIDGETS ── */
+        .popout-btn {
+            background:none; border:none; cursor:pointer; color:var(--text-2);
+            font-size:0.72rem; padding:2px 5px; border-radius:4px; display:inline-flex;
+            align-items:center; gap:3px; transition:all 0.15s ease; opacity:0;
+            margin-left:auto; margin-right:4px;
+        }
+        .card:hover .popout-btn, .metric:hover .popout-btn { opacity:1; }
+        .popout-btn:hover { color:var(--accent); background:var(--accent-dim); }
+        .popout-btn svg { width:13px; height:13px; }
+
+        .widget-float {
+            position:fixed; z-index:500;
+            background:var(--bg-1); border:1px solid var(--accent-border);
+            border-radius:var(--radius-lg); box-shadow:0 12px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(212,175,55,0.08);
+            display:flex; flex-direction:column; min-width:320px; min-height:200px;
+            resize:both; overflow:hidden;
+            backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+            animation:widgetIn 0.2s ease-out;
+        }
+        @keyframes widgetIn { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
+        .widget-float.closing { animation:widgetOut 0.15s ease-in forwards; }
+        @keyframes widgetOut { to{opacity:0;transform:scale(0.95)} }
+
+        .widget-titlebar {
+            display:flex; align-items:center; padding:8px 12px;
+            background:linear-gradient(135deg, var(--bg-2) 0%, var(--bg-3) 100%);
+            border-bottom:1px solid var(--border); cursor:move; user-select:none;
+            -webkit-user-select:none; flex-shrink:0;
+        }
+        .widget-titlebar .wt-title {
+            font-family:var(--mono); font-size:0.68rem; font-weight:600;
+            text-transform:uppercase; letter-spacing:1px; color:var(--accent);
+        }
+        .widget-titlebar .wt-actions { margin-left:auto; display:flex; gap:4px; }
+        .widget-titlebar .wt-btn {
+            background:none; border:none; cursor:pointer; color:var(--text-2);
+            width:22px; height:22px; display:flex; align-items:center; justify-content:center;
+            border-radius:4px; transition:all 0.15s; font-size:0.8rem;
+        }
+        .widget-titlebar .wt-btn:hover { color:var(--text-0); background:rgba(255,255,255,0.06); }
+        .widget-titlebar .wt-btn.wt-close:hover { color:var(--red); background:var(--red-dim); }
+
+        .widget-body {
+            flex:1; overflow:auto; padding:12px;
+            scrollbar-width:thin; scrollbar-color:var(--bg-4) transparent;
+        }
+        .widget-body .card { margin-bottom:0; border:none; background:transparent; box-shadow:none; }
+        .widget-body .card-head { display:none; }
+        .widget-body .tbl-wrap { max-height:none !important; }
+        .widget-body .metrics { margin-bottom:0; }
+
+        .widget-float.widget-fullscreen {
+            top:0 !important; left:0 !important; width:100vw !important; height:100vh !important;
+            border-radius:0; resize:none;
+        }
+
+        /* Snap indicator */
+        .widget-snap-preview {
+            position:fixed; z-index:499; background:rgba(212,175,55,0.06);
+            border:2px dashed var(--accent-border); border-radius:var(--radius-lg);
+            pointer-events:none; transition:all 0.15s ease;
+        }
     </style>
 </head>
 <body>
@@ -381,7 +445,7 @@
 
             <!-- Full Portfolio Table -->
             <div class="card" style="margin-top:8px;">
-                <div class="card-head"><span>Inventory Positions</span><a class="link" onclick="showPage('portfolio')">Full Analysis</a></div>
+                <div class="card-head"><span>Inventory Positions</span><a class="popout-spacer"></a><a class="link" onclick="showPage('portfolio')">Full Analysis</a></div>
                 <div class="tbl-wrap" style="max-height:400px;overflow-y:auto;"><table class="tbl" id="dash-inventory"><thead><tr>
                     <th>Ref</th><th>Details</th><th class="right">Cost</th><th class="right">Market</th><th class="right">P&L</th><th class="right">%</th><th class="right">Held</th><th>Status</th>
                 </tr></thead><tbody><tr><td colspan="8" class="dim" style="text-align:center;padding:12px;">Loading...</td></tr></tbody></table></div>
@@ -3314,6 +3378,211 @@ async function submitCreateInvoice() {
         }
     } catch(e) { alert('Error creating invoice: ' + e.message); }
 }
+
+// ═══════════════════════════════════════════════════════════════
+// ── POP-OUT WIDGET ENGINE ──
+// ═══════════════════════════════════════════════════════════════
+const POPOUT_ICON = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h5v5"/><path d="M14 2L8 8"/><path d="M12 9v4a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1h4"/></svg>`;
+const DOCK_ICON = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 14H3a1 1 0 01-1-1V3a1 1 0 011-1h10a1 1 0 011 1v5"/><path d="M15 10l-5 5"/><path d="M15 15h-5v-5"/></svg>`;
+
+let _widgetZCounter = 500;
+const _activeWidgets = new Map();
+
+function _makePopoutBtn(id, title) {
+    const btn = document.createElement('button');
+    btn.className = 'popout-btn';
+    btn.title = `Pop out ${title}`;
+    btn.innerHTML = POPOUT_ICON;
+    btn.onclick = (e) => { e.stopPropagation(); popOutWidget(id, title); };
+    return btn;
+}
+
+function _cascadePos() {
+    const n = _activeWidgets.size;
+    return { x: 80 + (n % 6) * 30, y: 80 + (n % 6) * 30 };
+}
+
+function popOutWidget(id, title) {
+    // If already popped out, focus it
+    if (_activeWidgets.has(id)) {
+        const existing = _activeWidgets.get(id);
+        existing.style.zIndex = ++_widgetZCounter;
+        existing.classList.add('fade-in');
+        return;
+    }
+
+    const source = document.getElementById(id);
+    if (!source) return;
+
+    // Clone the content
+    const clone = source.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.querySelectorAll('.popout-btn').forEach(b => b.remove());
+    clone.style.display = '';
+
+    // Create floating widget
+    const widget = document.createElement('div');
+    widget.className = 'widget-float';
+    const pos = _cascadePos();
+    const w = Math.min(600, window.innerWidth - 100);
+    const h = Math.min(480, window.innerHeight - 100);
+    widget.style.cssText = `left:${pos.x}px;top:${pos.y}px;width:${w}px;height:${h}px;z-index:${++_widgetZCounter};`;
+
+    // Titlebar
+    const titlebar = document.createElement('div');
+    titlebar.className = 'widget-titlebar';
+    titlebar.innerHTML = `
+        <span class="wt-title">${title}</span>
+        <div class="wt-actions">
+            <button class="wt-btn wt-fullscreen" title="Fullscreen">⛶</button>
+            <button class="wt-btn wt-newwin" title="Open in new window">⧉</button>
+            <button class="wt-btn wt-close" title="Close">✕</button>
+        </div>`;
+
+    // Body
+    const body = document.createElement('div');
+    body.className = 'widget-body';
+    body.appendChild(clone);
+
+    widget.appendChild(titlebar);
+    widget.appendChild(body);
+    document.body.appendChild(widget);
+    _activeWidgets.set(id, widget);
+
+    // Hide source card (optional visual indicator)
+    source.style.opacity = '0.3';
+    source.style.pointerEvents = 'none';
+
+    // ── Drag ──
+    let dragX, dragY, startLeft, startTop, isDragging = false;
+    titlebar.addEventListener('mousedown', (e) => {
+        if (e.target.closest('.wt-btn')) return;
+        isDragging = true;
+        dragX = e.clientX; dragY = e.clientY;
+        startLeft = widget.offsetLeft; startTop = widget.offsetTop;
+        widget.style.zIndex = ++_widgetZCounter;
+        widget.style.transition = 'none';
+        document.addEventListener('mousemove', onDrag);
+        document.addEventListener('mouseup', onDragEnd);
+    });
+    function onDrag(e) {
+        if (!isDragging) return;
+        widget.style.left = (startLeft + e.clientX - dragX) + 'px';
+        widget.style.top = (startTop + e.clientY - dragY) + 'px';
+    }
+    function onDragEnd() {
+        isDragging = false;
+        widget.style.transition = '';
+        document.removeEventListener('mousemove', onDrag);
+        document.removeEventListener('mouseup', onDragEnd);
+        // Snap to edges
+        const r = widget.getBoundingClientRect();
+        if (r.left < 8) widget.style.left = '0px';
+        if (r.top < 8) widget.style.top = '0px';
+        if (r.right > window.innerWidth - 8) widget.style.left = (window.innerWidth - r.width) + 'px';
+        if (r.bottom > window.innerHeight - 8) widget.style.top = (window.innerHeight - r.height) + 'px';
+    }
+
+    // Focus on click
+    widget.addEventListener('mousedown', () => { widget.style.zIndex = ++_widgetZCounter; });
+
+    // ── Fullscreen toggle ──
+    titlebar.querySelector('.wt-fullscreen').onclick = () => {
+        widget.classList.toggle('widget-fullscreen');
+        titlebar.querySelector('.wt-fullscreen').textContent = widget.classList.contains('widget-fullscreen') ? '⊟' : '⛶';
+    };
+
+    // ── New window ──
+    titlebar.querySelector('.wt-newwin').onclick = () => {
+        const win = window.open('', '_blank', `width=${w},height=${h},left=${pos.x},top=${pos.y}`);
+        if (!win) return;
+        win.document.write(`<!DOCTYPE html><html><head><title>${title} — MK Opulence</title>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+            <style>${document.querySelector('style').textContent}
+            body{background:var(--bg-0);color:var(--text-0);font-family:var(--font);padding:16px;}
+            .card{border:none;background:transparent;box-shadow:none;}
+            .card-head{display:none;}.tbl-wrap{max-height:none!important;}
+            </style></head><body></body></html>`);
+        win.document.close();
+        const c2 = clone.cloneNode(true);
+        win.document.body.appendChild(c2);
+        // Auto-refresh from source periodically
+        const refreshInterval = setInterval(() => {
+            if (win.closed) { clearInterval(refreshInterval); return; }
+            const fresh = document.getElementById(id);
+            if (fresh) {
+                const fc = fresh.cloneNode(true);
+                fc.removeAttribute('id');
+                fc.querySelectorAll('.popout-btn').forEach(b => b.remove());
+                fc.style.display = '';
+                win.document.body.innerHTML = '';
+                win.document.body.appendChild(fc);
+            }
+        }, 5000);
+    };
+
+    // ── Close ──
+    titlebar.querySelector('.wt-close').onclick = () => {
+        widget.classList.add('closing');
+        setTimeout(() => {
+            widget.remove();
+            _activeWidgets.delete(id);
+            source.style.opacity = '';
+            source.style.pointerEvents = '';
+        }, 150);
+    };
+
+    // Keyboard shortcut: Escape to close focused widget
+    widget.tabIndex = -1;
+    widget.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') titlebar.querySelector('.wt-close').click();
+    });
+    widget.focus();
+}
+
+// ── Attach pop-out buttons to all overview cards ──
+function initPopouts() {
+    const cards = [
+        { id: 'devotion-card', title: 'Hourly Devotion' },
+        { id: 'metrics-grid', title: 'Key Metrics' },
+    ];
+
+    // Auto-detect cards in overview that have card-head
+    const overview = document.getElementById('page-dashboard');
+    if (overview) {
+        overview.querySelectorAll('.card').forEach(card => {
+            if (cards.some(c => c.id === card.id)) return; // Already registered
+            const headSpan = card.querySelector('.card-head > span');
+            if (!headSpan) return;
+            const title = headSpan.textContent.trim();
+            if (!card.id) card.id = 'widget-' + title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            cards.push({ id: card.id, title });
+        });
+    }
+
+    cards.forEach(({ id, title }) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        // For cards with card-head, insert button into the head
+        const head = el.querySelector('.card-head');
+        if (head) {
+            const link = head.querySelector('.link');
+            head.insertBefore(_makePopoutBtn(id, title), link || null);
+        } else {
+            // For metrics grid etc, add floating button
+            el.style.position = 'relative';
+            const btn = _makePopoutBtn(id, title);
+            btn.style.cssText = 'position:absolute;top:4px;right:4px;opacity:0;z-index:2;';
+            el.addEventListener('mouseenter', () => btn.style.opacity = '1');
+            el.addEventListener('mouseleave', () => btn.style.opacity = '0');
+            el.appendChild(btn);
+        }
+    });
+}
+
+// Run after DOM + data loaded
+document.addEventListener('DOMContentLoaded', () => setTimeout(initPopouts, 500));
 </script>
 </body>
 </html>
