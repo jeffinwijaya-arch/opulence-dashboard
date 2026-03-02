@@ -849,10 +849,12 @@
                     <option value="not-shipped">Sold Not Shipped</option>
                     <option value="not-paid">Sold Not Paid</option>
                     <option value="not-posted">Not Posted</option>
+                    <option value="completed">Completed Lifecycle</option>
                 </select>
                 <button class="btn" onclick="showAddWatchModal()" style="background:var(--green);color:var(--bg-1);white-space:nowrap;">+ Add Watch</button>
                 <button class="btn" onclick="loadInventoryPage()" style="opacity:0.6;">Refresh</button>
             </div>
+            <div id="im-completed-toggle" style="display:none;text-align:center;padding:8px 0;border-bottom:1px solid var(--border);"></div>
             <!-- Table (desktop) -->
             <div id="im-table-wrap" style="overflow-x:auto;">
                 <table class="tbl" id="im-table">
@@ -3803,6 +3805,12 @@ function updateInventorySummary() {
     profitEl.style.color = totalProfit >= 0 ? 'var(--green)' : 'var(--red)';
 }
 
+window._showCompletedWatches = false;
+function toggleCompletedWatches() {
+    window._showCompletedWatches = !window._showCompletedWatches;
+    filterInventory();
+}
+
 function sortInventory(col) {
     if (invSortCol === col) invSortAsc = !invSortAsc;
     else { invSortCol = col; invSortAsc = true; }
@@ -3831,6 +3839,26 @@ function filterInventory() {
     else if (f === 'not-shipped') rows = rows.filter(r => r.sold === 'Yes' && r.shipped !== 'Yes');
     else if (f === 'not-paid') rows = rows.filter(r => r.sold === 'Yes' && r.paid_after_sold !== 'Yes');
     else if (f === 'not-posted') rows = rows.filter(r => r.sold !== 'Yes' && r.posted !== 'Yes');
+    else if (f === 'completed') rows = rows.filter(r => r.sold === 'Yes' && r.shipped === 'Yes' && r.paid_after_sold === 'Yes');
+
+    // Hide completed lifecycle watches by default (unless filter is 'all' or 'completed' or 'sold')
+    const showCompleted = window._showCompletedWatches || f === 'completed' || f === 'sold';
+    if (!showCompleted && f === 'all') {
+        const completedRows = rows.filter(r => r.sold === 'Yes' && r.shipped === 'Yes' && r.paid_after_sold === 'Yes');
+        const activeRows = rows.filter(r => !(r.sold === 'Yes' && r.shipped === 'Yes' && r.paid_after_sold === 'Yes'));
+        rows = activeRows;
+        // Update the completed toggle count
+        const toggleEl = document.getElementById('im-completed-toggle');
+        if (toggleEl) {
+            toggleEl.style.display = completedRows.length ? 'block' : 'none';
+            toggleEl.innerHTML = window._showCompletedWatches
+                ? `<a onclick="toggleCompletedWatches()" style="cursor:pointer;color:var(--accent);font-size:0.72rem;">Hide ${completedRows.length} completed watches</a>`
+                : `<a onclick="toggleCompletedWatches()" style="cursor:pointer;color:var(--accent);font-size:0.72rem;">Show ${completedRows.length} completed watches (sold + shipped + paid)</a>`;
+        }
+    } else {
+        const toggleEl = document.getElementById('im-completed-toggle');
+        if (toggleEl) toggleEl.style.display = 'none';
+    }
     
     // Apply sorting
     const p = v => { const n = parseFloat(String(v||'0').replace(/[$,]/g,'')); return isNaN(n)?0:n; };
