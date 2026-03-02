@@ -876,7 +876,7 @@ async function loadData() {
 async function loadPortfolio() { try { const r = await fetch('/api/portfolio_insights'); DATA.portfolio = await r.json(); renderPortfolio(); } catch(e) { console.error(e); } }
 async function loadListings() {
     try {
-        let r = await fetch('/data/listings.json'); if (!r.ok) r = await fetch('/api/search?q=');
+        let r = await fetch('/data/listings.json?v=' + Date.now()); if (!r.ok) r = await fetch('/api/search?q=');
         if (r.ok) {
             allListings = (await r.json()).map(l => ({ref:l.ref||'',model:l.model||'',dial:l.dial||'',bracelet:l.bracelet||'',price:l.price_usd||l.price||0,condition:l.condition||'',completeness:l.completeness||'',region:l.region||'',seller:l.seller||'',group:l.group||'',brand:l.brand||'Rolex',year:l.year||'',source_text:l.source_text||''}));
             allListings.sort((a,b)=>a.price-b.price);
