@@ -473,6 +473,10 @@
             <a data-page="invoices" onclick="showPage('invoices')">Invoices</a>
             <a data-page="shipping" onclick="showPage('shipping')">Shipping</a>
             <a data-page="inventory" onclick="showPage('inventory')">Inventory</a>
+            <a data-page="payments" onclick="showPage('payments')">Payments <span class="badge" id="payments-count">0</span></a>
+            <a data-page="photos" onclick="showPage('photos')">Photos</a>
+            <a data-page="alerts" onclick="showPage('alerts')">Alerts <span class="badge" id="alerts-count">0</span></a>
+            <a data-page="analytics" onclick="showPage('analytics')">Analytics</a>
         </nav>
     </header>
 
@@ -489,6 +493,10 @@
         <a data-page="invoices" onclick="showPage('invoices')">Invoices</a>
         <a data-page="shipping" onclick="showPage('shipping')">Ship</a>
         <a data-page="inventory" onclick="showPage('inventory')">Inv</a>
+        <a data-page="payments" onclick="showPage('payments')">Pay</a>
+        <a data-page="photos" onclick="showPage('photos')">Photos</a>
+        <a data-page="alerts" onclick="showPage('alerts')">Alerts</a>
+        <a data-page="analytics" onclick="showPage('analytics')">Data</a>
         <a data-page="browse" onclick="showPage('browse')">Market</a>
     </nav>
 
@@ -971,6 +979,235 @@
             </div>
         </div>
 
+        <!-- ═══ PAYMENTS ═══ -->
+        <div class="page" id="page-payments">
+            <div class="page-head">
+                <h1>Payments & Collections</h1>
+                <p>Track receivables, payables, and cash flow</p>
+            </div>
+            
+            <!-- Cash Flow Summary -->
+            <div class="metrics" id="payment-summary" style="margin-bottom:16px;">
+                <div class="metric">
+                    <div class="label">Outstanding Receivables</div>
+                    <div class="val green" id="pay-receivables">$0</div>
+                </div>
+                <div class="metric">
+                    <div class="label">Outstanding Payables</div>
+                    <div class="val red" id="pay-payables">$0</div>
+                </div>
+                <div class="metric">
+                    <div class="label">Net Position</div>
+                    <div class="val" id="pay-net">$0</div>
+                </div>
+                <div class="metric">
+                    <div class="label">Overdue</div>
+                    <div class="val red" id="pay-overdue">$0</div>
+                </div>
+            </div>
+
+            <!-- Payment Management -->
+            <div class="card" style="margin-bottom:16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <h3 style="margin:0;">Payment Tracking</h3>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn" onclick="loadPayments()">Refresh</button>
+                        <button class="btn" onclick="exportPayments()" style="opacity:0.7;">Export CSV</button>
+                    </div>
+                </div>
+                <div id="payments-content">Loading payment data...</div>
+            </div>
+
+            <!-- Collection Reminders -->
+            <div class="card">
+                <h3 style="margin:0 0 12px 0;">Collection Reminders</h3>
+                <div id="collection-reminders">Loading reminders...</div>
+            </div>
+        </div>
+
+        <!-- ═══ PHOTOS ═══ -->
+        <div class="page" id="page-photos">
+            <div class="page-head">
+                <h1>Photo Gallery</h1>
+                <p>Warranty cards, arrival photos, and watch documentation</p>
+            </div>
+
+            <!-- Photo Stats -->
+            <div class="metrics" id="photo-stats" style="margin-bottom:16px;">
+                <div class="metric">
+                    <div class="label">Total Photos</div>
+                    <div class="val" id="photo-count">0</div>
+                </div>
+                <div class="metric">
+                    <div class="label">Storage Used</div>
+                    <div class="val" id="photo-size">0 MB</div>
+                </div>
+                <div class="metric">
+                    <div class="label">Warranty Cards</div>
+                    <div class="val" id="warranty-count">0</div>
+                </div>
+                <div class="metric">
+                    <div class="label">Arrival Photos</div>
+                    <div class="val" id="arrival-count">0</div>
+                </div>
+            </div>
+
+            <!-- Photo Upload -->
+            <div class="card" style="margin-bottom:16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <h3 style="margin:0;">Upload Photos</h3>
+                </div>
+                <div style="border:2px dashed var(--border);border-radius:var(--radius);padding:24px;text-align:center;cursor:pointer;transition:border-color 0.2s;" 
+                     onclick="document.getElementById('photo-upload').click()"
+                     ondragover="event.preventDefault();this.style.borderColor='var(--accent)'" 
+                     ondragleave="this.style.borderColor='var(--border)'"
+                     ondrop="handlePhotoDrop(event)">
+                    <div style="font-size:0.9rem;color:var(--text-1);margin-bottom:8px;">📷 Drop photos here or click to upload</div>
+                    <div style="font-size:0.7rem;color:var(--text-2);">Supports: JPG, PNG, WEBP (max 10MB each)</div>
+                    <input type="file" id="photo-upload" multiple accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)">
+                </div>
+                
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:12px;">
+                    <select class="input" id="photo-category">
+                        <option value="general">General</option>
+                        <option value="warranty">Warranty Card</option>
+                        <option value="arrival">Arrival Photo</option>
+                        <option value="shipping">Shipping Label</option>
+                    </select>
+                    <input class="input" id="photo-ref" placeholder="Watch ref (optional)">
+                    <input class="input" id="photo-tags" placeholder="Tags (comma-separated)">
+                </div>
+            </div>
+
+            <!-- Photo Gallery -->
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <h3 style="margin:0;">Photo Gallery</h3>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <select class="input" id="photo-filter" onchange="filterPhotos()" style="width:auto;">
+                            <option value="">All Categories</option>
+                            <option value="warranty">Warranty Cards</option>
+                            <option value="arrival">Arrival Photos</option>
+                            <option value="shipping">Shipping Labels</option>
+                            <option value="general">General</option>
+                        </select>
+                        <input class="input" id="photo-search" placeholder="Search..." oninput="searchPhotos()" style="width:150px;">
+                    </div>
+                </div>
+                <div id="photo-gallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+                    Loading photos...
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ ALERTS ═══ -->
+        <div class="page" id="page-alerts">
+            <div class="page-head">
+                <h1>Business Alerts</h1>
+                <p>Real-time notifications and lifecycle gaps</p>
+            </div>
+
+            <!-- Alert Summary -->
+            <div class="metrics" id="alert-summary" style="margin-bottom:16px;">
+                <div class="metric">
+                    <div class="label">Active Alerts</div>
+                    <div class="val" id="alert-total">0</div>
+                </div>
+                <div class="metric">
+                    <div class="label">Urgent</div>
+                    <div class="val red" id="alert-urgent">0</div>
+                </div>
+                <div class="metric">
+                    <div class="label">High Priority</div>
+                    <div class="val orange" id="alert-high">0</div>
+                </div>
+                <div class="metric">
+                    <div class="label">Lifecycle Gaps</div>
+                    <div class="val" id="alert-lifecycle">0</div>
+                </div>
+            </div>
+
+            <!-- Alert Actions -->
+            <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+                <button class="btn" onclick="generateLifecycleAlerts()" style="background:var(--accent);color:var(--bg-1);">Generate Lifecycle Alerts</button>
+                <button class="btn" onclick="loadAlerts()">Refresh Alerts</button>
+                <button class="btn" onclick="acknowledgeAllAlerts()" style="opacity:0.7;">Acknowledge All</button>
+            </div>
+
+            <!-- Active Alerts -->
+            <div class="card" id="alerts-container">
+                <h3 style="margin:0 0 12px 0;">Active Alerts</h3>
+                <div id="alerts-list">Loading alerts...</div>
+            </div>
+        </div>
+
+        <!-- ═══ ANALYTICS ═══ -->
+        <div class="page" id="page-analytics">
+            <div class="page-head">
+                <h1>Business Analytics</h1>
+                <p>Comprehensive performance insights and reporting</p>
+            </div>
+
+            <!-- Business Health Score -->
+            <div class="card" style="margin-bottom:16px;text-align:center;">
+                <h3 style="margin:0 0 12px 0;">Business Health Score</h3>
+                <div style="position:relative;display:inline-block;width:120px;height:120px;margin-bottom:12px;">
+                    <svg width="120" height="120" style="transform:rotate(-90deg);">
+                        <circle cx="60" cy="60" r="50" fill="none" stroke="var(--bg-3)" stroke-width="8"/>
+                        <circle cx="60" cy="60" r="50" fill="none" stroke="var(--accent)" stroke-width="8" 
+                                stroke-dasharray="314" stroke-dashoffset="314" id="health-circle" 
+                                style="transition:stroke-dashoffset 1s ease;stroke-linecap:round;"/>
+                    </svg>
+                    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+                        <div id="health-score" style="font-size:1.8rem;font-weight:700;color:var(--accent);">--</div>
+                        <div style="font-size:0.6rem;color:var(--text-2);text-transform:uppercase;">HEALTH</div>
+                    </div>
+                </div>
+                <div id="health-status" style="font-size:0.8rem;color:var(--text-1);">Loading...</div>
+            </div>
+
+            <!-- Key Metrics -->
+            <div class="metrics" id="analytics-summary" style="margin-bottom:16px;">
+                <div class="metric">
+                    <div class="label">Gross Margin</div>
+                    <div class="val" id="analytics-margin">0%</div>
+                </div>
+                <div class="metric">
+                    <div class="label">Inventory Turnover</div>
+                    <div class="val" id="analytics-turnover">0x</div>
+                </div>
+                <div class="metric">
+                    <div class="label">Avg Days to Sell</div>
+                    <div class="val" id="analytics-days">0</div>
+                </div>
+                <div class="metric">
+                    <div class="label">Working Capital</div>
+                    <div class="val" id="analytics-capital">$0</div>
+                </div>
+            </div>
+
+            <!-- Profit Analysis -->
+            <div class="card" style="margin-bottom:16px;">
+                <h3 style="margin:0 0 12px 0;">Profit Analysis</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                    <div>
+                        <h4 style="margin:0 0 8px 0;font-size:0.8rem;color:var(--text-2);text-transform:uppercase;">Top Performing Models</h4>
+                        <div id="top-models" style="font-size:0.75rem;"></div>
+                    </div>
+                    <div>
+                        <h4 style="margin:0 0 8px 0;font-size:0.8rem;color:var(--text-2);text-transform:uppercase;">Top Suppliers</h4>
+                        <div id="top-suppliers" style="font-size:0.75rem;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Insights -->
+            <div class="card">
+                <h3 style="margin:0 0 12px 0;">Performance Insights</h3>
+                <div id="performance-insights">Loading insights...</div>
+            </div>
+        </div>
+
         <footer class="footer"><span>MK Opulence</span><span>&middot;</span><span>Market Intelligence</span><span>&middot;</span><span id="update-time">--</span><span>&middot;</span><span class="sync-timer" id="sync-timer">Last synced: --</span><span class="kbd-hint" style="opacity:0.4;font-size:0.58rem;">Keys: 1-7 nav / search R refresh</span></footer>
     </div>
 </div>
@@ -998,7 +1235,7 @@ let browseOffset = 0;
 const BROWSE_PAGE = 80;
 let currentDealsRegion = 'all';
 
-const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals',arbitrage:'Arbitrage',browse:'Market',invoices:'Invoices',shipping:'Shipping',inventory:'Inventory'};
+const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals',arbitrage:'Arbitrage',browse:'Market',invoices:'Invoices',shipping:'Shipping',inventory:'Inventory',payments:'Payments',photos:'Photos',alerts:'Alerts',analytics:'Analytics'};
 
 function showPage(name, pushState=true) {
     // Cross-fade: exit current page
@@ -1023,6 +1260,10 @@ function showPage(name, pushState=true) {
     if (name === 'invoices') loadInvoicePage();
     if (name === 'shipping') loadShippingPage();
     if (name === 'inventory') loadInventoryPage();
+    if (name === 'payments') loadPayments();
+    if (name === 'photos') loadPhotos();
+    if (name === 'alerts') loadAlerts();
+    if (name === 'analytics') loadAnalytics();
     if (pushState) {
         const params = new URLSearchParams(window.location.search);
         params.set('p', name);
@@ -4205,6 +4446,427 @@ document.addEventListener('DOMContentLoaded', () => setTimeout(initPopouts, 500)
     });
     const snapEl = document.getElementById('portfolio-snapshot');
     if (snapEl) snapObserver.observe(snapEl, {childList: true, subtree: true});
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // 🚀 NEW FEATURE FUNCTIONS
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    // ── Payments & Collections ──
+    async function loadPayments() {
+        try {
+            const response = await fetch('/api/payments/collections-dashboard');
+            const data = await response.json();
+            
+            // Update summary metrics
+            document.getElementById('pay-receivables').textContent = fmt(data.cash_flow?.total_receivables || 0);
+            document.getElementById('pay-payables').textContent = fmt(data.cash_flow?.total_payables || 0);
+            document.getElementById('pay-net').textContent = fmt(data.cash_flow?.net_position || 0);
+            document.getElementById('pay-overdue').textContent = fmt(data.cash_flow?.overdue_receivables || 0);
+            
+            // Update payments badge
+            const overdueCount = (data.overdue_receivables?.length || 0) + (data.overdue_payables?.length || 0);
+            document.getElementById('payments-count').textContent = overdueCount;
+            
+            // Render payment tables
+            renderPaymentTables(data);
+            renderCollectionReminders(data.reminders_due || []);
+            
+        } catch (error) {
+            console.error('Failed to load payments:', error);
+            document.getElementById('payments-content').innerHTML = '<div style="color:var(--red);padding:20px;">Failed to load payment data</div>';
+        }
+    }
+    
+    function renderPaymentTables(data) {
+        const content = document.getElementById('payments-content');
+        const overdue_receivables = data.overdue_receivables || [];
+        const overdue_payables = data.overdue_payables || [];
+        
+        let html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">';
+        
+        // Overdue Receivables
+        html += '<div><h4 style="color:var(--green);margin-bottom:8px;">Overdue Receivables</h4>';
+        if (overdue_receivables.length > 0) {
+            html += '<div style="font-size:0.75rem;">';
+            overdue_receivables.forEach(payment => {
+                html += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);">
+                    <div><strong>${payment.ref}</strong> → ${payment.counterparty}</div>
+                    <div style="color:var(--green);">${fmt(payment.amount)}</div>
+                </div>`;
+            });
+            html += '</div>';
+        } else {
+            html += '<div style="color:var(--text-2);font-size:0.75rem;">No overdue receivables</div>';
+        }
+        html += '</div>';
+        
+        // Overdue Payables  
+        html += '<div><h4 style="color:var(--red);margin-bottom:8px;">Overdue Payables</h4>';
+        if (overdue_payables.length > 0) {
+            html += '<div style="font-size:0.75rem;">';
+            overdue_payables.forEach(payment => {
+                html += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);">
+                    <div><strong>${payment.ref}</strong> ← ${payment.counterparty}</div>
+                    <div style="color:var(--red);">${fmt(payment.amount)}</div>
+                </div>`;
+            });
+            html += '</div>';
+        } else {
+            html += '<div style="color:var(--text-2);font-size:0.75rem;">No overdue payables</div>';
+        }
+        html += '</div></div>';
+        
+        content.innerHTML = html;
+    }
+    
+    function renderCollectionReminders(reminders) {
+        const container = document.getElementById('collection-reminders');
+        
+        if (reminders.length === 0) {
+            container.innerHTML = '<div style="color:var(--text-2);font-size:0.75rem;">No reminders due</div>';
+            return;
+        }
+        
+        let html = '';
+        reminders.forEach(reminder => {
+            const urgencyColor = reminder.urgency === 'urgent' ? 'var(--red)' : 
+                                reminder.urgency === 'high' ? 'var(--orange)' : 'var(--text-1)';
+            
+            html += `<div style="padding:12px;margin-bottom:8px;background:var(--bg-3);border-radius:var(--radius);border-left:3px solid ${urgencyColor};">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <strong style="color:${urgencyColor};">${reminder.ref} → ${reminder.customer}</strong>
+                    <span style="font-size:0.7rem;color:var(--text-2);">${reminder.days_overdue} days overdue</span>
+                </div>
+                <div style="font-size:0.75rem;color:var(--text-2);margin-bottom:8px;">${fmt(reminder.amount)}</div>
+                <div style="font-size:0.7rem;color:var(--text-1);">${reminder.message}</div>
+            </div>`;
+        });
+        
+        container.innerHTML = html;
+    }
+    
+    async function exportPayments() {
+        try {
+            const response = await fetch('/api/payments/export');
+            const data = await response.json();
+            if (data.success) {
+                alert('Payment export completed: ' + data.file_path);
+            } else {
+                alert('Export failed');
+            }
+        } catch (error) {
+            console.error('Export failed:', error);
+            alert('Export failed');
+        }
+    }
+
+    // ── Photo Gallery ──
+    async function loadPhotos() {
+        try {
+            const statsResponse = await fetch('/api/photos/statistics');
+            const statsData = await statsResponse.json();
+            
+            // Update photo stats
+            document.getElementById('photo-count').textContent = statsData.total_photos || 0;
+            document.getElementById('photo-size').textContent = statsData.total_size_mb + ' MB';
+            document.getElementById('warranty-count').textContent = statsData.categories?.warranty?.count || 0;
+            document.getElementById('arrival-count').textContent = statsData.categories?.arrival?.count || 0;
+            
+            // Load photo gallery
+            const photosResponse = await fetch('/api/photos/search?limit=50');
+            const photosData = await photosResponse.json();
+            renderPhotoGallery(photosData.photos || []);
+            
+        } catch (error) {
+            console.error('Failed to load photos:', error);
+            document.getElementById('photo-gallery').innerHTML = '<div style="color:var(--red);padding:20px;">Failed to load photos</div>';
+        }
+    }
+    
+    function renderPhotoGallery(photos) {
+        const gallery = document.getElementById('photo-gallery');
+        
+        if (photos.length === 0) {
+            gallery.innerHTML = '<div style="color:var(--text-2);grid-column:1/-1;text-align:center;padding:40px;">No photos found</div>';
+            return;
+        }
+        
+        let html = '';
+        photos.forEach(photo => {
+            const categoryColor = photo.category === 'warranty' ? 'var(--green)' :
+                                 photo.category === 'arrival' ? 'var(--blue)' :
+                                 photo.category === 'shipping' ? 'var(--orange)' : 'var(--text-2)';
+                                 
+            html += `<div style="background:var(--bg-2);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);">
+                <div style="height:150px;background:var(--bg-3);display:flex;align-items:center;justify-content:center;color:var(--text-2);">
+                    📷 ${photo.original_filename}
+                </div>
+                <div style="padding:8px;">
+                    <div style="font-size:0.7rem;color:${categoryColor};text-transform:uppercase;font-weight:600;">${photo.category}</div>
+                    <div style="font-size:0.75rem;margin:4px 0;">${photo.ref || 'No ref'}</div>
+                    <div style="font-size:0.65rem;color:var(--text-2);">${new Date(photo.uploaded_at).toLocaleDateString()}</div>
+                </div>
+            </div>`;
+        });
+        
+        gallery.innerHTML = html;
+    }
+    
+    async function handlePhotoUpload(event) {
+        const files = event.target.files;
+        if (!files.length) return;
+        
+        const category = document.getElementById('photo-category').value;
+        const ref = document.getElementById('photo-ref').value;
+        const tags = document.getElementById('photo-tags').value;
+        
+        for (const file of files) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('category', category);
+            if (ref) formData.append('ref', ref);
+            if (tags) formData.append('tags', tags);
+            
+            try {
+                const response = await fetch('/api/photos/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    console.log('Photo uploaded:', result.photo_id);
+                } else {
+                    console.error('Upload failed:', result.error);
+                }
+            } catch (error) {
+                console.error('Upload failed:', error);
+            }
+        }
+        
+        // Reload gallery
+        setTimeout(loadPhotos, 1000);
+        
+        // Clear inputs
+        event.target.value = '';
+        document.getElementById('photo-ref').value = '';
+        document.getElementById('photo-tags').value = '';
+    }
+    
+    function handlePhotoDrop(event) {
+        event.preventDefault();
+        event.target.style.borderColor = 'var(--border)';
+        
+        const files = event.dataTransfer.files;
+        if (files.length) {
+            document.getElementById('photo-upload').files = files;
+            handlePhotoUpload({target: {files}});
+        }
+    }
+    
+    function filterPhotos() {
+        // Implementation for filtering photos
+        loadPhotos();
+    }
+    
+    function searchPhotos() {
+        // Implementation for searching photos
+        loadPhotos();
+    }
+
+    // ── Business Alerts ──
+    async function loadAlerts() {
+        try {
+            const response = await fetch('/api/business-intelligence/alerts');
+            const data = await response.json();
+            const alerts = data.alerts || [];
+            
+            // Update alert metrics
+            document.getElementById('alert-total').textContent = alerts.length;
+            document.getElementById('alert-urgent').textContent = alerts.filter(a => a.priority === 'urgent').length;
+            document.getElementById('alert-high').textContent = alerts.filter(a => a.priority === 'high').length;
+            document.getElementById('alert-lifecycle').textContent = alerts.filter(a => a.type === 'lifecycle_gap').length;
+            
+            // Update alerts badge
+            document.getElementById('alerts-count').textContent = alerts.filter(a => a.priority === 'urgent').length;
+            
+            renderAlerts(alerts);
+            
+        } catch (error) {
+            console.error('Failed to load alerts:', error);
+            document.getElementById('alerts-list').innerHTML = '<div style="color:var(--red);padding:20px;">Failed to load alerts</div>';
+        }
+    }
+    
+    function renderAlerts(alerts) {
+        const container = document.getElementById('alerts-list');
+        
+        if (alerts.length === 0) {
+            container.innerHTML = '<div style="color:var(--text-2);font-size:0.75rem;text-align:center;padding:40px;">No active alerts</div>';
+            return;
+        }
+        
+        let html = '';
+        alerts.forEach(alert => {
+            const priorityColor = alert.priority === 'urgent' ? 'var(--red)' :
+                                 alert.priority === 'high' ? 'var(--orange)' :
+                                 alert.priority === 'normal' ? 'var(--blue)' : 'var(--text-2)';
+                                 
+            html += `<div style="padding:12px;margin-bottom:8px;background:var(--bg-3);border-radius:var(--radius);border-left:3px solid ${priorityColor};">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <strong style="color:${priorityColor};">${alert.title}</strong>
+                    <div style="display:flex;gap:6px;">
+                        <span style="font-size:0.65rem;padding:2px 6px;background:${priorityColor};color:var(--bg-1);border-radius:3px;text-transform:uppercase;">${alert.priority}</span>
+                        <button onclick="acknowledgeAlert('${alert.id}')" style="font-size:0.65rem;padding:2px 6px;background:var(--bg-1);border:1px solid var(--border);border-radius:3px;color:var(--text-2);cursor:pointer;">✓ ACK</button>
+                    </div>
+                </div>
+                <div style="font-size:0.75rem;color:var(--text-1);margin-bottom:8px;">${alert.message}</div>
+                <div style="font-size:0.65rem;color:var(--text-2);">${alert.type} • ${new Date(alert.created_at).toLocaleDateString()}</div>
+            </div>`;
+        });
+        
+        container.innerHTML = html;
+    }
+    
+    async function acknowledgeAlert(alertId) {
+        try {
+            const response = await fetch(`/api/business-intelligence/alerts/${alertId}/acknowledge`, {
+                method: 'POST'
+            });
+            
+            if (response.ok) {
+                loadAlerts(); // Reload alerts
+            }
+        } catch (error) {
+            console.error('Failed to acknowledge alert:', error);
+        }
+    }
+    
+    async function generateLifecycleAlerts() {
+        try {
+            const response = await fetch('/api/business-intelligence/generate-alerts', {
+                method: 'POST'
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                loadAlerts(); // Reload alerts
+                alert(`Generated ${data.alert_ids.length} lifecycle alerts`);
+            }
+        } catch (error) {
+            console.error('Failed to generate alerts:', error);
+            alert('Failed to generate alerts');
+        }
+    }
+    
+    async function acknowledgeAllAlerts() {
+        if (!confirm('Acknowledge all alerts?')) return;
+        
+        try {
+            const alertsResponse = await fetch('/api/business-intelligence/alerts');
+            const alertsData = await alertsResponse.json();
+            const alerts = alertsData.alerts || [];
+            
+            for (const alert of alerts) {
+                await acknowledgeAlert(alert.id);
+            }
+            
+            loadAlerts();
+        } catch (error) {
+            console.error('Failed to acknowledge all alerts:', error);
+        }
+    }
+
+    // ── Business Analytics ──
+    async function loadAnalytics() {
+        try {
+            // Load business health
+            const healthResponse = await fetch('/api/business-intelligence/health');
+            const healthData = await healthResponse.json();
+            
+            // Update health score
+            document.getElementById('health-score').textContent = healthData.health_score;
+            document.getElementById('health-status').textContent = healthData.status.toUpperCase();
+            
+            // Animate health circle
+            const circle = document.getElementById('health-circle');
+            const circumference = 2 * Math.PI * 50; // r = 50
+            const offset = circumference - (healthData.health_score / 100) * circumference;
+            circle.style.strokeDashoffset = offset;
+            
+            // Update key metrics
+            document.getElementById('analytics-margin').textContent = (healthData.gross_margin * 100).toFixed(1) + '%';
+            document.getElementById('analytics-turnover').textContent = healthData.inventory_turnover.toFixed(1) + 'x';
+            
+            // Load full analytics
+            const analyticsResponse = await fetch('/api/business-intelligence/analytics');
+            const analyticsData = await analyticsResponse.json();
+            
+            renderProfitAnalysis(analyticsData.profit_analysis);
+            renderPerformanceInsights(analyticsData.insights);
+            
+        } catch (error) {
+            console.error('Failed to load analytics:', error);
+            document.getElementById('health-status').textContent = 'ERROR';
+        }
+    }
+    
+    function renderProfitAnalysis(profitData) {
+        if (!profitData) return;
+        
+        // Top models
+        const topModels = document.getElementById('top-models');
+        let modelsHtml = '';
+        Object.entries(profitData.profit_by_model || {})
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 5)
+            .forEach(([model, profit]) => {
+                modelsHtml += `<div style="display:flex;justify-content:space-between;padding:4px 0;">
+                    <span>${model}</span><span style="color:var(--green);">${fmt(profit)}</span>
+                </div>`;
+            });
+        topModels.innerHTML = modelsHtml || '<div style="color:var(--text-2);">No data</div>';
+        
+        // Top suppliers
+        const topSuppliers = document.getElementById('top-suppliers');
+        let suppliersHtml = '';
+        Object.entries(profitData.profit_by_supplier || {})
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 5)
+            .forEach(([supplier, profit]) => {
+                suppliersHtml += `<div style="display:flex;justify-content:space-between;padding:4px 0;">
+                    <span>${supplier}</span><span style="color:var(--green);">${fmt(profit)}</span>
+                </div>`;
+            });
+        topSuppliers.innerHTML = suppliersHtml || '<div style="color:var(--text-2);">No data</div>';
+    }
+    
+    function renderPerformanceInsights(insights) {
+        const container = document.getElementById('performance-insights');
+        
+        if (!insights || insights.length === 0) {
+            container.innerHTML = '<div style="color:var(--text-2);font-size:0.75rem;">No insights available</div>';
+            return;
+        }
+        
+        let html = '';
+        insights.forEach(insight => {
+            const priorityColor = insight.priority === 'high' ? 'var(--orange)' :
+                                 insight.priority === 'normal' ? 'var(--blue)' : 'var(--text-2)';
+                                 
+            html += `<div style="padding:12px;margin-bottom:8px;background:var(--bg-3);border-radius:var(--radius);border-left:3px solid ${priorityColor};">
+                <div style="display:flex;justify-content:between;align-items:center;margin-bottom:4px;">
+                    <strong style="color:${priorityColor};">${insight.title}</strong>
+                    <span style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">${insight.type}</span>
+                </div>
+                <div style="font-size:0.75rem;color:var(--text-1);margin-bottom:6px;">${insight.message}</div>
+                <div style="font-size:0.7rem;color:var(--accent);">💡 ${insight.action}</div>
+            </div>`;
+        });
+        
+        container.innerHTML = html;
+    }
+
 })();
 </script>
 </body>
