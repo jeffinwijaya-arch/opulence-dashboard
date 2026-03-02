@@ -42,7 +42,11 @@
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         html { font-size:13px; scroll-behavior:smooth; -webkit-font-smoothing:antialiased; }
-        body { background:var(--bg-0); color:var(--text-0); font-family:var(--font); min-height:100vh; }
+        body {
+            background:var(--bg-0); color:var(--text-0); font-family:var(--font); min-height:100vh;
+            background-image: radial-gradient(rgba(255,255,255,0.015) 1px, transparent 1px);
+            background-size: 4px 4px;
+        }
         ::selection { background:rgba(212,175,55,0.2); }
 
         /* ── LAYOUT ── */
@@ -78,6 +82,11 @@
         }
         .nav a:hover { color:var(--text-1); background:rgba(255,255,255,0.02); }
         .nav a.active { color:var(--accent); border-bottom-color:var(--accent); }
+        .nav a.active::after {
+            content:''; position:absolute; bottom:6px; left:50%; transform:translateX(-50%);
+            width:4px; height:4px; border-radius:50%; background:var(--accent);
+            box-shadow:0 0 6px rgba(212,175,55,0.5);
+        }
         .nav .badge {
             background:var(--accent-dim); color:var(--accent); font-size:0.62rem;
             padding:1px 5px; border-radius:3px; font-weight:600; margin-left:5px;
@@ -110,9 +119,10 @@
         .card {
             background:var(--bg-2); border:1px solid var(--border);
             border-radius:var(--radius-lg); margin-bottom:12px;
-            box-shadow:var(--shadow-sm); transition:border-color 0.2s ease;
+            box-shadow:var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.02);
+            transition:border-color 0.2s ease;
         }
-        .card:hover { border-color:var(--border-strong); }
+        .card:hover { border-color:var(--border-strong); box-shadow:var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.03); }
         .card-head {
             display:flex; align-items:center; justify-content:space-between;
             padding:12px 16px; border-bottom:1px solid var(--border);
@@ -128,11 +138,25 @@
         .metric {
             background:linear-gradient(135deg, var(--bg-2) 0%, var(--bg-3) 100%);
             border:1px solid var(--border); border-radius:var(--radius-lg);
-            padding:14px 16px; transition:all 0.2s ease; box-shadow:var(--shadow-sm);
+            padding:14px 16px; transition:all 0.3s ease; box-shadow:var(--shadow-sm);
+            position:relative; overflow:hidden;
         }
+        .metric::before {
+            content:''; position:absolute; inset:-1px; border-radius:var(--radius-lg);
+            background:conic-gradient(from var(--gradient-angle, 0deg), transparent 60%, rgba(212,175,55,0.3), transparent 40%);
+            opacity:0; transition:opacity 0.4s ease; z-index:-1;
+        }
+        .metric:hover::before { opacity:1; animation:rotateGradient 3s linear infinite; }
+        @keyframes rotateGradient { to { --gradient-angle:360deg; } }
+        @property --gradient-angle { syntax:'<angle>'; initial-value:0deg; inherits:false; }
+        .metric::after {
+            content:''; position:absolute; inset:0; border-radius:var(--radius-lg);
+            box-shadow:inset 0 0 12px rgba(212,175,55,0); transition:box-shadow 0.3s ease;
+        }
+        .metric:hover::after { box-shadow:inset 0 0 12px rgba(212,175,55,0.04); }
         .metric:hover { border-color:var(--accent-border); transform:translateY(-2px); box-shadow:var(--shadow-md); }
-        .metric .label { font-size:0.56rem; color:var(--text-2); text-transform:uppercase; letter-spacing:1.2px; font-weight:600; margin-bottom:6px; font-family:var(--mono); }
-        .metric .val { font-size:1.65rem; font-weight:700; font-family:var(--mono); line-height:1.1; }
+        .metric .label { font-size:0.56rem; color:var(--text-2); text-transform:uppercase; letter-spacing:1.2px; font-weight:700; margin-bottom:6px; font-family:var(--mono); }
+        .metric .val { font-size:1.65rem; font-weight:300; font-family:var(--mono); line-height:1.1; font-variant-numeric:tabular-nums; letter-spacing:0.5px; }
         .metric .sub { font-size:0.62rem; color:var(--text-2); margin-top:6px; font-family:var(--mono); }
         .metric .sparkline-wrap { margin-top:8px; height:28px; position:relative; }
         .metric .sparkline-wrap canvas { width:100%; height:28px; display:block; }
@@ -150,18 +174,18 @@
         .tbl td { padding:7px 12px; border-bottom:1px solid var(--border); font-family:var(--mono); font-size:0.78rem; transition:all 0.15s ease; }
         .tbl tr:hover td { background:var(--bg-hover); }
         .tbl tr:hover td:first-child { box-shadow:inset 3px 0 0 var(--accent); }
-        .tbl tr:nth-child(even) td { background:rgba(255,255,255,0.01); }
+        .tbl tr:nth-child(even) td { background:rgba(255,255,255,0.015); }
         .tbl tr:nth-child(even):hover td { background:var(--bg-hover); }
         .tbl .ref { color:var(--accent); font-weight:600; cursor:pointer; transition:color 0.1s; }
         .tbl .ref:hover { color:var(--accent-light); }
-        .tbl .green { color:var(--green); }
-        .tbl .red { color:var(--red); }
+        .tbl .green { color:var(--green); font-weight:700; }
+        .tbl .red { color:var(--red); font-weight:700; }
         .tbl .dim { color:var(--text-2); }
         .tbl .right { text-align:right; }
         .tbl-wrap { overflow-x:auto; border-radius:var(--radius); }
 
         /* ── TAGS ── */
-        .tag { display:inline-block; padding:2px 7px; border-radius:4px; font-size:0.66rem; font-weight:600; font-family:var(--mono); letter-spacing:0.3px; transition:box-shadow 0.2s ease; }
+        .tag { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:20px; font-size:0.66rem; font-weight:600; font-family:var(--mono); letter-spacing:0.3px; transition:box-shadow 0.2s ease; white-space:nowrap; }
         .tag-green { background:var(--green-dim); color:var(--green); border:1px solid rgba(0,230,118,0.18); box-shadow:0 0 6px rgba(0,230,118,0.1); }
         .tag-red { background:var(--red-dim); color:var(--red); border:1px solid rgba(255,23,68,0.18); box-shadow:0 0 6px rgba(255,23,68,0.1); }
         .tag-blue { background:var(--blue-dim); color:var(--blue); border:1px solid rgba(96,165,250,0.18); box-shadow:0 0 6px rgba(96,165,250,0.1); }
@@ -184,14 +208,14 @@
         .conf-dots .d.med { background:var(--orange); }
 
         /* ── PROFIT PILL ── */
-        .pill { display:inline-block; padding:2px 8px; border-radius:4px; font-size:0.72rem; font-weight:600; font-family:var(--mono); }
+        .pill { display:inline-block; padding:2px 8px; border-radius:4px; font-size:0.72rem; font-weight:600; font-family:var(--mono); font-variant-numeric:tabular-nums; }
         .pill.pos { background:var(--green-dim); color:var(--green); border:1px solid rgba(0,230,118,0.15); box-shadow:0 0 8px rgba(0,230,118,0.08); }
         .pill.neg { background:var(--red-dim); color:var(--red); border:1px solid rgba(255,23,68,0.15); box-shadow:0 0 8px rgba(255,23,68,0.08); }
 
         /* ── PORTFOLIO GRID ── */
         .pf-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; }
         .pf-stat { text-align:center; padding:10px 8px; }
-        .pf-val { font-size:1.2rem; font-weight:700; font-family:var(--mono); }
+        .pf-val { font-size:1.2rem; font-weight:300; font-family:var(--mono); font-variant-numeric:tabular-nums; letter-spacing:0.5px; }
         .pf-label { font-size:0.62rem; color:var(--text-2); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
 
         /* ── DEAL CARDS ── */
@@ -268,14 +292,16 @@
         .footer {
             padding:16px 20px; text-align:center; font-size:0.62rem; color:var(--text-3);
             letter-spacing:1.5px; text-transform:uppercase; border-top:1px solid var(--border);
-            font-family:var(--mono);
+            font-family:var(--mono); display:flex; align-items:center; justify-content:center; gap:12px;
         }
+        .footer .sync-timer { color:var(--text-2); font-variant-numeric:tabular-nums; }
 
         /* ── SCROLLBAR ── */
-        ::-webkit-scrollbar { width:5px; height:5px; }
+        ::-webkit-scrollbar { width:4px; height:4px; }
         ::-webkit-scrollbar-track { background:transparent; }
-        ::-webkit-scrollbar-thumb { background:var(--bg-4); border-radius:3px; }
-        ::-webkit-scrollbar-thumb:hover { background:var(--text-3); }
+        ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.06); border-radius:4px; transition:background 0.3s; }
+        ::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,0.12); }
+        * { scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.06) transparent; }
 
         /* ── RESPONSIVE ── */
         @media(max-width:900px) {
@@ -403,15 +429,23 @@
         /* ── LOOKUP POPULAR REFS ── */
         .popular-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:8px; margin-top:14px; }
         .popular-card {
-            background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg);
-            padding:12px 14px; cursor:pointer; transition:all 0.2s ease;
+            background:linear-gradient(135deg, var(--bg-2) 0%, var(--bg-3) 100%);
+            border:1px solid var(--border); border-radius:var(--radius-lg);
+            padding:14px 16px; cursor:pointer; transition:all 0.25s ease;
+            position:relative; overflow:hidden;
         }
-        .popular-card:hover { border-color:var(--accent-border); transform:translateY(-2px); box-shadow:var(--shadow-md); }
-        .popular-card .pc-ref { color:var(--accent); font-family:var(--mono); font-weight:700; font-size:0.88rem; }
-        .popular-card .pc-model { font-size:0.72rem; color:var(--text-2); margin-top:2px; }
-        .popular-card .pc-price { font-family:var(--mono); font-weight:600; font-size:0.82rem; margin-top:6px; }
-        .popular-card .pc-spark { margin-top:6px; height:22px; }
-        .popular-card .pc-spark canvas { width:100%; height:22px; }
+        .popular-card::after {
+            content:''; position:absolute; top:0; left:0; right:0; height:2px;
+            background:linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity:0; transition:opacity 0.3s;
+        }
+        .popular-card:hover { border-color:var(--accent-border); transform:translateY(-3px); box-shadow:var(--shadow-md), 0 0 20px rgba(212,175,55,0.06); }
+        .popular-card:hover::after { opacity:1; }
+        .popular-card .pc-ref { color:var(--accent); font-family:var(--mono); font-weight:700; font-size:0.92rem; letter-spacing:0.3px; }
+        .popular-card .pc-model { font-size:0.7rem; color:var(--text-2); margin-top:3px; letter-spacing:0.2px; }
+        .popular-card .pc-price { font-family:var(--mono); font-weight:300; font-size:0.92rem; margin-top:8px; font-variant-numeric:tabular-nums; letter-spacing:0.5px; }
+        .popular-card .pc-spark { margin-top:8px; height:24px; }
+        .popular-card .pc-spark canvas { width:100%; height:24px; display:block; }
 
         /* ── BROWSE LOADING STATE ── */
         .browse-loading { text-align:center; padding:40px 20px; color:var(--text-2); }
@@ -467,11 +501,15 @@
             </div>
             <div class="metrics" id="metrics-grid"></div>
 
-            <div class="card" id="devotion-card" style="text-align:center;background:linear-gradient(135deg,var(--bg-2) 0%,rgba(212,175,55,0.05) 100%);border:1px solid rgba(212,175,55,0.15);">
-                <div class="card-head"><span>Hourly Devotion</span><span id="devotion-time" style="font-size:0.6rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;"></span></div>
-                <div class="card-body" style="padding:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-                    <div id="devotion-verse" style="font-size:1rem;line-height:1.6;color:var(--text-1);font-style:italic;max-width:720px;"></div>
-                    <div id="devotion-ref" style="margin-top:12px;font-size:0.75rem;color:var(--accent);font-weight:600;letter-spacing:0.5px;"></div>
+            <div id="devotion-card" style="background:linear-gradient(135deg,var(--bg-2) 0%,rgba(212,175,55,0.03) 100%);border:1px solid rgba(212,175,55,0.1);border-radius:var(--radius-lg);padding:10px 16px;margin-bottom:12px;cursor:pointer;display:flex;align-items:center;gap:14px;" onclick="this.querySelector('.devotion-full').style.display=this.querySelector('.devotion-full').style.display==='none'?'block':'none'">
+                <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
+                        <span style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-2);font-family:var(--mono);">Devotion</span>
+                        <span id="devotion-time" style="font-size:0.58rem;color:var(--text-3);font-family:var(--mono);"></span>
+                        <span id="devotion-ref" style="font-size:0.62rem;color:var(--accent);font-weight:600;letter-spacing:0.3px;font-family:var(--mono);margin-left:auto;"></span>
+                    </div>
+                    <div id="devotion-verse" style="font-size:0.78rem;line-height:1.5;color:var(--text-1);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+                    <div class="devotion-full" style="display:none;margin-top:6px;font-size:0.82rem;line-height:1.6;color:var(--text-1);font-style:italic;white-space:normal;"></div>
                 </div>
             </div>
 
@@ -932,7 +970,7 @@
             </div>
         </div>
 
-        <footer class="footer">MK Opulence &middot; Market Intelligence &middot; <span id="update-time">—</span> <span class="kbd-hint" style="margin-left:12px;opacity:0.4;font-size:0.58rem;">Keys: 1-7 nav · / search · R refresh</span></footer>
+        <footer class="footer"><span>MK Opulence</span><span>&middot;</span><span>Market Intelligence</span><span>&middot;</span><span id="update-time">--</span><span>&middot;</span><span class="sync-timer" id="sync-timer">Last synced: --</span><span class="kbd-hint" style="opacity:0.4;font-size:0.58rem;">Keys: 1-7 nav / search R refresh</span></footer>
     </div>
 </div>
 
@@ -979,7 +1017,7 @@ function showPage(name, pushState=true) {
     }, currentPage && currentPage.id !== `page-${name}` ? 80 : 0);
     $$(`[data-page="${name}"]`).forEach(n => n.classList.add('active'));
     if (name === 'browse') { if (!allListings.length) loadListings(); }
-    if (name === 'lookup' && !_lookupInitialized) initLookupPage();
+    if (name === 'lookup') { const _q = ($('#ref-search')?.value||'').trim(); if (!_q) { _lookupInitialized = false; initLookupPage(); } }
     if (name === 'portfolio') { if (DATA.portfolio) renderPortfolio(); else loadPortfolio(); }
     if (name === 'invoices') loadInvoicePage();
     if (name === 'shipping') loadShippingPage();
@@ -1712,8 +1750,16 @@ function detectBrand(ref) {
     return 'Other';
 }
 function statusTag(s) {
-    const cls = s==='SOLD'?'tag-red':s==='LISTED'?'tag-green':s==='SHIPPED'?'tag-blue':s==='IN TRANSIT'?'tag-blue':'tag-gold';
-    return `<span class="tag ${cls}">${s}</span>`;
+    const cfg = {
+        'SOLD':       {cls:'tag-red',   ind:'\u2716'},
+        'LISTED':     {cls:'tag-green', ind:'\u25B2'},
+        'SHIPPED':    {cls:'tag-blue',  ind:'\u25B6'},
+        'IN TRANSIT': {cls:'tag-blue',  ind:'\u25BA'},
+        'AT STORE':   {cls:'tag-gold',  ind:'\u25CF'},
+        'IN HAND':    {cls:'tag-gold',  ind:'\u25C6'},
+    };
+    const c = cfg[s] || {cls:'tag-gold', ind:'\u25CF'};
+    return `<span class="tag ${c.cls}"><span style="font-size:0.55rem;">${c.ind}</span> ${s}</span>`;
 }
 
 function renderPfSummary(c, p, items) {
@@ -2245,15 +2291,17 @@ function renderNews() {
     feed.innerHTML = articles.map(a => {
         const d = new Date(a.date);
         const ago = timeAgo(d);
-        const srcColor = {'HODINKEE':'var(--accent)','MONOCHROME':'var(--blue)','FRATELLO':'var(--green)','REVOLUTION':'var(--orange)'}[a.source]||'var(--text-2)';
-        return `<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="window.open('${a.link}','_blank')">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        const srcColor = {'HODINKEE':'var(--accent)','MONOCHROME':'var(--blue)','FRATELLO':'var(--green)','REVOLUTION':'var(--orange)','WATCHPRO':'#a78bfa','ABLOGTOWATCH':'#f472b6'}[a.source]||'var(--text-2)';
+        return `<div style="padding:10px 6px;border-bottom:1px solid var(--border);cursor:pointer;transition:all 0.15s ease;border-radius:var(--radius);" onmouseenter="this.style.background='rgba(255,255,255,0.02)';this.style.transform='translateX(4px)'" onmouseleave="this.style.background='';this.style.transform=''" onclick="window.open('${a.link}','_blank')">
+            <div style="display:flex;align-items:flex-start;gap:10px;">
+                <div style="width:6px;height:6px;border-radius:50%;background:${srcColor};margin-top:6px;flex-shrink:0;box-shadow:0 0 6px ${srcColor};"></div>
                 <div style="flex:1;min-width:0;">
-                    <div style="font-size:0.8rem;font-weight:500;color:var(--text-0);line-height:1.3;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${a.title}</div>
-                    <div style="font-size:0.68rem;color:var(--text-2);display:flex;gap:6px;align-items:center;">
-                        <span style="color:${srcColor};font-weight:600;font-family:var(--mono);font-size:0.62rem;">${a.source}</span>
+                    <div style="font-size:0.82rem;font-weight:600;color:var(--text-0);line-height:1.35;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${a.title}</div>
+                    <div style="font-size:0.65rem;color:var(--text-2);display:flex;gap:8px;align-items:center;font-family:var(--mono);">
+                        <span style="color:${srcColor};font-weight:600;font-size:0.6rem;letter-spacing:0.5px;">${a.source}</span>
+                        <span style="opacity:0.5;">|</span>
                         <span>${ago}</span>
-                        ${a.relevance >= 20 ? '<span style="color:var(--accent);font-size:0.6rem;">RELEVANT</span>' : ''}
+                        ${a.relevance >= 20 ? '<span style="color:var(--accent);font-size:0.58rem;font-weight:700;letter-spacing:0.5px;">RELEVANT</span>' : ''}
                     </div>
                 </div>
             </div>
@@ -2684,52 +2732,69 @@ function drawDonutChart(canvasId, segments, opts={}) {
 // ═══ LOOKUP PAGE INITIALIZER (popular refs) ═══
 let _lookupInitialized = false;
 async function initLookupPage() {
-    if (_lookupInitialized) return;
-    _lookupInitialized = true;
     const resultDiv = document.getElementById('lookup-result');
-    if (!resultDiv || resultDiv.innerHTML.trim()) return;
+    if (!resultDiv) return;
 
-    // Show popular refs grid using topRefs or sparkline data
     const popularRefs = [
-        {ref:'126500', model:'Daytona', icon:'⌚'},
-        {ref:'126610LN', model:'Submariner Date', icon:'🌊'},
-        {ref:'126710BLNR', model:'GMT-Master II', icon:'✈️'},
-        {ref:'126334', model:'Datejust 41', icon:'💎'},
-        {ref:'228235', model:'Day-Date 40', icon:'👑'},
-        {ref:'5711/1A', model:'Nautilus', icon:'⚓'},
-        {ref:'15500ST', model:'Royal Oak', icon:'🏛️'},
-        {ref:'126610LV', model:'Submariner Starbucks', icon:'🍀'},
-        {ref:'126710BLRO', model:'GMT Pepsi', icon:'🔴🔵'},
-        {ref:'124300', model:'Oyster Perpetual 41', icon:'⭕'},
+        {ref:'126500', model:'Daytona', family:'Cosmograph'},
+        {ref:'126610LN', model:'Submariner Date', family:'Diver'},
+        {ref:'126710BLNR', model:'GMT-Master II', family:'Travel'},
+        {ref:'126334', model:'Datejust 41', family:'Classic'},
+        {ref:'228235', model:'Day-Date 40', family:'President'},
+        {ref:'5711/1A', model:'Nautilus', family:'Patek'},
+        {ref:'15500ST', model:'Royal Oak', family:'AP'},
+        {ref:'126610LV', model:'Submariner Starbucks', family:'Diver'},
+        {ref:'126710BLRO', model:'GMT Pepsi', family:'Travel'},
+        {ref:'124300', model:'Oyster Perpetual 41', family:'Entry'},
     ];
 
-    let html = '<div style="margin-top:16px;"><div style="font-size:0.72rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:10px;">Popular References</div>';
+    // Try to get prices from topRefs data or spark data
+    const refPrices = {};
+    // Pull from DATA.topRefs if available
+    if (DATA.topRefs && Array.isArray(DATA.topRefs)) {
+        DATA.topRefs.forEach(t => { if (t.ref && t.b25) refPrices[t.ref] = {price: t.b25, low: t.low, high: t.high, count: t.count}; });
+    }
+    // Pull from DATA.refs if available
+    if (DATA.refs) {
+        Object.entries(DATA.refs).forEach(([ref, info]) => {
+            if (!refPrices[ref] && info) {
+                const p = info.b25 || info.median || info.price;
+                if (p) refPrices[ref] = {price: p, low: info.low, high: info.high, count: info.count};
+            }
+        });
+    }
+
+    // Build cards with whatever data we have
+    let html = '<div style="margin-top:16px;">';
+    html += '<div style="font-size:0.72rem;color:var(--text-2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:12px;font-family:var(--mono);">Popular References</div>';
     html += '<div class="popular-grid">';
     for (const ref of popularRefs) {
         const sparkVals = _sparkData[ref.ref];
-        const priceHtml = sparkVals ? '$' + Math.round(sparkVals[sparkVals.length-1]).toLocaleString() : '';
-        const changeHtml = sparkVals && sparkVals.length > 1
-            ? (() => {
-                const change = ((sparkVals[sparkVals.length-1] - sparkVals[0]) / sparkVals[0] * 100).toFixed(1);
-                const cls = change >= 0 ? 'green' : 'red';
-                return `<span style="color:var(--${cls});font-size:0.7rem;margin-left:6px;">${change >= 0?'+':''}${change}%</span>`;
-            })()
-            : '';
+        const apiPrice = refPrices[ref.ref];
+        const price = sparkVals ? sparkVals[sparkVals.length-1] : (apiPrice?.price || 0);
+        const priceHtml = price ? '$' + Math.round(price).toLocaleString() : '<span style="color:var(--text-2);font-size:0.72rem;">Loading...</span>';
+        let changeHtml = '';
+        if (sparkVals && sparkVals.length > 1) {
+            const change = ((sparkVals[sparkVals.length-1] - sparkVals[0]) / sparkVals[0] * 100).toFixed(1);
+            const cls = change >= 0 ? 'green' : 'red';
+            changeHtml = `<span style="color:var(--${cls});font-size:0.68rem;margin-left:6px;font-weight:600;">${change >= 0?'+':''}${change}%</span>`;
+        }
+        const countHtml = apiPrice?.count ? `<div style="font-size:0.62rem;color:var(--text-2);margin-top:2px;font-family:var(--mono);">${apiPrice.count} listings</div>` : '';
+        const canvasId = 'pop-spark-' + ref.ref.replace(/[^a-zA-Z0-9]/g,'');
         html += `<div class="popular-card" onclick="$('#ref-search').value='${ref.ref}';doLookup();">
-            <div style="display:flex;align-items:center;gap:6px;">
-                <span style="font-size:0.9rem;">${ref.icon}</span>
-                <span class="pc-ref">${ref.ref}</span>
-            </div>
+            <div class="pc-ref">${ref.ref}</div>
             <div class="pc-model">${ref.model}</div>
-            ${priceHtml ? `<div class="pc-price">${priceHtml}${changeHtml}</div>` : ''}
-            ${sparkVals ? `<div class="pc-spark"><canvas id="pop-spark-${ref.ref.replace(/[^a-zA-Z0-9]/g,'')}"></canvas></div>` : ''}
+            <div class="pc-price">${priceHtml}${changeHtml}</div>
+            ${countHtml}
+            <div class="pc-spark"><canvas id="${canvasId}"></canvas></div>
         </div>`;
     }
     html += '</div></div>';
     resultDiv.innerHTML = html;
+    _lookupInitialized = true;
 
-    // Draw sparklines for popular refs
-    setTimeout(() => {
+    // Draw sparklines — try immediately + retry after spark data loads
+    function drawPopularSparklines() {
         for (const ref of popularRefs) {
             const vals = _sparkData[ref.ref];
             if (!vals) continue;
@@ -2737,7 +2802,12 @@ async function initLookupPage() {
             const canvas = document.getElementById(canvasId);
             if (canvas) drawCanvasSparkline(canvas, vals);
         }
-    }, 100);
+    }
+    setTimeout(drawPopularSparklines, 150);
+    // Retry after 2s in case spark data was still loading
+    setTimeout(() => {
+        if (Object.keys(_sparkData).length > 0) drawPopularSparklines();
+    }, 2500);
 }
 
 // ═══ BROWSE PAGE LOADING STATE ═══
@@ -2869,9 +2939,11 @@ function updateDevotion(){
   const el=document.getElementById('devotion-verse');
   const ref=document.getElementById('devotion-ref');
   const ts=document.getElementById('devotion-time');
+  const full=document.querySelector('.devotion-full');
   if(el)el.textContent='"'+v.v+'"';
-  if(ref)ref.textContent='— '+v.r;
-  if(ts){const h=hour%12||12;const ap=hour>=12?'PM':'AM';ts.textContent=h+':00 '+ap+' hour';}
+  if(full)full.textContent='"'+v.v+'"';
+  if(ref)ref.textContent=v.r;
+  if(ts){const h=hour%12||12;const ap=hour>=12?'PM':'AM';ts.textContent=h+':00 '+ap;}
 }
 updateDevotion();
 setInterval(updateDevotion,60000);
@@ -3639,7 +3711,7 @@ async function showInvDetail(id) {
         `).join('');
         
         content.innerHTML = `
-            <button onclick="closeInvDetail()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;">✕</button>
+            <button onclick="closeInvDetail()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;">X</button>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
                 <div>
                     <h2 style="margin:0;">${inv.invoice_number}</h2>
@@ -3870,9 +3942,9 @@ function popOutWidget(id, title) {
     titlebar.innerHTML = `
         <span class="wt-title">${title}</span>
         <div class="wt-actions">
-            <button class="wt-btn wt-fullscreen" title="Fullscreen">⛶</button>
-            <button class="wt-btn wt-newwin" title="Open in new window">⧉</button>
-            <button class="wt-btn wt-close" title="Close">✕</button>
+            <button class="wt-btn wt-fullscreen" title="Fullscreen"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4V1h3M8 1h3v3M11 8v3H8M4 11H1V8"/></svg></button>
+            <button class="wt-btn wt-newwin" title="Open in new window"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 1H2v9h9V7M7 1h4v4M6 6l5-5"/></svg></button>
+            <button class="wt-btn wt-close" title="Close"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2l8 8M10 2l-8 8"/></svg></button>
         </div>`;
 
     // Body
@@ -3925,7 +3997,7 @@ function popOutWidget(id, title) {
     // ── Fullscreen toggle ──
     titlebar.querySelector('.wt-fullscreen').onclick = () => {
         widget.classList.toggle('widget-fullscreen');
-        titlebar.querySelector('.wt-fullscreen').textContent = widget.classList.contains('widget-fullscreen') ? '⊟' : '⛶';
+        titlebar.querySelector('.wt-fullscreen').innerHTML = widget.classList.contains('widget-fullscreen') ? '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 1H1v3M11 4V1H8M8 11h3V8M1 8v3h3"/></svg>' : '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4V1h3M8 1h3v3M11 8v3H8M4 11H1V8"/></svg>';
     };
 
     // ── New window ──
@@ -4019,6 +4091,85 @@ function initPopouts() {
 
 // Run after DOM + data loaded
 document.addEventListener('DOMContentLoaded', () => setTimeout(initPopouts, 500));
+
+// ═══ LIVE SYNC TIMER ═══
+(function() {
+    function updateSyncTimer() {
+        const el = document.getElementById('sync-timer');
+        if (!el) return;
+        const elapsed = Math.floor((Date.now() - _lastLoadTs) / 60000);
+        if (elapsed < 1) el.textContent = 'Last synced: just now';
+        else if (elapsed === 1) el.textContent = 'Last synced: 1 min ago';
+        else el.textContent = 'Last synced: ' + elapsed + ' min ago';
+    }
+    updateSyncTimer();
+    setInterval(updateSyncTimer, 30000);
+})();
+
+// ═══ P&L MINI BARS + GOLD BEST-PERFORMER BORDER ═══
+(function() {
+    const observer = new MutationObserver(() => {
+        const tbody = document.querySelector('#dash-inventory tbody');
+        if (!tbody || !tbody.rows.length) return;
+        // Find max abs P&L for scaling
+        const pnlVals = [];
+        tbody.querySelectorAll('tr').forEach(row => {
+            const cell = row.cells[4]; // P&L column
+            if (!cell) return;
+            const txt = cell.textContent.replace(/[^0-9.\-]/g, '');
+            const val = parseFloat(txt) || 0;
+            pnlVals.push({row, cell, val});
+        });
+        if (!pnlVals.length) return;
+        const maxAbs = Math.max(...pnlVals.map(p => Math.abs(p.val)), 1);
+        let bestRow = null, bestPnl = -Infinity;
+        pnlVals.forEach(({row, cell, val}) => {
+            if (val > bestPnl) { bestPnl = val; bestRow = row; }
+            // Add mini bar behind P&L value
+            if (val !== 0 && !cell.dataset.barAdded) {
+                cell.dataset.barAdded = '1';
+                cell.style.position = 'relative';
+                const pct = Math.min(100, Math.abs(val) / maxAbs * 100);
+                const color = val > 0 ? 'rgba(0,230,118,0.08)' : 'rgba(255,23,68,0.08)';
+                cell.style.backgroundImage = `linear-gradient(90deg, ${color} ${pct}%, transparent ${pct}%)`;
+            }
+        });
+        // Gold left border on best performer
+        if (bestRow && bestPnl > 0) {
+            bestRow.style.boxShadow = 'inset 3px 0 0 var(--accent)';
+        }
+    });
+    const target = document.querySelector('#dash-inventory tbody');
+    if (target) observer.observe(target, {childList: true, subtree: true});
+    // Also observe for when tbody gets replaced
+    const wrap = document.querySelector('#dash-inventory');
+    if (wrap) observer.observe(wrap, {childList: true, subtree: true});
+})();
+
+// ═══ PORTFOLIO P&L PULSE ANIMATION ═══
+(function() {
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes pnlPulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
+        .pnl-pulse { animation:pnlPulse 3s ease-in-out infinite; }
+        .tabular-nums { font-variant-numeric:tabular-nums; }
+    `;
+    document.head.appendChild(style);
+
+    // Apply pulse to unrealized P&L in portfolio snapshot
+    const snapObserver = new MutationObserver(() => {
+        const grid = document.getElementById('portfolio-snapshot');
+        if (!grid) return;
+        grid.querySelectorAll('.pf-val').forEach(el => {
+            el.classList.add('tabular-nums');
+            if (el.closest('.pf-stat')?.querySelector('.pf-label')?.textContent?.includes('P&L')) {
+                el.classList.add('pnl-pulse');
+            }
+        });
+    });
+    const snapEl = document.getElementById('portfolio-snapshot');
+    if (snapEl) snapObserver.observe(snapEl, {childList: true, subtree: true});
+})();
 </script>
 </body>
 </html>
