@@ -619,6 +619,17 @@
                 </div>
             </div>
 
+            <!-- Ready to Post -->
+            <div class="card" style="margin-top:8px;" id="ready-to-post-card">
+                <div class="card-head">
+                    <span>Ready to Post</span>
+                    <span id="rtp-count" style="font-size:0.7rem;color:var(--accent);font-family:var(--mono);font-weight:600;"></span>
+                </div>
+                <div id="ready-to-post" style="font-size:0.78rem;">
+                    <div class="dim" style="text-align:center;padding:8px;">Loading...</div>
+                </div>
+            </div>
+
             <!-- Full Portfolio Table -->
             <div class="card" style="margin-top:8px;">
                 <div class="card-head"><span>Inventory Positions</span><a class="popout-spacer"></a><a class="link" onclick="showPage('portfolio')">Full Analysis</a></div>
@@ -1498,6 +1509,7 @@ function renderDashboard() {
     if (DATA.portfolio) renderPortfolioSnapshot();
     loadDashInventory();
     loadActionItems();
+    loadReadyToPost();
 }
 
 function renderPortfolioSnapshot() {
@@ -1568,6 +1580,161 @@ async function loadActionItems() {
             <span style="flex:1;font-family:var(--mono);font-size:0.72rem;">${a.text}</span>
         </div>`).join('') + (actions.length > 8 ? `<div style="text-align:center;padding:6px;color:var(--text-2);font-size:0.7rem;">+${actions.length-8} more</div>` : '');
     } catch(e) { console.error(e); }
+}
+
+// ── READY TO POST ──
+async function loadReadyToPost() {
+    try {
+        const r = await fetch('/api/inventory');
+        if (!r.ok) return;
+        const items = await r.json();
+        const unposted = items.filter(i => i.arrived && !i.posted && !i.sold);
+        const el = document.getElementById('ready-to-post');
+        const countEl = document.getElementById('rtp-count');
+        const card = document.getElementById('ready-to-post-card');
+        if (!el) return;
+        if (countEl) countEl.textContent = unposted.length ? `${unposted.length} watches` : '';
+        if (!unposted.length) {
+            el.innerHTML = '<div style="text-align:center;padding:12px;color:var(--green);">All arrived watches are posted</div>';
+            return;
+        }
+
+        // Check which ones have photos
+        let photoIndex = {};
+        try { const pr = await fetch('/api/watch-photos'); if (pr.ok) { const pd = await pr.json(); pd.watches.forEach(w => photoIndex[w.row] = w.photo_count); } } catch(e){}
+
+        el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;padding:8px;">
+            ${unposted.map(i => {
+                const photoCount = photoIndex[i.row] || 0;
+                const hasPhotos = photoCount > 0;
+                const daysHeld = i.days_held || 0;
+                const urgency = daysHeld > 14 ? 'red' : daysHeld > 7 ? 'orange' : 'var(--text-2)';
+                const cost = i.cost_price ? fmt(i.cost_price) : '—';
+                const mkt = i.market_value ? fmt(i.market_value) : '—';
+                return `<div class="listing-card" style="padding:10px;border:1px solid ${hasPhotos ? 'var(--accent-border)' : 'var(--border)'};position:relative;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                        <div>
+                            <span class="ref" style="font-size:0.85rem;" onclick="lookupRef('${i.ref}')">${i.ref}</span>
+                            <div style="color:var(--text-2);font-size:0.72rem;margin-top:2px;">${[i.bracelet, i.dial].filter(Boolean).join(' ')}</div>
+                            <div style="color:var(--text-2);font-size:0.68rem;font-family:var(--mono);margin-top:1px;">${i.card_date || i.description?.match(/\d{2}\/\d{4}/)?.[0] || ''} ${i.serial ? '| ' + i.serial : ''}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-family:var(--mono);font-size:0.78rem;">${cost}</div>
+                            <div style="font-family:var(--mono);font-size:0.68rem;color:var(--text-2);">Mkt: ${mkt}</div>
+                            <div style="font-size:0.65rem;color:${urgency};font-family:var(--mono);">${daysHeld}d held</div>
+                        </div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;border-top:1px solid var(--border);padding-top:6px;">
+                        <div style="font-size:0.68rem;color:${hasPhotos ? 'var(--green)' : 'var(--text-2)'};">
+                            ${hasPhotos ? photoCount + ' photo' + (photoCount>1?'s':'') : 'No photos'}
+                        </div>
+                        <button class="btn" onclick="openPostingModal(${JSON.stringify(i).replace(/"/g,'&quot;')}, ${photoCount})" style="font-size:0.68rem;padding:3px 10px;color:var(--accent);border-color:var(--accent-border);">
+                            Post
+                        </button>
+                    </div>
+                </div>`;
+            }).join('')}
+        </div>`;
+    } catch(e) { console.error(e); }
+}
+
+function openPostingModal(item, photoCount) {
+    // Generate default posting text per My Postings format
+    const ref = item.ref || '';
+    const desc = item.description || '';
+    const bracelet = item.bracelet || '';
+    const dial = item.dial || '';
+    const serial = item.serial || '';
+    const cardDate = item.card_date || desc.match(/(\d{2}\/\d{4})/)?.[1] || '';
+    const wt = item.wt ? 'with WT' : '';
+
+    // Determine condition
+    let condition = 'BNIB';
+    if (desc.toLowerCase().includes('pre-owned')) condition = 'Pre-Owned';
+    else if (desc.toLowerCase().includes('retail ready')) condition = 'Retail Ready';
+
+    // Build month/year from card date
+    let monthYear = '';
+    if (cardDate) {
+        const [mm, yyyy] = cardDate.split('/');
+        const months = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+        monthYear = (months[parseInt(mm)] || '') + ' ' + yyyy;
+    }
+
+    // Serial prefix (card date code)
+    let serialPrefix = '';
+    if (cardDate) {
+        const [mm] = cardDate.split('/');
+        serialPrefix = 'N' + parseInt(mm);
+    }
+
+    // Full ref vs short ref
+    const refMatch = ref.match(/^(\d{5,6})([A-Z]+)$/);
+    const refLine = refMatch ? `${ref} ${refMatch[1]}` : ref;
+
+    const postingText = `${condition} Full Set ${refLine} ${bracelet} ${dial} Dial ${cardDate} ${monthYear} ${serialPrefix} ${wt}`.replace(/\s+/g,' ').trim();
+
+    // Show modal
+    const overlay = document.createElement('div');
+    overlay.id = 'posting-modal';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;';
+    overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+
+    overlay.innerHTML = `<div style="background:var(--bg-1);border:1px solid var(--border-strong);border-radius:var(--radius-lg);max-width:500px;width:90%;padding:20px;font-family:var(--font);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <span style="font-size:0.9rem;font-weight:600;color:var(--text-0);">Post to My Postings</span>
+            <button onclick="document.getElementById('posting-modal').remove()" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:1.1rem;">x</button>
+        </div>
+        <div style="margin-bottom:10px;">
+            <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Caption</label>
+            <textarea id="posting-caption" rows="3" style="width:100%;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);color:var(--text-0);padding:8px;font-family:var(--mono);font-size:0.75rem;resize:vertical;margin-top:4px;">${postingText}</textarea>
+        </div>
+        <div style="margin-bottom:10px;">
+            <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Asking Price</label>
+            <input id="posting-price" type="text" placeholder="e.g. 15000" style="width:100%;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);color:var(--text-0);padding:8px;font-family:var(--mono);font-size:0.82rem;margin-top:4px;" />
+        </div>
+        <div style="margin-bottom:14px;font-size:0.72rem;color:${photoCount > 0 ? 'var(--green)' : 'var(--red)'};">
+            ${photoCount > 0 ? photoCount + ' arrival photo' + (photoCount>1?'s':'') + ' ready to attach' : 'No photos saved — will post caption only'}
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <button class="btn" onclick="document.getElementById('posting-modal').remove()" style="font-size:0.75rem;padding:6px 14px;">Cancel</button>
+            <button class="btn" onclick="submitPosting(${item.row}, ${photoCount})" style="font-size:0.75rem;padding:6px 14px;background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);font-weight:600;">Post</button>
+        </div>
+    </div>`;
+    document.body.appendChild(overlay);
+}
+
+async function submitPosting(row, photoCount) {
+    const caption = document.getElementById('posting-caption')?.value || '';
+    const price = document.getElementById('posting-price')?.value || '';
+    if (!caption) return alert('Caption is required');
+    if (!price) return alert('Asking price is required');
+
+    const btn = document.querySelector('#posting-modal .btn:last-child');
+    if (btn) { btn.textContent = 'Posting...'; btn.disabled = true; }
+
+    try {
+        const fullCaption = caption + '\\n$' + price.replace(/[^0-9]/g,'').replace(/(\d)(?=(\d{3})+$)/g,'$1,') + ' + label';
+
+        const r = await fetch('/api/telegram/post-to-my-postings', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ row, caption: fullCaption, price, use_photos: photoCount > 0 })
+        });
+        const result = await r.json();
+        if (result.ok || result.success) {
+            document.getElementById('posting-modal')?.remove();
+            // Refresh the ready-to-post section
+            loadReadyToPost();
+            loadActionItems();
+        } else {
+            alert('Post failed: ' + (result.error || 'Unknown error'));
+            if (btn) { btn.textContent = 'Post'; btn.disabled = false; }
+        }
+    } catch(e) {
+        alert('Post failed: ' + e.message);
+        if (btn) { btn.textContent = 'Post'; btn.disabled = false; }
+    }
 }
 
 // ── DEALS ──

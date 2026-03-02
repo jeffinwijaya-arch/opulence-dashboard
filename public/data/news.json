@@ -1,6 +1,16 @@
 {
   "articles": [
     {
+      "id": "9ab63f07f363",
+      "title": "Introducing \u2013 The Norqain Adventure Gets a new 40mm Case and a Range of Updates",
+      "link": "https://monochrome-watches.com/2026-norqain-adventure-40mm-updated-collection-all-terrain-sports-watch-introducing-price/",
+      "desc": "Still a very young brand (founded in 2018), Norqain has rapidly grown to become an established brand, specialised in adventure watches and anything linked to mountaineering activities. With the Indepe",
+      "date": "2026-03-02T18:05:37+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/2026-Norqain-Adventure-40mm-Updated-collection-1-600x237.jpg",
+      "relevance": 0
+    },
+    {
       "id": "79e47f630bf2",
       "title": "Introducing \u2013 A Ruby Stone Dial for the Armin Strom Mirrored Force Resonance",
       "link": "https://monochrome-watches.com/armin-strom-mirrored-force-resonance-ruby-stone-dial-introducing-price/",
@@ -261,16 +271,6 @@
       "relevance": 10
     },
     {
-      "id": "96226e21c673",
-      "title": "Introducing \u2013 The New Tissot T-Race MotoGP Automatic Chronograph 2026 Limited Edition",
-      "link": "https://monochrome-watches.com/tissot-t-race-motogp-automatic-chronograph-2026-limited-edition-introducing-price/",
-      "desc": "Since becoming the official timekeeper of the MotoGP championship in 2001, Tissot has connected itself firmly to the sport through trackside timing systems and watches that speak the design language a",
-      "date": "2026-02-26T17:00:41+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/02/Tissot-T-Race-MotoGP-Automatic-Chronograph-2026-Limited-Edition-1-600x237.jpg",
-      "relevance": 10
-    },
-    {
       "id": "b58a3dfb497b",
       "title": "The IWC Portugieser Chronograph Ceratanium emerges from the shadows",
       "link": "https://revolutionwatch.com/the-iwc-portugieser-chronograph-ceratanium-emerges-from-the-shadows/",
@@ -361,7 +361,7 @@
       "relevance": 0
     }
   ],
-  "fetched_at": "2026-03-02T16:33:13.346602+00:00",
+  "fetched_at": "2026-03-02T20:33:14.901061+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
