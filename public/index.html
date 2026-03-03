@@ -1592,7 +1592,7 @@ async function loadActionItems() {
         // Collect by priority group
         const unposted = [], needsShip = [], awaitPay = [], inTransit = [];
         items.forEach(i => {
-            if (!i.posted && !i.sold) unposted.push(i);  // All unposted (arrived or not)
+            if (!i.posted && !i.sold && !i.at_store) unposted.push(i);  // All unposted except store watches
             else if (i.sold && !i.shipped) needsShip.push(i);
             else if (i.shipped && !i.paid) awaitPay.push(i);
         });
