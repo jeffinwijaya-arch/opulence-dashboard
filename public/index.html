@@ -581,20 +581,24 @@
 
     <!-- MOBILE NAV -->
     <nav class="mobile-nav" id="mobile-nav">
-        <a data-page="dashboard" class="active" onclick="showPage('dashboard')">Overview</a>
-        <a data-page="deals" onclick="showPage('deals')">Deals</a>
-        <a data-page="arbitrage" onclick="showPage('arbitrage')">Arb</a>
+        <a data-page="dashboard" class="active" onclick="showPage('dashboard')">Home</a>
         <a data-page="lookup" onclick="showPage('lookup')">Lookup</a>
         <a data-page="portfolio" onclick="showPage('portfolio')">Portfolio</a>
-        <a data-page="invoices" onclick="showPage('invoices')">Invoices</a>
-        <a data-page="shipping" onclick="showPage('shipping')">Ship</a>
-        <a data-page="inventory" onclick="showPage('inventory')">Inv</a>
-        <a data-page="payments" onclick="showPage('payments')">Pay</a>
-        <a data-page="photos" onclick="showPage('photos')">Photos</a>
-        <a data-page="alerts" onclick="showPage('alerts')">Alerts</a>
-        <a data-page="analytics" onclick="showPage('analytics')">Data</a>
-        <a data-page="browse" onclick="showPage('browse')">Market</a>
+        <a data-page="deals" onclick="showPage('deals')">Deals</a>
+        <a id="more-toggle" onclick="toggleMobileMore()" style="position:relative;">More</a>
     </nav>
+    <div id="mobile-more-menu" style="display:none;position:fixed;bottom:52px;left:0;right:0;z-index:9998;background:var(--bg-1);border-top:1px solid var(--border);padding:10px 12px;display:none;">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;">
+            <a onclick="mobileNav('arbitrage')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Arb</a>
+            <a onclick="mobileNav('invoices')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Invoices</a>
+            <a onclick="mobileNav('shipping')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Ship</a>
+            <a onclick="mobileNav('inventory')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Inventory</a>
+            <a onclick="mobileNav('payments')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Payments</a>
+            <a onclick="mobileNav('photos')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Photos</a>
+            <a onclick="mobileNav('browse')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Market</a>
+            <a onclick="mobileNav('analytics')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Data</a>
+        </div>
+    </div>
 
     <div class="main">
         <!-- ═══ DASHBOARD ═══ -->
@@ -1374,6 +1378,18 @@ let currentDealsRegion = 'all';
 
 const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals',arbitrage:'Arbitrage',browse:'Market',invoices:'Invoices',shipping:'Shipping',inventory:'Inventory',payments:'Payments',photos:'Photos',alerts:'Alerts',analytics:'Analytics'};
 
+function toggleMobileMore() {
+    const m = document.getElementById('mobile-more-menu');
+    if (!m) return;
+    const show = m.style.display === 'none';
+    m.style.display = show ? 'block' : 'none';
+    document.getElementById('more-toggle')?.classList.toggle('active', show);
+}
+function mobileNav(page) {
+    document.getElementById('mobile-more-menu').style.display = 'none';
+    document.getElementById('more-toggle')?.classList.remove('active');
+    showPage(page);
+}
 function showPage(name, pushState=true) {
     // Cross-fade: exit current page
     const currentPage = document.querySelector('.page.active');
@@ -1385,6 +1401,7 @@ function showPage(name, pushState=true) {
         currentPage.classList.remove('active');
     }
     $$('.nav a, #mobile-nav a').forEach(n => n.classList.remove('active'));
+    const mm = document.getElementById('mobile-more-menu'); if (mm) mm.style.display = 'none';
     // Small delay for exit animation, then show new page
     setTimeout(() => {
         $$('.page').forEach(p => p.classList.remove('active'));
