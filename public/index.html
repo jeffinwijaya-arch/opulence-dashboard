@@ -2073,22 +2073,37 @@ function openPostingModal(item, photoCount) {
             const bnibData = byCond['BNIB'] || {};
             const preData = byCond['Pre-owned'] || {};
 
-            // Build condition-relevant pricing
-            let condLine = '';
-            if (condition === 'BNIB' && bnibData.low) {
-                condLine = `<div>BNIB Low: <span style="color:var(--text-0);font-family:var(--mono);">${fmt(bnibData.low)}</span> (${bnibData.count || 0} listings) · B25: ${fmt(bnibData.b25 || 0)}</div>`;
-            } else if (condition !== 'BNIB' && preData.low) {
-                condLine = `<div>Pre-Owned Low: <span style="color:var(--text-0);font-family:var(--mono);">${fmt(preData.low)}</span> (${preData.count || 0} listings) · B25: ${fmt(preData.b25 || 0)}</div>`;
+            // Build BNIB breakdown with US/HK splits
+            const cd = bnibData.low ? bnibData : preData;
+            const cdLabel = bnibData.low ? 'BNIB' : 'Pre-Owned';
+            let condSection = '';
+            if (cd.low) {
+                const usLine = cd.us_low ? `<div><span style="color:var(--text-2);">US Low</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(cd.us_low)}</span></div>
+                    <div><span style="color:var(--text-2);">US B25</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(cd.us_b25)}</span></div>` : '';
+                const hkLine = cd.hk_low ? `<div><span style="color:var(--text-2);">HK Low</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(cd.hk_low)}</span></div>
+                    <div><span style="color:var(--text-2);">HK B25</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(cd.hk_b25)}</span></div>` : '';
+                condSection = `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+                    <div style="color:var(--text-2);font-size:0.6rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">${cdLabel} (${cd.count} listings)</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                        ${usLine}${hkLine}
+                    </div>
+                </div>`;
             }
 
+            // Link to intelligence page
+            const searchQuery = encodeURIComponent([ref, dial, bracelet].filter(Boolean).join(' '));
+
             intelEl.innerHTML = `
-                <div style="color:var(--text-2);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Price Intelligence — ${ref} ${dial} ${bracelet} (${count} listings)</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <span style="color:var(--text-2);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;">Price Intelligence — ${ref} ${dial} ${bracelet} (${count} listings)</span>
+                    <a href="#prices" onclick="document.getElementById('posting-modal')?.remove();setTimeout(()=>{const si=document.querySelector('#prices-section input[type=text],#search-input');if(si){si.value='${[ref,dial,bracelet].filter(Boolean).join(' ')}';si.dispatchEvent(new Event('input'));}},300);" style="font-size:0.6rem;color:var(--accent);text-decoration:none;cursor:pointer;">View Listings →</a>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:4px;">
                     <div><span style="color:var(--text-2);">Lowest</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(low)}</span></div>
                     <div><span style="color:var(--text-2);">US Low</span><br><span style="font-family:var(--mono);color:var(--text-0);">${usLow ? fmt(usLow) : '—'}</span></div>
                     <div><span style="color:var(--text-2);">B25 Avg</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(b25)}</span></div>
                 </div>
-                ${condLine}
+                ${condSection}
                 <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
                     <span style="color:var(--text-2);">Recommended:</span>
                     <span style="font-family:var(--mono);font-weight:700;font-size:0.85rem;color:var(--green);cursor:pointer;" onclick="document.getElementById('posting-price').value='${recommended}'">${recommended > 0 ? fmt(recommended) : '—'}</span>
