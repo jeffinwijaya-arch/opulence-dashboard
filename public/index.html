@@ -1710,6 +1710,26 @@ async function confirmMarkPaid(row) {
     }
 }
 
+async function confirmMarkSellerPaid(row) {
+    if (!confirm('Mark this watch as paid to seller?')) return;
+    try {
+        const r = await fetch('/api/inventory/mark-seller-paid', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ row })
+        });
+        const d = await r.json();
+        if (d.ok) {
+            loadData();
+            loadPayments();
+        } else {
+            alert('Error: ' + (d.error || 'Unknown'));
+        }
+    } catch(e) {
+        alert('Error: ' + e.message);
+    }
+}
+
 // ── SHIPPING MODAL ──
 function openShippingModal(item) {
     const overlay = document.createElement('div');
@@ -5356,6 +5376,7 @@ async function loadPayments() {
             <div style="display:flex;align-items:center;gap:8px;">
                 <span style="color:var(${type === 'recv' ? '--green' : '--red'});font-family:var(--mono);">${fmt(p.amount)}</span>
                 ${type === 'recv' ? `<button onclick="confirmMarkPaid(${p.row})" style="background:var(--green);color:var(--bg-1);border:none;border-radius:3px;padding:2px 8px;font-size:0.65rem;cursor:pointer;font-weight:600;">Paid</button>` : ''}
+                ${type === 'pay' ? `<button onclick="confirmMarkSellerPaid(${p.row})" style="background:var(--red);color:var(--bg-1);border:none;border-radius:3px;padding:2px 8px;font-size:0.65rem;cursor:pointer;font-weight:600;">Paid</button>` : ''}
             </div>
         </div>`;
         
