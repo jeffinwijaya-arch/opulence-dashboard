@@ -738,6 +738,7 @@
                 <div class="tab" onclick="setPfView('exposure',this)">Exposure</div>
                 <div class="tab" onclick="setPfView('pipeline',this)">Pipeline</div>
                 <div class="tab" onclick="setPfView('aging',this)">Aging</div>
+                <div class="tab" onclick="setPfView('monthly',this)">Monthly</div>
             </div>
             <div id="portfolio-content"><p style="color:var(--text-2);padding:20px 0;">Loading portfolio data...</p></div>
         </div>
@@ -2795,6 +2796,7 @@ async function renderPortfolio() {
     else if (currentPfView === 'exposure') renderPfExposure(c, p, items);
     else if (currentPfView === 'pipeline') renderPfPipeline(c, p, items);
     else if (currentPfView === 'aging') renderPfAging(c, p, items);
+    else if (currentPfView === 'monthly') renderPfMonthly(c);
 }
 
 function getStatus(i) {
@@ -3613,6 +3615,62 @@ function renderChart(canvasId, data, opts={}) {
         tooltip.classList.remove('visible');
         vertLine.style.opacity = '0';
     };
+}
+
+// ═══ MONTHLY PERFORMANCE ═══
+async function renderPfMonthly(c) {
+    c.innerHTML = '<p style="color:var(--text-2);padding:20px 0;">Loading monthly performance...</p>';
+    try {
+        const r = await fetch('/api/monthly_performance');
+        const data = await r.json();
+        const months = data.months || [];
+        const t = data.totals || {};
+        const monthNames = {
+            '01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun',
+            '07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'
+        };
+        const fmtMo = mo => { const [y,m] = mo.split('-'); return (monthNames[m]||m) + ' ' + y; };
+        const marginColor = m => m >= 10 ? 'var(--green)' : m >= 5 ? 'var(--text-0)' : 'var(--red)';
+
+        let html = `<div class="card"><div class="card-head">All-Time Totals</div><div class="card-body">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;text-align:center;">
+                <div><div style="color:var(--text-2);font-size:0.65rem;text-transform:uppercase;">Pieces</div><div style="font-size:1.3rem;font-weight:700;color:var(--text-0);">${t.pieces}</div></div>
+                <div><div style="color:var(--text-2);font-size:0.65rem;text-transform:uppercase;">Revenue</div><div style="font-size:1.3rem;font-weight:700;color:var(--text-0);">${fmt(t.revenue)}</div></div>
+                <div><div style="color:var(--text-2);font-size:0.65rem;text-transform:uppercase;">Profit</div><div style="font-size:1.3rem;font-weight:700;color:${t.profit>=0?'var(--green)':'var(--red)'};">${fmt(t.profit)}</div></div>
+                <div><div style="color:var(--text-2);font-size:0.65rem;text-transform:uppercase;">Margin</div><div style="font-size:1.3rem;font-weight:700;color:${marginColor(t.margin)};">${t.margin}%</div></div>
+            </div>
+        </div></div>`;
+
+        html += '<div class="card"><div class="card-head">Monthly Breakdown</div><div class="card-body">';
+        html += '<table class="tbl"><thead><tr><th>Month</th><th>Pieces</th><th class="hide-mobile">Revenue</th><th class="hide-mobile">Cost</th><th>Profit</th><th>Margin</th></tr></thead><tbody>';
+        for (const m of months) {
+            html += `<tr style="cursor:pointer;" onclick="toggleMonthDeals(this)">
+                <td style="font-weight:600;">${fmtMo(m.month)}</td>
+                <td>${m.pieces}</td>
+                <td class="hide-mobile">${fmt(m.revenue)}</td>
+                <td class="hide-mobile">${fmt(m.cost)}</td>
+                <td style="color:${m.profit>=0?'var(--green)':'var(--red)'};">${fmt(m.profit)}</td>
+                <td style="color:${marginColor(m.margin)};">${m.margin}%</td>
+            </tr>`;
+            // Expandable deal rows
+            html += `<tr class="deal-expand" style="display:none;"><td colspan="6" style="padding:0;">
+                <table class="tbl" style="margin:0;background:var(--bg-2);">
+                    <thead><tr><th>Watch</th><th>Buyer</th><th class="hide-mobile">Cost</th><th class="hide-mobile">Sold</th><th>Profit</th></tr></thead><tbody>`;
+            for (const d of m.deals) {
+                const pColor = d.profit >= 0 ? 'var(--green)' : 'var(--red)';
+                html += `<tr><td style="font-size:0.7rem;">${d.description}</td><td style="font-size:0.7rem;">${d.buyer}</td><td class="hide-mobile" style="font-size:0.7rem;">${fmt(d.cost)}</td><td class="hide-mobile" style="font-size:0.7rem;">${fmt(d.sold)}</td><td style="font-size:0.7rem;color:${pColor};">${fmt(d.profit)}</td></tr>`;
+            }
+            html += '</tbody></table></td></tr>';
+        }
+        html += '</tbody></table></div></div>';
+        c.innerHTML = html;
+    } catch(e) { c.innerHTML = '<p style="color:var(--red);">Failed to load monthly performance.</p>'; }
+}
+function toggleMonthDeals(row) {
+    const next = row.nextElementSibling;
+    if (next && next.classList.contains('deal-expand')) {
+        next.style.display = next.style.display === 'none' ? '' : 'none';
+    }
 }
 
 // ═══ PORTFOLIO CHART LOADER ═══
