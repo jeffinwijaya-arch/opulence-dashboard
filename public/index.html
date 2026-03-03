@@ -5318,41 +5318,47 @@ async function loadPayments() {
     function renderPaymentTables(data) {
         const content = document.getElementById('payments-content');
         const overdue_receivables = data.overdue_receivables || [];
+        const pending_receivables = data.pending_receivables || [];
         const overdue_payables = data.overdue_payables || [];
+        
+        const renderRow = (p, type) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.75rem;">
+            <div style="flex:1;min-width:0;">
+                <strong>${p.ref?.substring(0,35) || '?'}</strong>
+                <span style="color:var(--text-2);"> ${type === 'recv' ? '→' : '←'} ${p.counterparty}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span style="color:var(${type === 'recv' ? '--green' : '--red'});font-family:var(--mono);">${fmt(p.amount)}</span>
+                ${type === 'recv' ? `<button onclick="confirmMarkPaid(${p.row})" style="background:var(--green);color:var(--bg-1);border:none;border-radius:3px;padding:2px 8px;font-size:0.65rem;cursor:pointer;font-weight:600;">Paid</button>` : ''}
+            </div>
+        </div>`;
         
         let html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">';
         
-        // Overdue Receivables
-        html += '<div><h4 style="color:var(--green);margin-bottom:8px;">Overdue Receivables</h4>';
-        if (overdue_receivables.length > 0) {
-            html += '<div style="font-size:0.75rem;">';
-            overdue_receivables.forEach(payment => {
-                html += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);">
-                    <div><strong>${payment.ref}</strong> → ${payment.counterparty}</div>
-                    <div style="color:var(--green);">${fmt(payment.amount)}</div>
-                </div>`;
-            });
-            html += '</div>';
+        // Shipped & Awaiting Payment (most urgent)
+        html += `<div><h4 style="color:var(--green);margin-bottom:8px;">Shipped — Awaiting Payment (${overdue_receivables.length})</h4>`;
+        if (overdue_receivables.length) {
+            html += overdue_receivables.map(p => renderRow(p, 'recv')).join('');
         } else {
-            html += '<div style="color:var(--text-2);font-size:0.75rem;">No overdue receivables</div>';
+            html += '<div style="color:var(--text-2);font-size:0.75rem;">All shipped watches paid ✅</div>';
         }
         html += '</div>';
         
-        // Overdue Payables  
-        html += '<div><h4 style="color:var(--red);margin-bottom:8px;">Overdue Payables</h4>';
-        if (overdue_payables.length > 0) {
-            html += '<div style="font-size:0.75rem;">';
-            overdue_payables.forEach(payment => {
-                html += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);">
-                    <div><strong>${payment.ref}</strong> ← ${payment.counterparty}</div>
-                    <div style="color:var(--red);">${fmt(payment.amount)}</div>
-                </div>`;
-            });
-            html += '</div>';
+        // Payables
+        html += `<div><h4 style="color:var(--red);margin-bottom:8px;">Payables — Owed to Sellers (${overdue_payables.length})</h4>`;
+        if (overdue_payables.length) {
+            html += overdue_payables.map(p => renderRow(p, 'pay')).join('');
         } else {
-            html += '<div style="color:var(--text-2);font-size:0.75rem;">No overdue payables</div>';
+            html += '<div style="color:var(--text-2);font-size:0.75rem;">No outstanding payables</div>';
         }
         html += '</div></div>';
+        
+        // Sold but not yet shipped (secondary receivables)
+        if (pending_receivables.length) {
+            html += `<div style="margin-top:16px;"><h4 style="color:var(--accent);margin-bottom:8px;">Sold — Not Yet Shipped (${pending_receivables.length})</h4>`;
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+            html += pending_receivables.map(p => renderRow(p, 'recv')).join('');
+            html += '</div></div>';
+        }
         
         content.innerHTML = html;
     }
