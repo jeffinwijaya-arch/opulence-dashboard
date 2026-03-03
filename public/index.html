@@ -1521,16 +1521,31 @@ function renderDashboard() {
     loadReadyToPost();
 }
 
-function renderPortfolioSnapshot() {
+async function renderPortfolioSnapshot() {
     const p = DATA.portfolio; if (!p) return;
     const cls = p.total_pnl >= 0 ? 'green' : 'red';
+    // Fetch receivables/payables for snapshot
+    let recvVal = '—', payVal = '—', netVal = '—';
+    try {
+        const cf = await fetch('/api/payments/collections-dashboard');
+        if (cf.ok) {
+            const cfd = await cf.json();
+            const flow = cfd.cash_flow || {};
+            recvVal = fmt(flow.total_receivables || 0);
+            payVal = fmt(flow.total_payables || 0);
+            netVal = fmt(flow.net_position || 0);
+        }
+    } catch(e) {}
+
     $('#portfolio-snapshot').innerHTML = `
-        <div class="pf-stat"><div class="pf-val" style="color:var(--accent)">${fmt(p.total_invested)}</div><div class="pf-label">Capital</div></div>
+        <div class="pf-stat"><div class="pf-val" style="color:var(--accent)">${fmt(p.total_invested)}</div><div class="pf-label">Capital Deployed</div></div>
         <div class="pf-stat"><div class="pf-val">${fmt(p.total_market_value)}</div><div class="pf-label">Market Value</div></div>
         <div class="pf-stat"><div class="pf-val" style="color:var(--${cls})">${fmt(p.total_pnl)}</div><div class="pf-label">Unrealized P&L</div></div>
         <div class="pf-stat"><div class="pf-val" style="color:var(--${cls})">${p.roi_pct}%</div><div class="pf-label">ROI</div></div>
         <div class="pf-stat"><div class="pf-val">${p.total_pieces}</div><div class="pf-label">Positions</div></div>
         <div class="pf-stat"><div class="pf-val">${p.avg_days_held}d</div><div class="pf-label">Avg Hold</div></div>
+        <div class="pf-stat"><div class="pf-val" style="color:var(--green)">${recvVal}</div><div class="pf-label">Receivables</div></div>
+        <div class="pf-stat"><div class="pf-val" style="color:var(--red)">${payVal}</div><div class="pf-label">Payables</div></div>
     `;
 }
 
@@ -1584,19 +1599,19 @@ async function loadActionItems() {
 
         // Flatten into ordered actions array
         const actions = [];
-        unposted.forEach(i => actions.push({emoji:'📸', text:`${i.ref} ${i.dial||''}`, sub:'Unposted — idle capital', action:'post', item:i, label:'Post', color:'var(--accent)'}));
-        needsShip.forEach(i => actions.push({emoji:'📦', text:`${i.ref}`, sub:`Sold to ${i.sold_to||'?'} — needs shipping`, action:'shipping', item:i, label:'Ship', color:'var(--red)'}));
-        inTransit.forEach(i => actions.push({emoji:'🚚', text:`${i.ref}`, sub:`From ${i.bought_from||'?'} — in transit`, action:'transit', item:i, label:'Track', color:'var(--text-2)'}));
-        awaitPay.forEach(i => actions.push({emoji:'💰', text:`${i.ref}`, sub:`${i.sold_to||'?'} owes ${i.sold_price||i.sale_price||'?'}`, action:'payment', item:i, label:'Paid?', color:'var(--text-2)'}));
+        unposted.forEach(i => actions.push({dot:'var(--accent)', text:`${i.ref} ${i.dial||''}`, sub:'Unposted — idle capital', action:'post', item:i, label:'Post', color:'var(--accent)'}));
+        needsShip.forEach(i => actions.push({dot:'var(--red)', text:`${i.ref}`, sub:`Sold to ${i.sold_to||'?'} — needs shipping`, action:'shipping', item:i, label:'Ship', color:'var(--red)'}));
+        inTransit.forEach(i => actions.push({dot:'var(--gold, orange)', text:`${i.ref}`, sub:`From ${i.bought_from||'?'} — in transit`, action:'transit', item:i, label:'Track', color:'var(--text-2)'}));
+        awaitPay.forEach(i => actions.push({dot:'var(--text-2)', text:`${i.ref}`, sub:`${i.sold_to||'?'} owes ${i.sold_price||i.sale_price||'?'}`, action:'payment', item:i, label:'Paid?', color:'var(--text-2)'}));
 
         window._actionItems = actions;
         if (!actions.length) {
-            el.innerHTML = '<div style="text-align:center;padding:12px;color:var(--green);">All clear — nothing needs attention ✅</div>';
+            el.innerHTML = '<div style="text-align:center;padding:12px;color:var(--green);">All clear — nothing needs attention</div>';
             return;
         }
 
         const renderActionItem = (a, idx) => `<div onclick="handleActionItem(${idx})" style="padding:6px 8px;margin:3px 0;border-radius:6px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.15s;background:var(--bg-2);" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='var(--bg-2)'">
-            <span style="font-size:1rem;">${a.emoji}</span>
+            <span style="width:8px;height:8px;border-radius:50%;background:${a.dot};flex-shrink:0;"></span>
             <div style="flex:1;min-width:0;">
                 <div style="font-family:var(--mono);font-size:0.78rem;font-weight:600;color:var(--text-0);">${a.text}</div>
                 <div style="font-size:0.65rem;color:var(--text-2);margin-top:1px;">${a.sub}</div>
@@ -5351,7 +5366,7 @@ async function loadPayments() {
         if (overdue_receivables.length) {
             html += overdue_receivables.map(p => renderRow(p, 'recv')).join('');
         } else {
-            html += '<div style="color:var(--text-2);font-size:0.75rem;">All shipped watches paid ✅</div>';
+            html += '<div style="color:var(--text-2);font-size:0.75rem;">All shipped watches paid</div>';
         }
         html += '</div>';
         
