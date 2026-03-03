@@ -359,14 +359,54 @@
             .deal-stats { grid-template-columns:repeat(2,1fr); }
             div[style*="grid-template-columns:1fr 1fr"] { display:block !important; }
             div[style*="grid-template-columns:1fr 1fr"] > .card { margin-bottom:8px; }
-            .tbl { min-width:600px; }
+            .tbl { min-width:unset; font-size:0.72rem; }
+            .tbl th, .tbl td { padding:6px 6px; white-space:nowrap; }
+            /* Hide less important columns on tablet */
+            .tbl .hide-mobile { display:none; }
+            .pf-grid { grid-template-columns:repeat(2,1fr); }
+            /* Modals full width */
+            div[style*="max-width:500px"], div[style*="max-width:600px"], div[style*="max-width:700px"],
+            div[style*="max-width:800px"], div[style*="max-width:480px"] { max-width:95vw !important; width:95vw !important; }
+            /* Action items cards */
+            .action-card { padding:10px !important; }
+            /* Shipping form */
+            #ship-layout { grid-template-columns:1fr !important; }
+            /* Search inputs */
+            #ref-search, #im-search { max-width:100% !important; }
         }
         @media(max-width:480px) {
-            .main { padding:8px; }
-            .metrics { grid-template-columns:1fr 1fr; }
-            .metric .val { font-size:1.2rem; }
-            html { font-size:12px; }
+            .main { padding:6px; }
+            .metrics { grid-template-columns:1fr 1fr; gap:6px; }
+            .metric { padding:10px 10px; }
+            .metric .val { font-size:1.1rem; }
+            .metric .lbl { font-size:0.55rem; }
+            html { font-size:13px; }
             #ship-layout { grid-template-columns:1fr !important; }
+            .card { border-radius:8px; }
+            .card-head { padding:10px 12px; }
+            .card-body { padding:10px 12px; }
+            /* Table on small screens — allow scroll but reduce padding */
+            .tbl th, .tbl td { padding:5px 4px; font-size:0.68rem; }
+            /* Buttons touch friendly */
+            .btn, button { min-height:40px; font-size:0.8rem; }
+            .input, select, input[type="text"], input[type="number"] { min-height:38px; font-size:0.85rem; }
+            /* Stack filter controls */
+            div[style*="display:flex"][style*="gap"] { flex-wrap:wrap !important; }
+            /* Posting modal */
+            .posting-modal-content { padding:12px !important; }
+            /* Mobile nav icons */
+            .mobile-nav a { min-width:48px; padding:6px 4px; font-size:0.62rem; }
+            /* Fix grids that use inline styles */
+            div[style*="grid-template-columns:1fr 1fr 1fr"] { grid-template-columns:1fr 1fr !important; }
+            /* Inventory management table */
+            .tbl .hide-sm { display:none; }
+            /* Price intelligence in posting modal */
+            div[style*="grid-template-columns:1fr 1fr;gap:6px"] { grid-template-columns:1fr 1fr !important; }
+        }
+        @media(max-width:360px) {
+            html { font-size:12px; }
+            .metrics { grid-template-columns:1fr; }
+            .mobile-nav a { min-width:40px; font-size:0.58rem; }
         }
 
         @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
@@ -723,15 +763,15 @@
                 <h1>Market Data</h1>
                 <p id="browse-subtitle">Full listing database.</p>
             </div>
-            <div style="display:flex;gap:6px;margin-bottom:10px;">
-                <input class="input" id="browse-search" placeholder="Search ref, dial, seller, group..." oninput="filterBrowse()" style="flex:1;">
+            <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+                <input class="input" id="browse-search" placeholder="Search ref, dial, seller, group..." oninput="filterBrowse()" style="flex:1;min-width:150px;">
                 <select class="input" id="browse-region" onchange="filterBrowse()" style="width:90px;"><option value="">All</option><option value="US">US</option><option value="HK">HK</option><option value="EU">EU</option></select>
                 <select class="input" id="browse-cond" onchange="filterBrowse()" style="width:110px;"><option value="">All</option><option value="BNIB">BNIB</option><option value="Like New">Like New</option><option value="Pre-owned">Pre-owned</option></select>
                 <select class="input" id="browse-sort" onchange="filterBrowse()" style="width:110px;"><option value="price-asc">Price Asc</option><option value="price-desc">Price Desc</option><option value="ref">Ref A-Z</option></select>
             </div>
             <div class="card">
                 <div class="tbl-wrap"><table class="tbl" id="browse-table"><thead><tr>
-                    <th>Ref</th><th>Model</th><th>Dial</th><th>Bracelet</th><th class="right">Price</th><th>Cond</th><th>Year</th><th>Set</th><th>Region</th><th>Seller</th><th>Group</th>
+                    <th>Ref</th><th class="hide-mobile">Model</th><th>Dial</th><th class="hide-sm">Bracelet</th><th class="right">Price</th><th class="hide-sm">Cond</th><th class="hide-sm">Year</th><th class="hide-mobile">Set</th><th class="hide-sm">Region</th><th class="hide-mobile">Seller</th><th class="hide-mobile">Group</th>
                 </tr></thead><tbody></tbody></table></div>
                 <div style="text-align:center;padding:8px;"><button class="btn" onclick="loadMoreBrowse()" id="browse-more">Load More</button></div>
             </div>
@@ -3262,13 +3302,13 @@ function renderBrowse(append) {
             : '';
         return `<tr>
         <td class="ref" onclick="lookupRef('${l.ref}')">${l.ref}</td>
-        <td class="dim" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.model}</td>
-        <td>${l.dial}</td><td class="dim">${l.bracelet}</td><td class="right">${fmt(l.price)}</td>
-        <td><span class="tag ${condTag(l.condition)}">${l.condition||'—'}</span></td>
-        ${yearCell}
-        <td class="dim">${l.completeness}</td><td class="dim">${regionLabel(l.region)}</td>
-        <td class="dim" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.seller}</td>
-        <td class="dim" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.group}</td>
+        <td class="dim hide-mobile" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.model}</td>
+        <td>${l.dial}</td><td class="dim hide-sm">${l.bracelet}</td><td class="right">${fmt(l.price)}</td>
+        <td class="hide-sm"><span class="tag ${condTag(l.condition)}">${l.condition||'—'}</span></td>
+        ${yearCell.replace('<td','<td class="hide-sm"')}
+        <td class="dim hide-mobile">${l.completeness}</td><td class="dim hide-sm">${regionLabel(l.region)}</td>
+        <td class="dim hide-mobile" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.seller}</td>
+        <td class="dim hide-mobile" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.group}</td>
     </tr>${srcRow}`;
     }).join('');
     const tbody = $('#browse-table tbody');
