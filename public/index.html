@@ -2907,7 +2907,7 @@ async function loadCurrentMonthCard() {
         if (!months.length) return;
         const now = new Date();
         const curMo = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-        const m = months.find(x => x.month === curMo) || months[0];
+        const m = months.find(x => x.month === curMo) || {month: curMo, pieces: 0, revenue: 0, profit: 0, margin: 0};
         const monthNames = {'01':'January','02':'February','03':'March','04':'April','05':'May','06':'June','07':'July','08':'August','09':'September','10':'October','11':'November','12':'December'};
         const [yr,mn] = m.month.split('-');
         const label = (monthNames[mn]||mn) + ' ' + yr;
