@@ -2895,6 +2895,38 @@ function renderPfSummary(c, p, items) {
     requestAnimationFrame(() => animateAllCounters());
     // Load portfolio chart
     loadPortfolioChart();
+    // Load current month performance
+    loadCurrentMonthCard();
+}
+
+async function loadCurrentMonthCard() {
+    try {
+        const r = await fetch('/api/monthly_performance');
+        const data = await r.json();
+        const months = data.months || [];
+        if (!months.length) return;
+        const now = new Date();
+        const curMo = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+        const m = months.find(x => x.month === curMo) || months[0];
+        const monthNames = {'01':'January','02':'February','03':'March','04':'April','05':'May','06':'June','07':'July','08':'August','09':'September','10':'October','11':'November','12':'December'};
+        const [yr,mn] = m.month.split('-');
+        const label = (monthNames[mn]||mn) + ' ' + yr;
+        const marginColor = m.margin >= 10 ? 'var(--green)' : m.margin >= 5 ? 'var(--text-0)' : 'var(--red)';
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.marginTop = '8px';
+        card.innerHTML = `<div class="card-head"><span>${label} Performance</span><span style="font-size:0.65rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;cursor:pointer;" onclick="setPfView('monthly',document.querySelector('#portfolio-tabs .tab:last-child'))">View All →</span></div>
+            <div class="card-body">
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;">
+                    <div><div style="color:var(--text-2);font-size:0.6rem;text-transform:uppercase;">Pieces</div><div style="font-size:1.1rem;font-weight:700;color:var(--text-0);">${m.pieces}</div></div>
+                    <div><div style="color:var(--text-2);font-size:0.6rem;text-transform:uppercase;">Revenue</div><div style="font-size:1.1rem;font-weight:700;color:var(--text-0);">${fmt(m.revenue)}</div></div>
+                    <div><div style="color:var(--text-2);font-size:0.6rem;text-transform:uppercase;">Realized Profit</div><div style="font-size:1.1rem;font-weight:700;color:${m.profit>=0?'var(--green)':'var(--red)'};">${fmt(m.profit)}</div></div>
+                    <div><div style="color:var(--text-2);font-size:0.6rem;text-transform:uppercase;">Margin</div><div style="font-size:1.1rem;font-weight:700;color:${marginColor};">${m.margin}%</div></div>
+                </div>
+            </div>`;
+        const container = document.querySelector('#portfolio-content .fade-in');
+        if (container) container.appendChild(card);
+    } catch(e) {}
 }
 
 let posView = 'table';
