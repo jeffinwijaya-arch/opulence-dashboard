@@ -1592,18 +1592,19 @@ async function loadActionItems() {
         // Collect by priority group
         const unposted = [], needsShip = [], awaitPay = [], inTransit = [];
         items.forEach(i => {
-            if (i.arrived && !i.posted && !i.sold) unposted.push(i);
+            if (!i.posted && !i.sold) unposted.push(i);  // All unposted (arrived or not)
             else if (i.sold && !i.shipped) needsShip.push(i);
             else if (i.shipped && !i.paid) awaitPay.push(i);
-            else if (!i.arrived && !i.sold && i.buy_date) inTransit.push(i);
         });
 
         // Flatten into ordered actions array
         const actions = [];
         const desc = i => [i.ref, i.bracelet, i.dial].filter(Boolean).join(' ') || i.description || '?';
-        unposted.forEach(i => actions.push({dot:'var(--accent)', text:desc(i), sub:'Unposted — idle capital', action:'post', item:i, label:'Post', color:'var(--accent)'}));
+        unposted.forEach(i => {
+            const inTransitTag = !i.arrived ? ' (in transit)' : '';
+            actions.push({dot:'var(--accent)', text:desc(i), sub:`Unposted${inTransitTag} — idle capital`, action:'post', item:i, label:'Post', color:'var(--accent)'});
+        });
         needsShip.forEach(i => actions.push({dot:'var(--red)', text:desc(i), sub:`Sold to ${i.sold_to||'?'} — needs shipping`, action:'shipping', item:i, label:'Ship', color:'var(--red)'}));
-        inTransit.forEach(i => actions.push({dot:'var(--gold, orange)', text:desc(i), sub:`From ${i.bought_from||'?'} — in transit`, action:'transit', item:i, label:'Track', color:'var(--text-2)'}));
         awaitPay.forEach(i => actions.push({dot:'var(--text-2)', text:desc(i), sub:`${i.sold_to||'?'} owes ${i.sold_price||i.sale_price||'?'}`, action:'payment', item:i, label:'Paid?', color:'var(--text-2)'}));
 
         window._actionItems = actions;
