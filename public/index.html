@@ -2101,7 +2101,10 @@ function openPostingModal(item, photoCount) {
 
             // Year-matched data
             const byYear = ps.by_year || {};
+            const prevYear = ps.prev_year || {};
+            const yearRange = ps.year_range || {};
             const yearLabel = byYear.year || '';
+            const isBNIB = bnibData.count > 0;
 
             // Recommended = year-matched US low - 100, fallback to overall low - 100
             const yearUsLow = byYear.us_low || 0;
@@ -2109,36 +2112,29 @@ function openPostingModal(item, photoCount) {
             const recBase = yearUsLow || yearLow || low;
             const recommended = recBase > 0 ? recBase - 100 : 0;
 
-            // Build BNIB breakdown with US/HK splits
-            const cd = bnibData.low ? bnibData : preData;
-            const cdLabel = bnibData.low ? 'BNIB' : 'Pre-Owned';
-            let condSection = '';
-            if (cd.low) {
-                const usLine = cd.us_low ? `<div><span style="color:var(--text-2);">US Low</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(cd.us_low)}</span></div>
-                    <div><span style="color:var(--text-2);">US B25</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(cd.us_b25)}</span></div>` : '';
-                const hkLine = cd.hk_low ? `<div><span style="color:var(--text-2);">HK Low</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(cd.hk_low)}</span></div>
-                    <div><span style="color:var(--text-2);">HK B25</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(cd.hk_b25)}</span></div>` : '';
-                condSection = `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
-                    <div style="color:var(--text-2);font-size:0.6rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">${cdLabel} (${cd.count} listings)</div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-                        ${usLine}${hkLine}
-                    </div>
+            // Helper: render a year row
+            const yrRow = (d, label, accent) => {
+                if (!d || !d.count) return '';
+                const us = d.us_low ? `<div><span style="color:var(--text-2);">US Low</span><br><span style="font-family:var(--mono);color:var(--text-0);font-weight:700;">${fmt(d.us_low)}</span></div>
+                    <div><span style="color:var(--text-2);">US B25</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(d.us_b25)}</span></div>` : '';
+                const hk = d.hk_low ? `<div><span style="color:var(--text-2);">HK Low</span><br><span style="font-family:var(--mono);color:var(--text-0);font-weight:700;">${fmt(d.hk_low)}</span></div>
+                    <div><span style="color:var(--text-2);">HK B25</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(d.hk_b25)}</span></div>` : '';
+                return `<div style="margin-top:6px;padding-top:6px;border-top:1px solid ${accent};">
+                    <div style="color:${accent};font-size:0.6rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">${label} (${d.count})</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">${us}${hk}</div>
                 </div>`;
-            }
+            };
 
-            // Year-matched section
+            // Build year-based sections based on condition
             let yearSection = '';
-            if (byYear.count) {
-                const yUsLine = byYear.us_low ? `<div><span style="color:var(--text-2);">US Low</span><br><span style="font-family:var(--mono);color:var(--text-0);font-weight:700;">${fmt(byYear.us_low)}</span></div>
-                    <div><span style="color:var(--text-2);">US B25</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(byYear.us_b25)}</span></div>` : '';
-                const yHkLine = byYear.hk_low ? `<div><span style="color:var(--text-2);">HK Low</span><br><span style="font-family:var(--mono);color:var(--text-0);font-weight:700;">${fmt(byYear.hk_low)}</span></div>
-                    <div><span style="color:var(--text-2);">HK B25</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(byYear.hk_b25)}</span></div>` : '';
-                yearSection = `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--accent-border);">
-                    <div style="color:var(--accent);font-size:0.6rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">${yearLabel} ONLY (${byYear.count} listings)</div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-                        ${yUsLine}${yHkLine}
-                    </div>
-                </div>`;
+            if (isBNIB) {
+                // BNIB: show current year + previous year
+                yearSection = yrRow(byYear, yearLabel + ' BNIB', 'var(--accent)');
+                yearSection += yrRow(prevYear, (prevYear.year || '') + ' (prev year)', 'var(--text-2)');
+            } else {
+                // Pre-owned: show year +/- 2 range
+                yearSection = yrRow(yearRange, (yearRange.years || '') + ' range', 'var(--accent)');
+                yearSection += yrRow(byYear, yearLabel + ' only', 'var(--text-2)');
             }
 
             intelEl.innerHTML = `
@@ -2151,7 +2147,6 @@ function openPostingModal(item, photoCount) {
                     <div><span style="color:var(--text-2);">US Low</span><br><span style="font-family:var(--mono);color:var(--text-0);">${usLow ? fmt(usLow) : '—'}</span></div>
                     <div><span style="color:var(--text-2);">B25 Avg</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(b25)}</span></div>
                 </div>
-                ${condSection}
                 ${yearSection}
                 <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
                     <span style="color:var(--text-2);">Recommended:</span>
