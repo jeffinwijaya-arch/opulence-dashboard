@@ -2144,7 +2144,7 @@ function openPostingModal(item, photoCount) {
             intelEl.innerHTML = `
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
                     <span style="color:var(--text-2);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;">Price Intelligence — ${ref} ${dial} ${bracelet} (${count} listings)</span>
-                    <a href="javascript:void(0)" onclick="document.getElementById('posting-modal')?.remove();showPage('prices');setTimeout(()=>{const si=document.querySelector('#prices-section input[type=text],#search-input');if(si){si.value='${[ref,dial,bracelet].filter(Boolean).join(' ')}';si.dispatchEvent(new Event('input'));}},300);" style="font-size:0.6rem;color:var(--accent);text-decoration:none;cursor:pointer;">View Listings →</a>
+                    <a href="javascript:void(0)" onclick="document.getElementById('posting-modal')?.remove();showPage('lookup');setTimeout(()=>{const si=document.getElementById('ref-search');if(si){si.value='${[ref,dial,bracelet].filter(Boolean).join(' ')}';doLookup();}},300);" style="font-size:0.6rem;color:var(--accent);text-decoration:none;cursor:pointer;">View Listings →</a>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:4px;">
                     <div><span style="color:var(--text-2);">Lowest</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(low)}</span></div>
