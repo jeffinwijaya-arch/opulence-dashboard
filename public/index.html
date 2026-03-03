@@ -2030,6 +2030,10 @@ function openPostingModal(item, photoCount) {
             <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Caption</label>
             <textarea id="posting-caption" rows="3" style="width:100%;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);color:var(--text-0);padding:8px;font-family:var(--mono);font-size:0.75rem;resize:vertical;margin-top:4px;">${postingText}</textarea>
         </div>
+        <div id="posting-price-intel" style="margin-bottom:10px;padding:10px;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);font-size:0.72rem;">
+            <div style="color:var(--text-2);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Price Intelligence</div>
+            <div style="color:var(--text-2);">Loading...</div>
+        </div>
         <div style="margin-bottom:10px;">
             <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Asking Price</label>
             <input id="posting-price" type="text" placeholder="e.g. 15000" style="width:100%;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);color:var(--text-0);padding:8px;font-family:var(--mono);font-size:0.82rem;margin-top:4px;" />
@@ -2040,6 +2044,60 @@ function openPostingModal(item, photoCount) {
         </div>
     </div>`;
     document.body.appendChild(overlay);
+
+    // Fetch price intelligence for recommendation
+    (async () => {
+        const intelEl = document.getElementById('posting-price-intel');
+        try {
+            // Build query: ref + dial + bracelet for specific match
+            let q = ref;
+            if (dial) q += ' ' + dial;
+            if (bracelet) q += ' ' + bracelet;
+            const r = await fetch('/api/smart_search?q=' + encodeURIComponent(q));
+            const d = await r.json();
+            if (!r.ok || d.error) throw new Error(d.error || 'Not found');
+
+            const ps = d.price_summary || {};
+            const count = ps.count || 0;
+            const low = ps.low || 0;
+            const b25 = ps.b25 || ps.median || 0;
+            const usLow = ps.us_low || 0;
+            const hkLow = ps.hk_low || 0;
+
+            // Recommended = lowest wholesale - 100
+            const recommended = low > 0 ? low - 100 : 0;
+
+            // Condition-specific data
+            const byCond = ps.by_condition || {};
+            const bnibData = byCond['BNIB'] || {};
+            const preData = byCond['Pre-owned'] || {};
+
+            // Build condition-relevant pricing
+            let condLine = '';
+            if (condition === 'BNIB' && bnibData.low) {
+                condLine = `<div>BNIB Low: <span style="color:var(--text-0);font-family:var(--mono);">${fmt(bnibData.low)}</span> (${bnibData.count || 0} listings) · B25: ${fmt(bnibData.b25 || 0)}</div>`;
+            } else if (condition !== 'BNIB' && preData.low) {
+                condLine = `<div>Pre-Owned Low: <span style="color:var(--text-0);font-family:var(--mono);">${fmt(preData.low)}</span> (${preData.count || 0} listings) · B25: ${fmt(preData.b25 || 0)}</div>`;
+            }
+
+            intelEl.innerHTML = `
+                <div style="color:var(--text-2);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Price Intelligence — ${ref} ${dial} ${bracelet} (${count} listings)</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">
+                    <div><span style="color:var(--text-2);">Lowest</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(low)}</span></div>
+                    <div><span style="color:var(--text-2);">US Low</span><br><span style="font-family:var(--mono);color:var(--text-0);">${usLow ? fmt(usLow) : '—'}</span></div>
+                    <div><span style="color:var(--text-2);">B25 Avg</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(b25)}</span></div>
+                </div>
+                ${condLine}
+                <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+                    <span style="color:var(--text-2);">Recommended:</span>
+                    <span style="font-family:var(--mono);font-weight:700;font-size:0.85rem;color:var(--green);cursor:pointer;" onclick="document.getElementById('posting-price').value='${recommended}'">${recommended > 0 ? fmt(recommended) : '—'}</span>
+                    <span style="color:var(--text-2);font-size:0.6rem;margin-left:4px;">(lowest - $100, click to use)</span>
+                </div>
+            `;
+        } catch(e) {
+            intelEl.innerHTML = `<div style="color:var(--text-2);font-size:0.65rem;">Price data unavailable: ${e.message}</div>`;
+        }
+    })();
 
     // Load existing photo thumbnails
     if (photoCount > 0) {
