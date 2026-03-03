@@ -1580,12 +1580,31 @@ async function loadActionItems() {
             el.innerHTML = '<div style="text-align:center;padding:12px;color:var(--green);">All clear — nothing needs attention</div>';
             return;
         }
-        el.innerHTML = actions.slice(0,8).map((a,idx) => `<div onclick="handleActionItem(${idx})" style="padding:5px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
+        const renderActionItem = (a, idx) => `<div onclick="handleActionItem(${idx})" style="padding:5px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
             <span class="tag ${a.icon}" style="min-width:16px;text-align:center;">!</span>
             <span style="flex:1;font-family:var(--mono);font-size:0.72rem;">${a.text}</span>
             <span style="font-size:0.65rem;color:var(--accent);font-weight:600;padding:2px 6px;border:1px solid var(--accent-border);border-radius:3px;">${a.label}</span>
-        </div>`).join('') + (actions.length > 8 ? `<div style="text-align:center;padding:6px;color:var(--text-2);font-size:0.7rem;">+${actions.length-8} more</div>` : '');
+        </div>`;
+        const initialCount = 8;
+        el.innerHTML = actions.slice(0, initialCount).map(renderActionItem).join('')
+            + (actions.length > initialCount ? `<div id="action-items-overflow" style="display:none;">${actions.slice(initialCount).map((a,i) => renderActionItem(a, i + initialCount)).join('')}</div>
+            <div id="action-items-toggle" style="text-align:center;padding:6px;cursor:pointer;" onclick="toggleActionItems()">
+                <span style="color:var(--accent);font-size:0.7rem;font-weight:600;">Show ${actions.length - initialCount} more ▼</span>
+            </div>` : '');
     } catch(e) { console.error(e); }
+}
+
+function toggleActionItems() {
+    const overflow = document.getElementById('action-items-overflow');
+    const toggle = document.getElementById('action-items-toggle');
+    if (!overflow || !toggle) return;
+    const hidden = overflow.style.display === 'none';
+    overflow.style.display = hidden ? 'block' : 'none';
+    const total = window._actionItems?.length || 0;
+    const extra = total - 8;
+    toggle.innerHTML = hidden
+        ? `<span style="color:var(--accent);font-size:0.7rem;font-weight:600;">Show less ▲</span>`
+        : `<span style="color:var(--accent);font-size:0.7rem;font-weight:600;">Show ${extra} more ▼</span>`;
 }
 
 async function handleActionItem(idx) {
@@ -1668,13 +1687,16 @@ function showShipForm(type, row) {
 
     if (type === 'external') {
         form.innerHTML = `
-            <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Tracking Number</label>
-            <input id="ship-tracking" type="text" placeholder="Enter tracking number" style="width:100%;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);color:var(--text-0);padding:8px;font-family:var(--mono);font-size:0.78rem;margin-top:4px;margin-bottom:10px;" />
-            <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Label PDF (optional)</label>
-            <div id="ship-label-preview" style="min-height:50px;background:var(--bg-2);border:2px dashed var(--border-strong);border-radius:var(--radius);padding:10px;margin-top:4px;margin-bottom:12px;text-align:center;cursor:pointer;" onclick="document.getElementById('ship-label-upload').click()">
-                <div style="color:var(--text-2);font-size:0.72rem;">Click to attach label PDF</div>
+            <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Label PDF</label>
+            <div id="ship-label-preview" style="min-height:50px;background:var(--bg-2);border:2px dashed var(--border-strong);border-radius:var(--radius);padding:10px;margin-top:4px;margin-bottom:10px;text-align:center;cursor:pointer;" onclick="document.getElementById('ship-label-upload').click()">
+                <div style="color:var(--text-2);font-size:0.72rem;">📄 Click to upload label PDF — tracking will be extracted automatically</div>
             </div>
-            <input type="file" id="ship-label-upload" accept=".pdf,image/*" style="display:none" onchange="previewShipLabel(this)" />
+            <input type="file" id="ship-label-upload" accept=".pdf,image/*" style="display:none" onchange="handleLabelUpload(this)" />
+            <div id="ship-tracking-section" style="margin-bottom:10px;">
+                <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Tracking Number</label>
+                <input id="ship-tracking" type="text" placeholder="Auto-filled from PDF or enter manually" style="width:100%;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);color:var(--text-0);padding:8px;font-family:var(--mono);font-size:0.78rem;margin-top:4px;" />
+                <div id="ship-tracking-status" style="font-size:0.65rem;color:var(--text-2);margin-top:2px;"></div>
+            </div>
             <div style="display:flex;gap:8px;justify-content:flex-end;">
                 <button class="btn" onclick="showShipForm('back', ${row})" style="font-size:0.75rem;padding:6px 14px;">Back</button>
                 <button class="btn" id="ship-submit-btn" onclick="submitShipping(${row}, 'external')" style="font-size:0.75rem;padding:6px 14px;background:var(--blue);color:#fff;border:none;font-weight:600;">Mark Shipped</button>
@@ -1689,12 +1711,34 @@ function showShipForm(type, row) {
     }
 }
 
-function previewShipLabel(input) {
+async function handleLabelUpload(input) {
     const preview = document.getElementById('ship-label-preview');
+    const statusEl = document.getElementById('ship-tracking-status');
+    const trackingInput = document.getElementById('ship-tracking');
     if (!preview || !input.files?.length) return;
     const file = input.files[0];
-    preview.innerHTML = `<div style="color:var(--green);font-size:0.72rem;">${file.name} (${(file.size/1024).toFixed(0)} KB)</div>
-        <button onclick="document.getElementById('ship-label-upload').value='';document.getElementById('ship-label-preview').innerHTML='<div style=\\'color:var(--text-2);font-size:0.72rem;\\'>Click to attach label PDF</div>'" style="background:none;border:none;color:var(--red);font-size:0.65rem;cursor:pointer;margin-top:4px;">Remove</button>`;
+
+    preview.innerHTML = `<div style="color:var(--green);font-size:0.72rem;">✅ ${file.name} (${(file.size/1024).toFixed(0)} KB)</div>
+        <button onclick="document.getElementById('ship-label-upload').value='';document.getElementById('ship-label-preview').innerHTML='<div style=\\'color:var(--text-2);font-size:0.72rem;\\'>📄 Click to upload label PDF — tracking will be extracted automatically</div>';document.getElementById('ship-tracking').value='';document.getElementById('ship-tracking-status').textContent='';" style="background:none;border:none;color:var(--red);font-size:0.65rem;cursor:pointer;margin-top:4px;">Remove</button>`;
+
+    // Auto-extract tracking from PDF
+    if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent);">⏳ Extracting tracking number...</span>';
+        try {
+            const fd = new FormData();
+            fd.append('label', file);
+            const r = await fetch('/api/shipping/extract-tracking', { method: 'POST', body: fd });
+            const result = await r.json();
+            if (result.ok && result.tracking) {
+                if (trackingInput) trackingInput.value = result.tracking;
+                if (statusEl) statusEl.innerHTML = `<span style="color:var(--green);">✅ Tracking extracted: ${result.tracking}</span>`;
+            } else {
+                if (statusEl) statusEl.innerHTML = '<span style="color:var(--text-2);">Could not extract tracking — enter manually</span>';
+            }
+        } catch(e) {
+            if (statusEl) statusEl.innerHTML = '<span style="color:var(--red);">Extraction failed — enter manually</span>';
+        }
+    }
 }
 
 async function submitShipping(row, type) {
