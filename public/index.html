@@ -2054,7 +2054,15 @@ function openPostingModal(item, photoCount) {
             let q = ref;
             if (dial) q += ' ' + dial;
             if (bracelet) q += ' ' + bracelet;
-            const r = await fetch('/api/smart_search?q=' + encodeURIComponent(q));
+            // Extract year from card date for year-matched pricing
+            let watchYear = '';
+            if (cardDate) {
+                const ym = cardDate.match(/(\\d{4})/);
+                if (ym) watchYear = ym[1];
+                else { const mm = cardDate.match(/\\d{2}\\/(\\d{4})/); if (mm) watchYear = mm[1]; }
+            }
+            const yearParam = watchYear ? '&year=' + watchYear : '';
+            const r = await fetch('/api/smart_search?q=' + encodeURIComponent(q) + yearParam);
             const d = await r.json();
             if (!r.ok || d.error) throw new Error(d.error || 'Not found');
 
@@ -2065,13 +2073,20 @@ function openPostingModal(item, photoCount) {
             const usLow = ps.us_low || 0;
             const hkLow = ps.hk_low || 0;
 
-            // Recommended = lowest wholesale - 100
-            const recommended = low > 0 ? low - 100 : 0;
-
             // Condition-specific data
             const byCond = ps.by_condition || {};
             const bnibData = byCond['BNIB'] || {};
             const preData = byCond['Pre-owned'] || {};
+
+            // Year-matched data
+            const byYear = ps.by_year || {};
+            const yearLabel = byYear.year || '';
+
+            // Recommended = year-matched US low - 100, fallback to overall low - 100
+            const yearUsLow = byYear.us_low || 0;
+            const yearLow = byYear.low || 0;
+            const recBase = yearUsLow || yearLow || low;
+            const recommended = recBase > 0 ? recBase - 100 : 0;
 
             // Build BNIB breakdown with US/HK splits
             const cd = bnibData.low ? bnibData : preData;
@@ -2090,13 +2105,25 @@ function openPostingModal(item, photoCount) {
                 </div>`;
             }
 
-            // Link to intelligence page
-            const searchQuery = encodeURIComponent([ref, dial, bracelet].filter(Boolean).join(' '));
+            // Year-matched section
+            let yearSection = '';
+            if (byYear.count) {
+                const yUsLine = byYear.us_low ? `<div><span style="color:var(--text-2);">US Low</span><br><span style="font-family:var(--mono);color:var(--text-0);font-weight:700;">${fmt(byYear.us_low)}</span></div>
+                    <div><span style="color:var(--text-2);">US B25</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(byYear.us_b25)}</span></div>` : '';
+                const yHkLine = byYear.hk_low ? `<div><span style="color:var(--text-2);">HK Low</span><br><span style="font-family:var(--mono);color:var(--text-0);font-weight:700;">${fmt(byYear.hk_low)}</span></div>
+                    <div><span style="color:var(--text-2);">HK B25</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(byYear.hk_b25)}</span></div>` : '';
+                yearSection = `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--accent-border);">
+                    <div style="color:var(--accent);font-size:0.6rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">${yearLabel} ONLY (${byYear.count} listings)</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                        ${yUsLine}${yHkLine}
+                    </div>
+                </div>`;
+            }
 
             intelEl.innerHTML = `
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
                     <span style="color:var(--text-2);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;">Price Intelligence — ${ref} ${dial} ${bracelet} (${count} listings)</span>
-                    <a href="#prices" onclick="document.getElementById('posting-modal')?.remove();setTimeout(()=>{const si=document.querySelector('#prices-section input[type=text],#search-input');if(si){si.value='${[ref,dial,bracelet].filter(Boolean).join(' ')}';si.dispatchEvent(new Event('input'));}},300);" style="font-size:0.6rem;color:var(--accent);text-decoration:none;cursor:pointer;">View Listings →</a>
+                    <a href="javascript:void(0)" onclick="document.getElementById('posting-modal')?.remove();showPage('prices');setTimeout(()=>{const si=document.querySelector('#prices-section input[type=text],#search-input');if(si){si.value='${[ref,dial,bracelet].filter(Boolean).join(' ')}';si.dispatchEvent(new Event('input'));}},300);" style="font-size:0.6rem;color:var(--accent);text-decoration:none;cursor:pointer;">View Listings →</a>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:4px;">
                     <div><span style="color:var(--text-2);">Lowest</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(low)}</span></div>
@@ -2104,10 +2131,11 @@ function openPostingModal(item, photoCount) {
                     <div><span style="color:var(--text-2);">B25 Avg</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(b25)}</span></div>
                 </div>
                 ${condSection}
+                ${yearSection}
                 <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
                     <span style="color:var(--text-2);">Recommended:</span>
                     <span style="font-family:var(--mono);font-weight:700;font-size:0.85rem;color:var(--green);cursor:pointer;" onclick="document.getElementById('posting-price').value='${recommended}'">${recommended > 0 ? fmt(recommended) : '—'}</span>
-                    <span style="color:var(--text-2);font-size:0.6rem;margin-left:4px;">(lowest - $100, click to use)</span>
+                    <span style="color:var(--text-2);font-size:0.6rem;margin-left:4px;">(${yearLabel ? yearLabel+' ' : ''}US low - $100, click to use)</span>
                 </div>
             `;
         } catch(e) {
