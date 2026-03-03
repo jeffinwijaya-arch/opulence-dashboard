@@ -1600,10 +1600,11 @@ async function loadActionItems() {
 
         // Flatten into ordered actions array
         const actions = [];
-        unposted.forEach(i => actions.push({dot:'var(--accent)', text:`${i.ref} ${i.dial||''}`, sub:'Unposted — idle capital', action:'post', item:i, label:'Post', color:'var(--accent)'}));
-        needsShip.forEach(i => actions.push({dot:'var(--red)', text:`${i.ref}`, sub:`Sold to ${i.sold_to||'?'} — needs shipping`, action:'shipping', item:i, label:'Ship', color:'var(--red)'}));
-        inTransit.forEach(i => actions.push({dot:'var(--gold, orange)', text:`${i.ref}`, sub:`From ${i.bought_from||'?'} — in transit`, action:'transit', item:i, label:'Track', color:'var(--text-2)'}));
-        awaitPay.forEach(i => actions.push({dot:'var(--text-2)', text:`${i.ref}`, sub:`${i.sold_to||'?'} owes ${i.sold_price||i.sale_price||'?'}`, action:'payment', item:i, label:'Paid?', color:'var(--text-2)'}));
+        const desc = i => [i.ref, i.bracelet, i.dial].filter(Boolean).join(' ') || i.description || '?';
+        unposted.forEach(i => actions.push({dot:'var(--accent)', text:desc(i), sub:'Unposted — idle capital', action:'post', item:i, label:'Post', color:'var(--accent)'}));
+        needsShip.forEach(i => actions.push({dot:'var(--red)', text:desc(i), sub:`Sold to ${i.sold_to||'?'} — needs shipping`, action:'shipping', item:i, label:'Ship', color:'var(--red)'}));
+        inTransit.forEach(i => actions.push({dot:'var(--gold, orange)', text:desc(i), sub:`From ${i.bought_from||'?'} — in transit`, action:'transit', item:i, label:'Track', color:'var(--text-2)'}));
+        awaitPay.forEach(i => actions.push({dot:'var(--text-2)', text:desc(i), sub:`${i.sold_to||'?'} owes ${i.sold_price||i.sale_price||'?'}`, action:'payment', item:i, label:'Paid?', color:'var(--text-2)'}));
 
         window._actionItems = actions;
         if (!actions.length) {
