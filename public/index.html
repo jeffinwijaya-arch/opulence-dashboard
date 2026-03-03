@@ -2667,12 +2667,19 @@ async function doLookup() {
         if (usB25 && hkB25) { const sp=((usB25-hkB25)/hkB25*100).toFixed(1); regionalHtml += `<div class="detail-row"><span>HK-US Spread</span><span class="${parseFloat(sp)>0?'green':'red'}" style="font-family:var(--mono)">${sp}%</span></div>`; }
         if (ps.cheaper_region) regionalHtml += `<div class="detail-row"><span>Cheaper</span><span style="font-family:var(--mono);color:var(--green)">${ps.cheaper_region}</span></div>`;
 
-        const cheapest = (d.listings||d.cheapest_listings||[]).slice(0,10).map(l=>`
-            <div class="listing-card"><div style="display:flex;justify-content:space-between;align-items:center;">
-                <span style="font-family:var(--mono);font-weight:700;color:var(--green)">${fmt(l.price_usd||l.price)}</span>
-                <span><span class="tag ${condTag(l.condition)}">${l.condition||'—'}</span> ${regionLabel(l.region)}</span>
-            </div><div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">${l.dial||''} ${l.bracelet||''} ${l.year?'('+l.year+')':''} | ${l.completeness||''} | ${l.seller||''}</div></div>
-        `).join('');
+        const cheapest = (d.listings||d.cheapest_listings||[]).slice(0,10).map((l,i)=>{
+            const srcId = `src-${Date.now()}-${i}`;
+            const dateStr = l.ts ? l.ts.split(' ')[0].replace(/\//g,'/') : '';
+            const srcText = (l.source_text||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            return `<div class="listing-card" style="cursor:pointer" onclick="document.getElementById('${srcId}').style.display=document.getElementById('${srcId}').style.display==='none'?'block':'none'">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-family:var(--mono);font-weight:700;color:var(--green)">${fmt(l.price_usd||l.price)}</span>
+                    <span>${dateStr?'<span style="font-size:0.65rem;color:var(--text-2);margin-right:8px">'+dateStr+'</span>':''}<span class="tag ${condTag(l.condition)}">${l.condition||'—'}</span> ${regionLabel(l.region)}</span>
+                </div>
+                <div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">${l.dial||''} ${l.bracelet||''} ${l.year?'('+l.year+')':''} | ${l.completeness||''} | ${l.seller||''} | ${l.group||''}</div>
+                ${srcText?`<div id="${srcId}" style="display:none;font-size:0.68rem;color:var(--text-2);margin-top:6px;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:4px;border-left:2px solid var(--accent);font-family:var(--mono);white-space:pre-wrap;word-break:break-all">${srcText}</div>`:''}
+            </div>`;
+        }).join('');
 
         let dialTable = '';
         if (dials.length > 1) {
