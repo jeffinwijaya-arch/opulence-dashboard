@@ -1572,26 +1572,38 @@ async function loadActionItems() {
         const items = await r.json();
         const el = document.getElementById('action-items');
         if (!el) return;
-        const actions = [];
+
+        // Collect by priority group
+        const unposted = [], needsShip = [], awaitPay = [], inTransit = [];
         items.forEach(i => {
-            const s = getStatus(i);
-            const itemJson = JSON.stringify(i).replace(/'/g,"\\'");
-            if (i.sold && !i.shipped) actions.push({icon:'tag-red', text:`${i.ref} sold to ${i.sold_to||'?'} — needs shipping`, ref:i.ref, action:'shipping', item:i, label:'Ship'});
-            else if (i.shipped && !i.paid) actions.push({icon:'tag-gold', text:`${i.ref} shipped — awaiting payment from ${i.sold_to||'?'}`, ref:i.ref, action:'payment', item:i, label:'Paid?'});
-            else if (i.arrived && !i.posted && !i.sold) actions.push({icon:'tag-blue', text:`${i.ref} ${i.dial||''} sitting unposted — idle capital`, ref:i.ref, action:'post', item:i, label:'Post'});
-            else if (!i.arrived && !i.sold && i.buy_date) actions.push({icon:'tag-gold', text:`${i.ref} from ${i.bought_from||'?'} — still in transit`, ref:i.ref, action:'transit', item:i, label:'Track'});
+            if (i.arrived && !i.posted && !i.sold) unposted.push(i);
+            else if (i.sold && !i.shipped) needsShip.push(i);
+            else if (i.shipped && !i.paid) awaitPay.push(i);
+            else if (!i.arrived && !i.sold && i.buy_date) inTransit.push(i);
         });
-        // Store for click handlers
+
+        // Flatten into ordered actions array
+        const actions = [];
+        unposted.forEach(i => actions.push({emoji:'📸', text:`${i.ref} ${i.dial||''}`, sub:'Unposted — idle capital', action:'post', item:i, label:'Post', color:'var(--accent)'}));
+        needsShip.forEach(i => actions.push({emoji:'📦', text:`${i.ref}`, sub:`Sold to ${i.sold_to||'?'} — needs shipping`, action:'shipping', item:i, label:'Ship', color:'var(--red)'}));
+        inTransit.forEach(i => actions.push({emoji:'🚚', text:`${i.ref}`, sub:`From ${i.bought_from||'?'} — in transit`, action:'transit', item:i, label:'Track', color:'var(--text-2)'}));
+        awaitPay.forEach(i => actions.push({emoji:'💰', text:`${i.ref}`, sub:`${i.sold_to||'?'} owes ${i.sold_price||i.sale_price||'?'}`, action:'payment', item:i, label:'Paid?', color:'var(--text-2)'}));
+
         window._actionItems = actions;
         if (!actions.length) {
-            el.innerHTML = '<div style="text-align:center;padding:12px;color:var(--green);">All clear — nothing needs attention</div>';
+            el.innerHTML = '<div style="text-align:center;padding:12px;color:var(--green);">All clear — nothing needs attention ✅</div>';
             return;
         }
-        const renderActionItem = (a, idx) => `<div onclick="handleActionItem(${idx})" style="padding:5px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
-            <span class="tag ${a.icon}" style="min-width:16px;text-align:center;">!</span>
-            <span style="flex:1;font-family:var(--mono);font-size:0.72rem;">${a.text}</span>
-            <span style="font-size:0.65rem;color:var(--accent);font-weight:600;padding:2px 6px;border:1px solid var(--accent-border);border-radius:3px;">${a.label}</span>
+
+        const renderActionItem = (a, idx) => `<div onclick="handleActionItem(${idx})" style="padding:6px 8px;margin:3px 0;border-radius:6px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.15s;background:var(--bg-2);" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='var(--bg-2)'">
+            <span style="font-size:1rem;">${a.emoji}</span>
+            <div style="flex:1;min-width:0;">
+                <div style="font-family:var(--mono);font-size:0.78rem;font-weight:600;color:var(--text-0);">${a.text}</div>
+                <div style="font-size:0.65rem;color:var(--text-2);margin-top:1px;">${a.sub}</div>
+            </div>
+            <span style="font-size:0.65rem;color:${a.color};font-weight:600;padding:3px 8px;border:1px solid ${a.color};border-radius:4px;white-space:nowrap;">${a.label}</span>
         </div>`;
+
         const initialCount = 8;
         el.innerHTML = actions.slice(0, initialCount).map(renderActionItem).join('')
             + (actions.length > initialCount ? `<div id="action-items-overflow" style="display:none;">${actions.slice(initialCount).map((a,i) => renderActionItem(a, i + initialCount)).join('')}</div>
