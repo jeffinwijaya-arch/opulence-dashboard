@@ -820,6 +820,13 @@
                     </div>
                 </div>
             </div>
+            <!-- Shipped Watches Log -->
+            <div class="card" style="margin-top:12px;">
+                <div class="card-head"><span>Shipped Watches</span></div>
+                <div class="card-body" id="ship-history">
+                    <p style="color:var(--text-2);text-align:center;padding:12px;">Loading...</p>
+                </div>
+            </div>
         </div>
 
         <!-- ═══ INVENTORY ═══ -->
@@ -1688,8 +1695,11 @@ function showShipForm(type, row) {
     if (type === 'external') {
         form.innerHTML = `
             <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Label PDF</label>
-            <div id="ship-label-preview" style="min-height:50px;background:var(--bg-2);border:2px dashed var(--border-strong);border-radius:var(--radius);padding:10px;margin-top:4px;margin-bottom:10px;text-align:center;cursor:pointer;" onclick="document.getElementById('ship-label-upload').click()">
-                <div style="color:var(--text-2);font-size:0.72rem;">📄 Click to upload label PDF — tracking will be extracted automatically</div>
+            <div id="ship-label-preview" style="min-height:60px;background:var(--bg-2);border:2px dashed var(--border-strong);border-radius:var(--radius);padding:14px;margin-top:4px;margin-bottom:10px;text-align:center;cursor:pointer;transition:border-color 0.2s,background 0.2s;" onclick="document.getElementById('ship-label-upload').click()"
+                ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='var(--bg-hover)';"
+                ondragleave="this.style.borderColor='var(--border-strong)';this.style.background='var(--bg-2)';"
+                ondrop="event.preventDefault();this.style.borderColor='var(--border-strong)';this.style.background='var(--bg-2)';const f=event.dataTransfer.files;if(f.length){const dt=new DataTransfer();dt.items.add(f[0]);document.getElementById('ship-label-upload').files=dt.files;handleLabelUpload(document.getElementById('ship-label-upload'));}">
+                <div style="color:var(--text-2);font-size:0.72rem;">📄 Drag & drop label PDF here or click to browse<br><span style="font-size:0.65rem;opacity:0.7;">Tracking will be extracted automatically</span></div>
             </div>
             <input type="file" id="ship-label-upload" accept=".pdf,image/*" style="display:none" onchange="handleLabelUpload(this)" />
             <div id="ship-tracking-section" style="margin-bottom:10px;">
@@ -4417,6 +4427,7 @@ async function pollLabelStatus(jobId) {
 }
 
 async function loadRecentLabels() {
+    loadShippedHistory();
     const container = document.getElementById('ship-recent');
     if (!container) return;
     try {
@@ -4464,6 +4475,74 @@ async function loadRecentLabels() {
         container.innerHTML = html;
     } catch(e) {
         container.innerHTML = `<p style="color:var(--red);text-align:center;">Error: ${e.message}</p>`;
+    }
+}
+
+async function loadShippedHistory() {
+    const el = document.getElementById('ship-history');
+    if (!el) return;
+    try {
+        const [logR, invR] = await Promise.all([
+            fetch('/api/shipping/log'),
+            fetch('/api/inventory/all')
+        ]);
+        if (!logR.ok || !invR.ok) { el.innerHTML = '<p style="color:var(--text-2);text-align:center;">Could not load</p>'; return; }
+        const log = await logR.json();
+        const items = await invR.json();
+
+        // Build row→item map
+        const rowMap = {};
+        items.forEach(i => { if (i.row) rowMap[i.row] = i; });
+
+        // Also include items that are shipped but not in log
+        const shipped = items.filter(i => i.shipped);
+        const entries = [];
+
+        shipped.forEach(item => {
+            const logEntry = log[String(item.row)] || {};
+            entries.push({
+                row: item.row,
+                ref: item.ref || '',
+                desc: item.description || '',
+                dial: item.dial || '',
+                serial: item.serial || '',
+                sold_to: item.sold_to || '',
+                type: logEntry.type || 'unknown',
+                tracking: logEntry.tracking || '',
+                address: logEntry.address || '',
+                label_path: logEntry.label_path || '',
+                shipped_at: logEntry.shipped_at || item.sale_date || '',
+            });
+        });
+
+        if (!entries.length) {
+            el.innerHTML = '<p style="color:var(--text-2);text-align:center;padding:12px;">No shipped watches</p>';
+            return;
+        }
+
+        // Sort by shipped_at desc
+        entries.sort((a, b) => (b.shipped_at || '').localeCompare(a.shipped_at || ''));
+
+        const typeIcons = { fedex: '📦', external: '🏷️', local: '🚗', unknown: '📤' };
+        const typeLabels = { fedex: 'FedEx Label', external: 'External Label', local: 'Local Delivery', unknown: 'Shipped' };
+
+        el.innerHTML = entries.map(e => `
+            <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;font-size:0.75rem;">
+                <span style="font-size:1rem;">${typeIcons[e.type] || '📤'}</span>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-family:var(--mono);font-weight:600;color:var(--text-0);">${e.ref} ${e.dial}</div>
+                    <div style="color:var(--text-2);font-size:0.68rem;">
+                        ${typeLabels[e.type] || 'Shipped'} → ${e.sold_to}
+                        ${e.tracking ? ' · <span style="color:var(--accent);">' + e.tracking + '</span>' : ''}
+                        ${e.serial ? ' · Serial: ' + e.serial : ''}
+                    </div>
+                </div>
+                <div style="font-size:0.65rem;color:var(--text-2);white-space:nowrap;">${e.shipped_at ? new Date(e.shipped_at).toLocaleDateString() : ''}</div>
+            </div>
+        `).join('');
+
+    } catch(e) {
+        el.innerHTML = `<p style="color:var(--red);text-align:center;">Error: ${e.message}</p>`;
     }
 }
 
