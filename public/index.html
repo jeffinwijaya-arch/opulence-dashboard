@@ -2333,20 +2333,18 @@ function openPostingRedactEditor(file, row, desc) {
     // Create overlay
     const overlay = document.createElement('div');
     overlay.id = 'posting-redact-modal';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:10001;display:flex;flex-direction:column;align-items:center;padding:16px;';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:10001;display:flex;flex-direction:column;align-items:center;padding:8px;overflow:hidden;';
     overlay.innerHTML = `
-        <div style="display:flex;justify-content:space-between;width:100%;max-width:860px;align-items:center;margin-bottom:8px;">
-            <span style="color:white;font-size:0.9rem;font-weight:600;">✏️ Redact before uploading</span>
-            <div style="display:flex;gap:8px;">
-                <button class="btn" onclick="postingRedactUndo()" style="padding:4px 10px;font-size:0.72rem;">↩ Undo</button>
-                <button class="btn" onclick="postingRedactClear()" style="padding:4px 10px;font-size:0.72rem;">✕ Clear</button>
-                <button class="btn" onclick="postingAutoRedact()" style="padding:4px 10px;font-size:0.72rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">🤖 Auto</button>
-                <button class="btn" onclick="postingRedactSkip()" style="padding:4px 10px;font-size:0.72rem;">Skip →</button>
-                <button class="btn" onclick="postingRedactSave()" style="padding:4px 10px;font-size:0.72rem;background:var(--green-dim);color:var(--green);border-color:var(--green);">✓ Done & Upload</button>
-            </div>
+        <div style="display:flex;gap:4px;width:100%;max-width:860px;align-items:center;margin-bottom:4px;flex-wrap:wrap;">
+            <span style="color:white;font-size:0.75rem;font-weight:600;">✏️ Redact</span>
+            <button class="btn" onclick="postingRedactUndo()" style="padding:2px 8px;font-size:0.65rem;">↩</button>
+            <button class="btn" onclick="postingRedactClear()" style="padding:2px 8px;font-size:0.65rem;">✕</button>
+            <button class="btn" onclick="postingAutoRedact()" style="padding:2px 8px;font-size:0.65rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">🤖 Auto</button>
+            <div style="flex:1;"></div>
+            <button class="btn" onclick="postingRedactSkip()" style="padding:2px 8px;font-size:0.65rem;">Skip →</button>
+            <button class="btn" onclick="postingRedactSave()" style="padding:2px 8px;font-size:0.65rem;background:var(--green-dim);color:var(--green);border-color:var(--green);">✓ Done</button>
         </div>
-        <div style="color:var(--text-2);font-size:0.68rem;margin-bottom:8px;">Draw black boxes over serials / sensitive info. Click Skip to upload without redaction.</div>
-        <canvas id="posting-redact-canvas" style="max-width:100%;max-height:calc(100vh - 120px);cursor:crosshair;border:1px solid rgba(255,255,255,0.1);border-radius:4px;"></canvas>
+        <canvas id="posting-redact-canvas" style="max-width:100%;flex:1;min-height:0;cursor:crosshair;border:1px solid rgba(255,255,255,0.1);border-radius:4px;object-fit:contain;"></canvas>
     `;
     document.body.appendChild(overlay);
 

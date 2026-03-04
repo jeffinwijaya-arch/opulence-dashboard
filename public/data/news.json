@@ -1,6 +1,16 @@
 {
   "articles": [
     {
+      "id": "6946d1f45608",
+      "title": "Hands-on \u2013 Nomos Goes Precious, with the Elegant Tangente Gold and Ludwig Gold (Incl. Video)",
+      "link": "https://monochrome-watches.com/nomos-tangente-neomatik-gold-nomos-ludwig-gold-video-review-price/",
+      "desc": "Every brand at one point dreamt of having an icon on their hands. A cornerstone model that stands the test of time, design trends, and, more importantly, captures the hearts of fans and collectors wor",
+      "date": "2026-03-04T18:01:08+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/Video-Review-Nomos-Tangente-Neomatik-Gold-and-Nomos-Ludwig-Gold-2026-1-600x237.jpg",
+      "relevance": 10
+    },
+    {
       "id": "04167af9dd2e",
       "title": "Introducing \u2013 The Serica Ref. 6190 TDM, a Thai Twist on the California Dial",
       "link": "https://monochrome-watches.com/the-serica-ref-6190-tdm-a-thai-twist-on-the-california-dial/",
@@ -221,16 +231,6 @@
       "relevance": 0
     },
     {
-      "id": "002c73696abb",
-      "title": "Introducing \u2013 The New H. Moser & Cie. Streamliner Alpine Drivers Pink Edition is Performance, Exposed",
-      "link": "https://monochrome-watches.com/moser-streamliner-alpine-drivers-and-mechanics-pink-edition-2026-btw-alpine-f1-team-watch-introducing-price/",
-      "desc": "With the start of the 2026 Formula 1 season (Australia Grand Prix, March 6-8), H. Moser & Cie. adds a vivid new chapter to its collaboration with BWT Alpine Formula One Team and presents the Streamlin",
-      "date": "2026-03-02T10:01:49+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/H-Moser-Cie-Streamliner-Alpine-Drivers-and-Mechanics-Pink-Edition-2026-BTW-Alpine-Formula-1-Team-1-600x237.jpg",
-      "relevance": 0
-    },
-    {
       "id": "93c75d00cb6a",
       "title": "Attention! Introducing The Micromilspec Milgraph T5 \u2014 The Red Does It",
       "link": "https://www.fratellowatches.com/introducing-the-micromilspec-milgraph-t5/",
@@ -361,7 +361,7 @@
       "relevance": 0
     }
   ],
-  "fetched_at": "2026-03-04T17:00:03.420116+00:00",
+  "fetched_at": "2026-03-04T20:33:12.884489+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
