@@ -621,6 +621,39 @@
                 </div>
             </div>
 
+            <!-- FX Calculator -->
+            <div class="card" style="margin-top:8px;margin-bottom:12px;">
+                <div class="card-head"><span>💱 FX Calculator</span><span style="font-size:0.6rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px;">Wise mid-market + fees</span></div>
+                <div style="padding:10px;">
+                    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                        <input class="input" id="fx-amount" type="number" value="10000" style="width:120px;font-size:0.95rem;" oninput="fxCalc()">
+                        <select class="input" id="fx-from" style="width:80px;" onchange="fxCalc()">
+                            <option value="USD" selected>USD</option><option value="HKD">HKD</option><option value="CAD">CAD</option><option value="IDR">IDR</option>
+                        </select>
+                        <span style="color:var(--text-2);font-size:1.1rem;">→</span>
+                        <select class="input" id="fx-to" style="width:80px;" onchange="fxCalc()">
+                            <option value="HKD" selected>HKD</option><option value="USD">USD</option><option value="CAD">CAD</option><option value="IDR">IDR</option>
+                        </select>
+                        <button class="btn" onclick="fxSwap()" style="padding:4px 8px;font-size:0.8rem;">⇄</button>
+                    </div>
+                    <div id="fx-result" style="margin-top:10px;display:none;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <div style="background:var(--card-2);border-radius:8px;padding:10px;">
+                                <div style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.05em;">Recipient Gets</div>
+                                <div id="fx-converted" style="font-size:1.3rem;font-weight:700;color:var(--green);margin-top:2px;">—</div>
+                                <div id="fx-converted-sub" style="font-size:0.7rem;color:var(--text-2);margin-top:2px;"></div>
+                            </div>
+                            <div style="background:var(--card-2);border-radius:8px;padding:10px;">
+                                <div style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.05em;">Rate & Fee</div>
+                                <div id="fx-rate-display" style="font-size:1rem;font-weight:600;margin-top:2px;">—</div>
+                                <div id="fx-fee-display" style="font-size:0.7rem;color:var(--red);margin-top:2px;"></div>
+                            </div>
+                        </div>
+                        <div id="fx-quick-rates" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;"></div>
+                    </div>
+                </div>
+            </div>
+
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
                 <div class="card">
                     <div class="card-head"><span>Top Deals</span><a class="link" onclick="showPage('deals')">View all</a></div>
@@ -668,39 +701,6 @@
             <div class="card" style="margin-top:8px;">
                 <div class="card-head"><span>Industry News</span><span style="font-size:0.65rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;" id="news-ts"></span></div>
                 <div id="news-feed" style="max-height:320px;overflow-y:auto;padding:0 10px 10px;"></div>
-            </div>
-
-            <!-- FX Calculator -->
-            <div class="card" style="margin-top:8px;">
-                <div class="card-head"><span>💱 FX Calculator</span><span style="font-size:0.6rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px;">Wise mid-market + fees</span></div>
-                <div style="padding:10px;">
-                    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-                        <input class="input" id="fx-amount" type="number" value="10000" style="width:120px;font-size:0.95rem;" oninput="fxCalc()">
-                        <select class="input" id="fx-from" style="width:80px;" onchange="fxCalc()">
-                            <option value="USD" selected>USD</option><option value="HKD">HKD</option><option value="CAD">CAD</option><option value="IDR">IDR</option>
-                        </select>
-                        <span style="color:var(--text-2);font-size:1.1rem;">→</span>
-                        <select class="input" id="fx-to" style="width:80px;" onchange="fxCalc()">
-                            <option value="HKD" selected>HKD</option><option value="USD">USD</option><option value="CAD">CAD</option><option value="IDR">IDR</option>
-                        </select>
-                        <button class="btn" onclick="fxSwap()" style="padding:4px 8px;font-size:0.8rem;">⇄</button>
-                    </div>
-                    <div id="fx-result" style="margin-top:10px;display:none;">
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                            <div style="background:var(--card-2);border-radius:8px;padding:10px;">
-                                <div style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.05em;">Recipient Gets</div>
-                                <div id="fx-converted" style="font-size:1.3rem;font-weight:700;color:var(--green);margin-top:2px;">—</div>
-                                <div id="fx-converted-sub" style="font-size:0.7rem;color:var(--text-2);margin-top:2px;"></div>
-                            </div>
-                            <div style="background:var(--card-2);border-radius:8px;padding:10px;">
-                                <div style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.05em;">Rate & Fee</div>
-                                <div id="fx-rate-display" style="font-size:1rem;font-weight:600;margin-top:2px;">—</div>
-                                <div id="fx-fee-display" style="font-size:0.7rem;color:var(--red);margin-top:2px;"></div>
-                            </div>
-                        </div>
-                        <div id="fx-quick-rates" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;"></div>
-                    </div>
-                </div>
             </div>
 
         </div>
