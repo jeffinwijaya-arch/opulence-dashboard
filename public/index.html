@@ -1269,6 +1269,9 @@
                             👁 View
                         </button>
                         <div style="width:1px;height:20px;background:rgba(255,255,255,0.15);"></div>
+                        <button class="btn" onclick="autoRedactPhoto()" id="btn-auto-redact" style="padding:4px 12px;font-size:0.75rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">
+                            🤖 Auto-Redact
+                        </button>
                         <button class="btn" onclick="undoRedaction()" style="padding:4px 12px;font-size:0.75rem;">↩ Undo</button>
                         <button class="btn" onclick="clearRedactions()" style="padding:4px 12px;font-size:0.75rem;">✕ Clear All</button>
                         <div style="width:1px;height:20px;background:rgba(255,255,255,0.15);"></div>
@@ -2346,6 +2349,7 @@ function openPostingRedactEditor(file, row, desc) {
             <div style="display:flex;gap:8px;">
                 <button class="btn" onclick="postingRedactUndo()" style="padding:4px 10px;font-size:0.72rem;">↩ Undo</button>
                 <button class="btn" onclick="postingRedactClear()" style="padding:4px 10px;font-size:0.72rem;">✕ Clear</button>
+                <button class="btn" onclick="postingAutoRedact()" style="padding:4px 10px;font-size:0.72rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">🤖 Auto</button>
                 <button class="btn" onclick="postingRedactSkip()" style="padding:4px 10px;font-size:0.72rem;">Skip →</button>
                 <button class="btn" onclick="postingRedactSave()" style="padding:4px 10px;font-size:0.72rem;background:var(--green-dim);color:var(--green);border-color:var(--green);">✓ Done & Upload</button>
             </div>
@@ -2422,6 +2426,37 @@ function postingRedactRender() {
     ctx.drawImage(_postingRedactImg, 0, 0, canvas.width, canvas.height);
     ctx.fillStyle = 'black';
     for (const r of _postingRedactRects) ctx.fillRect(r.x, r.y, r.w, r.h);
+}
+async function postingAutoRedact() {
+    if (!_postingRedactFile) return;
+    const hint = document.querySelector('#posting-redact-modal div:nth-child(2)');
+    if (hint) hint.textContent = '🔍 Running OCR auto-detection...';
+    try {
+        const fd = new FormData();
+        fd.append('image', _postingRedactFile);
+        const resp = await fetch('/api/auto-redact', { method: 'POST', body: fd });
+        if (!resp.ok) throw new Error('Auto-redact failed');
+        const blob = await resp.blob();
+        const count = resp.headers.get('X-Redaction-Count') || '0';
+        
+        // Replace the file with redacted version
+        _postingRedactFile = new File([blob], _postingRedactFile.name, { type: 'image/jpeg' });
+        
+        // Reload canvas with redacted image
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = function() {
+            _postingRedactImg = img;
+            const canvas = document.getElementById('posting-redact-canvas');
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            _postingRedactRects = [];
+            URL.revokeObjectURL(url);
+        };
+        img.src = url;
+        if (hint) hint.textContent = `✓ Auto-redacted ${count} area(s). Draw more or click Done.`;
+    } catch(e) {
+        if (hint) hint.textContent = '✕ Auto-redact failed: ' + e.message + '. Use manual drawing.';
+    }
 }
 function postingRedactUndo() { _postingRedactRects.pop(); postingRedactRender(); }
 function postingRedactClear() { _postingRedactRects = []; postingRedactRender(); }
@@ -6581,6 +6616,50 @@ async function loadPayments() {
         
         editorRedactions.push(rect);
         renderEditor();
+    }
+    
+    async function autoRedactPhoto() {
+        if (!editorWatchId) return;
+        const statusEl = $('#editor-status');
+        const btn = $('#btn-auto-redact');
+        btn.textContent = '🤖 Detecting...';
+        btn.disabled = true;
+        statusEl.textContent = '🔍 Running OCR detection...';
+        statusEl.style.display = 'inline';
+        statusEl.style.color = 'var(--accent)';
+        
+        try {
+            // Get the watch's serial for better detection
+            const watch = photoLibraryData.find(w => w.watch_id === editorWatchId);
+            const serial = watch?.serial || '';
+            
+            const resp = await fetch(`/api/watch-photos/${editorWatchId}/auto-redact`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ serial })
+            });
+            
+            if (!resp.ok) throw new Error(await resp.text());
+            const result = await resp.json();
+            
+            if (result.redaction_count > 0) {
+                statusEl.textContent = `✓ Auto-redacted ${result.redaction_count} area${result.redaction_count > 1 ? 's' : ''}: ${result.detections.map(d => d.type).join(', ')}`;
+                statusEl.style.color = 'var(--green)';
+                // Reload the image
+                editorImage.src = '/api/watch-photos/' + editorWatchId + '/image?t=' + Date.now();
+                editorRedactions = [];
+                setTimeout(() => loadPhotoLibrary(), 500);
+            } else {
+                statusEl.textContent = '⚠️ No serial/date text detected — use manual redact';
+                statusEl.style.color = '#ffb400';
+            }
+        } catch(e) {
+            statusEl.textContent = '✕ Auto-redact failed: ' + e.message;
+            statusEl.style.color = 'var(--red)';
+        }
+        
+        btn.textContent = '🤖 Auto-Redact';
+        btn.disabled = false;
     }
     
     function undoRedaction() {

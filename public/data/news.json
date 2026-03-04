@@ -1,13 +1,33 @@
 {
   "articles": [
     {
-      "id": "c5256422a548",
-      "title": "News \u2013 Tad Kozh, a Award for New Talents Mixed with Artistic Crafts Limited Editions",
+      "id": "04167af9dd2e",
+      "title": "Introducing \u2013 The Serica Ref. 6190 TDM, a Thai Twist on the California Dial",
+      "link": "https://monochrome-watches.com/the-serica-ref-6190-tdm-a-thai-twist-on-the-california-dial/",
+      "desc": "Let\u2019s be a bit of nerds for a minute\u2026 You probably have heard the concept of JDM (in cars and watches), the contraction for Japanese Domestic Market, objects created exclusively for Japan and, in prin",
+      "date": "2026-03-04T14:00:55+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/Serica-Ref.6190-TDM-Thailand-Limited-Edition-California-Dial-Thai-Numerals-1-600x237.jpg",
+      "relevance": 10
+    },
+    {
+      "id": "7e1e1d377284",
+      "title": "News \u2013 Tad Kozh, an Award for New Talents Mixed with Artistic Crafts Limited Editions",
       "link": "https://monochrome-watches.com/tad-kozh-award-for-new-talents-mixed-with-artistic-crafts-limited-editions-news/",
       "desc": "It seems that promoting traditional watchmaking, its crafts and techniques, to protect watchmaking know-how and the women and men behind it, as well as supporting the emergence of new talents, has bec",
       "date": "2026-03-04T11:00:46+00:00",
       "source": "MONOCHROME",
       "image": "https://monochrome-watches.com/app/uploads/2026/03/Tad-Kozh-New-Talent-Award-1-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "50b22e3acddb",
+      "title": "The Business of Watches Podcast: Zenith CEO Benoit De Clerck",
+      "link": "https://www.hodinkee.com/articles/zenith-ceo-benoit-de-clerck",
+      "desc": "Zenith's CEO on keeping production at the El Primero maker in line with retail sell-out, and how supplying movements to other LVMH brands will be a growth driver for the 160-year-old manufacturer.",
+      "date": "2026-03-04T11:00:00-05:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/3b7d04b8-c751-43c3-889d-26159316373b/BusinessOfWatches_E18-zenith.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
       "relevance": 0
     },
     {
@@ -231,16 +251,6 @@
       "relevance": 0
     },
     {
-      "id": "33f951031f55",
-      "title": "Introducing \u2013 The Pequignet Royale Paris Large Date and Moon in Icy Blue",
-      "link": "https://monochrome-watches.com/pequignet-royale-paris-large-date-and-moon-icy-blue-price-introducing/",
-      "desc": "With the Royale Paris, Pequignet started to reshape its identity as one of the rare true French watch manufactures. Following the recent redesign of the collection and the introduction of a more conte",
-      "date": "2026-03-02T08:00:43+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/02/Pequignet-Royale-Paris-Icy-Blue-3-600x237.jpg",
-      "relevance": 0
-    },
-    {
       "id": "b69427f5b6ac",
       "title": "Introducing: The Mesmerizing Black DLC Ressence Type 9 Ikeda",
       "link": "https://www.fratellowatches.com/introducing-the-mesmerizing-black-dlc-ressence-type-9-ikeda/",
@@ -341,16 +351,6 @@
       "relevance": 10
     },
     {
-      "id": "a8ce100996c4",
-      "title": "Introducing: The Ressence Type 9 IKE Pairs A Futuristic Look With Japanese M\u00e9tiers d'Art Execution",
-      "link": "https://www.hodinkee.com/articles/the-ressence-type-9-ike-pairs-a-futuristic-look-with-japanese-metiers-dart-execution",
-      "desc": "Just 8 pieces bring together Ressence's simplest design with Japanese artist Terumasa Ikeda's handcrafted raden and urushi.",
-      "date": "2026-02-26T11:00:00-05:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/3023a1d6-322b-4cc2-9ca8-3b2952727047/T9-IKE_PAK_HD_HOR_SID_2026.jpeg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
-    },
-    {
       "id": "f390bfd5e1ce",
       "title": "Piaget\u2019s Duo of 2026 Limelight Galas",
       "link": "https://revolutionwatch.com/piagets-duo-of-2026-limelight-galas/",
@@ -361,7 +361,7 @@
       "relevance": 0
     }
   ],
-  "fetched_at": "2026-03-04T14:00:04.448686+00:00",
+  "fetched_at": "2026-03-04T17:00:03.420116+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
