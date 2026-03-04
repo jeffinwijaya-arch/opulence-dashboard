@@ -2437,8 +2437,8 @@ function postingRedactRender() {
 }
 async function postingAutoRedact() {
     if (!_postingRedactFile) return;
-    const hint = document.querySelector('#posting-redact-modal div:nth-child(2)');
-    if (hint) hint.textContent = '🔍 Running OCR auto-detection...';
+    const toolbar = document.querySelector('#posting-redact-modal > div:first-child span');
+    if (toolbar) toolbar.textContent = '🔍 Detecting...';
     try {
         const fd = new FormData();
         fd.append('image', _postingRedactFile);
@@ -2458,13 +2458,13 @@ async function postingAutoRedact() {
                 _postingRedactImg = img;
                 _postingRedactRects = [];
                 postingRedactRender();
+                if (toolbar) toolbar.textContent = `✅ ${count} redacted`;
             };
             img.src = ev2.target.result;
         };
         rd.readAsDataURL(blob);
-        if (hint) hint.textContent = `✓ Auto-redacted ${count} area(s). Draw more or click Done.`;
     } catch(e) {
-        if (hint) hint.textContent = '✕ Auto-redact failed: ' + e.message + '. Use manual drawing.';
+        if (toolbar) toolbar.textContent = '✕ Failed';
     }
 }
 function postingRedactUndo() { _postingRedactRects.pop(); postingRedactRender(); }
