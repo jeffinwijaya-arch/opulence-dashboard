@@ -3045,7 +3045,7 @@ function applySortToItems(items) {
     else if (posSortField==='us') numSort('us_wholesale');
     else if (posSortField==='market') numSort('market_value');
     else if (posSortField==='ask') items.sort((a,b)=>d*((parseFloat(String(a.sale_price||0).replace(/[$,]/g,''))||0)-(parseFloat(String(b.sale_price||0).replace(/[$,]/g,''))||0)));
-    else if (posSortField==='status') strSort('status_tag');
+    else if (posSortField==='status') items.sort((a,b)=>d*getStatus(a).localeCompare(getStatus(b)));
     else if (posSortField==='comps') numSort('comparable_count');
     else if (posSortField==='details') items.sort((a,b)=>d*((a.dial||'')+(a.bracelet||'')).localeCompare((b.dial||'')+(b.bracelet||'')));
 }
