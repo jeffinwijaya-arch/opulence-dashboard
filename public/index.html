@@ -2360,15 +2360,28 @@ function openPostingRedactEditor(file, row, desc) {
     const img = new Image();
     img.onload = function() {
         _postingRedactImg = img;
-        const maxW = Math.min(860, window.innerWidth - 16);
-        const maxH = window.innerHeight - 90;
-        const scale = Math.min(maxW / img.width, maxH / img.height, 1);
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
-        canvas.dataset.scale = scale;
+        const wrapEl = document.getElementById('posting-redact-canvas-wrap');
+        const maxW = Math.min(860, wrapEl ? wrapEl.clientWidth : (window.innerWidth - 16));
+        const maxH = wrapEl ? wrapEl.clientHeight : (window.innerHeight - 50);
+        console.log('Redact canvas: img='+img.width+'x'+img.height+' maxW='+maxW+' maxH='+maxH+' wrap='+(wrapEl?wrapEl.clientWidth+'x'+wrapEl.clientHeight:'null'));
+        if (maxH < 100) {
+            // Flex not computed yet, fallback
+            const fallbackH = window.innerHeight - 50;
+            const scale = Math.min((window.innerWidth - 16) / img.width, fallbackH / img.height);
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            canvas.dataset.scale = scale;
+        } else {
+            const scale = Math.min(maxW / img.width, maxH / img.height);
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            canvas.dataset.scale = scale;
+        }
+        console.log('Canvas set to: '+canvas.width+'x'+canvas.height);
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         URL.revokeObjectURL(url);
     };
+    img.onerror = function() { console.error('Failed to load image for redaction'); };
     img.src = url;
 
     // Wire up drawing
