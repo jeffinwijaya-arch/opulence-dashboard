@@ -1545,7 +1545,6 @@ function renderDashboard() {
         <div class="metric"><div class="label">References</div><div class="val counter-val" data-target="${refsNum}" data-format="num">${refsNum}</div><div class="sub">${Object.entries(s.regions||{}).map(([k,v])=>k+':'+v).join(' · ')||'—'}</div><div class="sparkline-wrap"><canvas class="metric-spark" data-key="refs"></canvas></div></div>
         <div class="metric"><div class="label">Deals</div><div class="val counter-val" style="color:var(--green)" data-target="${nDeals}" data-format="num">${nDeals}</div><div class="sub">below market</div><div class="sparkline-wrap"><canvas class="metric-spark" data-key="deals"></canvas></div></div>
         <div class="metric"><div class="label">Arb Potential</div><div class="val counter-val" style="color:var(--accent)" data-target="${totalProfit}" data-format="dollar">${fmt(totalProfit)}</div><div class="sub">${nArb} opportunities</div><div class="sparkline-wrap"><canvas class="metric-spark" data-key="arb"></canvas></div></div>
-        <div class="metric"><div class="label">HKD/USD Rate</div><div class="val" style="font-size:1.2rem;" id="fx-rate-val">—</div><div class="sub" id="fx-rate-age">—</div></div>
     `;
     // Animate counters
     requestAnimationFrame(() => animateAllCounters());
@@ -1578,7 +1577,7 @@ function renderDashboard() {
     const si = DATA.syncInfo || {};
     const fxEl = document.getElementById('fx-rate-val');
     const fxAge = document.getElementById('fx-rate-age');
-    if (fxEl && si.fx_hkd_per_usd) {
+    if (false && fxEl && si.fx_hkd_per_usd) {
         fxEl.textContent = si.fx_hkd_per_usd.toFixed(2);
         const ageLabel = si.fx_age_hrs != null ? (si.fx_age_hrs < 1 ? 'Live' : Math.round(si.fx_age_hrs) + 'h old') : '';
         const stale = si.fx_age_hrs > 12;
