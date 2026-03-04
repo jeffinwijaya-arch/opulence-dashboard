@@ -2450,17 +2450,18 @@ async function postingAutoRedact() {
         // Replace the file with redacted version
         _postingRedactFile = new File([blob], _postingRedactFile.name, { type: 'image/jpeg' });
         
-        // Reload canvas with redacted image
-        const url = URL.createObjectURL(blob);
-        const img = new Image();
-        img.onload = function() {
-            _postingRedactImg = img;
-            const canvas = document.getElementById('posting-redact-canvas');
-            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-            _postingRedactRects = [];
-            URL.revokeObjectURL(url);
+        // Reload canvas with redacted image (DPR-aware, FileReader for iOS)
+        const rd = new FileReader();
+        rd.onload = function(ev2) {
+            const img = new Image();
+            img.onload = function() {
+                _postingRedactImg = img;
+                _postingRedactRects = [];
+                postingRedactRender();
+            };
+            img.src = ev2.target.result;
         };
-        img.src = url;
+        rd.readAsDataURL(blob);
         if (hint) hint.textContent = `✓ Auto-redacted ${count} area(s). Draw more or click Done.`;
     } catch(e) {
         if (hint) hint.textContent = '✕ Auto-redact failed: ' + e.message + '. Use manual drawing.';
