@@ -6247,7 +6247,185 @@ async function loadPayments() {
     let editorRedactions = []; // [{x,y,w,h}, ...]
     let editorDrawing = false;
     let editorStartX = 0, editorStartY = 0;
-    
+    let watchReference = null; // loaded from /api/watch-reference
+
+    async function ensureWatchReference() {
+        if (watchReference) return;
+        try {
+            const r = await fetch('/api/watch-reference');
+            if (r.ok) watchReference = await r.json();
+        } catch(e) { console.warn('Failed to load watch reference:', e); }
+        if (!watchReference) watchReference = { models: {}, conditions: [] };
+    }
+
+    function buildEditableField(label, field, value, watchId) {
+        const id = `edit-${field}-${watchId}`;
+        return `<div style="display:flex;flex-direction:column;gap:2px;min-width:100px;flex:1;">
+            <label style="font-size:0.6rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">${label}</label>
+            <div style="position:relative;">
+                <input id="${id}" type="text" value="${(value||'').replace(/"/g,'&quot;')}" data-field="${field}" data-original="${(value||'').replace(/"/g,'&quot;')}"
+                    style="width:100%;background:var(--bg-3);border:1px solid var(--border);border-radius:4px;color:var(--text-0);padding:4px 6px;font-size:0.78rem;font-family:var(--font);"
+                    oninput="onEditFieldInput(this, '${field}')" onfocus="showFieldSuggestions(this, '${field}')" onblur="setTimeout(()=>hideFieldSuggestions(this),200)" />
+                <div id="${id}-suggest" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg-1);border:1px solid var(--border-strong);border-radius:4px;max-height:140px;overflow-y:auto;z-index:10;margin-top:2px;"></div>
+            </div>
+        </div>`;
+    }
+
+    function onEditFieldInput(input, field) {
+        showFieldSuggestions(input, field);
+        markFieldDirty(input);
+    }
+
+    function markFieldDirty(input) {
+        if (input.value !== input.dataset.original) {
+            input.style.borderColor = 'var(--accent)';
+        } else {
+            input.style.borderColor = 'var(--border)';
+        }
+    }
+
+    function showFieldSuggestions(input, field) {
+        if (!watchReference) return;
+        const suggestEl = document.getElementById(input.id + '-suggest');
+        if (!suggestEl) return;
+
+        const modelInput = document.querySelector('[data-field="model"]');
+        const currentModel = modelInput ? modelInput.value.trim() : '';
+        const query = input.value.toLowerCase();
+        let options = [];
+
+        if (field === 'model') {
+            options = Object.keys(watchReference.models || {}).filter(m => m.toLowerCase().includes(query));
+        } else if (field === 'dial') {
+            // Show dials for current model first, then all known dials
+            const modelDials = (watchReference.models[currentModel] || {}).dials || [];
+            const allDials = [...new Set([...modelDials, ...Object.values(watchReference.models).flatMap(m => m.dials || [])])];
+            options = allDials.filter(d => d.toLowerCase().includes(query));
+        } else if (field === 'bracelet') {
+            const modelBracelets = (watchReference.models[currentModel] || {}).bracelets || [];
+            const allBracelets = [...new Set([...modelBracelets, ...Object.values(watchReference.models).flatMap(m => m.bracelets || [])])];
+            options = allBracelets.filter(b => b.toLowerCase().includes(query));
+        } else if (field === 'condition') {
+            options = (watchReference.conditions || []).filter(c => c.toLowerCase().includes(query));
+        }
+
+        if (options.length === 0 || (options.length === 1 && options[0] === input.value)) {
+            suggestEl.style.display = 'none';
+            return;
+        }
+
+        suggestEl.innerHTML = options.slice(0, 10).map(opt => {
+            const isModelMatch = field === 'dial' || field === 'bracelet';
+            const modelData = watchReference.models[currentModel] || {};
+            const isKnown = isModelMatch && (modelData[field + 's'] || []).includes(opt);
+            return `<div onclick="pickSuggestion(this, '${input.id}')" style="padding:4px 8px;cursor:pointer;font-size:0.72rem;color:var(--text-0);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;"
+                onmouseover="this.style.background='var(--bg-3)'" onmouseout="this.style.background='none'">
+                <span>${opt}</span>
+                ${isKnown ? '<span style="font-size:0.6rem;color:var(--green);">✓ known</span>' : ''}
+            </div>`;
+        }).join('');
+        suggestEl.style.display = 'block';
+    }
+
+    function hideFieldSuggestions(input) {
+        const el = document.getElementById(input.id + '-suggest');
+        if (el) el.style.display = 'none';
+    }
+
+    function pickSuggestion(div, inputId) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        input.value = div.querySelector('span').textContent;
+        markFieldDirty(input);
+        hideFieldSuggestions(input);
+        // If model changed, validate dial/bracelet
+        if (input.dataset.field === 'model') validateCombo();
+    }
+
+    function validateCombo() {
+        if (!watchReference) return;
+        const model = document.querySelector('[data-field="model"]')?.value?.trim() || '';
+        const dial = document.querySelector('[data-field="dial"]')?.value?.trim() || '';
+        const bracelet = document.querySelector('[data-field="bracelet"]')?.value?.trim() || '';
+        const warnEl = document.getElementById('combo-warning');
+        if (!warnEl || !model) { if(warnEl) warnEl.style.display='none'; return; }
+
+        const modelData = watchReference.models[model];
+        if (!modelData) { warnEl.style.display='none'; return; }
+
+        const warnings = [];
+        if (dial && modelData.dials && modelData.dials.length > 0 && !modelData.dials.includes(dial)) {
+            warnings.push(`"${dial}" is not a known dial for ${model}. Known: ${modelData.dials.join(', ')}`);
+        }
+        if (bracelet && modelData.bracelets && modelData.bracelets.length > 0 && !modelData.bracelets.includes(bracelet)) {
+            warnings.push(`"${bracelet}" is not a known bracelet for ${model}. Known: ${modelData.bracelets.join(', ')}`);
+        }
+
+        if (warnings.length > 0) {
+            warnEl.innerHTML = '⚠️ ' + warnings.join('<br>⚠️ ');
+            warnEl.style.display = 'block';
+        } else {
+            warnEl.style.display = 'none';
+        }
+    }
+
+    async function saveWatchMetadata() {
+        if (!editorWatchId) return;
+        const fields = ['model', 'dial', 'bracelet', 'condition', 'card_date'];
+        const data = {};
+        let changed = false;
+        for (const f of fields) {
+            const input = document.querySelector(`[data-field="${f}"]`);
+            if (input && input.value !== input.dataset.original) {
+                data[f] = input.value.trim();
+                changed = true;
+            }
+        }
+        if (!changed) return;
+
+        const statusEl = $('#editor-status');
+        statusEl.textContent = '⏳ Saving...';
+        statusEl.style.display = 'inline';
+        statusEl.style.color = 'var(--accent)';
+
+        try {
+            const r = await fetch(`/api/watch-photos/${editorWatchId}/update`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            const result = await r.json();
+            if (!r.ok) throw new Error(result.error || 'Save failed');
+
+            statusEl.textContent = `✓ ${result.changes} field${result.changes>1?'s':''} updated`;
+            statusEl.style.color = 'var(--green)';
+
+            // Update local data
+            const watch = photoLibraryData.find(w => w.watch_id === editorWatchId);
+            if (watch) Object.assign(watch, data);
+
+            // Update original markers so fields no longer show as dirty
+            for (const f of fields) {
+                const input = document.querySelector(`[data-field="${f}"]`);
+                if (input) { input.dataset.original = input.value; input.style.borderColor = 'var(--border)'; }
+            }
+
+            // Update title
+            $('#modal-title').textContent = `${watch?.model||data.model||''} — ${watch?.dial||data.dial||''} ${watch?.bracelet||data.bracelet||''}`;
+
+            // Reload reference for updated autocomplete
+            watchReference = null;
+            await ensureWatchReference();
+
+            // Refresh gallery
+            setTimeout(() => loadPhotoLibrary(), 500);
+
+        } catch(e) {
+            statusEl.textContent = '✕ ' + e.message;
+            statusEl.style.color = 'var(--red)';
+        }
+    }
+
     function openPhotoModal(watchId) {
         const watch = photoLibraryData.find(w => w.watch_id === watchId);
         if (!watch) return;
@@ -6255,17 +6433,23 @@ async function loadPayments() {
         editorWatchId = watchId;
         editorRedactions = [];
         editorTool = 'view';
+
+        ensureWatchReference();
         
         $('#modal-title').textContent = `${watch.model || 'Unknown'} — ${watch.dial || ''} ${watch.bracelet || ''}`;
         $('#modal-details').innerHTML = `
-            <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;">
-                <span><strong>Model:</strong> ${watch.model || '?'}</span>
-                <span><strong>Dial:</strong> ${watch.dial || '?'}</span>
-                <span><strong>Bracelet:</strong> ${watch.bracelet || '?'}</span>
-                <span><strong>Condition:</strong> ${watch.condition || '?'}</span>
-                <span><strong>Card Date:</strong> ${watch.card_date || '?'}</span>
-                <span><strong>File:</strong> ${watch.filename || '?'}</span>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+                ${buildEditableField('Model', 'model', watch.model, watchId)}
+                ${buildEditableField('Dial', 'dial', watch.dial, watchId)}
+                ${buildEditableField('Bracelet', 'bracelet', watch.bracelet, watchId)}
+                ${buildEditableField('Condition', 'condition', watch.condition, watchId)}
+                ${buildEditableField('Card Date', 'card_date', watch.card_date, watchId)}
+                <button class="btn" onclick="saveWatchMetadata()" style="padding:4px 12px;font-size:0.72rem;background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);height:28px;align-self:flex-end;">
+                    Save Info
+                </button>
             </div>
+            <div id="combo-warning" style="display:none;margin-top:6px;padding:6px 10px;background:rgba(255,180,0,0.1);border:1px solid rgba(255,180,0,0.3);border-radius:4px;font-size:0.68rem;color:#ffb400;"></div>
+            <div style="margin-top:4px;font-size:0.6rem;color:var(--text-2);">📁 ${watch.filename || '?'} · Edit fields above and click Save. Suggestions powered by reference dictionary.</div>
         `;
         $('#editor-status').style.display = 'none';
         updateToolButtons();
