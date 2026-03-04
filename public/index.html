@@ -616,8 +616,8 @@
                         <span id="devotion-time" style="font-size:0.58rem;color:var(--text-3);font-family:var(--mono);"></span>
                         <span id="devotion-ref" style="font-size:0.62rem;color:var(--accent);font-weight:600;letter-spacing:0.3px;font-family:var(--mono);margin-left:auto;"></span>
                     </div>
-                    <div id="devotion-verse" style="font-size:0.78rem;line-height:1.5;color:var(--text-1);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
-                    <div class="devotion-full" style="display:none;margin-top:6px;font-size:0.82rem;line-height:1.6;color:var(--text-1);font-style:italic;white-space:normal;"></div>
+                    <div id="devotion-verse" style="font-size:1rem;line-height:1.6;color:var(--text-1);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+                    <div class="devotion-full" style="display:none;margin-top:6px;font-size:1.05rem;line-height:1.7;color:var(--text-1);font-style:italic;white-space:normal;"></div>
                 </div>
             </div>
 
@@ -702,6 +702,7 @@
                     </div>
                 </div>
             </div>
+
         </div>
 
         <!-- ═══ DEALS ═══ -->
@@ -4112,6 +4113,8 @@ loadData();
 loadNews();
 fxLoadRates();
 fxCalc();
+// Refresh FX rates every hour (free Wise API, no cost)
+setInterval(()=>{ fxLoadRates(); }, 3600000);
 fetch('/api/portfolio_insights').then(r=>r.json()).then(d=>{DATA.portfolio=d;renderPortfolioSnapshot();}).catch(()=>{});
 // Restore page from URL AFTER init
 {
