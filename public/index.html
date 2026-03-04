@@ -5352,8 +5352,10 @@ async function loadInvoices(page) {
                 <td><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.68rem;text-transform:uppercase;font-weight:600;color:var(--bg-1);background:${statusBg};">${inv.status}</span></td>
                 <td style="white-space:nowrap;" onclick="event.stopPropagation()">
                     <a onclick="downloadInvPdf('${inv.invoice_id}','${inv.invoice_number}')" style="cursor:pointer;color:var(--accent);font-size:0.78rem;margin-right:6px;" title="Download PDF">PDF</a>
+                    ${inv.status!=='paid'&&inv.status!=='void'?`<a onclick="editInvoice('${inv.invoice_id}');document.getElementById('inv-detail-overlay').style.display='block'" style="cursor:pointer;color:var(--text-2);font-size:0.78rem;margin-right:6px;" title="Edit">Edit</a>`:''}
                     ${inv.status==='draft'?`<a onclick="sendInvoice('${inv.invoice_id}')" style="cursor:pointer;color:var(--green);font-size:0.78rem;margin-right:6px;" title="Mark Sent">Send</a>`:''}
-                    ${inv.balance>0&&inv.status!=='draft'?`<a onclick="quickPayment('${inv.invoice_id}',${inv.balance})" style="cursor:pointer;color:var(--green);font-size:0.78rem;" title="Record Payment">Pay</a>`:''}
+                    ${inv.balance>0&&inv.status!=='draft'?`<a onclick="quickPayment('${inv.invoice_id}',${inv.balance})" style="cursor:pointer;color:var(--green);font-size:0.78rem;margin-right:6px;" title="Record Payment">Pay</a>`:''}
+                    ${canDelete?`<a onclick="deleteInvoice('${inv.invoice_id}','${inv.invoice_number}')" style="cursor:pointer;color:var(--red);font-size:0.78rem;" title="Delete">Del</a>`:''}
                 </td>
             </tr>`;
         }).join('');
@@ -5450,6 +5452,7 @@ async function showInvDetail(id) {
             </div>`:''}
             <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
                 ${canDelete?`<button class="btn" onclick="deleteInvoice('${inv.invoice_id}','${inv.invoice_number}')" style="font-size:0.78rem;background:var(--red);color:var(--bg-1);">Delete</button>`:''}
+                ${inv.status!=='paid'&&inv.status!=='void'?`<button class="btn" onclick="editInvoice('${inv.invoice_id}')" style="font-size:0.78rem;background:var(--text-2);color:var(--bg-1);">Edit</button>`:''}
                 ${inv.balance>0?`<button class="btn" onclick="document.getElementById('inv-payment-form').style.display='block'" style="font-size:0.78rem;background:var(--accent);color:var(--bg-1);">Record Payment</button>`:''}
                 <button class="btn" onclick="downloadInvPdf('${inv.invoice_id}','${inv.invoice_number}')" style="font-size:0.78rem;">Download PDF</button>
                 ${inv.status==='draft'?`<button class="btn" onclick="sendInvoice('${inv.invoice_id}')" style="font-size:0.78rem;background:var(--green);color:var(--bg-1);">Mark as Sent</button>`:''}
@@ -5522,6 +5525,91 @@ async function deleteInvoice(id, num) {
             alert('Error: ' + (d.error || 'Unknown error'));
         }
     } catch(e) { alert('Error deleting: ' + e.message); }
+}
+
+async function editInvoice(id) {
+    const content = document.getElementById('inv-detail-content');
+    if (!content) return;
+    content.innerHTML = '<p style="text-align:center;padding:20px;color:var(--text-2);">Loading...</p>';
+    try {
+        const r = await fetch(`/api/zoho/invoices/${id}`);
+        const d = await r.json();
+        const inv = d.invoice || d;
+        const items = inv.line_items || [];
+        
+        let itemRows = items.map((li, i) => `
+            <div class="inv-edit-item" style="display:grid;grid-template-columns:1fr 1fr 80px 30px;gap:6px;margin-bottom:6px;">
+                <input class="input inv-edit-name" value="${(li.name||'').replace(/"/g,'&quot;')}" placeholder="Item name (e.g. 126334 Oyster Slate)">
+                <input class="input inv-edit-desc" value="${(li.description||'').replace(/"/g,'&quot;')}" placeholder="Serial: XXXXX — MM/YYYY">
+                <input class="input inv-edit-rate" type="number" value="${li.rate||0}" placeholder="Rate">
+                <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:1rem;">✕</button>
+            </div>
+        `).join('');
+        
+        content.innerHTML = `
+            <button onclick="closeInvDetail()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;">X</button>
+            <h2 style="margin:0 0 16px;">Edit ${inv.invoice_number}</h2>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+                <div><label style="font-size:0.68rem;color:var(--text-2);">Customer</label>
+                    <input class="input" id="inv-edit-customer" value="${(inv.customer_name||'').replace(/"/g,'&quot;')}" list="inv-customer-list" style="width:100%;margin-top:3px;"></div>
+                <div><label style="font-size:0.68rem;color:var(--text-2);">Date</label>
+                    <input class="input" id="inv-edit-date" type="date" value="${inv.date||''}" style="width:100%;margin-top:3px;"></div>
+            </div>
+            <div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:600;">Line Items</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 80px 30px;gap:6px;margin-bottom:4px;font-size:0.65rem;color:var(--text-2);padding:0 2px;">
+                <span>Item Name</span><span>Description</span><span>Rate</span><span></span>
+            </div>
+            <div id="inv-edit-items">${itemRows}</div>
+            <button class="btn" onclick="addEditInvItem()" style="font-size:0.72rem;margin:4px 0 12px;">+ Add Item</button>
+            <div><label style="font-size:0.68rem;color:var(--text-2);">Notes</label>
+                <textarea class="input" id="inv-edit-notes" rows="2" style="width:100%;margin-top:3px;">${inv.notes||''}</textarea></div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+                <button class="btn" onclick="showInvDetail('${id}')" style="font-size:0.78rem;opacity:0.6;">Cancel</button>
+                <button class="btn" onclick="submitEditInvoice('${id}')" style="font-size:0.78rem;background:var(--accent);color:var(--bg-1);">Save Changes</button>
+            </div>
+        `;
+        loadCustomerSuggestions();
+    } catch(e) { content.innerHTML = `<p style="color:var(--red);">Error: ${e.message}</p>`; }
+}
+
+function addEditInvItem() {
+    const container = document.getElementById('inv-edit-items');
+    if (!container) return;
+    const div = document.createElement('div');
+    div.className = 'inv-edit-item';
+    div.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 80px 30px;gap:6px;margin-bottom:6px;';
+    div.innerHTML = `
+        <input class="input inv-edit-name" placeholder="Item name (e.g. 126334 Oyster Slate)">
+        <input class="input inv-edit-desc" placeholder="Serial: XXXXX — MM/YYYY">
+        <input class="input inv-edit-rate" type="number" placeholder="Rate">
+        <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:1rem;">✕</button>
+    `;
+    container.appendChild(div);
+}
+
+async function submitEditInvoice(id) {
+    const customer = document.getElementById('inv-edit-customer')?.value?.trim();
+    const date = document.getElementById('inv-edit-date')?.value;
+    const notes = document.getElementById('inv-edit-notes')?.value?.trim();
+    const itemEls = document.querySelectorAll('.inv-edit-item');
+    const items = [];
+    itemEls.forEach(el => {
+        const name = el.querySelector('.inv-edit-name')?.value?.trim() || '';
+        const desc = el.querySelector('.inv-edit-desc')?.value?.trim() || '';
+        const rate = parseFloat(el.querySelector('.inv-edit-rate')?.value) || 0;
+        if (name || rate) items.push({ name, description: desc, rate, quantity: 1 });
+    });
+    if (!items.length) { alert('Add at least one line item'); return; }
+    try {
+        const r = await fetch(`/api/zoho/invoices/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ customer_name: customer, line_items: items, date, notes })
+        });
+        const d = await r.json();
+        if (d.error) { alert('Error: ' + d.error); return; }
+        showInvDetail(id);
+    } catch(e) { alert('Error: ' + e.message); }
 }
 
 function showCreateInvoice() {
