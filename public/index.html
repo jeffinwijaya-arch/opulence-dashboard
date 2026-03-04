@@ -5508,6 +5508,9 @@ async function submitPayment(invoiceId) {
         });
         const d = await r.json();
         if (d.error) { alert('Error: ' + d.error); return; }
+        if (d.synced_rows && d.synced_rows.length) {
+            console.log('Auto-synced Bot Sheet rows:', d.synced_rows);
+        }
         closeInvDetail();
         loadInvoicePage();
     } catch(e) { alert('Payment error: ' + e.message); }
