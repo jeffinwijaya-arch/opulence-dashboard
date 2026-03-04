@@ -2543,6 +2543,8 @@ async function uploadPostingPhotos(row, desc, files) {
             }, 200);
         });
     }
+    // Refresh previews after all uploads
+    await loadPostingPhotoPreviews(row);
 }
 
 async function deletePostingPhoto(row, filename) {
