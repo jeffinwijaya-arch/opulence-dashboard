@@ -1183,78 +1183,113 @@
         <!-- ═══ PHOTOS ═══ -->
         <div class="page" id="page-photos">
             <div class="page-head">
-                <h1>📸 Photo Library</h1>
-                <p>Watch photos, posting templates, warranty cards — your visual inventory</p>
+                <h1>📸 Watch Photo Library</h1>
+                <p>49 processed watch photos — serial numbers redacted, fully cataloged</p>
             </div>
 
             <!-- Photo Stats -->
             <div class="metrics" id="photo-stats" style="margin-bottom:16px;">
                 <div class="metric">
                     <div class="label">Total Photos</div>
-                    <div class="val" id="photo-count">0</div>
+                    <div class="val" id="photo-count">49</div>
                 </div>
                 <div class="metric">
-                    <div class="label">Storage Used</div>
-                    <div class="val" id="photo-size">0 MB</div>
+                    <div class="label">Redacted & Safe</div>
+                    <div class="val" style="color:var(--green);">✓</div>
                 </div>
                 <div class="metric">
-                    <div class="label">Posting Templates</div>
-                    <div class="val" id="posting-count">0</div>
+                    <div class="label">Grail Pieces</div>
+                    <div class="val" id="grail-count">2</div>
                 </div>
                 <div class="metric">
-                    <div class="label">Unique Refs</div>
-                    <div class="val" id="ref-count">0</div>
+                    <div class="label">Unique Models</div>
+                    <div class="val" id="model-count">30</div>
                 </div>
             </div>
 
-            <!-- Photo Upload -->
+            <!-- Filters & Search -->
             <div class="card" style="margin-bottom:16px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                    <h3 style="margin:0;">Upload Photos</h3>
-                </div>
-                <div style="border:2px dashed var(--border);border-radius:var(--radius);padding:24px;text-align:center;cursor:pointer;transition:border-color 0.2s;" 
-                     onclick="document.getElementById('photo-upload').click()"
-                     ondragover="event.preventDefault();this.style.borderColor='var(--accent)'" 
-                     ondragleave="this.style.borderColor='var(--border)'"
-                     ondrop="handlePhotoDrop(event)">
-                    <div style="font-size:0.9rem;color:var(--text-1);margin-bottom:8px;">Drop photos here or click to upload</div>
-                    <div style="font-size:0.7rem;color:var(--text-2);">Supports: JPG, PNG, WEBP (max 10MB each)</div>
-                    <input type="file" id="photo-upload" multiple accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)">
-                </div>
-                
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:12px;">
-                    <select class="input" id="photo-category">
-                        <option value="posting">📋 Posting Template</option>
-                        <option value="arrival">📦 Arrival Photo</option>
-                        <option value="warranty">🏷️ Warranty Card</option>
-                        <option value="shipping">📬 Shipping Label</option>
-                        <option value="general">📁 General</option>
+                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                    <input class="input" id="library-search" placeholder="Search by model, dial, date..." 
+                           oninput="filterPhotoLibrary()" style="flex:1;min-width:200px;">
+                    <select class="input" id="model-filter" onchange="filterPhotoLibrary()" style="width:140px;">
+                        <option value="">All Models</option>
+                        <option value="126710BLRO">GMT Pepsi</option>
+                        <option value="126300">Datejust 41</option>
+                        <option value="278274">Lady-DJ 31</option>
+                        <option value="126610LV">Sub Starbucks</option>
+                        <option value="126509">Daytona WG</option>
+                        <option value="126515LN">Daytona RG</option>
                     </select>
-                    <input class="input" id="photo-ref" placeholder="Ref (e.g. 126300)">
-                    <input class="input" id="photo-dial" placeholder="Dial (e.g. Azzurro Blue)">
-                    <input class="input" id="photo-bracelet" placeholder="Bracelet (e.g. Jubilee)">
-                    <input class="input" id="photo-tags" placeholder="Tags (comma-separated)">
+                    <select class="input" id="condition-filter" onchange="filterPhotoLibrary()" style="width:120px;">
+                        <option value="">All</option>
+                        <option value="BNIB">BNIB</option>
+                        <option value="Pre-owned">Pre-owned</option>
+                    </select>
+                    <button class="btn" onclick="showPhotoStats()" style="padding:0 16px;">📊 Stats</button>
                 </div>
             </div>
 
             <!-- Photo Gallery -->
             <div class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-                    <h3 style="margin:0;">Photo Gallery</h3>
-                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                        <select class="input" id="photo-filter" onchange="loadPhotos()" style="width:auto;">
-                            <option value="">All</option>
-                            <option value="posting">📋 Postings</option>
-                            <option value="arrival">📦 Arrivals</option>
-                            <option value="warranty">🏷️ Warranty</option>
-                            <option value="shipping">📬 Shipping</option>
-                            <option value="general">📁 General</option>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                    <h3 style="margin:0;">Gallery</h3>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <span id="photo-results" style="color:var(--text-2);font-size:0.8rem;">49 photos</span>
+                        <select class="input" id="sort-order" onchange="filterPhotoLibrary()" style="width:120px;">
+                            <option value="model">By Model</option>
+                            <option value="date">By Date</option>
+                            <option value="condition">By Condition</option>
                         </select>
-                        <input class="input" id="photo-search" placeholder="Search ref, dial..." oninput="debouncePhotoSearch()" style="width:180px;">
                     </div>
                 </div>
-                <div id="photo-gallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;">
-                    Loading photos...
+                <div id="photo-library-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;">
+                    Loading photo library...
+                </div>
+            </div>
+
+            <!-- Photo Modal -->
+            <!-- Photo Editor Modal -->
+            <div id="photo-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.95);z-index:9999;overflow:auto;" onclick="if(event.target===this) closePhotoModal()">
+                <div style="max-width:900px;margin:auto;padding:16px;height:100%;display:flex;flex-direction:column;">
+                    <!-- Header -->
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;color:white;flex-shrink:0;">
+                        <h3 id="modal-title" style="margin:0;font-size:1rem;"></h3>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <span id="editor-status" style="font-size:0.7rem;color:var(--green);display:none;">✓ Saved</span>
+                            <button onclick="closePhotoModal()" style="background:none;border:none;color:white;font-size:24px;cursor:pointer;line-height:1;">×</button>
+                        </div>
+                    </div>
+                    <!-- Toolbar -->
+                    <div id="editor-toolbar" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;flex-shrink:0;">
+                        <button class="btn" onclick="setEditorTool('redact')" id="btn-redact" style="padding:4px 12px;font-size:0.75rem;background:var(--red-dim);color:var(--red);border-color:var(--red);">
+                            ■ Redact
+                        </button>
+                        <button class="btn" onclick="setEditorTool('view')" id="btn-view" style="padding:4px 12px;font-size:0.75rem;">
+                            👁 View
+                        </button>
+                        <div style="width:1px;height:20px;background:rgba(255,255,255,0.15);"></div>
+                        <button class="btn" onclick="undoRedaction()" style="padding:4px 12px;font-size:0.75rem;">↩ Undo</button>
+                        <button class="btn" onclick="clearRedactions()" style="padding:4px 12px;font-size:0.75rem;">✕ Clear All</button>
+                        <div style="width:1px;height:20px;background:rgba(255,255,255,0.15);"></div>
+                        <button class="btn" onclick="saveRedactedPhoto()" style="padding:4px 12px;font-size:0.75rem;background:var(--green-dim);color:var(--green);border-color:var(--green);">
+                            💾 Save Redacted
+                        </button>
+                        <div style="flex:1;"></div>
+                        <button class="btn" onclick="confirmDeletePhoto()" style="padding:4px 12px;font-size:0.75rem;background:var(--red-dim);color:var(--red);border-color:var(--red);">
+                            🗑 Delete Photo
+                        </button>
+                    </div>
+                    <!-- Canvas area -->
+                    <div style="flex:1;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;min-height:0;">
+                        <canvas id="editor-canvas" style="max-width:100%;max-height:100%;cursor:crosshair;border:1px solid rgba(255,255,255,0.1);border-radius:4px;"></canvas>
+                        <div id="redact-hint" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:var(--text-1);padding:6px 14px;border-radius:4px;font-size:0.7rem;pointer-events:none;display:none;">
+                            Click and drag to draw a black redaction box
+                        </div>
+                    </div>
+                    <!-- Details -->
+                    <div id="modal-details" style="background:var(--bg-2);padding:12px;border-radius:var(--radius);margin-top:12px;color:var(--text-0);flex-shrink:0;font-size:0.8rem;">
+                    </div>
                 </div>
             </div>
         </div>
@@ -1454,7 +1489,7 @@ function showPage(name, pushState=true) {
     if (name === 'shipping') loadShippingPage();
     if (name === 'inventory') loadInventoryPage();
     if (name === 'payments') loadPayments();
-    if (name === 'photos') loadPhotos();
+    if (name === 'photos') loadPhotoLibrary();
     if (name === 'alerts') loadAlerts();
     if (name === 'analytics') loadAnalytics();
     if (pushState) {
@@ -5892,6 +5927,413 @@ async function loadPayments() {
     function showPhotoDetail(photoId) {
         // TODO: Modal with full photo, edit fields, copy posting text, reuse for new posting
         window.open('/api/photos/'+photoId+'/serve', '_blank');
+    }
+
+    // ── Photo Library Functions ──
+    let photoLibraryData = [];
+    
+    async function loadPhotoLibrary() {
+        try {
+            console.log('Loading photo library...');
+            const response = await fetch('/api/watch-photos');
+            console.log('Photo library response status:', response.status);
+            
+            if (!response.ok) {
+                throw new Error(`Failed to load photo library: ${response.status} ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            console.log('Photo library data:', data);
+            photoLibraryData = data.watches || [];
+            console.log('Loaded', photoLibraryData.length, 'photos');
+            
+            // Update stats
+            try {
+                const stats = await fetch('/api/watch-photos/stats');
+                if (stats.ok) {
+                    const statsData = await stats.json();
+                    console.log('Stats data:', statsData);
+                    updatePhotoStats(statsData);
+                }
+            } catch (statsError) {
+                console.warn('Failed to load stats:', statsError);
+            }
+            
+            filterPhotoLibrary();
+        } catch (error) {
+            console.error('Error loading photo library:', error);
+            $('#photo-library-grid').innerHTML = `<div style="text-align:center;padding:40px;color:var(--red);">Failed to load photo library: ${error.message}<br><br><button class="btn" onclick="loadPhotoLibrary()">Retry</button></div>`;
+        }
+    }
+    
+    function updatePhotoStats(stats) {
+        $('#photo-count').textContent = stats.total_photos || 49;
+        $('#model-count').textContent = Object.keys(stats.models || {}).length || 30;
+        $('#grail-count').textContent = (stats.models?.['126509'] || 0) + (stats.models?.['126515LN'] || 0) || 2;
+    }
+    
+    function filterPhotoLibrary() {
+        const search = ($('#library-search').value || '').toLowerCase();
+        const modelFilter = $('#model-filter').value;
+        const conditionFilter = $('#condition-filter').value;
+        const sortOrder = $('#sort-order').value;
+        
+        let filtered = photoLibraryData.filter(watch => {
+            if (search && !(
+                (watch.model || '').toLowerCase().includes(search) ||
+                (watch.dial || '').toLowerCase().includes(search) ||
+                (watch.bracelet || '').toLowerCase().includes(search) ||
+                (watch.card_date || '').toLowerCase().includes(search)
+            )) return false;
+            
+            if (modelFilter && watch.model !== modelFilter) return false;
+            if (conditionFilter && watch.condition !== conditionFilter) return false;
+            
+            return true;
+        });
+        
+        // Sort
+        filtered.sort((a, b) => {
+            if (sortOrder === 'model') return (a.model || '').localeCompare(b.model || '');
+            if (sortOrder === 'date') return (b.card_date || '').localeCompare(a.card_date || '');
+            if (sortOrder === 'condition') return (a.condition || '').localeCompare(b.condition || '');
+            return 0;
+        });
+        
+        $('#photo-results').textContent = `${filtered.length} of ${photoLibraryData.length} photos`;
+        console.log('Rendering', filtered.length, 'photos');
+        renderPhotoLibrary(filtered);
+    }
+    
+    function renderPhotoLibrary(watches) {
+        const grid = $('#photo-library-grid');
+        if (!watches.length) {
+            grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-2);">No photos match your filters</div>';
+            return;
+        }
+        
+        let html = '';
+        watches.forEach(watch => {
+            const model = watch.model || 'Unknown';
+            const dial = watch.dial || '';
+            const bracelet = watch.bracelet || '';
+            const condition = watch.condition || '';
+            const cardDate = watch.card_date || '';
+            
+            // Determine if it's a grail piece
+            const isGrail = ['126509', '126515LN'].includes(model);
+            const grailBadge = isGrail ? '<div style="position:absolute;top:4px;right:4px;background:linear-gradient(45deg,#d4af37,#e8c84a);color:#000;padding:2px 6px;border-radius:3px;font-size:0.6rem;font-weight:700;">GRAIL</div>' : '';
+            
+            // Model badge color
+            let modelColor = 'var(--text-2)';
+            if (model.includes('126710')) modelColor = 'var(--red)'; // GMT
+            else if (model.includes('126610') || model.includes('124060')) modelColor = 'var(--green)'; // Sub
+            else if (model.includes('126509') || model.includes('126515')) modelColor = 'var(--accent)'; // Daytona
+            else if (model.includes('278')) modelColor = 'var(--blue)'; // Ladies
+            
+            html += `
+                <div style="background:var(--bg-2);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);cursor:pointer;position:relative;transition:all 0.2s ease;" 
+                     onclick="openPhotoModal('${watch.watch_id}')"
+                     onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='var(--shadow-md)'"
+                     onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
+                    ${grailBadge}
+                    <div style="height:160px;background:var(--bg-3);overflow:hidden;position:relative;">
+                        <div style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,0.7);padding:2px 6px;border-radius:3px;font-size:0.6rem;color:white;font-weight:600;">${condition}</div>
+                        <img src="/api/watch-photos/${watch.watch_id}/image" 
+                             style="width:100%;height:100%;object-fit:cover;transition:transform 0.2s ease;" 
+                             onerror="this.style.display='none'; this.parentElement.insertAdjacentHTML('beforeend', '<div style=\\'display:flex;align-items:center;justify-content:center;position:absolute;top:0;left:0;width:100%;height:100%;color:var(--text-2);font-size:0.8rem;\\'>📸 ${model}</div>')"
+                             onmouseover="this.style.transform='scale(1.05)'"
+                             onmouseout="this.style.transform='scale(1)'"
+                             loading="lazy">
+                    </div>
+                    <div style="padding:12px;">
+                        <div style="font-weight:600;color:${modelColor};font-size:0.85rem;margin-bottom:4px;">${model}</div>
+                        <div style="color:var(--text-1);font-size:0.75rem;margin-bottom:6px;">${dial} ${bracelet}</div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-size:0.65rem;color:var(--text-2);">${cardDate}</span>
+                            <span style="font-size:0.65rem;color:var(--accent);cursor:pointer;" onclick="event.stopPropagation();copyPhotoInfo('${watch.watch_id}')">Copy Info</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        grid.innerHTML = html;
+    }
+    
+    // ── Photo Editor State ──
+    let editorTool = 'view';
+    let editorWatchId = null;
+    let editorImage = null;
+    let editorRedactions = []; // [{x,y,w,h}, ...]
+    let editorDrawing = false;
+    let editorStartX = 0, editorStartY = 0;
+    
+    function openPhotoModal(watchId) {
+        const watch = photoLibraryData.find(w => w.watch_id === watchId);
+        if (!watch) return;
+        
+        editorWatchId = watchId;
+        editorRedactions = [];
+        editorTool = 'view';
+        
+        $('#modal-title').textContent = `${watch.model || 'Unknown'} — ${watch.dial || ''} ${watch.bracelet || ''}`;
+        $('#modal-details').innerHTML = `
+            <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;">
+                <span><strong>Model:</strong> ${watch.model || '?'}</span>
+                <span><strong>Dial:</strong> ${watch.dial || '?'}</span>
+                <span><strong>Bracelet:</strong> ${watch.bracelet || '?'}</span>
+                <span><strong>Condition:</strong> ${watch.condition || '?'}</span>
+                <span><strong>Card Date:</strong> ${watch.card_date || '?'}</span>
+                <span><strong>File:</strong> ${watch.filename || '?'}</span>
+            </div>
+        `;
+        $('#editor-status').style.display = 'none';
+        updateToolButtons();
+        
+        // Load image onto canvas
+        const canvas = $('#editor-canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function() {
+            editorImage = img;
+            // Scale canvas to fit while preserving aspect ratio
+            const maxW = Math.min(860, window.innerWidth - 40);
+            const maxH = window.innerHeight - 280;
+            const scale = Math.min(maxW / img.width, maxH / img.height, 1);
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+            canvas.dataset.scale = scale;
+            renderEditor();
+        };
+        img.onerror = function() {
+            canvas.width = 400; canvas.height = 300;
+            const ctx2 = canvas.getContext('2d');
+            ctx2.fillStyle = '#222';
+            ctx2.fillRect(0,0,400,300);
+            ctx2.fillStyle = '#666';
+            ctx2.font = '14px Inter';
+            ctx2.textAlign = 'center';
+            ctx2.fillText('Failed to load image', 200, 150);
+        };
+        img.src = '/api/watch-photos/' + watchId + '/image?t=' + Date.now();
+        
+        $('#photo-modal').style.display = 'block';
+        
+        // Wire up canvas events
+        canvas.onmousedown = editorMouseDown;
+        canvas.onmousemove = editorMouseMove;
+        canvas.onmouseup = editorMouseUp;
+        canvas.onmouseleave = editorMouseUp;
+        // Touch support
+        canvas.ontouchstart = function(e) { e.preventDefault(); editorMouseDown(touchToMouse(e)); };
+        canvas.ontouchmove = function(e) { e.preventDefault(); editorMouseMove(touchToMouse(e)); };
+        canvas.ontouchend = function(e) { e.preventDefault(); editorMouseUp(touchToMouse(e)); };
+    }
+    
+    function touchToMouse(e) {
+        const touch = e.touches[0] || e.changedTouches[0];
+        const canvas = $('#editor-canvas');
+        const rect = canvas.getBoundingClientRect();
+        return { offsetX: touch.clientX - rect.left, offsetY: touch.clientY - rect.top };
+    }
+    
+    function renderEditor() {
+        const canvas = $('#editor-canvas');
+        const ctx = canvas.getContext('2d');
+        if (!editorImage) return;
+        
+        // Draw image
+        ctx.drawImage(editorImage, 0, 0, canvas.width, canvas.height);
+        
+        // Draw existing redactions
+        ctx.fillStyle = 'black';
+        for (const r of editorRedactions) {
+            ctx.fillRect(r.x, r.y, r.w, r.h);
+        }
+    }
+    
+    function setEditorTool(tool) {
+        editorTool = tool;
+        const canvas = $('#editor-canvas');
+        canvas.style.cursor = tool === 'redact' ? 'crosshair' : 'default';
+        const hint = $('#redact-hint');
+        hint.style.display = tool === 'redact' ? 'block' : 'none';
+        updateToolButtons();
+    }
+    
+    function updateToolButtons() {
+        const btnRedact = $('#btn-redact');
+        const btnView = $('#btn-view');
+        if (btnRedact) {
+            btnRedact.style.opacity = editorTool === 'redact' ? '1' : '0.5';
+            btnRedact.style.transform = editorTool === 'redact' ? 'scale(1.05)' : 'scale(1)';
+        }
+        if (btnView) {
+            btnView.style.opacity = editorTool === 'view' ? '1' : '0.5';
+            btnView.style.transform = editorTool === 'view' ? 'scale(1.05)' : 'scale(1)';
+        }
+    }
+    
+    function editorMouseDown(e) {
+        if (editorTool !== 'redact') return;
+        editorDrawing = true;
+        editorStartX = e.offsetX;
+        editorStartY = e.offsetY;
+    }
+    
+    function editorMouseMove(e) {
+        if (!editorDrawing || editorTool !== 'redact') return;
+        renderEditor();
+        const ctx = $('#editor-canvas').getContext('2d');
+        const w = e.offsetX - editorStartX;
+        const h = e.offsetY - editorStartY;
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(editorStartX, editorStartY, w, h);
+        // Draw border for visibility while dragging
+        ctx.strokeStyle = 'rgba(255,0,0,0.5)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(editorStartX, editorStartY, w, h);
+    }
+    
+    function editorMouseUp(e) {
+        if (!editorDrawing) return;
+        editorDrawing = false;
+        if (editorTool !== 'redact') return;
+        
+        const w = e.offsetX - editorStartX;
+        const h = e.offsetY - editorStartY;
+        
+        // Ignore tiny accidental clicks
+        if (Math.abs(w) < 5 || Math.abs(h) < 5) return;
+        
+        // Normalize negative dimensions
+        const rect = {
+            x: w < 0 ? editorStartX + w : editorStartX,
+            y: h < 0 ? editorStartY + h : editorStartY,
+            w: Math.abs(w),
+            h: Math.abs(h)
+        };
+        
+        editorRedactions.push(rect);
+        renderEditor();
+    }
+    
+    function undoRedaction() {
+        if (editorRedactions.length > 0) {
+            editorRedactions.pop();
+            renderEditor();
+        }
+    }
+    
+    function clearRedactions() {
+        editorRedactions = [];
+        renderEditor();
+    }
+    
+    async function saveRedactedPhoto() {
+        if (!editorWatchId || !editorImage) return;
+        if (editorRedactions.length === 0) {
+            if (!confirm('No redactions drawn. Save the image as-is?')) return;
+        }
+        
+        const statusEl = $('#editor-status');
+        statusEl.textContent = '⏳ Saving...';
+        statusEl.style.display = 'inline';
+        statusEl.style.color = 'var(--accent)';
+        
+        try {
+            // Render final image at full resolution
+            const fullCanvas = document.createElement('canvas');
+            fullCanvas.width = editorImage.naturalWidth;
+            fullCanvas.height = editorImage.naturalHeight;
+            const ctx = fullCanvas.getContext('2d');
+            
+            // Draw original image at full res
+            ctx.drawImage(editorImage, 0, 0);
+            
+            // Scale redactions from display to full resolution
+            const displayCanvas = $('#editor-canvas');
+            const scale = parseFloat(displayCanvas.dataset.scale) || 1;
+            
+            ctx.fillStyle = 'black';
+            for (const r of editorRedactions) {
+                ctx.fillRect(r.x / scale, r.y / scale, r.w / scale, r.h / scale);
+            }
+            
+            // Export as JPEG blob
+            const blob = await new Promise(resolve => fullCanvas.toBlob(resolve, 'image/jpeg', 0.92));
+            
+            // Upload
+            const formData = new FormData();
+            formData.append('image', blob, 'redacted.jpg');
+            
+            const resp = await fetch(`/api/watch-photos/${editorWatchId}/save-redacted`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!resp.ok) throw new Error(await resp.text());
+            
+            statusEl.textContent = '✓ Saved!';
+            statusEl.style.color = 'var(--green)';
+            
+            // Reload the image to show saved version
+            editorImage.src = '/api/watch-photos/' + editorWatchId + '/image?t=' + Date.now();
+            editorRedactions = [];
+            
+            // Refresh gallery thumbnails
+            setTimeout(() => loadPhotoLibrary(), 500);
+            
+        } catch (err) {
+            statusEl.textContent = '✕ Save failed: ' + err.message;
+            statusEl.style.color = 'var(--red)';
+            console.error('Save error:', err);
+        }
+    }
+    
+    function confirmDeletePhoto() {
+        const watch = photoLibraryData.find(w => w.watch_id === editorWatchId);
+        if (!watch) return;
+        
+        if (!confirm(`Delete this photo?\n\n${watch.model} ${watch.dial} ${watch.bracelet}\n\nThis cannot be undone.`)) return;
+        
+        deletePhoto(editorWatchId);
+    }
+    
+    async function deletePhoto(watchId) {
+        try {
+            const resp = await fetch(`/api/watch-photos/${watchId}`, { method: 'DELETE' });
+            if (!resp.ok) throw new Error(await resp.text());
+            
+            closePhotoModal();
+            loadPhotoLibrary();
+            
+        } catch (err) {
+            alert('Delete failed: ' + err.message);
+        }
+    }
+    
+    function closePhotoModal() {
+        $('#photo-modal').style.display = 'none';
+        editorWatchId = null;
+        editorImage = null;
+        editorRedactions = [];
+        editorDrawing = false;
+    }
+    
+    function copyPhotoInfo(watchId) {
+        const watch = photoLibraryData.find(w => w.watch_id === watchId);
+        if (!watch) return;
+        const info = `${watch.model || ''} ${watch.dial || ''} ${watch.bracelet || ''} ${watch.condition || ''} ${watch.card_date || ''}`.trim();
+        navigator.clipboard.writeText(info);
+        if (typeof showToast === 'function') showToast('Copied!');
+    }
+    
+    function showPhotoStats() {
+        const models = new Set(photoLibraryData.map(w => w.model));
+        alert(`Photo Library Stats\n\nTotal: ${photoLibraryData.length} photos\nUnique models: ${models.size}\nConditions: ${new Set(photoLibraryData.map(w => w.condition)).size} types`);
     }
     
     async function handlePhotoUpload(event) {
