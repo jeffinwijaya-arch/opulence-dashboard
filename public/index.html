@@ -2702,15 +2702,15 @@ async function doLookup() {
 
         const cheapest = (d.listings||d.cheapest_listings||[]).slice(0,10).map((l,i)=>{
             const srcText = String(l.source_text||'').split('<').join('&lt;').split('>').join('&gt;');
-            const phone = l.phone ? ' \u00b7 \ud83d\udcf1 '+l.phone : '';
+            const phone = l.phone ? ' · 📱 '+l.phone : '';
             const ts = l.ts || '';
             let card = '<div class="listing-card">';
             card += '<div style="display:flex;justify-content:space-between;align-items:center;">';
             card += '<span style="font-family:var(--mono);font-weight:700;color:var(--green)">'+fmt(l.price_usd||l.price)+'</span>';
             card += '<span><span class="tag '+condTag(l.condition)+'">'+(l.condition||'\u2014')+'</span> '+regionLabel(l.region)+'</span>';
             card += '</div>';
-            card += '<div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">'+(l.dial||'')+' '+(l.bracelet||'')+' '+(l.year?'('+l.year+')':'')+' \u00b7 '+(l.completeness||'')+' \u00b7 \ud83d\udc64 '+(l.seller||'?')+phone+' \u00b7 \ud83d\udccd '+(l.group||'?')+'</div>';
-            if(ts) card += '<div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">\ud83d\udd70 '+ts+'</div>';
+            card += '<div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">'+(l.dial||'')+' '+(l.bracelet||'')+' '+(l.year?'('+l.year+')':'')+' · '+(l.completeness||'')+' · 👤 '+(l.seller||'?')+phone+' · 📍 '+(l.group||'?')+'</div>';
+            if(ts) card += '<div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">🕐 '+ts+'</div>';
             if(srcText) card += '<div style="font-size:0.70rem;color:var(--text-1);margin-top:4px;padding:6px 8px;background:rgba(255,255,255,0.04);border-radius:4px;border-left:2px solid var(--accent);font-family:var(--mono);white-space:pre-wrap;word-break:break-all;line-height:1.4;">'+srcText+'</div>';
             card += '</div>';
             return card;
