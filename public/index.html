@@ -2118,7 +2118,7 @@ function openPostingModal(item, photoCount) {
             </div>
             <div style="margin-top:6px;display:flex;align-items:center;gap:8px;">
                 <label style="font-size:0.68rem;color:var(--green);cursor:pointer;border:1px dashed var(--green);border-radius:var(--radius);padding:4px 10px;" for="posting-upload-extra">+ Add more photos</label>
-                <input type="file" id="posting-upload-extra" accept="image/*" multiple style="display:none" onchange="handlePostingUpload(${item.row}, '${item.description?.replace(/'/g,"\\'")||''}')"/>
+                <input type="file" id="posting-upload-extra" accept="image/*,.heic,.heif" multiple style="display:none" onchange="handlePostingUpload(${item.row}, '${item.description?.replace(/'/g,"\\'")||''}')"/>
             </div>
         </div>`
         : `<div style="margin-bottom:10px;">
@@ -2129,7 +2129,7 @@ function openPostingModal(item, photoCount) {
                     <div style="color:var(--text-2);font-size:0.68rem;margin-top:4px;">Click or drag photos here</div>
                 </div>
             </div>
-            <input type="file" id="posting-upload" accept="image/*" multiple style="display:none" onchange="handlePostingUpload(${item.row}, '${item.description?.replace(/'/g,"\\'")||''}')"/>
+            <input type="file" id="posting-upload" accept="image/*,.heic,.heif" multiple style="display:none" onchange="handlePostingUpload(${item.row}, '${item.description?.replace(/'/g,"\\'")||''}')"/>
         </div>`;
 
     overlay.innerHTML = `<div style="background:var(--bg-1);border:1px solid var(--border-strong);border-radius:var(--radius-lg);max-width:520px;width:90%;padding:20px;font-family:var(--font);">
@@ -2288,36 +2288,215 @@ function handlePostingUpload(row, desc) {
     if (input?.files?.length) uploadPostingPhotos(row, desc, input.files);
 }
 
+// ── HEIC → JPEG conversion via canvas ──
+async function convertFileToJpeg(file) {
+    // If already JPEG/PNG/WEBP, return as-is
+    const name = (file.name || '').toLowerCase();
+    if (!name.endsWith('.heic') && !name.endsWith('.heif')) return file;
+    
+    // Try native browser decode (Safari supports HEIC natively)
+    try {
+        const bitmap = await createImageBitmap(file);
+        const canvas = document.createElement('canvas');
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(bitmap, 0, 0);
+        const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.92));
+        return new File([blob], name.replace(/\.heic?$/i, '.jpg'), { type: 'image/jpeg' });
+    } catch (nativeErr) {
+        console.warn('Native HEIC decode failed, trying server-side...', nativeErr);
+        // Fall back to server-side conversion
+        const fd = new FormData();
+        fd.append('file', file);
+        try {
+            const resp = await fetch('/api/convert-heic', { method: 'POST', body: fd });
+            if (resp.ok) {
+                const blob = await resp.blob();
+                return new File([blob], name.replace(/\.heic?$/i, '.jpg'), { type: 'image/jpeg' });
+            }
+        } catch (e) { console.error('Server HEIC conversion failed:', e); }
+        // Last resort: return original and let backend handle it
+        return file;
+    }
+}
+
+// ── Inline redaction editor for posting photos ──
+let _postingRedactFile = null;
+let _postingRedactRow = null;
+let _postingRedactDesc = '';
+let _postingRedactRects = [];
+let _postingRedactDrawing = false;
+let _postingRedactStart = {x:0,y:0};
+let _postingRedactImg = null;
+
+function openPostingRedactEditor(file, row, desc) {
+    _postingRedactFile = file;
+    _postingRedactRow = row;
+    _postingRedactDesc = desc;
+    _postingRedactRects = [];
+
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'posting-redact-modal';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:10001;display:flex;flex-direction:column;align-items:center;padding:16px;';
+    overlay.innerHTML = `
+        <div style="display:flex;justify-content:space-between;width:100%;max-width:860px;align-items:center;margin-bottom:8px;">
+            <span style="color:white;font-size:0.9rem;font-weight:600;">✏️ Redact before uploading</span>
+            <div style="display:flex;gap:8px;">
+                <button class="btn" onclick="postingRedactUndo()" style="padding:4px 10px;font-size:0.72rem;">↩ Undo</button>
+                <button class="btn" onclick="postingRedactClear()" style="padding:4px 10px;font-size:0.72rem;">✕ Clear</button>
+                <button class="btn" onclick="postingRedactSkip()" style="padding:4px 10px;font-size:0.72rem;">Skip →</button>
+                <button class="btn" onclick="postingRedactSave()" style="padding:4px 10px;font-size:0.72rem;background:var(--green-dim);color:var(--green);border-color:var(--green);">✓ Done & Upload</button>
+            </div>
+        </div>
+        <div style="color:var(--text-2);font-size:0.68rem;margin-bottom:8px;">Draw black boxes over serials / sensitive info. Click Skip to upload without redaction.</div>
+        <canvas id="posting-redact-canvas" style="max-width:100%;max-height:calc(100vh - 120px);cursor:crosshair;border:1px solid rgba(255,255,255,0.1);border-radius:4px;"></canvas>
+    `;
+    document.body.appendChild(overlay);
+
+    const canvas = document.getElementById('posting-redact-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Load file into canvas
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = function() {
+        _postingRedactImg = img;
+        const maxW = Math.min(860, window.innerWidth - 40);
+        const maxH = window.innerHeight - 140;
+        const scale = Math.min(maxW / img.width, maxH / img.height, 1);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        canvas.dataset.scale = scale;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+    };
+    img.src = url;
+
+    // Wire up drawing
+    canvas.onmousedown = function(e) {
+        _postingRedactDrawing = true;
+        _postingRedactStart = {x: e.offsetX, y: e.offsetY};
+    };
+    canvas.onmousemove = function(e) {
+        if (!_postingRedactDrawing) return;
+        postingRedactRender();
+        const c = document.getElementById('posting-redact-canvas').getContext('2d');
+        c.fillStyle = 'rgba(0,0,0,0.7)';
+        c.fillRect(_postingRedactStart.x, _postingRedactStart.y, e.offsetX - _postingRedactStart.x, e.offsetY - _postingRedactStart.y);
+        c.strokeStyle = 'rgba(255,0,0,0.5)';
+        c.lineWidth = 1;
+        c.strokeRect(_postingRedactStart.x, _postingRedactStart.y, e.offsetX - _postingRedactStart.x, e.offsetY - _postingRedactStart.y);
+    };
+    canvas.onmouseup = function(e) {
+        if (!_postingRedactDrawing) return;
+        _postingRedactDrawing = false;
+        const w = e.offsetX - _postingRedactStart.x;
+        const h = e.offsetY - _postingRedactStart.y;
+        if (Math.abs(w) < 5 || Math.abs(h) < 5) return;
+        _postingRedactRects.push({
+            x: w < 0 ? _postingRedactStart.x + w : _postingRedactStart.x,
+            y: h < 0 ? _postingRedactStart.y + h : _postingRedactStart.y,
+            w: Math.abs(w), h: Math.abs(h)
+        });
+        postingRedactRender();
+    };
+    canvas.onmouseleave = canvas.onmouseup;
+    // Touch
+    canvas.ontouchstart = function(e) { e.preventDefault(); canvas.onmousedown(postingTouchToMouse(e, canvas)); };
+    canvas.ontouchmove = function(e) { e.preventDefault(); canvas.onmousemove(postingTouchToMouse(e, canvas)); };
+    canvas.ontouchend = function(e) { e.preventDefault(); canvas.onmouseup(postingTouchToMouse(e, canvas)); };
+}
+
+function postingTouchToMouse(e, canvas) {
+    const t = e.touches[0] || e.changedTouches[0];
+    const r = canvas.getBoundingClientRect();
+    return { offsetX: t.clientX - r.left, offsetY: t.clientY - r.top };
+}
+
+function postingRedactRender() {
+    const canvas = document.getElementById('posting-redact-canvas');
+    if (!canvas || !_postingRedactImg) return;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(_postingRedactImg, 0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'black';
+    for (const r of _postingRedactRects) ctx.fillRect(r.x, r.y, r.w, r.h);
+}
+function postingRedactUndo() { _postingRedactRects.pop(); postingRedactRender(); }
+function postingRedactClear() { _postingRedactRects = []; postingRedactRender(); }
+
+function postingRedactSkip() {
+    document.getElementById('posting-redact-modal')?.remove();
+    // Upload original file without redaction
+    doUploadPostingFile(_postingRedactFile, _postingRedactRow, _postingRedactDesc);
+}
+
+async function postingRedactSave() {
+    // Render at full resolution
+    const fullCanvas = document.createElement('canvas');
+    fullCanvas.width = _postingRedactImg.naturalWidth;
+    fullCanvas.height = _postingRedactImg.naturalHeight;
+    const ctx = fullCanvas.getContext('2d');
+    ctx.drawImage(_postingRedactImg, 0, 0);
+
+    const displayCanvas = document.getElementById('posting-redact-canvas');
+    const scale = parseFloat(displayCanvas.dataset.scale) || 1;
+    ctx.fillStyle = 'black';
+    for (const r of _postingRedactRects) {
+        ctx.fillRect(r.x / scale, r.y / scale, r.w / scale, r.h / scale);
+    }
+
+    const blob = await new Promise(r => fullCanvas.toBlob(r, 'image/jpeg', 0.92));
+    const redactedFile = new File([blob], (_postingRedactFile.name || 'photo').replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' });
+
+    document.getElementById('posting-redact-modal')?.remove();
+    doUploadPostingFile(redactedFile, _postingRedactRow, _postingRedactDesc);
+}
+
+async function doUploadPostingFile(file, row, desc) {
+    const preview = document.getElementById('posting-photo-preview');
+    const fd = new FormData();
+    fd.append('photo', file);
+    fd.append('row', row);
+    fd.append('description', desc);
+    fd.append('source', 'manual');
+    try {
+        const r = await fetch('/api/watch-photos/upload', { method: 'POST', body: fd });
+        if (r.ok) {
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            img.style.cssText = 'width:70px;height:70px;object-fit:cover;border-radius:4px;border:1px solid var(--accent-border);';
+            if (preview) preview.appendChild(img);
+        }
+    } catch(e) { console.error(e); }
+    await loadPostingPhotoPreviews(row);
+}
+
 async function uploadPostingPhotos(row, desc, files) {
     const preview = document.getElementById('posting-photo-preview');
     if (!preview) return;
 
-    // Show uploading state
     const existingImgs = preview.querySelectorAll('img');
     let html = Array.from(existingImgs).map(img => img.outerHTML).join('');
-    html += '<div style="color:var(--accent);font-size:0.68rem;padding:4px;">Uploading...</div>';
+    html += '<div style="color:var(--accent);font-size:0.68rem;padding:4px;">Processing...</div>';
     preview.innerHTML = html;
 
-    for (const file of files) {
-        const fd = new FormData();
-        fd.append('photo', file);
-        fd.append('row', row);
-        fd.append('description', desc);
-        fd.append('source', 'manual');
-        try {
-            const r = await fetch('/api/watch-photos/upload', { method: 'POST', body: fd });
-            if (r.ok) {
-                const result = await r.json();
-                // Add thumbnail
-                const img = document.createElement('img');
-                img.src = URL.createObjectURL(file);
-                img.style.cssText = 'width:70px;height:70px;object-fit:cover;border-radius:4px;border:1px solid var(--accent-border);';
-                preview.appendChild(img);
-            }
-        } catch(e) { console.error(e); }
+    for (const rawFile of files) {
+        // Convert HEIC if needed
+        const file = await convertFileToJpeg(rawFile);
+        // Open redaction editor for each photo
+        openPostingRedactEditor(file, row, desc);
+        // Wait for user to finish (modal will be closed by skip/save)
+        await new Promise(resolve => {
+            const check = setInterval(() => {
+                if (!document.getElementById('posting-redact-modal')) {
+                    clearInterval(check);
+                    resolve();
+                }
+            }, 200);
+        });
     }
-    // Reload previews to get proper delete buttons
-    await loadPostingPhotoPreviews(row);
 }
 
 async function deletePostingPhoto(row, filename) {
