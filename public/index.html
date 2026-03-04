@@ -2665,6 +2665,29 @@ function showArbDetail(idx, dirFilter) {
 
 // ── PRICE LOOKUP ──
 let searchTimeout;
+function expandCheapest() {
+    if (!window._cheapestAll) return;
+    var all = window._cheapestAll;
+    var html = all.map(function(l,i) {
+        var srcText = String(l.source_text||'').replace(/\+?\s*label\s+gambar tidak disertakan/gi,'').replace(/gambar tidak disertakan/gi,'').replace(/\(file terlampir\)/gi,'').trim().split('<').join('&lt;').split('>').join('&gt;');
+        var phone = l.phone ? ' · 📱 '+l.phone : '';
+        var ts = l.ts || '';
+        var card = '<div class="listing-card">';
+        card += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+        card += '<span style="font-family:var(--mono);font-weight:700;color:var(--green)">'+fmt(l.price_usd||l.price)+'</span>';
+        card += '<span><span class="tag '+condTag(l.condition)+'">'+(l.condition||'\u2014')+'</span> '+regionLabel(l.region)+'</span>';
+        card += '</div>';
+        card += '<div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">'+(l.dial||'')+' '+(l.bracelet||'')+' '+(l.year?'('+l.year+')':'')+' · '+(l.completeness||'')+' · 👤 '+(l.seller||'?')+phone+' · 📍 '+(l.group||'?')+'</div>';
+        if(ts) card += '<div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">🕐 '+ts+'</div>';
+        if(srcText) card += '<div style="font-size:0.70rem;color:var(--text-1);margin-top:4px;padding:6px 8px;background:rgba(255,255,255,0.04);border-radius:4px;border-left:2px solid var(--accent);font-family:var(--mono);white-space:pre-wrap;word-break:break-all;line-height:1.4;">'+srcText+'</div>';
+        card += '</div>';
+        return card;
+    }).join('');
+    var container = document.getElementById('cheapest-container');
+    if(container) container.innerHTML = html;
+    var btn = document.getElementById('cheapest-more');
+    if(btn) btn.style.display = 'none';
+}
 function debounceSearch() { clearTimeout(searchTimeout); searchTimeout=setTimeout(doLookup,300); }
 function lookupRef(ref,dial) { showPage('lookup'); $('#ref-search').value=dial?ref+' '+dial:ref; doLookup(); }
 
@@ -2700,7 +2723,9 @@ async function doLookup() {
         if (usB25 && hkB25) { const sp=((usB25-hkB25)/hkB25*100).toFixed(1); regionalHtml += `<div class="detail-row"><span>HK-US Spread</span><span class="${parseFloat(sp)>0?'green':'red'}" style="font-family:var(--mono)">${sp}%</span></div>`; }
         if (ps.cheaper_region) regionalHtml += `<div class="detail-row"><span>Cheaper</span><span style="font-family:var(--mono);color:var(--green)">${ps.cheaper_region}</span></div>`;
 
-        const cheapest = (d.listings||d.cheapest_listings||[]).slice(0,10).map((l,i)=>{
+        window._cheapestAll = d.listings||d.cheapest_listings||[];
+        const _allListingsData = window._cheapestAll;
+        const cheapest = _allListingsData.slice(0,10).map((l,i)=>{
             const srcText = String(l.source_text||'').replace(/\+?\s*label\s+gambar tidak disertakan/gi,'').replace(/gambar tidak disertakan/gi,'').replace(/\(file terlampir\)/gi,'').trim().split('<').join('&lt;').split('>').join('&gt;');
             const phone = l.phone ? ' · 📱 '+l.phone : '';
             const ts = l.ts || '';
@@ -2757,7 +2782,7 @@ async function doLookup() {
                 ${relatedHtml}
             </div></div>
             <div class="card" style="margin-top:8px;" id="lookup-chart-card"><div class="card-head"><span>Price History (14d)</span></div><div class="card-body" style="padding:8px;"><canvas id="lookup-chart"></canvas><div id="lookup-chart-empty" class="dim" style="text-align:center;padding:12px;display:none;">No history available</div></div></div>
-            <div class="card" style="margin-top:8px;"><div class="card-head"><span>Cheapest Listings</span></div><div class="card-body">${cheapest||'<div style="color:var(--text-2)">No listings</div>'}</div></div>
+            <div class="card" style="margin-top:8px;"><div class="card-head"><span>Cheapest Listings (${_allListingsData.length})</span></div><div class="card-body"><div id="cheapest-container">${cheapest||'<div style="color:var(--text-2)">No listings</div>'}</div>${_allListingsData.length>10?'<div id="cheapest-more" style="text-align:center;padding:8px;"><button class="btn" onclick="expandCheapest()" style="font-size:0.72rem;padding:4px 16px;">Show All '+_allListingsData.length+' Listings</button></div>':''}</div></div>
         </div>`;
         // Load price history chart
         try {
