@@ -1183,8 +1183,8 @@
         <!-- ═══ PHOTOS ═══ -->
         <div class="page" id="page-photos">
             <div class="page-head">
-                <h1>Photo Gallery</h1>
-                <p>Warranty cards, arrival photos, and watch documentation</p>
+                <h1>📸 Photo Library</h1>
+                <p>Watch photos, posting templates, warranty cards — your visual inventory</p>
             </div>
 
             <!-- Photo Stats -->
@@ -1198,12 +1198,12 @@
                     <div class="val" id="photo-size">0 MB</div>
                 </div>
                 <div class="metric">
-                    <div class="label">Warranty Cards</div>
-                    <div class="val" id="warranty-count">0</div>
+                    <div class="label">Posting Templates</div>
+                    <div class="val" id="posting-count">0</div>
                 </div>
                 <div class="metric">
-                    <div class="label">Arrival Photos</div>
-                    <div class="val" id="arrival-count">0</div>
+                    <div class="label">Unique Refs</div>
+                    <div class="val" id="ref-count">0</div>
                 </div>
             </div>
 
@@ -1224,32 +1224,36 @@
                 
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:12px;">
                     <select class="input" id="photo-category">
-                        <option value="general">General</option>
-                        <option value="warranty">Warranty Card</option>
-                        <option value="arrival">Arrival Photo</option>
-                        <option value="shipping">Shipping Label</option>
+                        <option value="posting">📋 Posting Template</option>
+                        <option value="arrival">📦 Arrival Photo</option>
+                        <option value="warranty">🏷️ Warranty Card</option>
+                        <option value="shipping">📬 Shipping Label</option>
+                        <option value="general">📁 General</option>
                     </select>
-                    <input class="input" id="photo-ref" placeholder="Watch ref (optional)">
+                    <input class="input" id="photo-ref" placeholder="Ref (e.g. 126300)">
+                    <input class="input" id="photo-dial" placeholder="Dial (e.g. Azzurro Blue)">
+                    <input class="input" id="photo-bracelet" placeholder="Bracelet (e.g. Jubilee)">
                     <input class="input" id="photo-tags" placeholder="Tags (comma-separated)">
                 </div>
             </div>
 
             <!-- Photo Gallery -->
             <div class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
                     <h3 style="margin:0;">Photo Gallery</h3>
-                    <div style="display:flex;gap:8px;align-items:center;">
-                        <select class="input" id="photo-filter" onchange="filterPhotos()" style="width:auto;">
-                            <option value="">All Categories</option>
-                            <option value="warranty">Warranty Cards</option>
-                            <option value="arrival">Arrival Photos</option>
-                            <option value="shipping">Shipping Labels</option>
-                            <option value="general">General</option>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                        <select class="input" id="photo-filter" onchange="loadPhotos()" style="width:auto;">
+                            <option value="">All</option>
+                            <option value="posting">📋 Postings</option>
+                            <option value="arrival">📦 Arrivals</option>
+                            <option value="warranty">🏷️ Warranty</option>
+                            <option value="shipping">📬 Shipping</option>
+                            <option value="general">📁 General</option>
                         </select>
-                        <input class="input" id="photo-search" placeholder="Search..." oninput="searchPhotos()" style="width:150px;">
+                        <input class="input" id="photo-search" placeholder="Search ref, dial..." oninput="debouncePhotoSearch()" style="width:180px;">
                     </div>
                 </div>
-                <div id="photo-gallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+                <div id="photo-gallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;">
                     Loading photos...
                 </div>
             </div>
@@ -5818,25 +5822,33 @@ async function loadPayments() {
     }
 
     // ── Photo Gallery ──
+    let _photoSearchTimer = null;
+    function debouncePhotoSearch() { clearTimeout(_photoSearchTimer); _photoSearchTimer = setTimeout(loadPhotos, 400); }
+
     async function loadPhotos() {
         try {
             const statsResponse = await fetch('/api/photos/statistics');
             const statsData = await statsResponse.json();
             
-            // Update photo stats
             document.getElementById('photo-count').textContent = statsData.total_photos || 0;
-            document.getElementById('photo-size').textContent = statsData.total_size_mb + ' MB';
-            document.getElementById('warranty-count').textContent = statsData.categories?.warranty?.count || 0;
-            document.getElementById('arrival-count').textContent = statsData.categories?.arrival?.count || 0;
+            document.getElementById('photo-size').textContent = (statsData.total_size_mb || 0) + ' MB';
+            document.getElementById('posting-count').textContent = statsData.categories?.posting?.count || 0;
+            document.getElementById('ref-count').textContent = Object.keys(statsData.by_ref || {}).length || 0;
             
-            // Load photo gallery
-            const photosResponse = await fetch('/api/photos/search?limit=50');
+            // Build query
+            const filter = document.getElementById('photo-filter').value;
+            const search = (document.getElementById('photo-search').value || '').trim();
+            let url = '/api/photos/library?limit=100';
+            if (filter) url += '&category=' + encodeURIComponent(filter);
+            if (search) url += '&q=' + encodeURIComponent(search);
+            
+            const photosResponse = await fetch(url);
             const photosData = await photosResponse.json();
             renderPhotoGallery(photosData.photos || []);
             
         } catch (error) {
             console.error('Failed to load photos:', error);
-            document.getElementById('photo-gallery').innerHTML = '<div style="color:var(--red);padding:20px;">Failed to load photos</div>';
+            document.getElementById('photo-gallery').innerHTML = '<div style="color:var(--red);padding:20px;">Failed to load photos: '+error.message+'</div>';
         }
     }
     
@@ -5844,29 +5856,42 @@ async function loadPayments() {
         const gallery = document.getElementById('photo-gallery');
         
         if (photos.length === 0) {
-            gallery.innerHTML = '<div style="color:var(--text-2);grid-column:1/-1;text-align:center;padding:40px;">No photos found</div>';
+            gallery.innerHTML = '<div style="color:var(--text-2);grid-column:1/-1;text-align:center;padding:40px;"><div style="font-size:1.5rem;margin-bottom:8px;">📷</div>No photos yet — upload some or send watch photos via Telegram DM</div>';
             return;
         }
         
+        const catIcons = {posting:'📋',arrival:'📦',warranty:'🏷️',shipping:'📬',general:'📁'};
+        const catColors = {posting:'var(--accent)',arrival:'var(--blue)',warranty:'var(--green)',shipping:'var(--orange)',general:'var(--text-2)'};
+        
         let html = '';
         photos.forEach(photo => {
-            const categoryColor = photo.category === 'warranty' ? 'var(--green)' :
-                                 photo.category === 'arrival' ? 'var(--blue)' :
-                                 photo.category === 'shipping' ? 'var(--orange)' : 'var(--text-2)';
+            const icon = catIcons[photo.category] || '📁';
+            const color = catColors[photo.category] || 'var(--text-2)';
+            const imgUrl = '/api/photos/'+photo.id+'/serve?thumb=true';
+            const dial = photo.dial || '';
+            const bracelet = photo.bracelet || '';
+            const details = [dial, bracelet].filter(Boolean).join(' | ');
+            const dateStr = photo.uploaded_at ? new Date(photo.uploaded_at).toLocaleDateString() : '';
                                  
-            html += `<div style="background:var(--bg-2);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);">
-                <div style="height:150px;background:var(--bg-3);display:flex;align-items:center;justify-content:center;color:var(--text-2);">
-                    ${photo.original_filename}
-                </div>
-                <div style="padding:8px;">
-                    <div style="font-size:0.7rem;color:${categoryColor};text-transform:uppercase;font-weight:600;">${photo.category}</div>
-                    <div style="font-size:0.75rem;margin:4px 0;">${photo.ref || 'No ref'}</div>
-                    <div style="font-size:0.65rem;color:var(--text-2);">${new Date(photo.uploaded_at).toLocaleDateString()}</div>
-                </div>
-            </div>`;
+            html += '<div style="background:var(--bg-2);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);cursor:pointer;" onclick="showPhotoDetail(\''+photo.id+'\')">';
+            html += '<div style="height:160px;background:var(--bg-3);overflow:hidden;"><img src="'+imgUrl+'" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML=\'<div style=padding:40px;text-align:center;color:var(--text-2)>'+photo.original_filename+'</div>\'" loading="lazy"></div>';
+            html += '<div style="padding:8px;">';
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:0.72rem;color:'+color+';font-weight:600;">'+icon+' '+(photo.category||'general')+'</span>';
+            if(photo.used_count>0) html += '<span style="font-size:0.6rem;color:var(--accent);">Used '+photo.used_count+'x</span>';
+            html += '</div>';
+            html += '<div style="font-size:0.82rem;font-weight:600;margin:3px 0;font-family:var(--mono);">'+(photo.ref||'No ref')+'</div>';
+            if(details) html += '<div style="font-size:0.68rem;color:var(--text-2);">'+details+'</div>';
+            if(photo.posting_text) html += '<div style="font-size:0.65rem;color:var(--text-2);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px;">'+photo.posting_text.substring(0,50)+'</div>';
+            html += '<div style="font-size:0.6rem;color:var(--text-2);margin-top:3px;">'+dateStr+'</div>';
+            html += '</div></div>';
         });
         
         gallery.innerHTML = html;
+    }
+    
+    function showPhotoDetail(photoId) {
+        // TODO: Modal with full photo, edit fields, copy posting text, reuse for new posting
+        window.open('/api/photos/'+photoId+'/serve', '_blank');
     }
     
     async function handlePhotoUpload(event) {
@@ -5875,13 +5900,18 @@ async function loadPayments() {
         
         const category = document.getElementById('photo-category').value;
         const ref = document.getElementById('photo-ref').value;
+        const dial = document.getElementById('photo-dial')?.value || '';
+        const bracelet = document.getElementById('photo-bracelet')?.value || '';
         const tags = document.getElementById('photo-tags').value;
         
+        let uploaded = 0;
         for (const file of files) {
             const formData = new FormData();
             formData.append('file', file);
             formData.append('category', category);
             if (ref) formData.append('ref', ref);
+            if (dial) formData.append('dial', dial);
+            if (bracelet) formData.append('bracelet', bracelet);
             if (tags) formData.append('tags', tags);
             
             try {
@@ -5889,46 +5919,27 @@ async function loadPayments() {
                     method: 'POST',
                     body: formData
                 });
-                
                 const result = await response.json();
-                if (result.success) {
-                    console.log('Photo uploaded:', result.photo_id);
-                } else {
-                    console.error('Upload failed:', result.error);
-                }
+                if (result.success) uploaded++;
             } catch (error) {
                 console.error('Upload failed:', error);
             }
         }
         
-        // Reload gallery
-        setTimeout(loadPhotos, 1000);
-        
-        // Clear inputs
-        event.target.value = '';
-        document.getElementById('photo-ref').value = '';
-        document.getElementById('photo-tags').value = '';
+        if (uploaded > 0) {
+            setTimeout(loadPhotos, 500);
+            event.target.value = '';
+        }
     }
     
     function handlePhotoDrop(event) {
         event.preventDefault();
         event.target.style.borderColor = 'var(--border)';
-        
         const files = event.dataTransfer.files;
         if (files.length) {
             document.getElementById('photo-upload').files = files;
             handlePhotoUpload({target: {files}});
         }
-    }
-    
-    function filterPhotos() {
-        // Implementation for filtering photos
-        loadPhotos();
-    }
-    
-    function searchPhotos() {
-        // Implementation for searching photos
-        loadPhotos();
     }
 
     // ── Business Alerts ──
