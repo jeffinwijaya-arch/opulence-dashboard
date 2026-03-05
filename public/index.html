@@ -2393,7 +2393,7 @@ function openPostingRedactEditor(file, row, desc) {
     const overlay = document.createElement('div');
     overlay.id = 'posting-redact-modal';
     const canvasH = window.innerHeight - 50;
-    overlay.style.cssText = 'position:fixed;inset:0;background:#000;z-index:10001;overflow:hidden;touch-action:none;display:flex;flex-direction:column;';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;height:100dvh;background:#000;z-index:99999;overflow:hidden;touch-action:none;display:flex;flex-direction:column;';
     document.body.style.overflow = 'hidden';
     overlay.innerHTML = `
         <div id="redact-toolbar" style="display:flex;align-items:center;padding:env(safe-area-inset-top,0) 12px 0 12px;flex-shrink:0;">
