@@ -2396,16 +2396,16 @@ function openPostingRedactEditor(file, row, desc) {
     overlay.style.cssText = 'position:fixed;inset:0;background:#000;z-index:10001;padding:8px;overflow:hidden;touch-action:none;';
     document.body.style.overflow = 'hidden';
     overlay.innerHTML = `
-        <div style="display:flex;gap:6px;width:100%;align-items:center;height:40px;padding:4px 4px 0 4px;padding-top:max(4px,env(safe-area-inset-top));">
-            <button class="btn" onclick="postingRedactUndo()" style="padding:4px 10px;font-size:0.7rem;">Undo</button>
-            <button class="btn" onclick="postingRedactRotate()" style="padding:4px 10px;font-size:0.7rem;">Rotate</button>
-            <button class="btn" onclick="postingAutoRedact()" style="padding:4px 10px;font-size:0.7rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">Auto</button>
-            <button class="btn" onclick="redactZoomIn()" style="padding:4px 8px;font-size:0.7rem;">+</button>
-            <button class="btn" onclick="redactZoomOut()" style="padding:4px 8px;font-size:0.7rem;">−</button>
-            <span id="redact-zoom-label" style="color:rgba(255,255,255,0.4);font-size:0.65rem;">1x</span>
+        <div style="display:flex;gap:2px;width:100%;align-items:center;height:44px;padding:0 8px;padding-top:max(0px,env(safe-area-inset-top));">
+            <a onclick="postingRedactUndo()" style="color:white;font-size:0.75rem;padding:8px 10px;cursor:pointer;opacity:0.7;">Undo</a>
+            <a onclick="postingRedactRotate()" style="color:white;font-size:0.75rem;padding:8px 10px;cursor:pointer;opacity:0.7;">Rotate</a>
+            <a onclick="postingAutoRedact()" style="color:#b388ff;font-size:0.75rem;padding:8px 10px;cursor:pointer;">Auto</a>
+            <a onclick="redactZoomIn()" style="color:white;font-size:0.85rem;padding:8px 6px;cursor:pointer;opacity:0.5;">+</a>
+            <a onclick="redactZoomOut()" style="color:white;font-size:0.85rem;padding:8px 6px;cursor:pointer;opacity:0.5;">−</a>
+            <span id="redact-zoom-label" style="color:rgba(255,255,255,0.3);font-size:0.65rem;"></span>
             <div style="flex:1;"></div>
-            <button class="btn" onclick="postingRedactSkip()" style="padding:4px 12px;font-size:0.7rem;">Skip</button>
-            <button class="btn" onclick="postingRedactSave()" style="padding:4px 12px;font-size:0.7rem;background:var(--green);color:var(--bg-1);border-color:var(--green);font-weight:600;">Done</button>
+            <a onclick="postingRedactSkip()" style="color:rgba(255,255,255,0.5);font-size:0.75rem;padding:8px 10px;cursor:pointer;">Skip</a>
+            <a onclick="postingRedactSave()" style="color:#4ade80;font-size:0.8rem;padding:8px 10px;cursor:pointer;font-weight:600;">Done</a>
         </div>
         <div id="redact-canvas-wrapper" style="width:100%;height:${canvasH}px;overflow:hidden;position:relative;">
             <canvas id="posting-redact-canvas" style="cursor:crosshair;border:1px solid rgba(255,255,255,0.1);border-radius:4px;position:absolute;transform-origin:0 0;"></canvas>
@@ -2641,8 +2641,8 @@ function postingRedactRender() {
 }
 async function postingAutoRedact() {
     if (!_postingRedactFile) return;
-    const toolbar = document.querySelector('#posting-redact-modal > div:first-child span');
-    if (toolbar) toolbar.textContent = 'Detecting (may take 30s)...';
+    const autoBtn = document.querySelector('#posting-redact-modal > div:first-child a:nth-child(3)');
+    if (autoBtn) autoBtn.textContent = 'Detecting...';
     try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 90000);
@@ -2663,7 +2663,7 @@ async function postingAutoRedact() {
                 _postingRedactImg = img;
                 _postingRedactRects = [];
                 postingRedactRender();
-                if (toolbar) toolbar.textContent = count === '0' ? 'No serial found' : `${count} redacted`;
+                if (autoBtn) autoBtn.textContent = count === '0' ? 'No serial found' : `${count} redacted`;
             };
             img.onerror = function() {
                 if (toolbar) toolbar.textContent = 'Image load failed';
@@ -2672,7 +2672,7 @@ async function postingAutoRedact() {
         };
         rd.readAsDataURL(blob);
     } catch(e) {
-        if (toolbar) toolbar.textContent = e.name === 'AbortError' ? 'Timed out' : 'Failed';
+        if (autoBtn) autoBtn.textContent = e.name === 'AbortError' ? 'Timed out' : 'Failed';
     }
 }
 function postingRedactUndo() { _postingRedactRects.pop(); postingRedactRender(); }
