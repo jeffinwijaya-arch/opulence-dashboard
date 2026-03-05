@@ -2393,22 +2393,22 @@ function openPostingRedactEditor(file, row, desc) {
     const overlay = document.createElement('div');
     overlay.id = 'posting-redact-modal';
     const canvasH = window.innerHeight - 50;
-    overlay.style.cssText = 'position:fixed;inset:0;background:#000;z-index:10001;padding:8px;overflow:hidden;touch-action:none;';
+    overlay.style.cssText = 'position:fixed;inset:0;background:#000;z-index:10001;overflow:hidden;touch-action:none;display:flex;flex-direction:column;';
     document.body.style.overflow = 'hidden';
     overlay.innerHTML = `
-        <div style="display:flex;gap:2px;width:100%;align-items:center;height:44px;padding:0 8px;padding-top:max(0px,env(safe-area-inset-top));">
-            <a onclick="postingRedactUndo()" style="color:white;font-size:0.75rem;padding:8px 10px;cursor:pointer;opacity:0.7;">Undo</a>
-            <a onclick="postingRedactRotate()" style="color:white;font-size:0.75rem;padding:8px 10px;cursor:pointer;opacity:0.7;">Rotate</a>
-            <a onclick="postingAutoRedact()" style="color:#b388ff;font-size:0.75rem;padding:8px 10px;cursor:pointer;">Auto</a>
-            <a onclick="redactZoomIn()" style="color:white;font-size:0.85rem;padding:8px 6px;cursor:pointer;opacity:0.5;">+</a>
-            <a onclick="redactZoomOut()" style="color:white;font-size:0.85rem;padding:8px 6px;cursor:pointer;opacity:0.5;">−</a>
-            <span id="redact-zoom-label" style="color:rgba(255,255,255,0.3);font-size:0.65rem;"></span>
+        <div id="redact-toolbar" style="display:flex;align-items:center;padding:env(safe-area-inset-top,0) 12px 0 12px;flex-shrink:0;">
+            <a onclick="postingRedactUndo()" style="color:rgba(255,255,255,.7);font-size:13px;padding:10px 8px;cursor:pointer;">Undo</a>
+            <a onclick="postingRedactRotate()" style="color:rgba(255,255,255,.7);font-size:13px;padding:10px 8px;cursor:pointer;">Rotate</a>
+            <a onclick="postingAutoRedact()" style="color:#b388ff;font-size:13px;padding:10px 8px;cursor:pointer;">Auto</a>
             <div style="flex:1;"></div>
-            <a onclick="postingRedactSkip()" style="color:rgba(255,255,255,0.5);font-size:0.75rem;padding:8px 10px;cursor:pointer;">Skip</a>
-            <a onclick="postingRedactSave()" style="color:#4ade80;font-size:0.8rem;padding:8px 10px;cursor:pointer;font-weight:600;">Done</a>
+            <a onclick="redactZoomIn()" style="color:rgba(255,255,255,.4);font-size:16px;padding:10px 6px;cursor:pointer;">+</a>
+            <a onclick="redactZoomOut()" style="color:rgba(255,255,255,.4);font-size:16px;padding:10px 6px;cursor:pointer;">−</a>
+            <div style="flex:1;"></div>
+            <a onclick="postingRedactSkip()" style="color:rgba(255,255,255,.4);font-size:13px;padding:10px 8px;cursor:pointer;">Skip</a>
+            <a onclick="postingRedactSave()" style="color:#4ade80;font-size:14px;padding:10px 8px;cursor:pointer;font-weight:600;">Done</a>
         </div>
-        <div id="redact-canvas-wrapper" style="width:100%;height:${canvasH}px;overflow:hidden;position:relative;">
-            <canvas id="posting-redact-canvas" style="cursor:crosshair;border:1px solid rgba(255,255,255,0.1);border-radius:4px;position:absolute;transform-origin:0 0;"></canvas>
+        <div id="redact-canvas-wrapper" style="flex:1;overflow:hidden;position:relative;">
+            <canvas id="posting-redact-canvas" style="cursor:crosshair;position:absolute;transform-origin:0 0;"></canvas>
         </div>
     `;
     document.body.appendChild(overlay);
@@ -2420,8 +2420,9 @@ function openPostingRedactEditor(file, row, desc) {
     reader.onload = function(ev) {
         const img = new Image();
         img.onload = function() {
-            const maxW = window.innerWidth - 16;
-            const maxH = window.innerHeight - 58;
+            const wrapper = document.getElementById('redact-canvas-wrapper');
+            const maxW = wrapper.clientWidth;
+            const maxH = wrapper.clientHeight;
             const dpr = window.devicePixelRatio || 1;
             
             const scale = Math.min(maxW / img.width, maxH / img.height);
@@ -2534,6 +2535,13 @@ function openPostingRedactEditor(file, row, desc) {
             postingRedactRender();
         }
     };
+
+    // Re-fit canvas on orientation change
+    window._redactResizeHandler = function() {
+        if (!_postingRedactImg || !document.getElementById('posting-redact-modal')) return;
+        setTimeout(_redactRefit, 150);
+    };
+    window.addEventListener('resize', window._redactResizeHandler);
 }
 
 function _pinchDist(touches) {
@@ -2577,18 +2585,16 @@ function _redactClampPan() {
     _redactPanX = Math.max(-maxPanX, Math.min(maxPanX, _redactPanX));
     _redactPanY = Math.max(-maxPanY, Math.min(maxPanY, _redactPanY));
 }
-function postingRedactRotate() {
-    _redactRotation = (_redactRotation + 90) % 360;
-    _postingRedactRects = []; // Clear rects since coords change
-    // Recalculate canvas size for new orientation
+function _redactRefit() {
     const canvas = document.getElementById('posting-redact-canvas');
-    if (!canvas || !_postingRedactImg) return;
-    const maxW = window.innerWidth - 16;
-    const maxH = window.innerHeight - 58;
+    const wrapper = document.getElementById('redact-canvas-wrapper');
+    if (!canvas || !wrapper || !_postingRedactImg) return;
+    const maxW = wrapper.clientWidth;
+    const maxH = wrapper.clientHeight;
     const dpr = window.devicePixelRatio || 1;
-    const isRotated = _redactRotation === 90 || _redactRotation === 270;
-    const srcW = isRotated ? _postingRedactImg.naturalHeight : _postingRedactImg.naturalWidth;
-    const srcH = isRotated ? _postingRedactImg.naturalWidth : _postingRedactImg.naturalHeight;
+    const isRot = _redactRotation === 90 || _redactRotation === 270;
+    const srcW = isRot ? _postingRedactImg.naturalHeight : _postingRedactImg.naturalWidth;
+    const srcH = isRot ? _postingRedactImg.naturalWidth : _postingRedactImg.naturalHeight;
     const scale = Math.min(maxW / srcW, maxH / srcH);
     const cssW = Math.round(srcW * scale);
     const cssH = Math.round(srcH * scale);
@@ -2598,9 +2604,15 @@ function postingRedactRotate() {
     canvas.style.width = cssW + 'px';
     canvas.style.height = cssH + 'px';
     canvas.dataset.scale = scale;
+    canvas.dataset.dpr = dpr;
     _redactZoom = 1; _redactPanX = 0; _redactPanY = 0;
     postingRedactRender();
     _redactApplyTransform();
+}
+function postingRedactRotate() {
+    _redactRotation = (_redactRotation + 90) % 360;
+    _postingRedactRects = [];
+    _redactRefit();
 }
 function redactZoomIn() {
     _redactZoom = Math.min(8, _redactZoom * 1.5);
@@ -2679,6 +2691,7 @@ function postingRedactUndo() { _postingRedactRects.pop(); postingRedactRender();
 function postingRedactClear() { _postingRedactRects = []; postingRedactRender(); }
 
 function postingRedactSkip() {
+    if (window._redactResizeHandler) window.removeEventListener('resize', window._redactResizeHandler);
     document.getElementById('posting-redact-modal')?.remove();
     document.body.style.overflow = '';
     // Upload original file without redaction
@@ -2713,6 +2726,7 @@ async function postingRedactSave() {
     const blob = await new Promise(r => fullCanvas.toBlob(r, 'image/jpeg', 0.92));
     const redactedFile = new File([blob], (_postingRedactFile.name || 'photo').replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' });
 
+    if (window._redactResizeHandler) window.removeEventListener('resize', window._redactResizeHandler);
     document.getElementById('posting-redact-modal')?.remove();
     document.body.style.overflow = '';
     await doUploadPostingFile(redactedFile, _postingRedactRow, _postingRedactDesc);
