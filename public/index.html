@@ -2604,19 +2604,20 @@ function postingRedactRender() {
 async function postingAutoRedact() {
     if (!_postingRedactFile) return;
     const toolbar = document.querySelector('#posting-redact-modal > div:first-child span');
-    if (toolbar) toolbar.textContent = 'Detecting...';
+    if (toolbar) toolbar.textContent = 'Detecting (may take 30s)...';
     try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 90000);
         const fd = new FormData();
         fd.append('image', _postingRedactFile);
-        const resp = await fetch('/api/auto-redact', { method: 'POST', body: fd });
-        if (!resp.ok) throw new Error('Auto-redact failed');
+        const resp = await fetch('/api/auto-redact', { method: 'POST', body: fd, signal: controller.signal });
+        clearTimeout(timeout);
+        if (!resp.ok) throw new Error('Auto-redact failed: ' + resp.status);
         const blob = await resp.blob();
         const count = resp.headers.get('X-Redaction-Count') || '0';
         
-        // Replace the file with redacted version
         _postingRedactFile = new File([blob], _postingRedactFile.name, { type: 'image/jpeg' });
         
-        // Reload canvas with redacted image (DPR-aware, FileReader for iOS)
         const rd = new FileReader();
         rd.onload = function(ev2) {
             const img = new Image();
@@ -2624,13 +2625,16 @@ async function postingAutoRedact() {
                 _postingRedactImg = img;
                 _postingRedactRects = [];
                 postingRedactRender();
-                if (toolbar) toolbar.textContent = `${count} redacted`;
+                if (toolbar) toolbar.textContent = count === '0' ? 'No serial found' : `${count} redacted`;
+            };
+            img.onerror = function() {
+                if (toolbar) toolbar.textContent = 'Image load failed';
             };
             img.src = ev2.target.result;
         };
         rd.readAsDataURL(blob);
     } catch(e) {
-        if (toolbar) toolbar.textContent = '✕ Failed';
+        if (toolbar) toolbar.textContent = e.name === 'AbortError' ? 'Timed out' : 'Failed';
     }
 }
 function postingRedactUndo() { _postingRedactRects.pop(); postingRedactRender(); }
