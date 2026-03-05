@@ -2676,18 +2676,37 @@ function postingRedactSkip() {
 }
 
 async function postingRedactSave() {
-    // Render at full resolution
-    const fullCanvas = document.createElement('canvas');
-    fullCanvas.width = _postingRedactImg.naturalWidth;
-    fullCanvas.height = _postingRedactImg.naturalHeight;
-    const ctx = fullCanvas.getContext('2d');
-    ctx.drawImage(_postingRedactImg, 0, 0);
-
     const displayCanvas = document.getElementById('posting-redact-canvas');
     const scale = parseFloat(displayCanvas.dataset.scale) || 1;
-    ctx.fillStyle = 'black';
-    for (const r of _postingRedactRects) {
-        ctx.fillRect(r.x / scale, r.y / scale, r.w / scale, r.h / scale);
+    const rotated = displayCanvas.dataset.rotated === '1';
+    
+    // Render at full resolution, accounting for rotation
+    const fullCanvas = document.createElement('canvas');
+    const natW = _postingRedactImg.naturalWidth;
+    const natH = _postingRedactImg.naturalHeight;
+    
+    if (rotated) {
+        fullCanvas.width = natH;
+        fullCanvas.height = natW;
+        const ctx = fullCanvas.getContext('2d');
+        ctx.translate(natH, 0);
+        ctx.rotate(Math.PI / 2);
+        ctx.drawImage(_postingRedactImg, 0, 0);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        // Redaction rects are in rotated CSS coords — scale to full res
+        ctx.fillStyle = 'black';
+        for (const r of _postingRedactRects) {
+            ctx.fillRect(r.x / scale, r.y / scale, r.w / scale, r.h / scale);
+        }
+    } else {
+        fullCanvas.width = natW;
+        fullCanvas.height = natH;
+        const ctx = fullCanvas.getContext('2d');
+        ctx.drawImage(_postingRedactImg, 0, 0);
+        ctx.fillStyle = 'black';
+        for (const r of _postingRedactRects) {
+            ctx.fillRect(r.x / scale, r.y / scale, r.w / scale, r.h / scale);
+        }
     }
 
     const blob = await new Promise(r => fullCanvas.toBlob(r, 'image/jpeg', 0.92));
@@ -2695,7 +2714,7 @@ async function postingRedactSave() {
 
     document.getElementById('posting-redact-modal')?.remove();
     document.body.style.overflow = '';
-    doUploadPostingFile(redactedFile, _postingRedactRow, _postingRedactDesc);
+    await doUploadPostingFile(redactedFile, _postingRedactRow, _postingRedactDesc);
 }
 
 async function doUploadPostingFile(file, row, desc) {
