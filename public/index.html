@@ -863,8 +863,21 @@
                                 <input type="checkbox" id="ship-residential"> Residential
                             </label>
                             <label style="font-size:0.72rem;display:flex;align-items:center;gap:4px;cursor:pointer;">
-                                <input type="checkbox" id="ship-hal"> Hold at Location
+                                <input type="checkbox" id="ship-hal" onchange="toggleHalFields()"> Hold at Location
                             </label>
+                        </div>
+                        <div id="hal-fields" style="display:none;margin-top:6px;padding:8px;border:1px solid var(--border);border-radius:6px;">
+                            <div style="font-size:0.68rem;color:var(--text-2);margin-bottom:4px;">HAL Location Address</div>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                <div style="flex:1;min-width:140px;"><label style="font-size:0.65rem;color:var(--text-2);">Address</label>
+                                    <input class="input" id="hal-address" placeholder="FedEx location address" style="width:100%;margin-top:2px;"></div>
+                                <div style="flex:1;min-width:100px;"><label style="font-size:0.65rem;color:var(--text-2);">City</label>
+                                    <input class="input" id="hal-city" placeholder="City" style="width:100%;margin-top:2px;"></div>
+                                <div style="width:60px;"><label style="font-size:0.65rem;color:var(--text-2);">State</label>
+                                    <input class="input" id="hal-state" placeholder="ST" style="width:100%;margin-top:2px;"></div>
+                                <div style="width:70px;"><label style="font-size:0.65rem;color:var(--text-2);">ZIP</label>
+                                    <input class="input" id="hal-zip" placeholder="ZIP" style="width:100%;margin-top:2px;"></div>
+                            </div>
                         </div>
                         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
                             <button class="btn" onclick="clearShipForm()" style="opacity:0.6;">Clear</button>
@@ -5290,6 +5303,10 @@ function applyShipPreset() {
     document.getElementById('ship-residential').checked = p.residential || false;
 }
 
+function toggleHalFields() {
+    const hal = document.getElementById('ship-hal').checked;
+    document.getElementById('hal-fields').style.display = hal ? 'block' : 'none';
+}
 function clearShipForm(keepPreset) {
     if (!keepPreset) document.getElementById('ship-preset').value = '';
     ['ship-contact','ship-company','ship-address','ship-apt','ship-city','ship-state','ship-zip','ship-value','ship-phone'].forEach(id => {
@@ -5301,6 +5318,11 @@ function clearShipForm(keepPreset) {
     document.getElementById('ship-signature').value = 'Direct Signature';
     document.getElementById('ship-residential').checked = false;
     document.getElementById('ship-hal').checked = false;
+    document.getElementById('hal-fields').style.display = 'none';
+    document.getElementById('hal-address').value = '';
+    document.getElementById('hal-city').value = '';
+    document.getElementById('hal-state').value = '';
+    document.getElementById('hal-zip').value = '';
     document.getElementById('ship-status').style.display = 'none';
 }
 
@@ -5321,6 +5343,10 @@ async function submitShipLabel() {
         signature: g('ship-signature'),
         residential: document.getElementById('ship-residential')?.checked || false,
         hal: document.getElementById('ship-hal')?.checked || false,
+        hal_address: document.getElementById('hal-address')?.value || '',
+        hal_city: document.getElementById('hal-city')?.value || '',
+        hal_state: document.getElementById('hal-state')?.value || '',
+        hal_zip: document.getElementById('hal-zip')?.value || '',
         preset: document.getElementById('ship-preset')?.value || '',
     };
     
