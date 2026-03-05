@@ -2260,18 +2260,11 @@ function openPostingModal(item, photoCount) {
                 if (bracelet) url += `&bracelet=${encodeURIComponent(bracelet)}`;
                 const r = await fetch(url);
                 const d = await r.json();
-                if (!d.photos?.length) {
-                    // Try broader: ref+dial only (no bracelet), then ref only
-                    if (bracelet && dial) {
-                        const r2 = await fetch(`/api/watch-photos/search-library?ref=${encodeURIComponent(ref)}&dial=${encodeURIComponent(dial)}&limit=12`);
-                        const d2 = await r2.json();
-                        if (d2.photos?.length) d.photos = d2.photos;
-                    }
-                    if (!d.photos?.length && (dial || bracelet)) {
-                        const r3 = await fetch(`/api/watch-photos/search-library?ref=${encodeURIComponent(ref)}&limit=12`);
-                        const d3 = await r3.json();
-                        if (d3.photos?.length) d.photos = d3.photos;
-                    }
+                if (!d.photos?.length && bracelet && dial) {
+                    // Fallback: ref+dial without bracelet
+                    const r2 = await fetch(`/api/watch-photos/search-library?ref=${encodeURIComponent(ref)}&dial=${encodeURIComponent(dial)}&limit=12`);
+                    const d2 = await r2.json();
+                    if (d2.photos?.length) d.photos = d2.photos;
                 }
                 if (!d.photos?.length) { sugDiv.innerHTML = ''; return; }
                 sugDiv.innerHTML = `
