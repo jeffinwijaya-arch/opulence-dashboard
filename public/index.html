@@ -2396,17 +2396,15 @@ function openPostingRedactEditor(file, row, desc) {
     overlay.style.cssText = 'position:fixed;inset:0;background:#000;z-index:10001;padding:8px;overflow:hidden;touch-action:none;';
     document.body.style.overflow = 'hidden';
     overlay.innerHTML = `
-        <div style="display:flex;gap:4px;width:100%;align-items:center;margin-bottom:4px;height:34px;">
-            <span style="color:white;font-size:0.75rem;font-weight:600;">Redact</span>
-            <button class="btn" onclick="postingRedactUndo()" style="padding:2px 8px;font-size:0.65rem;">↩</button>
-            <button class="btn" onclick="postingRedactClear()" style="padding:2px 8px;font-size:0.65rem;">✕</button>
-            <button class="btn" onclick="postingAutoRedact()" style="padding:2px 8px;font-size:0.65rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">Auto</button>
-            <button class="btn" onclick="redactZoomIn()" style="padding:2px 8px;font-size:0.65rem;">+</button>
-            <button class="btn" onclick="redactZoomOut()" style="padding:2px 8px;font-size:0.65rem;">-</button>
-            <span id="redact-zoom-label" style="color:rgba(255,255,255,0.5);font-size:0.6rem;min-width:28px;text-align:center;">1x</span>
+        <div style="display:flex;gap:6px;width:100%;align-items:center;margin-bottom:4px;height:40px;padding:0 4px;">
+            <button class="btn" onclick="postingRedactUndo()" style="padding:4px 10px;font-size:0.7rem;">Undo</button>
+            <button class="btn" onclick="postingAutoRedact()" style="padding:4px 10px;font-size:0.7rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">Auto</button>
+            <button class="btn" onclick="redactZoomIn()" style="padding:4px 8px;font-size:0.7rem;">+</button>
+            <button class="btn" onclick="redactZoomOut()" style="padding:4px 8px;font-size:0.7rem;">−</button>
+            <span id="redact-zoom-label" style="color:rgba(255,255,255,0.4);font-size:0.65rem;min-width:24px;text-align:center;">1x</span>
             <div style="flex:1;"></div>
-            <button class="btn" onclick="postingRedactSkip()" style="padding:2px 8px;font-size:0.65rem;">Skip →</button>
-            <button class="btn" onclick="postingRedactSave()" style="padding:2px 8px;font-size:0.65rem;background:var(--green-dim);color:var(--green);border-color:var(--green);">Done</button>
+            <button class="btn" onclick="postingRedactSkip()" style="padding:4px 12px;font-size:0.7rem;">Skip</button>
+            <button class="btn" onclick="postingRedactSave()" style="padding:4px 12px;font-size:0.7rem;background:var(--green);color:var(--bg-1);border-color:var(--green);font-weight:600;">Done</button>
         </div>
         <div id="redact-canvas-wrapper" style="width:100%;height:${canvasH}px;overflow:hidden;position:relative;">
             <canvas id="posting-redact-canvas" style="cursor:crosshair;border:1px solid rgba(255,255,255,0.1);border-radius:4px;position:absolute;transform-origin:0 0;"></canvas>
@@ -2425,18 +2423,9 @@ function openPostingRedactEditor(file, row, desc) {
             const maxH = window.innerHeight - 58;
             const dpr = window.devicePixelRatio || 1;
             
-            // Auto-rotate landscape watch photos to portrait
-            const needsRotate = img.width > img.height * 1.2;
-            let drawW, drawH;
-            if (needsRotate) {
-                drawW = img.height; drawH = img.width;
-            } else {
-                drawW = img.width; drawH = img.height;
-            }
-            
-            const scale = Math.min(maxW / drawW, maxH / drawH);
-            const cssW = Math.round(drawW * scale);
-            const cssH = Math.round(drawH * scale);
+            const scale = Math.min(maxW / img.width, maxH / img.height);
+            const cssW = Math.round(img.width * scale);
+            const cssH = Math.round(img.height * scale);
             _redactBaseW = cssW; _redactBaseH = cssH;
             canvas.width = Math.round(cssW * dpr);
             canvas.height = Math.round(cssH * dpr);
@@ -2444,17 +2433,8 @@ function openPostingRedactEditor(file, row, desc) {
             canvas.style.height = cssH + 'px';
             canvas.dataset.scale = scale;
             canvas.dataset.dpr = dpr;
-            canvas.dataset.rotated = needsRotate ? '1' : '0';
             ctx.scale(dpr, dpr);
-            
-            if (needsRotate) {
-                ctx.translate(cssW, 0);
-                ctx.rotate(Math.PI / 2);
-                ctx.drawImage(img, 0, 0, cssH, cssW);
-                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-            } else {
-                ctx.drawImage(img, 0, 0, cssW, cssH);
-            }
+            ctx.drawImage(img, 0, 0, cssW, cssH);
             _postingRedactImg = img;
             _redactApplyTransform();
         };
@@ -2615,17 +2595,8 @@ function postingRedactRender() {
     const dpr = parseFloat(canvas.dataset.dpr) || 1;
     const cssW = parseFloat(canvas.style.width);
     const cssH = parseFloat(canvas.style.height);
-    const rotated = canvas.dataset.rotated === '1';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    if (rotated) {
-        ctx.save();
-        ctx.translate(cssW, 0);
-        ctx.rotate(Math.PI / 2);
-        ctx.drawImage(_postingRedactImg, 0, 0, cssH, cssW);
-        ctx.restore();
-    } else {
-        ctx.drawImage(_postingRedactImg, 0, 0, cssW, cssH);
-    }
+    ctx.drawImage(_postingRedactImg, 0, 0, cssW, cssH);
     ctx.fillStyle = 'black';
     for (const r of _postingRedactRects) ctx.fillRect(r.x, r.y, r.w, r.h);
 }
@@ -2678,35 +2649,15 @@ function postingRedactSkip() {
 async function postingRedactSave() {
     const displayCanvas = document.getElementById('posting-redact-canvas');
     const scale = parseFloat(displayCanvas.dataset.scale) || 1;
-    const rotated = displayCanvas.dataset.rotated === '1';
     
-    // Render at full resolution, accounting for rotation
     const fullCanvas = document.createElement('canvas');
-    const natW = _postingRedactImg.naturalWidth;
-    const natH = _postingRedactImg.naturalHeight;
-    
-    if (rotated) {
-        fullCanvas.width = natH;
-        fullCanvas.height = natW;
-        const ctx = fullCanvas.getContext('2d');
-        ctx.translate(natH, 0);
-        ctx.rotate(Math.PI / 2);
-        ctx.drawImage(_postingRedactImg, 0, 0);
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        // Redaction rects are in rotated CSS coords — scale to full res
-        ctx.fillStyle = 'black';
-        for (const r of _postingRedactRects) {
-            ctx.fillRect(r.x / scale, r.y / scale, r.w / scale, r.h / scale);
-        }
-    } else {
-        fullCanvas.width = natW;
-        fullCanvas.height = natH;
-        const ctx = fullCanvas.getContext('2d');
-        ctx.drawImage(_postingRedactImg, 0, 0);
-        ctx.fillStyle = 'black';
-        for (const r of _postingRedactRects) {
-            ctx.fillRect(r.x / scale, r.y / scale, r.w / scale, r.h / scale);
-        }
+    fullCanvas.width = _postingRedactImg.naturalWidth;
+    fullCanvas.height = _postingRedactImg.naturalHeight;
+    const ctx = fullCanvas.getContext('2d');
+    ctx.drawImage(_postingRedactImg, 0, 0);
+    ctx.fillStyle = 'black';
+    for (const r of _postingRedactRects) {
+        ctx.fillRect(r.x / scale, r.y / scale, r.w / scale, r.h / scale);
     }
 
     const blob = await new Promise(r => fullCanvas.toBlob(r, 'image/jpeg', 0.92));
