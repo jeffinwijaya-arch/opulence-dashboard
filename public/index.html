@@ -2124,6 +2124,7 @@ function openPostingModal(item, photoCount) {
                 </div>
             </div>
             <input type="file" id="posting-upload" accept="image/*,.heic,.heif" multiple style="display:none" onchange="handlePostingUpload(${item.row}, '${item.description?.replace(/'/g,"\\'")||''}')"/>
+            <div id="posting-library-suggestions" style="margin-top:8px;"></div>
         </div>`;
 
     overlay.innerHTML = `<div style="background:var(--bg-1);border:1px solid var(--border-strong);border-radius:var(--radius-lg);max-width:520px;width:90%;padding:20px;font-family:var(--font);">
@@ -2248,6 +2249,42 @@ function openPostingModal(item, photoCount) {
         loadPostingPhotoPreviews(item.row);
     }
 
+    // Search library for matching photos
+    if (ref) {
+        (async () => {
+            const sugDiv = document.getElementById('posting-library-suggestions');
+            if (!sugDiv) return;
+            try {
+                let url = `/api/watch-photos/search-library?ref=${encodeURIComponent(ref)}&limit=12`;
+                if (dial) url += `&dial=${encodeURIComponent(dial)}`;
+                const r = await fetch(url);
+                const d = await r.json();
+                if (!d.photos?.length) {
+                    // Try broader search without dial
+                    if (dial) {
+                        const r2 = await fetch(`/api/watch-photos/search-library?ref=${encodeURIComponent(ref)}&limit=12`);
+                        const d2 = await r2.json();
+                        if (d2.photos?.length) {
+                            d.photos = d2.photos;
+                        }
+                    }
+                }
+                if (!d.photos?.length) { sugDiv.innerHTML = ''; return; }
+                sugDiv.innerHTML = `
+                    <div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">📸 Library matches (tap to use)</div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;max-height:160px;overflow-y:auto;">
+                        ${d.photos.map(p => `
+                            <div style="position:relative;cursor:pointer;" onclick="useLibraryPhoto('${p.id}', '${p.url}', ${item.row}, '${(item.description||'').replace(/'/g,"\\'")}')">
+                                <img src="${p.url}" style="width:70px;height:70px;object-fit:cover;border-radius:4px;border:1px solid var(--border);" />
+                                <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);color:white;font-size:0.5rem;padding:1px 3px;border-radius:0 0 4px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.dial||p.ref}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } catch(e) { sugDiv.innerHTML = ''; }
+        })();
+    }
+
     // Setup drag-and-drop on the photo area
     const dropZone = document.getElementById('posting-photo-preview');
     if (dropZone) {
@@ -2276,6 +2313,27 @@ async function loadPostingPhotoPreviews(row) {
             </div>`
         ).join('');
     } catch(e) { console.error(e); }
+}
+
+async function useLibraryPhoto(photoId, url, row, desc) {
+    // Fetch the library image, then open redact editor
+    try {
+        const r = await fetch(url);
+        const blob = await r.blob();
+        const file = new File([blob], `library_${photoId}.jpg`, { type: 'image/jpeg' });
+        openPostingRedactEditor(file, row, desc);
+        // Wait for redact modal to close
+        await new Promise(resolve => {
+            const check = setInterval(() => {
+                if (!document.getElementById('posting-redact-modal')) {
+                    clearInterval(check);
+                    resolve();
+                }
+            }, 200);
+        });
+        await new Promise(r => setTimeout(r, 500));
+        await loadPostingPhotoPreviews(row);
+    } catch(e) { alert('Error loading library photo: ' + e.message); }
 }
 
 function handlePostingUpload(row, desc) {
