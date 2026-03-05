@@ -573,7 +573,7 @@
             <a data-page="alerts" onclick="showPage('alerts')">Alerts <span class="badge" id="alerts-count">0</span></a>
             <a data-page="analytics" onclick="showPage('analytics')">Analytics</a>
         </nav>
-        <div class="theme-toggle" onclick="toggleTheme()" id="themeToggle" title="Toggle light/dark mode">🌙</div>
+        <div class="theme-toggle" onclick="toggleTheme()" id="themeToggle" title="Toggle light/dark mode"></div>
     </header>
 
     <!-- TICKER -->
@@ -623,7 +623,7 @@
 
             <!-- FX Calculator -->
             <div class="card" style="margin-top:8px;margin-bottom:12px;">
-                <div class="card-head"><span>💱 FX Calculator</span><span style="font-size:0.6rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px;">Wise mid-market + fees</span></div>
+                <div class="card-head"><span> FX Calculator</span><span style="font-size:0.6rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px;">Wise mid-market + fees</span></div>
                 <div style="padding:10px;">
                     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
                         <input class="input" id="fx-amount" type="number" value="10000" style="width:120px;font-size:0.95rem;" oninput="fxCalc()">
@@ -1183,7 +1183,7 @@
         <!-- ═══ PHOTOS ═══ -->
         <div class="page" id="page-photos">
             <div class="page-head">
-                <h1>📸 Watch Photo Library</h1>
+                <h1>Watch Photo Library</h1>
                 <p>49 processed watch photos — serial numbers redacted, fully cataloged</p>
             </div>
 
@@ -1226,7 +1226,7 @@
                         <option value="BNIB">BNIB</option>
                         <option value="Pre-owned">Pre-owned</option>
                     </select>
-                    <button class="btn" onclick="showPhotoStats()" style="padding:0 16px;">📊 Stats</button>
+                    <button class="btn" onclick="showPhotoStats()" style="padding:0 16px;">Stats</button>
                 </div>
             </div>
 
@@ -1263,13 +1263,13 @@
                     <!-- Toolbar (single compact row) -->
                     <div id="editor-toolbar" style="display:flex;gap:4px;margin-bottom:4px;flex-wrap:wrap;align-items:center;flex-shrink:0;">
                         <button class="btn" onclick="setEditorTool('redact')" id="btn-redact" style="padding:2px 8px;font-size:0.65rem;background:var(--red-dim);color:var(--red);border-color:var(--red);">■ Redact</button>
-                        <button class="btn" onclick="setEditorTool('view')" id="btn-view" style="padding:2px 8px;font-size:0.65rem;">👁 View</button>
-                        <button class="btn" onclick="autoRedactPhoto()" id="btn-auto-redact" style="padding:2px 8px;font-size:0.65rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">🤖 Auto</button>
+                        <button class="btn" onclick="setEditorTool('view')" id="btn-view" style="padding:2px 8px;font-size:0.65rem;"> View</button>
+                        <button class="btn" onclick="autoRedactPhoto()" id="btn-auto-redact" style="padding:2px 8px;font-size:0.65rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">Auto</button>
                         <button class="btn" onclick="undoRedaction()" style="padding:2px 8px;font-size:0.65rem;">↩</button>
                         <button class="btn" onclick="clearRedactions()" style="padding:2px 8px;font-size:0.65rem;">✕</button>
-                        <button class="btn" onclick="saveRedactedPhoto()" style="padding:2px 8px;font-size:0.65rem;background:var(--green-dim);color:var(--green);border-color:var(--green);">💾 Save</button>
+                        <button class="btn" onclick="saveRedactedPhoto()" style="padding:2px 8px;font-size:0.65rem;background:var(--green-dim);color:var(--green);border-color:var(--green);"> Save</button>
                         <div style="flex:1;"></div>
-                        <button class="btn" onclick="confirmDeletePhoto()" style="padding:2px 8px;font-size:0.65rem;background:var(--red-dim);color:var(--red);border-color:var(--red);">🗑</button>
+                        <button class="btn" onclick="confirmDeletePhoto()" style="padding:2px 8px;font-size:0.65rem;background:var(--red-dim);color:var(--red);border-color:var(--red);"></button>
                     </div>
                     <!-- Canvas area (takes most space) -->
                     <div style="flex:1;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;min-height:0;">
@@ -1407,7 +1407,7 @@ function toggleTheme() {
     const isLight = html.classList.toggle('light');
     localStorage.setItem('mk-theme', isLight ? 'light' : 'dark');
     const btn = document.getElementById('themeToggle');
-    if (btn) btn.textContent = isLight ? '☀️' : '🌙';
+    if (btn) btn.textContent = isLight ? '' : '';
 }
 // Apply saved theme on load
 (function() {
@@ -1418,7 +1418,7 @@ function toggleTheme() {
     // Update button after DOM ready
     document.addEventListener('DOMContentLoaded', function() {
         const btn = document.getElementById('themeToggle');
-        if (btn) btn.textContent = document.documentElement.classList.contains('light') ? '☀️' : '🌙';
+        if (btn) btn.textContent = document.documentElement.classList.contains('light') ? '' : '';
     });
 })();
 
@@ -1785,7 +1785,7 @@ function openPaymentModal(item) {
         </div>
         <div style="display:flex;gap:8px;">
             <button class="btn" onclick="confirmMarkPaid(${item.row})" style="flex:1;background:var(--green);color:var(--bg-1);padding:10px;font-weight:600;">
-                ✅ Mark Paid
+                Mark Paid
             </button>
             <button class="btn" onclick="document.getElementById('payment-modal').remove()" style="flex:1;padding:10px;opacity:0.7;">
                 Cancel
@@ -1806,7 +1806,7 @@ async function confirmMarkPaid(row) {
         const d = await r.json();
         if (d.ok) {
             if (modal) modal.innerHTML = `<div style="background:var(--bg-1);border:1px solid var(--green);border-radius:var(--radius-lg);max-width:400px;width:90%;padding:20px;text-align:center;font-family:var(--font);">
-                <div style="font-size:1.5rem;margin-bottom:8px;">✅</div>
+                <div style="font-size:1.2rem;margin-bottom:8px;color:var(--green);font-weight:700;">Done</div>
                 <div style="color:var(--green);font-weight:600;">Marked as Paid</div>
             </div>`;
             setTimeout(() => { if (modal) modal.remove(); loadData(); }, 1500);
@@ -1906,7 +1906,7 @@ function showShipForm(type, row) {
                 ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='var(--bg-hover)';"
                 ondragleave="this.style.borderColor='var(--border-strong)';this.style.background='var(--bg-2)';"
                 ondrop="event.preventDefault();this.style.borderColor='var(--border-strong)';this.style.background='var(--bg-2)';const f=event.dataTransfer.files;if(f.length){const dt=new DataTransfer();dt.items.add(f[0]);document.getElementById('ship-label-upload').files=dt.files;handleLabelUpload(document.getElementById('ship-label-upload'));}">
-                <div style="color:var(--text-2);font-size:0.72rem;">📄 Drag & drop label PDF here or click to browse<br><span style="font-size:0.65rem;opacity:0.7;">Tracking will be extracted automatically</span></div>
+                <div style="color:var(--text-2);font-size:0.72rem;"> Drag & drop label PDF here or click to browse<br><span style="font-size:0.65rem;opacity:0.7;">Tracking will be extracted automatically</span></div>
             </div>
             <input type="file" id="ship-label-upload" accept=".pdf,image/*" style="display:none" onchange="handleLabelUpload(this)" />
             <div id="ship-tracking-section" style="margin-bottom:10px;">
@@ -1935,12 +1935,12 @@ async function handleLabelUpload(input) {
     if (!preview || !input.files?.length) return;
     const file = input.files[0];
 
-    preview.innerHTML = `<div style="color:var(--green);font-size:0.72rem;">✅ ${file.name} (${(file.size/1024).toFixed(0)} KB)</div>
-        <button onclick="document.getElementById('ship-label-upload').value='';document.getElementById('ship-label-preview').innerHTML='<div style=\\'color:var(--text-2);font-size:0.72rem;\\'>📄 Click to upload label PDF — tracking will be extracted automatically</div>';document.getElementById('ship-tracking').value='';document.getElementById('ship-tracking-status').textContent='';" style="background:none;border:none;color:var(--red);font-size:0.65rem;cursor:pointer;margin-top:4px;">Remove</button>`;
+    preview.innerHTML = `<div style="color:var(--green);font-size:0.72rem;">${file.name} (${(file.size/1024).toFixed(0)} KB)</div>
+        <button onclick="document.getElementById('ship-label-upload').value='';document.getElementById('ship-label-preview').innerHTML='<div style=\\'color:var(--text-2);font-size:0.72rem;\\'> Click to upload label PDF — tracking will be extracted automatically</div>';document.getElementById('ship-tracking').value='';document.getElementById('ship-tracking-status').textContent='';" style="background:none;border:none;color:var(--red);font-size:0.65rem;cursor:pointer;margin-top:4px;">Remove</button>`;
 
     // Auto-extract tracking from PDF
     if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
-        if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent);">⏳ Extracting tracking number...</span>';
+        if (statusEl) statusEl.innerHTML = '<span style="color:var(--accent);"> Extracting tracking number...</span>';
         try {
             const fd = new FormData();
             fd.append('label', file);
@@ -1948,7 +1948,7 @@ async function handleLabelUpload(input) {
             const result = await r.json();
             if (result.ok && result.tracking) {
                 if (trackingInput) trackingInput.value = result.tracking;
-                if (statusEl) statusEl.innerHTML = `<span style="color:var(--green);">✅ Tracking extracted: ${result.tracking}</span>`;
+                if (statusEl) statusEl.innerHTML = `<span style="color:var(--green);">Tracking extracted: ${result.tracking}</span>`;
             } else {
                 if (statusEl) statusEl.innerHTML = '<span style="color:var(--text-2);">Could not extract tracking — enter manually</span>';
             }
@@ -2268,7 +2268,7 @@ function openPostingModal(item, photoCount) {
                 }
                 if (!d.photos?.length) { sugDiv.innerHTML = ''; return; }
                 sugDiv.innerHTML = `
-                    <div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">📸 Library matches (tap to use)</div>
+                    <div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Library matches (tap to use)</div>
                     <div style="display:flex;gap:6px;flex-wrap:wrap;max-height:160px;overflow-y:auto;">
                         ${d.photos.map(p => `
                             <div style="position:relative;cursor:pointer;" onclick="useLibraryPhoto('${p.id}', '${p.url}', ${item.row}, '${(item.description||'').replace(/'/g,"\\'")}')">
@@ -2397,16 +2397,16 @@ function openPostingRedactEditor(file, row, desc) {
     document.body.style.overflow = 'hidden';
     overlay.innerHTML = `
         <div style="display:flex;gap:4px;width:100%;align-items:center;margin-bottom:4px;height:34px;">
-            <span style="color:white;font-size:0.75rem;font-weight:600;">✏️ Redact</span>
+            <span style="color:white;font-size:0.75rem;font-weight:600;">Redact</span>
             <button class="btn" onclick="postingRedactUndo()" style="padding:2px 8px;font-size:0.65rem;">↩</button>
             <button class="btn" onclick="postingRedactClear()" style="padding:2px 8px;font-size:0.65rem;">✕</button>
-            <button class="btn" onclick="postingAutoRedact()" style="padding:2px 8px;font-size:0.65rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">🤖 Auto</button>
-            <button class="btn" onclick="redactZoomIn()" style="padding:2px 8px;font-size:0.65rem;">🔍+</button>
-            <button class="btn" onclick="redactZoomOut()" style="padding:2px 8px;font-size:0.65rem;">🔍−</button>
+            <button class="btn" onclick="postingAutoRedact()" style="padding:2px 8px;font-size:0.65rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">Auto</button>
+            <button class="btn" onclick="redactZoomIn()" style="padding:2px 8px;font-size:0.65rem;">+</button>
+            <button class="btn" onclick="redactZoomOut()" style="padding:2px 8px;font-size:0.65rem;">-</button>
             <span id="redact-zoom-label" style="color:rgba(255,255,255,0.5);font-size:0.6rem;min-width:28px;text-align:center;">1x</span>
             <div style="flex:1;"></div>
             <button class="btn" onclick="postingRedactSkip()" style="padding:2px 8px;font-size:0.65rem;">Skip →</button>
-            <button class="btn" onclick="postingRedactSave()" style="padding:2px 8px;font-size:0.65rem;background:var(--green-dim);color:var(--green);border-color:var(--green);">✓ Done</button>
+            <button class="btn" onclick="postingRedactSave()" style="padding:2px 8px;font-size:0.65rem;background:var(--green-dim);color:var(--green);border-color:var(--green);">Done</button>
         </div>
         <div id="redact-canvas-wrapper" style="width:100%;height:${canvasH}px;overflow:hidden;position:relative;">
             <canvas id="posting-redact-canvas" style="cursor:crosshair;border:1px solid rgba(255,255,255,0.1);border-radius:4px;position:absolute;transform-origin:0 0;"></canvas>
@@ -2604,7 +2604,7 @@ function postingRedactRender() {
 async function postingAutoRedact() {
     if (!_postingRedactFile) return;
     const toolbar = document.querySelector('#posting-redact-modal > div:first-child span');
-    if (toolbar) toolbar.textContent = '🔍 Detecting...';
+    if (toolbar) toolbar.textContent = 'Detecting...';
     try {
         const fd = new FormData();
         fd.append('image', _postingRedactFile);
@@ -2624,7 +2624,7 @@ async function postingAutoRedact() {
                 _postingRedactImg = img;
                 _postingRedactRects = [];
                 postingRedactRender();
-                if (toolbar) toolbar.textContent = `✅ ${count} redacted`;
+                if (toolbar) toolbar.textContent = `${count} redacted`;
             };
             img.src = ev2.target.result;
         };
@@ -3108,15 +3108,15 @@ function expandCheapest() {
     var all = window._cheapestAll;
     var html = all.map(function(l,i) {
         var srcText = String(l.source_text||'').replace(/\+?\s*label\s+gambar tidak disertakan/gi,'').replace(/gambar tidak disertakan/gi,'').replace(/\(file terlampir\)/gi,'').trim().split('<').join('&lt;').split('>').join('&gt;');
-        var phone = l.phone ? ' · 📱 '+l.phone : '';
+        var phone = l.phone ? ' ·  '+l.phone : '';
         var ts = l.ts || '';
         var card = '<div class="listing-card">';
         card += '<div style="display:flex;justify-content:space-between;align-items:center;">';
         card += '<span style="font-family:var(--mono);font-weight:700;color:var(--green)">'+fmt(l.price_usd||l.price)+'</span>';
         card += '<span><span class="tag '+condTag(l.condition)+'">'+(l.condition||'\u2014')+'</span> '+regionLabel(l.region)+'</span>';
         card += '</div>';
-        card += '<div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">'+(l.dial||'')+' '+(l.bracelet||'')+' '+(l.year?'('+l.year+')':'')+' · '+(l.completeness||'')+' · 👤 '+(l.seller||'?')+phone+' · 📍 '+(l.group||'?')+'</div>';
-        if(ts) card += '<div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">🕐 '+ts+'</div>';
+        card += '<div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">'+(l.dial||'')+' '+(l.bracelet||'')+' '+(l.year?'('+l.year+')':'')+' · '+(l.completeness||'')+' ·  '+(l.seller||'?')+phone+' ·  '+(l.group||'?')+'</div>';
+        if(ts) card += '<div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;"> '+ts+'</div>';
         if(srcText) card += '<div style="font-size:0.70rem;color:var(--text-1);margin-top:4px;padding:6px 8px;background:rgba(255,255,255,0.04);border-radius:4px;border-left:2px solid var(--accent);font-family:var(--mono);white-space:pre-wrap;word-break:break-all;line-height:1.4;">'+srcText+'</div>';
         card += '</div>';
         return card;
@@ -3165,15 +3165,15 @@ async function doLookup() {
         const _allListingsData = window._cheapestAll;
         const cheapest = _allListingsData.slice(0,10).map((l,i)=>{
             const srcText = String(l.source_text||'').replace(/\+?\s*label\s+gambar tidak disertakan/gi,'').replace(/gambar tidak disertakan/gi,'').replace(/\(file terlampir\)/gi,'').trim().split('<').join('&lt;').split('>').join('&gt;');
-            const phone = l.phone ? ' · 📱 '+l.phone : '';
+            const phone = l.phone ? ' ·  '+l.phone : '';
             const ts = l.ts || '';
             let card = '<div class="listing-card">';
             card += '<div style="display:flex;justify-content:space-between;align-items:center;">';
             card += '<span style="font-family:var(--mono);font-weight:700;color:var(--green)">'+fmt(l.price_usd||l.price)+'</span>';
             card += '<span><span class="tag '+condTag(l.condition)+'">'+(l.condition||'\u2014')+'</span> '+regionLabel(l.region)+'</span>';
             card += '</div>';
-            card += '<div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">'+(l.dial||'')+' '+(l.bracelet||'')+' '+(l.year?'('+l.year+')':'')+' · '+(l.completeness||'')+' · 👤 '+(l.seller||'?')+phone+' · 📍 '+(l.group||'?')+'</div>';
-            if(ts) card += '<div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">🕐 '+ts+'</div>';
+            card += '<div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">'+(l.dial||'')+' '+(l.bracelet||'')+' '+(l.year?'('+l.year+')':'')+' · '+(l.completeness||'')+' ·  '+(l.seller||'?')+phone+' ·  '+(l.group||'?')+'</div>';
+            if(ts) card += '<div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;"> '+ts+'</div>';
             if(srcText) card += '<div style="font-size:0.70rem;color:var(--text-1);margin-top:4px;padding:6px 8px;background:rgba(255,255,255,0.04);border-radius:4px;border-left:2px solid var(--accent);font-family:var(--mono);white-space:pre-wrap;word-break:break-all;line-height:1.4;">'+srcText+'</div>';
             card += '</div>';
             return card;
@@ -5425,12 +5425,12 @@ async function loadShippedHistory() {
         // Sort by shipped_at desc
         entries.sort((a, b) => (b.shipped_at || '').localeCompare(a.shipped_at || ''));
 
-        const typeIcons = { fedex: '📦', external: '🏷️', local: '🚗', unknown: '📤' };
+        const typeIcons = { fedex: '▸', external: '▸', local: '▸', unknown: '▸' };
         const typeLabels = { fedex: 'FedEx Label', external: 'External Label', local: 'Local Delivery', unknown: 'Shipped' };
 
         el.innerHTML = entries.map(e => `
             <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;font-size:0.75rem;">
-                <span style="font-size:1rem;">${typeIcons[e.type] || '📤'}</span>
+                <span style="font-size:1rem;">${typeIcons[e.type] || '▸'}</span>
                 <div style="flex:1;min-width:0;">
                     <div style="font-family:var(--mono);font-weight:600;color:var(--text-0);">${e.ref} ${e.dial}</div>
                     <div style="color:var(--text-2);font-size:0.68rem;">
@@ -6129,7 +6129,7 @@ document.addEventListener('DOMContentLoaded', () => setTimeout(initPopouts, 500)
 })();
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 🔍 WATCH DETAIL OVERLAY
+//  WATCH DETAIL OVERLAY
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function showWatchDetail(row) {
@@ -6227,7 +6227,7 @@ function closeWatchDetail() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 🚀 NEW FEATURE FUNCTIONS (global scope for showPage access)
+//  NEW FEATURE FUNCTIONS (global scope for showPage access)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // ── Payments & Collections ──
@@ -6381,16 +6381,16 @@ async function loadPayments() {
         const gallery = document.getElementById('photo-gallery');
         
         if (photos.length === 0) {
-            gallery.innerHTML = '<div style="color:var(--text-2);grid-column:1/-1;text-align:center;padding:40px;"><div style="font-size:1.5rem;margin-bottom:8px;">📷</div>No photos yet — upload some or send watch photos via Telegram DM</div>';
+            gallery.innerHTML = '<div style="color:var(--text-2);grid-column:1/-1;text-align:center;padding:40px;"><div style="font-size:1.5rem;margin-bottom:8px;"></div>No photos yet — upload some or send watch photos via Telegram DM</div>';
             return;
         }
         
-        const catIcons = {posting:'📋',arrival:'📦',warranty:'🏷️',shipping:'📬',general:'📁'};
+        const catIcons = {posting:'▸',arrival:'▸',warranty:'▸',shipping:'▸',general:'▸'};
         const catColors = {posting:'var(--accent)',arrival:'var(--blue)',warranty:'var(--green)',shipping:'var(--orange)',general:'var(--text-2)'};
         
         let html = '';
         photos.forEach(photo => {
-            const icon = catIcons[photo.category] || '📁';
+            const icon = catIcons[photo.category] || '▸';
             const color = catColors[photo.category] || 'var(--text-2)';
             const imgUrl = '/api/photos/'+photo.id+'/serve?thumb=true';
             const dial = photo.dial || '';
@@ -6531,7 +6531,7 @@ async function loadPayments() {
                         <div style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,0.7);padding:2px 6px;border-radius:3px;font-size:0.6rem;color:white;font-weight:600;">${condition}</div>
                         <img src="/api/watch-photos/${watch.watch_id}/image" 
                              style="width:100%;height:100%;object-fit:cover;transition:transform 0.2s ease;" 
-                             onerror="this.style.display='none'; this.parentElement.insertAdjacentHTML('beforeend', '<div style=\\'display:flex;align-items:center;justify-content:center;position:absolute;top:0;left:0;width:100%;height:100%;color:var(--text-2);font-size:0.8rem;\\'>📸 ${model}</div>')"
+                             onerror="this.style.display='none'; this.parentElement.insertAdjacentHTML('beforeend', '<div style=\\'display:flex;align-items:center;justify-content:center;position:absolute;top:0;left:0;width:100%;height:100%;color:var(--text-2);font-size:0.8rem;\\'>Photo: ${model}</div>')"
                              onmouseover="this.style.transform='scale(1.05)'"
                              onmouseout="this.style.transform='scale(1)'"
                              loading="lazy">
@@ -6673,7 +6673,7 @@ async function loadPayments() {
         }
 
         if (warnings.length > 0) {
-            warnEl.innerHTML = '⚠️ ' + warnings.join('<br>⚠️ ');
+            warnEl.innerHTML = '' + warnings.join('<br>');
             warnEl.style.display = 'block';
         } else {
             warnEl.style.display = 'none';
@@ -6695,7 +6695,7 @@ async function loadPayments() {
         if (!changed) return;
 
         const statusEl = $('#editor-status');
-        statusEl.textContent = '⏳ Saving...';
+        statusEl.textContent = ' Saving...';
         statusEl.style.display = 'inline';
         statusEl.style.color = 'var(--accent)';
 
@@ -6760,7 +6760,7 @@ async function loadPayments() {
                 </button>
             </div>
             <div id="combo-warning" style="display:none;margin-top:6px;padding:6px 10px;background:rgba(255,180,0,0.1);border:1px solid rgba(255,180,0,0.3);border-radius:4px;font-size:0.68rem;color:#ffb400;"></div>
-            <div style="margin-top:4px;font-size:0.6rem;color:var(--text-2);">📁 ${watch.filename || '?'} · Edit fields above and click Save. Suggestions powered by reference dictionary.</div>
+            <div style="margin-top:4px;font-size:0.6rem;color:var(--text-2);">▸ ${watch.filename || '?'} · Edit fields above and click Save. Suggestions powered by reference dictionary.</div>
         `;
         $('#editor-status').style.display = 'none';
         updateToolButtons();
@@ -6899,9 +6899,9 @@ async function loadPayments() {
         if (!editorWatchId) return;
         const statusEl = $('#editor-status');
         const btn = $('#btn-auto-redact');
-        btn.textContent = '🤖 Detecting...';
+        btn.textContent = 'Detecting...';
         btn.disabled = true;
-        statusEl.textContent = '🔍 Running OCR detection...';
+        statusEl.textContent = ' Running OCR detection...';
         statusEl.style.display = 'inline';
         statusEl.style.color = 'var(--accent)';
         
@@ -6927,7 +6927,7 @@ async function loadPayments() {
                 editorRedactions = [];
                 setTimeout(() => loadPhotoLibrary(), 500);
             } else {
-                statusEl.textContent = '⚠️ No serial/date text detected — use manual redact';
+                statusEl.textContent = 'No serial/date text detected — use manual redact';
                 statusEl.style.color = '#ffb400';
             }
         } catch(e) {
@@ -6935,7 +6935,7 @@ async function loadPayments() {
             statusEl.style.color = 'var(--red)';
         }
         
-        btn.textContent = '🤖 Auto-Redact';
+        btn.textContent = 'Auto-Redact';
         btn.disabled = false;
     }
     
@@ -6958,7 +6958,7 @@ async function loadPayments() {
         }
         
         const statusEl = $('#editor-status');
-        statusEl.textContent = '⏳ Saving...';
+        statusEl.textContent = ' Saving...';
         statusEl.style.display = 'inline';
         statusEl.style.color = 'var(--accent)';
         
@@ -7289,7 +7289,7 @@ async function loadPayments() {
                     <span style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">${insight.type}</span>
                 </div>
                 <div style="font-size:0.75rem;color:var(--text-1);margin-bottom:6px;">${insight.message}</div>
-                <div style="font-size:0.7rem;color:var(--accent);">💡 ${insight.action}</div>
+                <div style="font-size:0.7rem;color:var(--accent);"> ${insight.action}</div>
             </div>`;
         });
         
