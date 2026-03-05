@@ -2267,7 +2267,8 @@ async function loadPostingPhotoPreviews(row) {
         if (!r.ok) return;
         const data = await r.json();
         const preview = document.getElementById('posting-photo-preview');
-        if (!preview || !data.photos?.length) return;
+        if (!preview) return;
+        if (!data.photos?.length) { preview.innerHTML = ''; return; }
         preview.innerHTML = data.photos.map(p =>
             `<div style="position:relative;display:inline-block;">
                 <img src="/api/watch-photos/${row}/images/${p.filename}" style="width:70px;height:70px;object-fit:cover;border-radius:4px;border:1px solid var(--border);" />
@@ -2324,13 +2325,16 @@ let _postingRedactDrawing = false;
 let _postingRedactStart = {x:0,y:0};
 let _postingRedactImg = null;
 
+var _redactZoom = 1, _redactPanX = 0, _redactPanY = 0, _redactBaseW = 0, _redactBaseH = 0;
+var _redactPinchDist = 0, _redactPanning = false, _redactPanStart = null;
+
 function openPostingRedactEditor(file, row, desc) {
     _postingRedactFile = file;
     _postingRedactRow = row;
     _postingRedactDesc = desc;
     _postingRedactRects = [];
+    _redactZoom = 1; _redactPanX = 0; _redactPanY = 0;
 
-    // Create overlay
     const overlay = document.createElement('div');
     overlay.id = 'posting-redact-modal';
     const canvasH = window.innerHeight - 50;
@@ -2342,12 +2346,15 @@ function openPostingRedactEditor(file, row, desc) {
             <button class="btn" onclick="postingRedactUndo()" style="padding:2px 8px;font-size:0.65rem;">↩</button>
             <button class="btn" onclick="postingRedactClear()" style="padding:2px 8px;font-size:0.65rem;">✕</button>
             <button class="btn" onclick="postingAutoRedact()" style="padding:2px 8px;font-size:0.65rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">🤖 Auto</button>
+            <button class="btn" onclick="redactZoomIn()" style="padding:2px 8px;font-size:0.65rem;">🔍+</button>
+            <button class="btn" onclick="redactZoomOut()" style="padding:2px 8px;font-size:0.65rem;">🔍−</button>
+            <span id="redact-zoom-label" style="color:rgba(255,255,255,0.5);font-size:0.6rem;min-width:28px;text-align:center;">1x</span>
             <div style="flex:1;"></div>
             <button class="btn" onclick="postingRedactSkip()" style="padding:2px 8px;font-size:0.65rem;">Skip →</button>
             <button class="btn" onclick="postingRedactSave()" style="padding:2px 8px;font-size:0.65rem;background:var(--green-dim);color:var(--green);border-color:var(--green);">✓ Done</button>
         </div>
-        <div style="width:100%;height:${canvasH}px;display:flex;justify-content:center;align-items:center;">
-            <canvas id="posting-redact-canvas" style="cursor:crosshair;border:1px solid rgba(255,255,255,0.1);border-radius:4px;"></canvas>
+        <div id="redact-canvas-wrapper" style="width:100%;height:${canvasH}px;overflow:hidden;position:relative;">
+            <canvas id="posting-redact-canvas" style="cursor:crosshair;border:1px solid rgba(255,255,255,0.1);border-radius:4px;position:absolute;transform-origin:0 0;"></canvas>
         </div>
     `;
     document.body.appendChild(overlay);
@@ -2355,7 +2362,6 @@ function openPostingRedactEditor(file, row, desc) {
     const canvas = document.getElementById('posting-redact-canvas');
     const ctx = canvas.getContext('2d');
 
-    // Load file into canvas via FileReader (iOS Safari compatible)
     const reader = new FileReader();
     reader.onload = function(ev) {
         const img = new Image();
@@ -2367,42 +2373,45 @@ function openPostingRedactEditor(file, row, desc) {
             const scale = Math.min(maxW / img.width, maxH / img.height);
             const cssW = Math.round(img.width * scale);
             const cssH = Math.round(img.height * scale);
-            // Set canvas backing store to retina resolution
+            _redactBaseW = cssW; _redactBaseH = cssH;
             canvas.width = Math.round(cssW * dpr);
             canvas.height = Math.round(cssH * dpr);
-            // Set CSS display size
             canvas.style.width = cssW + 'px';
             canvas.style.height = cssH + 'px';
             canvas.dataset.scale = scale;
             canvas.dataset.dpr = dpr;
             ctx.scale(dpr, dpr);
             ctx.drawImage(img, 0, 0, cssW, cssH);
+            _redactApplyTransform();
         };
         img.src = ev.target.result;
     };
     reader.readAsDataURL(file);
 
-    // Wire up drawing
+    // Mouse drawing
     canvas.onmousedown = function(e) {
         _postingRedactDrawing = true;
-        _postingRedactStart = {x: e.offsetX, y: e.offsetY};
+        const p = _redactCanvasCoord(e.offsetX, e.offsetY);
+        _postingRedactStart = p;
     };
     canvas.onmousemove = function(e) {
         if (!_postingRedactDrawing) return;
+        const p = _redactCanvasCoord(e.offsetX, e.offsetY);
         postingRedactRender();
         const c = document.getElementById('posting-redact-canvas').getContext('2d');
         c.fillStyle = 'rgba(0,0,0,0.7)';
-        c.fillRect(_postingRedactStart.x, _postingRedactStart.y, e.offsetX - _postingRedactStart.x, e.offsetY - _postingRedactStart.y);
+        c.fillRect(_postingRedactStart.x, _postingRedactStart.y, p.x - _postingRedactStart.x, p.y - _postingRedactStart.y);
         c.strokeStyle = 'rgba(255,0,0,0.5)';
         c.lineWidth = 1;
-        c.strokeRect(_postingRedactStart.x, _postingRedactStart.y, e.offsetX - _postingRedactStart.x, e.offsetY - _postingRedactStart.y);
+        c.strokeRect(_postingRedactStart.x, _postingRedactStart.y, p.x - _postingRedactStart.x, p.y - _postingRedactStart.y);
     };
     canvas.onmouseup = function(e) {
         if (!_postingRedactDrawing) return;
         _postingRedactDrawing = false;
-        const w = e.offsetX - _postingRedactStart.x;
-        const h = e.offsetY - _postingRedactStart.y;
-        if (Math.abs(w) < 5 || Math.abs(h) < 5) return;
+        const p = _redactCanvasCoord(e.offsetX, e.offsetY);
+        const w = p.x - _postingRedactStart.x;
+        const h = p.y - _postingRedactStart.y;
+        if (Math.abs(w) < 3 || Math.abs(h) < 3) return;
         _postingRedactRects.push({
             x: w < 0 ? _postingRedactStart.x + w : _postingRedactStart.x,
             y: h < 0 ? _postingRedactStart.y + h : _postingRedactStart.y,
@@ -2411,16 +2420,118 @@ function openPostingRedactEditor(file, row, desc) {
         postingRedactRender();
     };
     canvas.onmouseleave = canvas.onmouseup;
-    // Touch
-    canvas.ontouchstart = function(e) { e.preventDefault(); canvas.onmousedown(postingTouchToMouse(e, canvas)); };
-    canvas.ontouchmove = function(e) { e.preventDefault(); canvas.onmousemove(postingTouchToMouse(e, canvas)); };
-    canvas.ontouchend = function(e) { e.preventDefault(); canvas.onmouseup(postingTouchToMouse(e, canvas)); };
+
+    // Touch: 1 finger = draw, 2 fingers = pinch zoom + pan
+    canvas.ontouchstart = function(e) {
+        e.preventDefault();
+        if (e.touches.length === 2) {
+            _redactPinchDist = _pinchDist(e.touches);
+            _redactPanning = true;
+            _redactPanStart = { x: (e.touches[0].clientX+e.touches[1].clientX)/2, y: (e.touches[0].clientY+e.touches[1].clientY)/2 };
+            _postingRedactDrawing = false;
+        } else if (e.touches.length === 1) {
+            const m = _redactTouchCoord(e, canvas);
+            _postingRedactDrawing = true;
+            _postingRedactStart = m;
+        }
+    };
+    canvas.ontouchmove = function(e) {
+        e.preventDefault();
+        if (e.touches.length === 2 && _redactPanning) {
+            const newDist = _pinchDist(e.touches);
+            const ratio = newDist / _redactPinchDist;
+            _redactZoom = Math.max(1, Math.min(8, _redactZoom * ratio));
+            _redactPinchDist = newDist;
+            const mid = { x: (e.touches[0].clientX+e.touches[1].clientX)/2, y: (e.touches[0].clientY+e.touches[1].clientY)/2 };
+            _redactPanX += mid.x - _redactPanStart.x;
+            _redactPanY += mid.y - _redactPanStart.y;
+            _redactPanStart = mid;
+            _redactClampPan();
+            _redactApplyTransform();
+        } else if (e.touches.length === 1 && _postingRedactDrawing) {
+            const m = _redactTouchCoord(e, canvas);
+            postingRedactRender();
+            const c = canvas.getContext('2d');
+            c.fillStyle = 'rgba(0,0,0,0.7)';
+            c.fillRect(_postingRedactStart.x, _postingRedactStart.y, m.x - _postingRedactStart.x, m.y - _postingRedactStart.y);
+            c.strokeStyle = 'rgba(255,0,0,0.5)';
+            c.lineWidth = 1;
+            c.strokeRect(_postingRedactStart.x, _postingRedactStart.y, m.x - _postingRedactStart.x, m.y - _postingRedactStart.y);
+        }
+    };
+    canvas.ontouchend = function(e) {
+        e.preventDefault();
+        if (_redactPanning && e.touches.length < 2) {
+            _redactPanning = false;
+            return;
+        }
+        if (_postingRedactDrawing) {
+            _postingRedactDrawing = false;
+            const m = _redactTouchCoord(e, canvas);
+            const w = m.x - _postingRedactStart.x;
+            const h = m.y - _postingRedactStart.y;
+            if (Math.abs(w) < 3 || Math.abs(h) < 3) return;
+            _postingRedactRects.push({
+                x: w < 0 ? _postingRedactStart.x + w : _postingRedactStart.x,
+                y: h < 0 ? _postingRedactStart.y + h : _postingRedactStart.y,
+                w: Math.abs(w), h: Math.abs(h)
+            });
+            postingRedactRender();
+        }
+    };
 }
 
-function postingTouchToMouse(e, canvas) {
+function _pinchDist(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx*dx + dy*dy);
+}
+function _redactCanvasCoord(offX, offY) {
+    // offsetX/Y are already in CSS canvas space — no zoom adjustment needed
+    // because CSS transform scales the element visually but offsetX/Y stay in element-local coords
+    return { x: offX, y: offY };
+}
+function _redactTouchCoord(e, canvas) {
     const t = e.touches[0] || e.changedTouches[0];
     const r = canvas.getBoundingClientRect();
-    return { offsetX: t.clientX - r.left, offsetY: t.clientY - r.top };
+    // getBoundingClientRect includes CSS transform, so we need to un-scale
+    const scaleX = parseFloat(canvas.style.width) / r.width;
+    const scaleY = parseFloat(canvas.style.height) / r.height;
+    return { x: (t.clientX - r.left) * scaleX, y: (t.clientY - r.top) * scaleY };
+}
+function _redactApplyTransform() {
+    const canvas = document.getElementById('posting-redact-canvas');
+    if (!canvas) return;
+    const wrapper = document.getElementById('redact-canvas-wrapper');
+    // Center the canvas in wrapper when at 1x
+    const wW = wrapper.clientWidth, wH = wrapper.clientHeight;
+    const cW = _redactBaseW * _redactZoom, cH = _redactBaseH * _redactZoom;
+    const centerX = (wW - _redactBaseW) / 2;
+    const centerY = (wH - _redactBaseH) / 2;
+    canvas.style.transform = `translate(${centerX + _redactPanX}px, ${centerY + _redactPanY}px) scale(${_redactZoom})`;
+    const label = document.getElementById('redact-zoom-label');
+    if (label) label.textContent = _redactZoom.toFixed(1) + 'x';
+}
+function _redactClampPan() {
+    const wrapper = document.getElementById('redact-canvas-wrapper');
+    if (!wrapper) return;
+    const wW = wrapper.clientWidth, wH = wrapper.clientHeight;
+    const cW = _redactBaseW * _redactZoom, cH = _redactBaseH * _redactZoom;
+    const maxPanX = Math.max(0, (cW - wW) / 2 + 20);
+    const maxPanY = Math.max(0, (cH - wH) / 2 + 20);
+    _redactPanX = Math.max(-maxPanX, Math.min(maxPanX, _redactPanX));
+    _redactPanY = Math.max(-maxPanY, Math.min(maxPanY, _redactPanY));
+}
+function redactZoomIn() {
+    _redactZoom = Math.min(8, _redactZoom * 1.5);
+    _redactClampPan();
+    _redactApplyTransform();
+}
+function redactZoomOut() {
+    _redactZoom = Math.max(1, _redactZoom / 1.5);
+    _redactPanX = 0; _redactPanY = 0;
+    _redactClampPan();
+    _redactApplyTransform();
 }
 
 function postingRedactRender() {
@@ -2543,8 +2654,14 @@ async function uploadPostingPhotos(row, desc, files) {
             }, 200);
         });
     }
-    // Refresh previews after all uploads
+    // Refresh previews after all uploads — clear Processing...
+    const preview2 = document.getElementById('posting-photo-preview');
+    if (preview2) preview2.innerHTML = '<div style="color:var(--text-2);font-size:0.68rem;padding:4px;">Refreshing...</div>';
+    // Wait briefly for server to index
+    await new Promise(r => setTimeout(r, 500));
     await loadPostingPhotoPreviews(row);
+    // If still showing refreshing, clear it
+    if (preview2 && preview2.textContent.includes('Refreshing')) preview2.innerHTML = '';
 }
 
 async function deletePostingPhoto(row, filename) {
