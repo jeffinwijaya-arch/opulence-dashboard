@@ -2675,7 +2675,7 @@ async function postingAutoRedact() {
                 _postingRedactImg = img;
                 _postingRedactRects = [];
                 postingRedactRender();
-                if (autoBtn) autoBtn.textContent = count === '0' ? 'No serial found' : `${count} redacted`;
+                if (autoBtn) autoBtn.textContent = count === '0' ? 'Not found — draw manually' : `${count} redacted`;
             };
             img.onerror = function() {
                 if (toolbar) toolbar.textContent = 'Image load failed';
