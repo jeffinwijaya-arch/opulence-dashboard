@@ -801,10 +801,62 @@
 
         <!-- ═══ SHIPPING ═══ -->
         <div class="page" id="page-shipping">
-            <div class="page-head">
-                <h1>FedEx Shipping</h1>
-                <p>Create labels via IFS</p>
+            <div class="page-head" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                <div>
+                    <h1>Shipping Tracker</h1>
+                    <p>Track all inbound &amp; outbound packages — real-time FedEx status</p>
+                </div>
+                <button class="btn" onclick="showTrackerForm()" style="background:var(--accent);color:var(--bg-1);font-weight:600;white-space:nowrap;">+ Add Tracking</button>
             </div>
+
+            <!-- Stats row -->
+            <div class="metrics" id="tracker-stats" style="margin-bottom:12px;">
+                <div class="metric"><div class="label">Active Inbound</div><div class="val" id="ts-inbound">—</div><div class="sub">packages coming in</div></div>
+                <div class="metric"><div class="label">Active Outbound</div><div class="val" id="ts-outbound">—</div><div class="sub">packages going out</div></div>
+                <div class="metric"><div class="label">Delivered Today</div><div class="val" id="ts-today">—</div><div class="sub">completed today</div></div>
+                <div class="metric"><div class="label">Total Tracked</div><div class="val" id="ts-total">—</div><div class="sub">all time</div></div>
+            </div>
+
+            <!-- Tab bar -->
+            <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:12px;">
+                <button id="tab-inbound" onclick="switchTrackerTab('inbound')" style="padding:8px 20px;background:none;border:none;border-bottom:2px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;cursor:pointer;">
+                    Inbound <span id="tab-inbound-count" style="font-size:0.65rem;opacity:0.7;"></span>
+                </button>
+                <button id="tab-outbound" onclick="switchTrackerTab('outbound')" style="padding:8px 20px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-2);font-family:var(--mono);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;cursor:pointer;">
+                    Outbound <span id="tab-outbound-count" style="font-size:0.65rem;opacity:0.7;"></span>
+                </button>
+                <div style="flex:1;"></div>
+                <button onclick="loadTrackerPage()" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:0.72rem;padding:8px 12px;font-family:var(--mono);">Refresh</button>
+            </div>
+
+            <!-- Tracker table -->
+            <div class="card">
+                <div class="tbl-wrap">
+                    <table class="tbl" id="tracker-table">
+                        <thead><tr>
+                            <th>Watch / Ref</th>
+                            <th>Tracking #</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Ship Date</th>
+                            <th>Status</th>
+                            <th>ETA</th>
+                            <th>Last Update</th>
+                            <th></th>
+                        </tr></thead>
+                        <tbody id="tracker-tbody">
+                            <tr><td colspan="9" style="text-align:center;color:var(--text-2);padding:24px;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Divider: Label creation tools -->
+            <div style="margin:20px 0 12px;display:flex;align-items:center;gap:10px;">
+                <span style="font-family:var(--mono);font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:1px;">Label Creation</span>
+                <div style="flex:1;height:1px;background:var(--border);"></div>
+            </div>
+
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" id="ship-layout">
                 <!-- Create Label Form -->
                 <div class="card">
@@ -901,6 +953,68 @@
                 <div class="card-head"><span>Shipped Watches</span></div>
                 <div class="card-body" id="ship-history">
                     <p style="color:var(--text-2);text-align:center;padding:12px;">Loading...</p>
+                </div>
+            </div>
+
+            <!-- Add Tracking Modal -->
+            <div id="tracker-form-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;align-items:center;justify-content:center;">
+                <div style="background:var(--bg-1);border:1px solid var(--border-strong);border-radius:var(--radius-lg);max-width:460px;width:90%;padding:20px;font-family:var(--font);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                        <span style="font-size:0.9rem;font-weight:600;color:var(--text-0);">Add Tracking</span>
+                        <button onclick="hideTrackerForm()" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:1.1rem;">&#x2715;</button>
+                    </div>
+                    <div style="display:grid;gap:10px;">
+                        <div>
+                            <label style="font-size:0.68rem;color:var(--text-2);">Tracking Number *</label>
+                            <input class="input" id="tf-tracking" placeholder="e.g. 889331788940" style="width:100%;margin-top:3px;" oninput="this.value=this.value.replace(/\s/g,'')">
+                        </div>
+                        <div>
+                            <label style="font-size:0.68rem;color:var(--text-2);">Direction *</label>
+                            <select class="input" id="tf-direction" style="width:100%;margin-top:3px;">
+                                <option value="outbound">Outbound (going to buyer)</option>
+                                <option value="inbound">Inbound (coming to me)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:0.68rem;color:var(--text-2);">Watch Ref / Description</label>
+                            <input class="input" id="tf-ref" placeholder="e.g. 126334 Jubilee Wimbledon" style="width:100%;margin-top:3px;">
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <div>
+                                <label style="font-size:0.68rem;color:var(--text-2);">From</label>
+                                <input class="input" id="tf-from" placeholder="Sender name" style="width:100%;margin-top:3px;">
+                            </div>
+                            <div>
+                                <label style="font-size:0.68rem;color:var(--text-2);">To</label>
+                                <input class="input" id="tf-to" placeholder="Recipient name" style="width:100%;margin-top:3px;">
+                            </div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <div>
+                                <label style="font-size:0.68rem;color:var(--text-2);">Ship Date</label>
+                                <input class="input" id="tf-date" type="date" style="width:100%;margin-top:3px;">
+                            </div>
+                            <div>
+                                <label style="font-size:0.68rem;color:var(--text-2);">Service</label>
+                                <select class="input" id="tf-service" style="width:100%;margin-top:3px;">
+                                    <option value="Priority Overnight">Priority Overnight</option>
+                                    <option value="Standard Overnight">Standard Overnight</option>
+                                    <option value="FedEx 2Day">FedEx 2Day</option>
+                                    <option value="FedEx Ground">Ground</option>
+                                    <option value="">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="font-size:0.68rem;color:var(--text-2);">Notes</label>
+                            <input class="input" id="tf-notes" placeholder="Optional notes" style="width:100%;margin-top:3px;">
+                        </div>
+                        <div id="tf-status" style="display:none;padding:8px;border-radius:var(--radius);font-size:0.72rem;margin-top:2px;"></div>
+                        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
+                            <button class="btn" onclick="hideTrackerForm()" style="opacity:0.6;">Cancel</button>
+                            <button class="btn" id="tf-submit" onclick="submitTrackerForm()" style="background:var(--accent);color:var(--bg-1);font-weight:600;">Add Tracking</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -7655,6 +7769,244 @@ async function loadPayments() {
     showPage = function(page) {
         _origShowPage(page);
         if (page === 'postings') loadPostingsPage();
+    };
+
+    // ── SHIPPING TRACKER ────────────────────────────────────────────────────
+    let _trackerTab = 'inbound';
+
+    function switchTrackerTab(tab) {
+        _trackerTab = tab;
+        ['inbound','outbound'].forEach(t => {
+            const btn = document.getElementById('tab-' + t);
+            if (!btn) return;
+            if (t === tab) {
+                btn.style.color = 'var(--accent)';
+                btn.style.borderBottomColor = 'var(--accent)';
+            } else {
+                btn.style.color = 'var(--text-2)';
+                btn.style.borderBottomColor = 'transparent';
+            }
+        });
+        renderTrackerTable();
+    }
+
+    function _statusBadge(status) {
+        const s = (status || '').toLowerCase();
+        if (s === 'delivered') return '<span class="tag tag-green">Delivered</span>';
+        if (s.includes('out for delivery')) return '<span class="tag tag-gold">Out for Delivery</span>';
+        if (s.includes('in transit') || s.includes('picked up') || s.includes('on fedex vehicle')) return '<span class="tag tag-blue">In Transit</span>';
+        if (s.includes('exception') || s.includes('delay')) return '<span class="tag tag-red">Exception</span>';
+        if (s === 'pending') return '<span class="tag" style="background:var(--bg-4);color:var(--text-2);border:1px solid var(--border);">Pending</span>';
+        return `<span class="tag tag-blue">${status || '—'}</span>`;
+    }
+
+    function _fmtDate(dt) {
+        if (!dt) return '—';
+        try {
+            const d = new Date(dt);
+            return d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+        } catch(e) { return dt.slice(0,10) || '—'; }
+    }
+
+    function _fmtTs(ts) {
+        if (!ts) return '—';
+        try {
+            const d = new Date(ts);
+            return d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' ' +
+                   d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+        } catch(e) { return ts.slice(0,16) || '—'; }
+    }
+
+    let _allTrackings = [];
+
+    function renderTrackerTable() {
+        const tbody = document.getElementById('tracker-tbody');
+        if (!tbody) return;
+        const rows = _allTrackings.filter(t => t.direction === _trackerTab);
+
+        // Update counts on tabs
+        const inCount = _allTrackings.filter(t => t.direction === 'inbound').length;
+        const outCount = _allTrackings.filter(t => t.direction === 'outbound').length;
+        const inCnt = document.getElementById('tab-inbound-count');
+        const outCnt = document.getElementById('tab-outbound-count');
+        if (inCnt) inCnt.textContent = inCount ? `(${inCount})` : '';
+        if (outCnt) outCnt.textContent = outCount ? `(${outCount})` : '';
+
+        if (!rows.length) {
+            tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--text-2);padding:24px;">No ${_trackerTab} packages tracked yet — click <strong>+ Add Tracking</strong> to start.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = rows.map(t => {
+            const fedexUrl = `https://www.fedex.com/fedextrack/?tracknumbers=${t.tracking_number}`;
+            const trkLink = `<a href="${fedexUrl}" target="_blank" style="color:var(--blue);font-family:var(--mono);font-size:0.72rem;">${t.tracking_number}</a>`;
+            const detail = t.status_detail ? `<br><span style="color:var(--text-2);font-size:0.68rem;">${t.status_detail}</span>` : '';
+            return `<tr>
+                <td style="max-width:180px;"><span style="color:var(--accent);font-weight:600;">${t.watch_ref || '—'}</span></td>
+                <td>${trkLink}</td>
+                <td style="color:var(--text-1);">${t.from || '—'}</td>
+                <td style="color:var(--text-1);">${t.to || '—'}</td>
+                <td class="dim">${_fmtDate(t.ship_date)}</td>
+                <td>${_statusBadge(t.status)}${detail}</td>
+                <td class="dim">${_fmtDate(t.eta)}</td>
+                <td class="dim">${_fmtTs(t.last_update)}</td>
+                <td style="white-space:nowrap;">
+                    <button onclick="refreshTracking('${t.id}')" title="Refresh from FedEx" style="background:none;border:none;cursor:pointer;color:var(--text-2);font-size:0.72rem;padding:2px 6px;" title="Refresh">&#x21bb;</button>
+                    <button onclick="deleteTracking('${t.id}')" title="Remove" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:0.72rem;padding:2px 6px;">&#x2715;</button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    async function loadTrackerStats() {
+        try {
+            const r = await fetch('/api/shipping/stats');
+            if (!r.ok) return;
+            const d = await r.json();
+            if (!d.ok) return;
+            const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            set('ts-inbound', d.active_inbound);
+            set('ts-outbound', d.active_outbound);
+            set('ts-today', d.delivered_today);
+            set('ts-total', d.total);
+        } catch(e) {}
+    }
+
+    async function loadTrackerPage() {
+        const tbody = document.getElementById('tracker-tbody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-2);padding:24px;">Loading...</td></tr>';
+        try {
+            const r = await fetch('/api/shipping/trackings');
+            if (!r.ok) throw new Error('API error');
+            const d = await r.json();
+            _allTrackings = d.trackings || [];
+            renderTrackerTable();
+            loadTrackerStats();
+        } catch(e) {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--red);padding:24px;">Error loading trackings: ${e.message}</td></tr>`;
+        }
+    }
+
+    async function refreshTracking(id) {
+        try {
+            const r = await fetch(`/api/shipping/trackings/${id}/refresh`, {method:'POST'});
+            const d = await r.json();
+            if (d.tracking) {
+                const idx = _allTrackings.findIndex(t => t.id === id);
+                if (idx >= 0) _allTrackings[idx] = d.tracking;
+                renderTrackerTable();
+                loadTrackerStats();
+            }
+            if (!d.ok) alert('Refresh note: ' + d.error);
+        } catch(e) { alert('Refresh failed: ' + e.message); }
+    }
+
+    async function deleteTracking(id) {
+        if (!confirm('Remove this tracking?')) return;
+        try {
+            const r = await fetch(`/api/shipping/trackings/${id}`, {method:'DELETE'});
+            const d = await r.json();
+            if (d.ok) {
+                _allTrackings = _allTrackings.filter(t => t.id !== id);
+                renderTrackerTable();
+                loadTrackerStats();
+            } else {
+                alert('Delete failed: ' + (d.error || 'unknown'));
+            }
+        } catch(e) { alert('Delete failed: ' + e.message); }
+    }
+
+    function showTrackerForm() {
+        const modal = document.getElementById('tracker-form-modal');
+        if (!modal) return;
+        modal.style.display = 'flex';
+        // Default ship date to today
+        const dateEl = document.getElementById('tf-date');
+        if (dateEl && !dateEl.value) {
+            dateEl.value = new Date().toISOString().slice(0, 10);
+        }
+        // Default from = Jeffin for outbound
+        const dirEl = document.getElementById('tf-direction');
+        const fromEl = document.getElementById('tf-from');
+        if (dirEl && fromEl) {
+            function setFromDefault() {
+                fromEl.value = dirEl.value === 'outbound' ? 'Jeffin' : '';
+            }
+            setFromDefault();
+            dirEl.onchange = setFromDefault;
+        }
+        const tf = document.getElementById('tf-tracking');
+        if (tf) tf.focus();
+        // Clear status
+        const st = document.getElementById('tf-status');
+        if (st) st.style.display = 'none';
+    }
+
+    function hideTrackerForm() {
+        const modal = document.getElementById('tracker-form-modal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    async function submitTrackerForm() {
+        const tracking = (document.getElementById('tf-tracking')?.value || '').trim();
+        const direction = document.getElementById('tf-direction')?.value || 'outbound';
+        const ref = (document.getElementById('tf-ref')?.value || '').trim();
+        const from = (document.getElementById('tf-from')?.value || '').trim();
+        const to = (document.getElementById('tf-to')?.value || '').trim();
+        const date = document.getElementById('tf-date')?.value || '';
+        const service = document.getElementById('tf-service')?.value || '';
+        const notes = (document.getElementById('tf-notes')?.value || '').trim();
+        const stEl = document.getElementById('tf-status');
+        const btn = document.getElementById('tf-submit');
+
+        if (!tracking) {
+            if (stEl) { stEl.style.cssText = 'display:block;background:var(--red-dim);color:var(--red);padding:8px;border-radius:var(--radius);font-size:0.72rem;margin-top:2px;'; stEl.textContent = 'Tracking number is required.'; }
+            return;
+        }
+        if (btn) { btn.disabled = true; btn.textContent = 'Adding...'; }
+        if (stEl) stEl.style.display = 'none';
+
+        try {
+            const r = await fetch('/api/shipping/trackings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({tracking_number: tracking, direction, watch_ref: ref, from, to, ship_date: date, service, notes})
+            });
+            const d = await r.json();
+            if (!d.ok) throw new Error(d.error || 'Add failed');
+            _allTrackings.unshift(d.tracking);
+            // Switch to the relevant tab
+            if (direction !== _trackerTab) switchTrackerTab(direction);
+            renderTrackerTable();
+            loadTrackerStats();
+            hideTrackerForm();
+            // Reset form
+            ['tf-tracking','tf-ref','tf-from','tf-to','tf-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        } catch(e) {
+            if (stEl) { stEl.style.cssText = 'display:block;background:var(--red-dim);color:var(--red);padding:8px;border-radius:var(--radius);font-size:0.72rem;margin-top:2px;'; stEl.textContent = 'Error: ' + e.message; }
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = 'Add Tracking'; }
+        }
+    }
+
+    // Auto-add tracking when mark_shipped is called with a tracking number
+    // (hooks into the existing submitShipping function result handling)
+    const _origSubmitShipping_tracker = window.submitShipping;
+    if (typeof submitShipping === 'function') {
+        const _prevSubmitShipping = submitShipping;
+        submitShipping = async function(row, type) {
+            await _prevSubmitShipping(row, type);
+            // After shipping, reload tracker if on that page
+            const pg = document.getElementById('page-shipping');
+            if (pg && pg.classList.contains('active')) loadTrackerPage();
+        };
+    }
+
+    // Load tracker data when shipping page is opened
+    const _origLoadShippingPage = loadShippingPage;
+    loadShippingPage = async function() {
+        loadTrackerPage();
+        if (typeof _origLoadShippingPage === 'function') _origLoadShippingPage();
     };
 
 </script>
