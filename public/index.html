@@ -1224,11 +1224,11 @@
                     <div class="tbl-wrap">
                         <table class="tbl" id="postings-active-table">
                             <thead><tr>
-                                <th>Photo</th>
+                                <th class="hide-sm">Photo</th>
                                 <th>Ref</th>
-                                <th>Description</th>
+                                <th class="hide-sm">Description</th>
                                 <th class="right">Price</th>
-                                <th class="right">Posted</th>
+                                <th class="right hide-sm">Posted</th>
                                 <th>Actions</th>
                             </tr></thead>
                             <tbody id="postings-active-tbody">
@@ -7740,11 +7740,11 @@ async function loadPayments() {
             const safePhoto = (p.photo || '').replace(/'/g,'&apos;');
             const priceRaw = p.price || '';
             return `<tr>
-                <td style="vertical-align:middle;">${photoHtml}</td>
+                <td class="hide-sm" style="vertical-align:middle;">${photoHtml}</td>
                 <td style="font-weight:600;white-space:nowrap;">${p.ref || '—'}</td>
-                <td style="max-width:240px;font-size:0.72rem;" title="${desc}">${shortDesc}</td>
+                <td class="hide-sm" style="max-width:240px;font-size:0.72rem;" title="${desc}">${shortDesc}</td>
                 <td class="right" style="font-size:0.72rem;font-family:monospace;font-weight:600;">${price}</td>
-                <td class="right" style="font-size:0.72rem;white-space:nowrap;">${posted}</td>
+                <td class="right hide-sm" style="font-size:0.72rem;white-space:nowrap;">${posted}</td>
                 <td style="white-space:nowrap;">
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;"
                         onclick="openPriceEditModal('${mid}','${priceRaw}')">Edit $</button>
