@@ -1,6 +1,116 @@
 {
   "articles": [
     {
+      "id": "ca9a735d11ff",
+      "title": "A Closer Look: Daniel Roth Extra Plat Skeleton",
+      "link": "https://revolutionwatch.com/a-closer-look-daniel-roth-extra-plat-skeleton-review/",
+      "desc": "The post A Closer Look: Daniel Roth Extra Plat Skeleton appeared first on Revolution Watch.",
+      "date": "2026-03-06T02:06:46+00:00",
+      "source": "REVOLUTION",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "1fbb7efab1ca",
+      "title": "Introducing \u2013 Kurono Tokyo Launches its First Diver, a Two-in-One Watch with Sealed Outer Case",
+      "link": "https://monochrome-watches.com/2026-kurono-tokyo-diver-two-in-one-watch-with-sealed-outer-diving-case-introducing-price/",
+      "desc": "When you think about Kurono Tokyo, the side-brand of Japanese independent watchmaker Hajime Asaoka, you should picture something compact and elegant in your mind. Watches often focus on traditional cr",
+      "date": "2026-03-05T17:00:20+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/2026-Kurono-Tokyo-Diver-two-in-one-watch-with-sealed-outer-diving-case-introducing-1-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "6e598a2935a2",
+      "title": "Introducing \u2013 The S\u00e9rie R01 Depancel x DAMS Lucas Oil Limited Edition",
+      "link": "https://monochrome-watches.com/serie-r01-depancel-x-dams-lucas-oil-limited-edition-introducing-price/",
+      "desc": "The connection between Depancel and the automotive world is rather obvious and quite cool. The very name of the brand says it all, being the contraction of vintage French car manufacturers Delage, Pan",
+      "date": "2026-03-05T15:01:23+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/Depancel-\u00d7-DAMS-Lucas-Oil-Serie-R01-Limited-Edition-1-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "7d33edf65a7e",
+      "title": "Hands-On With The Collaborative S\u00e9rie R01 Depancel \u00d7 DAMS Lucas Oil",
+      "link": "https://www.fratellowatches.com/hands-on-serie-r01-depancel-x-dams-lucas-oil/",
+      "desc": "Depancel has made a name for itself by creating an extensive collection of race-inspired chronographs. For its newest effort, the brand teamed up with an actual racing team to become an active partner",
+      "date": "2026-03-05T15:00:52+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 10
+    },
+    {
+      "id": "7ed3f6ea1599",
+      "title": "Bremont shows off its playful side with the Altitude MB Meteor Felix the Cat",
+      "link": "https://revolutionwatch.com/bremont-altitude-mb-meteor-felix-the-cat/",
+      "desc": "The post Bremont shows off its playful side with the Altitude MB Meteor Felix the Cat appeared first on Revolution Watch.",
+      "date": "2026-03-05T14:00:05+00:00",
+      "source": "REVOLUTION",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "bfd375df7cf4",
+      "title": "Hodinkee Insurance Heads To Windup Watch Fair Dallas",
+      "link": "https://www.hodinkee.com/articles/hodinkee-insurance-heads-to-windup-watch-fair-dallas",
+      "desc": "Windup returns to Dallas this March\u2014and Hodinkee Insurance will be there all weekend to talk watches, coverage, and everything in between.",
+      "date": "2026-03-05T13:00:00-05:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/4225c879-eccd-4eb2-a081-05a9255b4e23/Untitled-10.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "relevance": 0
+    },
+    {
+      "id": "7b57b2bd99df",
+      "title": "A Closer Look At Russell Crowe's (Previously Secret) TikTok Watch Account",
+      "link": "https://www.hodinkee.com/articles/a-closer-look-at-russell-crowes-previously-secret-tiktok-watch-account",
+      "desc": "The Oscar Award-winning actor goes incognito on TikTok and gives us a personal glimpse into his watch collection.",
+      "date": "2026-03-05T11:12:19-05:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/52f930d4-d8cc-4834-b107-bb57c8e8f45d/r-s-hero-2.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "relevance": 0
+    },
+    {
+      "id": "e83df4c419fb",
+      "title": "Introducing \u2013 Parmigiani Fleurier Tonda PF Automatic 36mm Alta Rosa",
+      "link": "https://monochrome-watches.com/parmigiani-fleurier-tonda-pf-automatic-36mm-alta-rosa-pink-dial-introducing-price/",
+      "desc": "Parmigiani Fleurier\u2019s luxury sports watch collection, the Tonda PF, was introduced in 2021. A refined, minimalist interpretation of the luxury sports watch, the Tonda PF collection is home to several ",
+      "date": "2026-03-05T11:01:49+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/Parmigiani-Fleurier-Tonda-PF-36mm-Alta-Rose-pink-dial-1-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "423ff912b25b",
+      "title": "Introducing \u2013 Lebois & Co Heritage Sector Chronograph Aventurine",
+      "link": "https://monochrome-watches.com/lebois-and-co-heritage-sector-chronograph-aventurine-introducing-price/",
+      "desc": "Indie brand Lebois & Co expands its Heritage collection with the Heritage Sector Chronograph Aventurine, a new version of the brand\u2019s vintage-inspired chronograph distinguished by a textured aventurin",
+      "date": "2026-03-05T10:01:28+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/Lebois-and-Co-Heritage-Sector-Chronograph-Aventurine-324.444-1-600x237.jpg",
+      "relevance": 10
+    },
+    {
+      "id": "c44d2fe4c585",
+      "title": "Hands-On With The Zenith Defy Revival A3643",
+      "link": "https://www.fratellowatches.com/hands-on-zenith-defy-revival-a3643/",
+      "desc": "During LVMH Watch Week in Milan, I was especially interested in the new Zenith releases. It is no secret that I love Zenith. The brand has managed to amaze me time and again with releases that combine",
+      "date": "2026-03-05T06:00:58+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "b39ad8074821",
+      "title": "Fratello Talks: New and Pre-Owned Watches We\u2019d Buy For \u20ac5,000",
+      "link": "https://www.fratellowatches.com/fratello-talks-new-and-pre-owned-watches-wed-buy-for-e5000/",
+      "desc": "What watch would you buy with \u20ac5k in your pocket today? And what if you could spend no less than \u20ac4,500? That\u2019s the hypothetical dilemma we\u2019re tackling on Fratello Talks today. RJ, Daan, and Nacho hav",
+      "date": "2026-03-05T05:00:43+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 10
+    },
+    {
       "id": "6946d1f45608",
       "title": "Hands-on \u2013 Nomos Goes Precious, with the Elegant Tangente Gold and Ludwig Gold (Incl. Video)",
       "link": "https://monochrome-watches.com/nomos-tangente-neomatik-gold-nomos-ludwig-gold-video-review-price/",
@@ -151,16 +261,6 @@
       "relevance": 10
     },
     {
-      "id": "7cd10cc38a12",
-      "title": "First Look \u2013 The March LA.B AM2 Nyctalope Carbon, the Mill\u00e9sime March 2026 Edition",
-      "link": "https://monochrome-watches.com/march-lab-am2-nyctalope-carbon-millesime-march-2026-edition-review-price/",
-      "desc": "Spring is in the air, and French brand March LA.B celebrates its favourite month with a limited edition of its flagship AM2 watch collection. Founded in 2009 by three friends, united by a passion for ",
-      "date": "2026-03-03T10:01:19+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/March-LAB-AM2-Nyctalope-Carbon-March-2026-millesime-edition-review-8-600x237.jpg",
-      "relevance": 0
-    },
-    {
       "id": "c9c7138c191c",
       "title": "Hands-On With The Exciting New March LA.B AM2 \u201cNyctalope\u201d Carbon",
       "link": "https://www.fratellowatches.com/hands-on-with-the-exciting-new-march-la-b-am2-nyctalope-carbon/",
@@ -168,16 +268,6 @@
       "date": "2026-03-03T10:00:18+00:00",
       "source": "FRATELLO",
       "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "14050dd25054",
-      "title": "Introducing \u2013 The Matte, Monochromatic Gerald Charles Masterlink Boutique Edition",
-      "link": "https://monochrome-watches.com/gerald-charles-masterlink-boutique-edition-matte-darkblast-integrated-sports-watch-introducing/",
-      "desc": "With the Masterlink Boutique Edition, Gerald Charles aims to reinforce its preference for controlled distribution and direct customer dialogue. Available only through the brand\u2019s boutiques in Geneva a",
-      "date": "2026-03-03T07:30:11+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/Gerald-Charles-Masterlink-Boutique-Edition-Darkblast-finish-1-600x237.jpg",
       "relevance": 0
     },
     {
@@ -198,26 +288,6 @@
       "date": "2026-03-03T05:32:45+00:00",
       "source": "REVOLUTION",
       "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "9ab63f07f363",
-      "title": "Introducing \u2013 The Norqain Adventure Gets a new 40mm Case and a Range of Updates",
-      "link": "https://monochrome-watches.com/2026-norqain-adventure-40mm-updated-collection-all-terrain-sports-watch-introducing-price/",
-      "desc": "Still a very young brand (founded in 2018), Norqain has rapidly grown to become an established brand, specialised in adventure watches and anything linked to mountaineering activities. With the Indepe",
-      "date": "2026-03-02T18:05:37+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/2026-Norqain-Adventure-40mm-Updated-collection-1-600x237.jpg",
-      "relevance": 0
-    },
-    {
-      "id": "79e47f630bf2",
-      "title": "Introducing \u2013 A Ruby Stone Dial for the Armin Strom Mirrored Force Resonance",
-      "link": "https://monochrome-watches.com/armin-strom-mirrored-force-resonance-ruby-stone-dial-introducing-price/",
-      "desc": "In 2016, Armin Strom rocked the watchmaking scene with the release of its Mirrored Force Resonance, an incredible technical breakthrough that miniaturised the centuries-old concept of synchronised mot",
-      "date": "2026-03-02T16:01:14+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/02/Armin-Strom-Mirrored-Force-Resonance-Ruby-8-600x237.jpg",
       "relevance": 0
     },
     {
@@ -271,36 +341,6 @@
       "relevance": 0
     },
     {
-      "id": "7fb715d73af0",
-      "title": "IFL Watches Celebrates D\u00eda De Los Muertos With The Citizen Tsuyosa Calavera Collection",
-      "link": "https://www.fratellowatches.com/ifl-watches-celebrates-dia-de-los-muertos-with-the-citizen-tsuyosa-calavera-collection/",
-      "desc": "Every year on November 1st and 2nd, Mexico celebrates D\u00eda de los Muertos, or the Day of the Dead. On that day, Mexican people welcome back the spirits of the departed. This tradition centers around th",
-      "date": "2026-03-02T04:00:40+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "a8d293abefc2",
-      "title": "Hands-On With The Kudoke 5 \u2014 A Piece Of Art For Your Wrist",
-      "link": "https://www.fratellowatches.com/hands-on-with-the-kudoke-5-a-piece-of-art-for-your-wrist/",
-      "desc": "Part of the fascination that drives my interest in watches is the endless variations in design and, even more so, completely new ideas that result in something I have never seen before. Most of these ",
-      "date": "2026-03-01T10:00:30+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "cb3bb8f8b880",
-      "title": "Sunday Morning Showdown: Favre Leuba Deep Raider Revival Vs. Aquastar Deepstar II",
-      "link": "https://www.fratellowatches.com/sunday-morning-showdown-favre-leuba-deep-raider-revival-vs-aquastar-deepstar-ii/",
-      "desc": "It\u2019s Sunday, which means it\u2019s time for another Sunday Morning Showdown. This week, it\u2019s an epic battle between two retro dive watches. Each is inspired by its respective brand\u2019s 1960s classics. Jorg\u2019s",
-      "date": "2026-03-01T06:00:16+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 0
-    },
-    {
       "id": "6e2c43ed563e",
       "title": "Business News: Swatch Group Publishes Open Letter To Morgan Stanley Management Saying Longines Is Profitable And Tissot Sales Grew",
       "link": "https://www.hodinkee.com/articles/swatch-group-publishes-open-letter-to-morgan-stanley-management-saying-longines-is-profitable-and-ti",
@@ -308,26 +348,6 @@
       "date": "2026-02-27T14:04:01-05:00",
       "source": "HODINKEE",
       "image": "https://hodinkee.imgix.net/uploads/images/3926b838-e518-47cb-a434-4c9a05a3fe69/Swatchgroup_Biel.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
-    },
-    {
-      "id": "0e9be8e6a7c2",
-      "title": "Bring a Loupe: A Heuer Dato 12, A Rolex Bomb\u00e9, and\u2014What's That?\u2014An F.P.Journe \u00c9l\u00e9gante?",
-      "link": "https://www.hodinkee.com/articles/bring-a-loupe-feb-27",
-      "desc": "All that and more in this week's edition of Hodinkee's What's Selling Where column.",
-      "date": "2026-02-27T11:00:00-05:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/4574d07a-cfeb-4768-81bf-5023f66d9b52/HeroBAL.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 10
-    },
-    {
-      "id": "5687edc62968",
-      "title": "Introducing: The Panerai Radiomir Viaggio NelTempo Experience Set \u2014 Two Watches and A Trip Through Panerai's Italian History",
-      "link": "https://www.hodinkee.com/articles/introducing-panerai-radiomir-viaggio-nel-tempo-experience-set",
-      "desc": "For the first time, the Panerai experience offering comes with a pair of watches and an interesting take on a three-day movement.",
-      "date": "2026-02-27T09:00:00-05:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/c3dbdbd8-5e94-434a-aba5-eeec846a623f/PAM01729_PAM01730_STILLLIFE.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
       "relevance": 0
     },
     {
@@ -339,29 +359,9 @@
       "source": "REVOLUTION",
       "image": "",
       "relevance": 10
-    },
-    {
-      "id": "b58a3dfb497b",
-      "title": "The IWC Portugieser Chronograph Ceratanium emerges from the shadows",
-      "link": "https://revolutionwatch.com/the-iwc-portugieser-chronograph-ceratanium-emerges-from-the-shadows/",
-      "desc": "The post The IWC Portugieser Chronograph Ceratanium emerges from the shadows appeared first on Revolution Watch.",
-      "date": "2026-02-26T12:00:02+00:00",
-      "source": "REVOLUTION",
-      "image": "",
-      "relevance": 10
-    },
-    {
-      "id": "f390bfd5e1ce",
-      "title": "Piaget\u2019s Duo of 2026 Limelight Galas",
-      "link": "https://revolutionwatch.com/piagets-duo-of-2026-limelight-galas/",
-      "desc": "The post Piaget\u2019s Duo of 2026 Limelight Galas appeared first on Revolution Watch.",
-      "date": "2026-02-26T00:56:19+00:00",
-      "source": "REVOLUTION",
-      "image": "",
-      "relevance": 0
     }
   ],
-  "fetched_at": "2026-03-05T04:33:13.282466+00:00",
+  "fetched_at": "2026-03-06T04:33:12.562970+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
