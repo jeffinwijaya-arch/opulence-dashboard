@@ -5336,10 +5336,14 @@ async function submitSale() {
     try {
         const r = await fetch(`/api/inventory/${row}/sold`, {
             method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({sold_to: soldTo, sold_price: soldPrice, sale_date: saleDate})
+            body: JSON.stringify({sold_to: soldTo, sold_price: soldPrice, sale_date: saleDate, expected_desc: document.getElementById('sm-watch-info').textContent})
         });
         const d = await r.json();
-        if (d.ok) { status.style.color='var(--green)'; status.textContent='Sold! Posted to Telegram.'; setTimeout(()=>{closeSellModal();loadInventoryPage();},800); }
+        if (d.ok) {
+            let msg = '✅ Sold! Posted to Telegram.';
+            if (d.invoice) msg += ` Invoice ${d.invoice.invoice_number} created & sent!`;
+            else if (d.invoice_error) msg += ` ⚠️ Invoice failed: ${d.invoice_error}`;
+            status.style.color='var(--green)'; status.textContent=msg; setTimeout(()=>{closeSellModal();loadInventoryPage();},1500); }
         else { status.style.color='var(--red)'; status.textContent='Error: '+(d.error||'Unknown'); }
     } catch(e) { status.style.color='var(--red)'; status.textContent='Error: '+e.message; }
     btn.disabled = false; btn.textContent = 'Sell';
