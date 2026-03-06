@@ -4525,6 +4525,48 @@ async function renderPfMonthly(c) {
             </div>
         </div></div>`;
 
+        // ── Analytics Section ──
+        const a = data.analytics || {};
+        const cap = a.capital || {};
+        const topRefs = a.top_refs || [];
+        const bestDeals = a.best_deals || [];
+        const worstDeals = a.worst_deals || [];
+        
+        // Capital Overview
+        html += `<div class="card"><div class="card-head">Capital & Inventory</div><div class="card-body">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;text-align:center;">
+                <div><div style="color:var(--text-2);font-size:0.65rem;text-transform:uppercase;">Capital Tied Up</div><div style="font-size:1.1rem;font-weight:700;color:var(--text-0);">${fmt(cap.tied_up||0)}</div><div style="font-size:0.6rem;color:var(--text-2);">${cap.unsold_count||0} watches</div></div>
+                <div><div style="color:var(--text-2);font-size:0.65rem;text-transform:uppercase;">Potential Profit</div><div style="font-size:1.1rem;font-weight:700;color:var(--green);">${fmt(cap.potential_profit||0)}</div><div style="font-size:0.6rem;color:var(--text-2);">if sold at ask</div></div>
+                <div><div style="color:var(--text-2);font-size:0.65rem;text-transform:uppercase;">Monthly Turnover</div><div style="font-size:1.1rem;font-weight:700;color:var(--accent);">${cap.turnover_ratio||0}x</div><div style="font-size:0.6rem;color:var(--text-2);">rev / capital</div></div>
+                <div><div style="color:var(--text-2);font-size:0.65rem;text-transform:uppercase;">Avg Monthly Rev</div><div style="font-size:1.1rem;font-weight:700;color:var(--text-0);">${fmt(cap.avg_monthly_revenue||0)}</div></div>
+            </div>
+        </div></div>`;
+        
+        // Top Refs + Best/Worst in 2 columns
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+        
+        // Top Models
+        html += '<div class="card"><div class="card-head">Top Models by Volume</div><div class="card-body" style="padding:0;">';
+        html += '<table class="tbl" style="font-size:0.72rem;"><thead><tr><th>Ref</th><th>#</th><th>Profit</th><th>Margin</th></tr></thead><tbody>';
+        for (const r of topRefs.slice(0, 8)) {
+            const mc = r.margin >= 10 ? 'var(--green)' : r.margin >= 5 ? 'var(--text-0)' : 'var(--red)';
+            html += `<tr><td style="font-weight:600;">${r.ref}</td><td>${r.count}</td><td style="color:${r.total_profit>=0?'var(--green)':'var(--red)'};">${fmt(r.total_profit)}</td><td style="color:${mc};">${r.margin}%</td></tr>`;
+        }
+        html += '</tbody></table></div></div>';
+        
+        // Best & Worst Deals
+        html += '<div class="card"><div class="card-head">Best & Worst Deals</div><div class="card-body" style="padding:0;">';
+        html += '<table class="tbl" style="font-size:0.72rem;"><thead><tr><th>Watch</th><th>Buyer</th><th>Profit</th></tr></thead><tbody>';
+        for (const d of bestDeals) {
+            html += `<tr><td>${d.description}</td><td style="font-size:0.65rem;">${d.buyer}</td><td style="color:var(--green);font-weight:600;">${fmt(d.profit)}</td></tr>`;
+        }
+        html += '<tr><td colspan="3" style="background:var(--bg-1);height:2px;padding:0;"></td></tr>';
+        for (const d of worstDeals) {
+            html += `<tr><td>${d.description}</td><td style="font-size:0.65rem;">${d.buyer}</td><td style="color:var(--red);font-weight:600;">${fmt(d.profit)}</td></tr>`;
+        }
+        html += '</tbody></table></div></div>';
+        html += '</div>';  // end 2-col grid
+        
         html += '<div class="card"><div class="card-head">Monthly Breakdown</div><div class="card-body">';
         html += '<table class="tbl"><thead><tr><th>Month</th><th>Pieces</th><th class="hide-mobile">Revenue</th><th class="hide-mobile">Cost</th><th>Profit</th><th>Margin</th></tr></thead><tbody>';
         for (const m of months) {
