@@ -569,6 +569,7 @@
             <a data-page="shipping" onclick="showPage('shipping')">Shipping</a>
             <a data-page="inventory" onclick="showPage('inventory')">Inventory</a>
             <a data-page="payments" onclick="showPage('payments')">Payments <span class="badge" id="payments-count">0</span></a>
+            <a data-page="postings" onclick="showPage('postings')">My Postings</a>
             <a data-page="photos" onclick="showPage('photos')">Photos</a>
             <a data-page="alerts" onclick="showPage('alerts')">Alerts <span class="badge" id="alerts-count">0</span></a>
             <a data-page="analytics" onclick="showPage('analytics')">Analytics</a>
@@ -594,6 +595,7 @@
             <a onclick="mobileNav('shipping')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Ship</a>
             <a onclick="mobileNav('inventory')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Inventory</a>
             <a onclick="mobileNav('payments')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Payments</a>
+            <a onclick="mobileNav('postings')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Postings</a>
             <a onclick="mobileNav('photos')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Photos</a>
             <a onclick="mobileNav('browse')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Market</a>
             <a onclick="mobileNav('analytics')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Data</a>
@@ -1077,6 +1079,88 @@
                         <button class="btn" id="pm-submit" onclick="submitPost()" style="background:#f0c040;color:var(--bg-1);">Post</button>
                     </div>
                     <div id="pm-status" style="display:none;padding:8px;border-radius:var(--radius);font-size:0.75rem;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ MY POSTINGS ═══ -->
+        <div class="page" id="page-postings">
+            <div class="page-head">
+                <h1>My Postings</h1>
+                <p>Manage watches posted in the My Postings Telegram group</p>
+            </div>
+            <!-- Tabs -->
+            <div class="tabs" style="margin-bottom:12px;">
+                <div class="tab active" id="postings-tab-active" onclick="switchPostingsTab('active',this)">Active Postings</div>
+                <div class="tab" id="postings-tab-ready" onclick="switchPostingsTab('ready',this)">Ready to Post</div>
+            </div>
+            <!-- Controls row -->
+            <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
+                <button class="btn" onclick="loadPostingsPage()" style="opacity:0.8;">&#8635; Refresh</button>
+                <button class="btn" onclick="syncPostings()" id="postings-sync-btn" style="opacity:0.8;">Sync with Telegram</button>
+                <span id="postings-status-msg" style="font-size:0.72rem;color:var(--text-2);margin-left:4px;"></span>
+            </div>
+
+            <!-- Active Postings Panel -->
+            <div id="postings-panel-active">
+                <div class="card">
+                    <div class="card-head">
+                        <span id="postings-active-count" style="color:var(--text-2);font-size:0.75rem;"></span>
+                    </div>
+                    <div class="tbl-wrap">
+                        <table class="tbl" id="postings-active-table">
+                            <thead><tr>
+                                <th>Ref</th>
+                                <th>Description</th>
+                                <th>Dial</th>
+                                <th>Date</th>
+                                <th class="right">Msg ID</th>
+                                <th class="right">Posted</th>
+                                <th>Actions</th>
+                            </tr></thead>
+                            <tbody id="postings-active-tbody">
+                                <tr><td colspan="7" style="text-align:center;color:var(--text-2);padding:20px;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ready to Post Panel -->
+            <div id="postings-panel-ready" style="display:none;">
+                <div class="card">
+                    <div class="card-head">
+                        <span id="postings-ready-count" style="color:var(--text-2);font-size:0.75rem;"></span>
+                    </div>
+                    <div class="tbl-wrap">
+                        <table class="tbl" id="postings-ready-table">
+                            <thead><tr>
+                                <th>Ref</th>
+                                <th>Description</th>
+                                <th>Arrived</th>
+                                <th class="right">Cost</th>
+                                <th>Actions</th>
+                            </tr></thead>
+                            <tbody id="postings-ready-tbody">
+                                <tr><td colspan="5" style="text-align:center;color:var(--text-2);padding:20px;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete confirm modal -->
+            <div id="posting-delete-modal" style="display:none;position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+                <div style="background:var(--bg-2);border-radius:var(--radius);padding:20px;max-width:380px;width:90%;">
+                    <h3 style="margin:0 0 10px;">Delete Posting?</h3>
+                    <div id="pdm-desc" style="font-size:0.75rem;color:var(--text-2);margin-bottom:14px;padding:8px;background:var(--bg-1);border-radius:var(--radius);"></div>
+                    <p style="font-size:0.78rem;color:var(--text-1);margin-bottom:14px;">This will delete the Telegram message and remove it from the log.</p>
+                    <input type="hidden" id="pdm-message-id">
+                    <div style="display:flex;gap:8px;justify-content:flex-end;">
+                        <button class="btn" onclick="closePostingDeleteModal()" style="opacity:0.6;">Cancel</button>
+                        <button class="btn" id="pdm-confirm" onclick="confirmDeletePosting()" style="background:var(--red);color:#fff;">Delete</button>
+                    </div>
+                    <div id="pdm-status" style="display:none;margin-top:8px;padding:8px;border-radius:var(--radius);font-size:0.72rem;"></div>
                 </div>
             </div>
         </div>
@@ -7387,6 +7471,191 @@ async function loadPayments() {
         
         container.innerHTML = html;
     }
+
+    // ══════════════════════════════════════════
+    // MY POSTINGS MANAGER
+    // ══════════════════════════════════════════
+
+    let _postingsCurrentTab = 'active';
+    let _postingsData = [];
+    let _postingsReadyData = [];
+
+    function switchPostingsTab(tab, el) {
+        _postingsCurrentTab = tab;
+        document.querySelectorAll('#page-postings .tab').forEach(t => t.classList.remove('active'));
+        if (el) el.classList.add('active');
+        document.getElementById('postings-panel-active').style.display = tab === 'active' ? '' : 'none';
+        document.getElementById('postings-panel-ready').style.display = tab === 'ready' ? '' : 'none';
+        if (tab === 'ready' && _postingsReadyData.length === 0) loadReadyToPost();
+    }
+
+    async function loadPostingsPage() {
+        setPostingsStatus('Loading...');
+        try {
+            const r = await fetch('/api/my-postings');
+            const d = await r.json();
+            if (!d.ok) throw new Error(d.error || 'Failed to load');
+            _postingsData = d.postings || [];
+            renderActivePostings(_postingsData);
+            setPostingsStatus('');
+        } catch (e) {
+            setPostingsStatus('Error: ' + e.message);
+        }
+        if (_postingsCurrentTab === 'ready') loadReadyToPost();
+    }
+
+    function renderActivePostings(postings) {
+        const tbody = document.getElementById('postings-active-tbody');
+        const countEl = document.getElementById('postings-active-count');
+        countEl.textContent = `${postings.length} posting${postings.length !== 1 ? 's' : ''}`;
+        if (!postings.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-2);padding:20px;">No active postings with message IDs</td></tr>';
+            return;
+        }
+        tbody.innerHTML = postings.map(p => {
+            const desc = (p.description || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            const shortDesc = desc.length > 60 ? desc.slice(0, 60) + '…' : desc;
+            const posted = (p.posted_at || p.posted_date || '').slice(0, 10);
+            const dial = p.dial || '—';
+            const year = p.year || '—';
+            const mid = p.message_id || '';
+            return `<tr>
+                <td style="font-weight:600;white-space:nowrap;">${p.ref || '—'}</td>
+                <td style="max-width:260px;font-size:0.72rem;" title="${desc}">${shortDesc}</td>
+                <td style="font-size:0.72rem;">${dial}</td>
+                <td style="font-size:0.72rem;white-space:nowrap;">${year}</td>
+                <td class="right" style="font-size:0.72rem;font-family:monospace;">${mid}</td>
+                <td class="right" style="font-size:0.72rem;white-space:nowrap;">${posted}</td>
+                <td>
+                    <button class="btn" style="font-size:0.65rem;padding:3px 8px;background:var(--red);color:#fff;opacity:0.85;"
+                        onclick="openPostingDeleteModal('${mid}','${desc.replace(/'/g,'&apos;')}')">Delete</button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    async function loadReadyToPost() {
+        const tbody = document.getElementById('postings-ready-tbody');
+        const countEl = document.getElementById('postings-ready-count');
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-2);padding:20px;">Loading inventory...</td></tr>';
+        try {
+            const r = await fetch('/api/inventory');
+            const d = await r.json();
+            const items = (d.items || []).filter(it => !it.sold && it.arrived !== false);
+            // Exclude items that already have an active posting (by ref+year matching)
+            const postedKeys = new Set(_postingsData.map(p => (p.ref || '') + '|' + (p.year || p.card_date || '')));
+            _postingsReadyData = items;
+            countEl.textContent = `${items.length} watch${items.length !== 1 ? 'es' : ''} available`;
+            if (!items.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-2);padding:20px;">No watches ready to post</td></tr>';
+                return;
+            }
+            tbody.innerHTML = items.map(it => {
+                const desc = (it.description || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                const shortDesc = desc.length > 65 ? desc.slice(0, 65) + '…' : desc;
+                const cost = it.cost_price ? '$' + Number(it.cost_price).toLocaleString() : '—';
+                const arrived = it.arrived ? '<span class="tag-green" style="font-size:0.65rem;padding:2px 5px;border-radius:3px;background:rgba(0,230,118,0.15);color:var(--green);">Yes</span>' : '<span style="font-size:0.65rem;color:var(--text-2);">No</span>';
+                const row = it.row || '';
+                const postKey = (it.ref || '') + '|' + (it.year || '');
+                const alreadyPosted = postedKeys.has(postKey);
+                const postBtn = alreadyPosted
+                    ? `<span style="font-size:0.65rem;color:var(--text-2);">Posted</span>`
+                    : `<button class="btn" style="font-size:0.65rem;padding:3px 8px;background:#f0c040;color:var(--bg-1);"
+                        onclick="openPostModalFromPostings(${row})">Post</button>`;
+                return `<tr>
+                    <td style="font-weight:600;white-space:nowrap;">${it.ref || '—'}</td>
+                    <td style="max-width:280px;font-size:0.72rem;" title="${desc}">${shortDesc}</td>
+                    <td>${arrived}</td>
+                    <td class="right" style="font-size:0.72rem;">${cost}</td>
+                    <td>${postBtn}</td>
+                </tr>`;
+            }).join('');
+        } catch (e) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--red);padding:20px;">Error: ${e.message}</td></tr>`;
+        }
+    }
+
+    function openPostingDeleteModal(messageId, desc) {
+        document.getElementById('pdm-message-id').value = messageId;
+        document.getElementById('pdm-desc').textContent = desc;
+        document.getElementById('pdm-status').style.display = 'none';
+        document.getElementById('pdm-confirm').disabled = false;
+        const modal = document.getElementById('posting-delete-modal');
+        modal.style.display = 'flex';
+    }
+
+    function closePostingDeleteModal() {
+        document.getElementById('posting-delete-modal').style.display = 'none';
+    }
+
+    async function confirmDeletePosting() {
+        const messageId = document.getElementById('pdm-message-id').value;
+        const btn = document.getElementById('pdm-confirm');
+        const status = document.getElementById('pdm-status');
+        btn.disabled = true;
+        btn.textContent = 'Deleting...';
+        status.style.display = 'none';
+        try {
+            const r = await fetch('/api/my-postings/delete', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message_id: messageId})
+            });
+            const d = await r.json();
+            if (!d.ok) throw new Error(d.error || 'Delete failed');
+            status.style.cssText = 'display:block;background:rgba(0,230,118,0.1);color:var(--green);padding:8px;border-radius:var(--radius);font-size:0.72rem;margin-top:8px;';
+            status.textContent = d.tg_deleted ? 'Deleted from Telegram and log.' : 'Removed from log (Telegram message may already be gone).';
+            setTimeout(() => {
+                closePostingDeleteModal();
+                loadPostingsPage();
+            }, 1200);
+        } catch (e) {
+            status.style.cssText = 'display:block;background:rgba(255,23,68,0.1);color:var(--red);padding:8px;border-radius:var(--radius);font-size:0.72rem;margin-top:8px;';
+            status.textContent = 'Error: ' + e.message;
+            btn.disabled = false;
+            btn.textContent = 'Delete';
+        }
+    }
+
+    async function syncPostings() {
+        const btn = document.getElementById('postings-sync-btn');
+        btn.disabled = true;
+        btn.textContent = 'Syncing...';
+        setPostingsStatus('Checking Telegram for stale messages...');
+        try {
+            const r = await fetch('/api/my-postings/sync', {method: 'POST'});
+            const d = await r.json();
+            if (!d.ok) throw new Error(d.error || 'Sync failed');
+            setPostingsStatus(`Sync done — ${d.stale_removed} stale removed, ${d.remaining} remaining.`);
+            loadPostingsPage();
+        } catch (e) {
+            setPostingsStatus('Sync error: ' + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Sync with Telegram';
+        }
+    }
+
+    function setPostingsStatus(msg) {
+        const el = document.getElementById('postings-status-msg');
+        if (el) el.textContent = msg;
+    }
+
+    function openPostModalFromPostings(row) {
+        // Delegate to the existing posting modal used from inventory page
+        showPage('inventory');
+        setTimeout(() => {
+            const item = (DATA.inventory && DATA.inventory.items ? DATA.inventory.items : []).find(i => i.row === row);
+            if (item) openPostingModal(item, 0);
+        }, 300);
+    }
+
+    // Hook into showPage to auto-load postings
+    const _origShowPage = showPage;
+    showPage = function(page) {
+        _origShowPage(page);
+        if (page === 'postings') loadPostingsPage();
+    };
 
 </script>
 </body>
