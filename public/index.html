@@ -7833,7 +7833,12 @@ async function loadPayments() {
             const d = await r.json();
             if (!d.ok) throw new Error(d.error || 'Delete failed');
             status.style.cssText = 'display:block;background:rgba(0,230,118,0.1);color:var(--green);padding:8px;border-radius:var(--radius);font-size:0.72rem;margin-top:8px;';
-            status.textContent = d.tg_deleted ? 'Deleted from Telegram and log.' : 'Removed from log (Telegram message may already be gone).';
+            if (d.tg_deleted) {
+                status.textContent = '✅ Deleted from Telegram and log.';
+            } else {
+                status.style.cssText = 'display:block;background:rgba(255,152,0,0.1);color:#ff9800;padding:8px;border-radius:var(--radius);font-size:0.72rem;margin-top:8px;';
+                status.textContent = '⚠️ Removed from log but Telegram message NOT deleted. ' + (d.warning || 'Bot may need admin rights in the group.');
+            }
             setTimeout(() => {
                 closePostingDeleteModal();
                 loadPostingsPage();
