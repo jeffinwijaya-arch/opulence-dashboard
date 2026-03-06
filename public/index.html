@@ -366,6 +366,21 @@
             #ship-layout { grid-template-columns:1fr !important; }
             #ref-search, #im-search { max-width:100% !important; }
         }
+        .postings-mobile { display:none; }
+        .posting-card {
+            background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius);
+            padding:12px; margin-bottom:8px; display:flex; gap:10px; align-items:flex-start;
+        }
+        .posting-card img { width:60px; height:60px; object-fit:cover; border-radius:6px; flex-shrink:0; }
+        .posting-card-body { flex:1; min-width:0; }
+        .posting-card-ref { font-weight:700; font-size:0.85rem; color:var(--accent); }
+        .posting-card-desc { font-size:0.7rem; color:var(--text-2); margin:2px 0 6px; line-height:1.3; word-break:break-word; }
+        .posting-card-meta { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+        .posting-card-price { font-family:monospace; font-weight:700; font-size:0.85rem; color:var(--green); }
+        .posting-card-date { font-size:0.65rem; color:var(--text-2); }
+        .posting-card-actions { display:flex; gap:6px; margin-top:8px; }
+        .posting-card-actions .btn { font-size:0.7rem; padding:5px 10px; }
+
         @media(max-width:480px) {
             .main { padding:6px; }
             .metrics { grid-template-columns:1fr 1fr; gap:6px; }
@@ -383,6 +398,8 @@
             div[style*="display:flex"][style*="gap"] { flex-wrap:wrap !important; }
             .mobile-nav a { min-width:48px; padding:6px 4px; font-size:0.62rem; }
             .tbl .hide-sm { display:none; }
+            .postings-desktop { display:none !important; }
+            .postings-mobile { display:block !important; }
         }
         @media(max-width:360px) {
             html { font-size:12px; }
@@ -1222,19 +1239,20 @@
                         <span id="postings-active-count" style="color:var(--text-2);font-size:0.75rem;"></span>
                     </div>
                     <div class="tbl-wrap">
-                        <table class="tbl" id="postings-active-table">
+                        <table class="tbl postings-desktop" id="postings-active-table">
                             <thead><tr>
-                                <th class="hide-sm">Photo</th>
+                                <th>Photo</th>
                                 <th>Ref</th>
-                                <th class="hide-sm">Description</th>
+                                <th>Description</th>
                                 <th class="right">Price</th>
-                                <th class="right hide-sm">Posted</th>
+                                <th class="right">Posted</th>
                                 <th>Actions</th>
                             </tr></thead>
                             <tbody id="postings-active-tbody">
                                 <tr><td colspan="6" style="text-align:center;color:var(--text-2);padding:20px;">Loading...</td></tr>
                             </tbody>
                         </table>
+                        <div class="postings-mobile" id="postings-active-cards" style="display:none;"></div>
                         <!-- Edit Price Modal -->
                         <div id="posting-price-edit-modal" style="display:none;position:fixed;inset:0;z-index:1002;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
                             <div style="background:var(--bg-2);border-radius:var(--radius);padding:20px;max-width:340px;width:90%;">
@@ -7740,11 +7758,11 @@ async function loadPayments() {
             const safePhoto = (p.photo || '').replace(/'/g,'&apos;');
             const priceRaw = p.price || '';
             return `<tr>
-                <td class="hide-sm" style="vertical-align:middle;">${photoHtml}</td>
+                <td style="vertical-align:middle;">${photoHtml}</td>
                 <td style="font-weight:600;white-space:nowrap;">${p.ref || '—'}</td>
-                <td class="hide-sm" style="max-width:240px;font-size:0.72rem;" title="${desc}">${shortDesc}</td>
+                <td style="max-width:240px;font-size:0.72rem;" title="${desc}">${shortDesc}</td>
                 <td class="right" style="font-size:0.72rem;font-family:monospace;font-weight:600;">${price}</td>
-                <td class="right hide-sm" style="font-size:0.72rem;white-space:nowrap;">${posted}</td>
+                <td class="right" style="font-size:0.72rem;white-space:nowrap;">${posted}</td>
                 <td style="white-space:nowrap;">
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;"
                         onclick="openPriceEditModal('${mid}','${priceRaw}')">Edit $</button>
@@ -7753,6 +7771,39 @@ async function loadPayments() {
                 </td>
             </tr>`;
         }).join('');
+
+        // Mobile card view
+        const cardsEl = document.getElementById('postings-active-cards');
+        if (cardsEl) {
+            cardsEl.innerHTML = postings.map(p => {
+                const desc = (p.description || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                const posted = (p.posted_at || p.posted_date || '').slice(0, 10);
+                const price = p.price ? '$' + Number(p.price).toLocaleString() : '—';
+                const mid = p.message_id || '';
+                const priceRaw = p.price || '';
+                const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\');
+                const safePhoto = (p.photo || '').replace(/'/g,'&apos;');
+                const imgTag = p.photo
+                    ? `<img src="/api/posting-photo/${p.photo}" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">`
+                    : '';
+                return `<div class="posting-card">
+                    ${imgTag}
+                    <div class="posting-card-body">
+                        <div class="posting-card-ref">${p.ref || '—'}</div>
+                        <div class="posting-card-desc">${desc}</div>
+                        <div class="posting-card-meta">
+                            <span class="posting-card-price">${price}</span>
+                            <span class="posting-card-date">${posted}</span>
+                        </div>
+                        <div class="posting-card-actions">
+                            <button class="btn" onclick="openPriceEditModal('${mid}','${priceRaw}')">Edit $</button>
+                            <button class="btn" style="background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);"
+                                onclick="openPostingDeleteModal('${mid}','${safeDesc}','${safePhoto}','${priceRaw}')">Delete</button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
     }
 
     async function loadReadyToPost() {
