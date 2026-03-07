@@ -1193,7 +1193,16 @@
                             </label>
                         </div>
                         <div id="hal-fields" style="display:none;margin-top:6px;padding:8px;border:1px solid var(--border);border-radius:6px;">
-                            <div style="font-size:0.68rem;color:var(--text-2);margin-bottom:4px;">HAL Location Address</div>
+                            <div style="font-size:0.68rem;color:var(--text-2);margin-bottom:4px;">FedEx Office Location</div>
+                            <div id="hal-location-picker" style="margin-bottom:6px;">
+                                <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+                                    <input class="input" id="hal-zip-search" placeholder="Enter recipient ZIP to find FedEx Offices..." style="flex:1;" oninput="debounceHalSearch()">
+                                    <button class="btn" onclick="searchHalLocations()" id="hal-search-btn" style="padding:4px 10px;font-size:0.7rem;white-space:nowrap;">🔍 Find</button>
+                                </div>
+                                <div id="hal-loading" style="display:none;font-size:0.68rem;color:var(--accent);padding:4px 0;">⏳ Searching FedEx Offices...</div>
+                                <div id="hal-locations-list" style="max-height:180px;overflow-y:auto;"></div>
+                            </div>
+                            <div style="font-size:0.6rem;color:var(--text-3);margin-bottom:4px;">Or enter manually:</div>
                             <div style="display:flex;gap:6px;flex-wrap:wrap;">
                                 <div style="flex:1;min-width:140px;"><label style="font-size:0.65rem;color:var(--text-2);">Address</label>
                                     <input class="input" id="hal-address" placeholder="FedEx location address" style="width:100%;margin-top:2px;"></div>
@@ -6211,6 +6220,71 @@ function applyShipPreset() {
 function toggleHalFields() {
     const hal = document.getElementById('ship-hal').checked;
     document.getElementById('hal-fields').style.display = hal ? 'block' : 'none';
+    if (hal) {
+        // Auto-search if recipient ZIP is already filled
+        const zip = document.getElementById('ship-zip').value.trim();
+        if (zip.length >= 5) {
+            document.getElementById('hal-zip-search').value = zip;
+            searchHalLocations();
+        }
+        // Also auto-set signature to No Signature for HAL
+        document.getElementById('ship-signature').value = 'Signature Not Required';
+    } else {
+        document.getElementById('ship-signature').value = 'Direct Signature';
+    }
+}
+let _halSearchTimer = null;
+function debounceHalSearch() {
+    clearTimeout(_halSearchTimer);
+    const zip = document.getElementById('hal-zip-search').value.trim();
+    if (zip.length >= 5) {
+        _halSearchTimer = setTimeout(searchHalLocations, 600);
+    }
+}
+async function searchHalLocations() {
+    const zip = document.getElementById('hal-zip-search').value.trim();
+    if (zip.length < 5) return;
+    const loading = document.getElementById('hal-loading');
+    const list = document.getElementById('hal-locations-list');
+    loading.style.display = 'block';
+    list.innerHTML = '';
+    try {
+        const r = await fetch('/api/fedex-locations?zip=' + encodeURIComponent(zip));
+        const data = await r.json();
+        loading.style.display = 'none';
+        if (data.error) {
+            list.innerHTML = '<div style="font-size:0.7rem;color:var(--red);padding:4px;">' + data.error + '</div>';
+            return;
+        }
+        if (!data.locations || data.locations.length === 0) {
+            list.innerHTML = '<div style="font-size:0.7rem;color:var(--text-2);padding:4px;">No FedEx Offices found near ' + zip + '</div>';
+            return;
+        }
+        list.innerHTML = data.locations.map((loc, i) => `
+            <div onclick="selectHalLocation(${i})" data-loc='${JSON.stringify(loc).replace(/'/g,"&#39;")}'
+                 style="padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:4px;cursor:pointer;font-size:0.72rem;transition:background 0.15s;"
+                 onmouseover="this.style.background='var(--bg-3)'" onmouseout="this.style.background=''" >
+                <div style="font-weight:600;color:var(--text-0);">📍 ${loc.name}</div>
+                <div style="color:var(--text-2);font-size:0.65rem;margin-top:2px;">${loc.full_address || loc.display}</div>
+            </div>
+        `).join('');
+    } catch(e) {
+        loading.style.display = 'none';
+        list.innerHTML = '<div style="font-size:0.7rem;color:var(--red);padding:4px;">Search failed: ' + e.message + '</div>';
+    }
+}
+function selectHalLocation(index) {
+    const items = document.querySelectorAll('#hal-locations-list > div');
+    if (!items[index]) return;
+    const loc = JSON.parse(items[index].getAttribute('data-loc'));
+    document.getElementById('hal-address').value = loc.address || '';
+    document.getElementById('hal-city').value = loc.city || '';
+    document.getElementById('hal-state').value = loc.state || '';
+    document.getElementById('hal-zip').value = loc.zip || '';
+    // Highlight selected
+    items.forEach(el => el.style.border = '1px solid var(--border)');
+    items[index].style.border = '1px solid var(--accent)';
+    items[index].style.background = 'var(--accent-dim)';
 }
 function clearShipForm(keepPreset) {
     if (!keepPreset) document.getElementById('ship-preset').value = '';

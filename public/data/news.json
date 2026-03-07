@@ -1,6 +1,36 @@
 {
   "articles": [
     {
+      "id": "552647c45ee6",
+      "title": "Should Serviceability Be A Factor When Buying A Watch?",
+      "link": "https://www.fratellowatches.com/should-serviceability-be-a-factor-when-buying-a-watch/",
+      "desc": "There\u2019s an aphorism among watch lovers that the right mechanical watch never truly belongs to you; rather, it is something you just look after for the next generation. But beneath the romantic surface",
+      "date": "2026-03-07T10:00:02+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "29bfc7ae29d8",
+      "title": "The Petrolhead Corner \u2013 The Autoforma Norrsken P1800 ES Revives Sweden\u2019s Coolest Shooting Break",
+      "link": "https://monochrome-watches.com/the-petrolhead-corner-autoforma-norrsken-p1800-es-restomod-niels-van-roij/",
+      "desc": "If you think about Volvo estate cars, you probably will think about those large, boxy ones from the 1980s and 1990s. While very practical, they weren\u2019t necessarily the most sexy cars, apart from a few",
+      "date": "2026-03-07T09:35:23+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/2026-Autoforma-Norrsken-Volvo-P1800-ES-Restomod-Niels-van-Roij-1-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "7e10acbde60a",
+      "title": "Unimatic Releases The Modello Cinque UT5-TANC Created With Nigel Cabourn and The Armoury",
+      "link": "https://www.fratellowatches.com/unimatic-releases-the-modello-cinque-ut5-tanc-created-with-nigel-cabourn-and-the-armoury/",
+      "desc": "Unimatic has been dropping one new release after another in 2026. While the year is only two months old, we have already seen quite a few interesting watches from the Italian brand. Its latest collabo",
+      "date": "2026-03-07T06:00:07+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
       "id": "a18345a6b2c7",
       "title": "Introducing \u2013 The Benrus Sky Chief Chronograph, a Historic Pilot\u2019s Watch Reborn",
       "link": "https://monochrome-watches.com/the-benrus-sky-chief-chronograph-a-historic-pilots-watch-reborn/",
@@ -201,16 +231,6 @@
       "relevance": 10
     },
     {
-      "id": "6946d1f45608",
-      "title": "Hands-on \u2013 Nomos Goes Precious, with the Elegant Tangente Gold and Ludwig Gold (Incl. Video)",
-      "link": "https://monochrome-watches.com/nomos-tangente-neomatik-gold-nomos-ludwig-gold-video-review-price/",
-      "desc": "Every brand at one point dreamt of having an icon on their hands. A cornerstone model that stands the test of time, design trends, and, more importantly, captures the hearts of fans and collectors wor",
-      "date": "2026-03-04T18:01:08+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/Video-Review-Nomos-Tangente-Neomatik-Gold-and-Nomos-Ludwig-Gold-2026-1-600x237.jpg",
-      "relevance": 10
-    },
-    {
       "id": "50b22e3acddb",
       "title": "The Business of Watches Podcast: Zenith CEO Benoit De Clerck",
       "link": "https://www.hodinkee.com/articles/zenith-ceo-benoit-de-clerck",
@@ -301,26 +321,6 @@
       "relevance": 10
     },
     {
-      "id": "c9c7138c191c",
-      "title": "Hands-On With The Exciting New March LA.B AM2 \u201cNyctalope\u201d Carbon",
-      "link": "https://www.fratellowatches.com/hands-on-with-the-exciting-new-march-la-b-am2-nyctalope-carbon/",
-      "desc": "March LA.B initially caught my eye with the release of its AM2 GMT Grall Edition in 2024. But the French brand has been around for much longer than just a few years. It is the brainchild of three frie",
-      "date": "2026-03-03T10:00:18+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "31b54d4b857c",
-      "title": "Introducing: The Armin Strom Mirrored Force Resonance Ruby",
-      "link": "https://www.fratellowatches.com/introducing-the-armin-strom-mirrored-force-resonance-ruby/",
-      "desc": "Time flies when everything resonates nicely, doesn\u2019t it? It sure does for Armin Strom. No fewer than 10 years have passed since the independent Swiss house launched its breakthrough resonance mechanis",
-      "date": "2026-03-03T06:00:25+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 0
-    },
-    {
       "id": "cb927487a7c0",
       "title": "The Ressence Type 9 IKE creates a rainbow light show for the wrist",
       "link": "https://revolutionwatch.com/the-ressence-type-9-ike-creates-a-rainbow-light-show-for-the-wrist/",
@@ -361,7 +361,7 @@
       "relevance": 10
     }
   ],
-  "fetched_at": "2026-03-07T04:33:12.700327+00:00",
+  "fetched_at": "2026-03-07T14:00:04.025144+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
