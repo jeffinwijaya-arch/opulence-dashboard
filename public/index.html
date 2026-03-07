@@ -1131,11 +1131,14 @@
                 <div class="card">
                     <div class="card-head"><span>Create Label</span></div>
                     <div class="card-body" style="display:grid;gap:10px;">
-                        <!-- Preset selector -->
-                        <div><label style="font-size:0.72rem;color:var(--text-2);text-transform:uppercase;">Quick Preset</label>
-                            <select class="input" id="ship-preset" onchange="applyShipPreset()" style="width:100%;margin-top:4px;">
-                                <option value="">Custom Address</option>
-                            </select>
+                        <!-- Contact selector (replaces Quick Preset) -->
+                        <div>
+                            <label style="font-size:0.72rem;color:var(--text-2);text-transform:uppercase;">Contact / Preset</label>
+                            <div style="display:flex;gap:6px;margin-top:4px;">
+                                <input class="input" id="ship-contact-search" placeholder="Search contacts..." oninput="filterContactsDropdown(this.value)" style="flex:1;" autocomplete="off">
+                                <button class="btn" onclick="toggleContactsList()" style="font-size:0.7rem;padding:4px 10px;white-space:nowrap;">&#9776; Contacts</button>
+                            </div>
+                            <div id="ship-contacts-dropdown" style="display:none;position:relative;z-index:100;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);margin-top:2px;max-height:160px;overflow-y:auto;"></div>
                         </div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                             <div><label style="font-size:0.68rem;color:var(--text-2);">Recipient Name</label>
@@ -1202,8 +1205,9 @@
                                     <input class="input" id="hal-zip" placeholder="ZIP" style="width:100%;margin-top:2px;"></div>
                             </div>
                         </div>
-                        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
+                        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;flex-wrap:wrap;">
                             <button class="btn" onclick="clearShipForm()" style="opacity:0.6;">Clear</button>
+                            <button class="btn" onclick="saveCurrentAsContact()" style="background:var(--bg-3);color:var(--text-1);border-color:var(--border-strong);">&#9881; Save as Contact</button>
                             <button class="btn" onclick="submitShipLabel()" style="background:var(--green);color:var(--bg-1);" id="ship-submit-btn">Create Label</button>
                         </div>
                         <div id="ship-status" style="display:none;padding:10px;border-radius:var(--radius);margin-top:4px;"></div>
@@ -1222,6 +1226,22 @@
                 <div class="card-head"><span>Shipped Watches</span></div>
                 <div class="card-body" id="ship-history">
                     <p style="color:var(--text-2);text-align:center;padding:12px;">Loading...</p>
+                </div>
+            </div>
+
+            <!-- Contacts Management -->
+            <div class="card" id="contacts-panel" style="margin-top:12px;display:none;">
+                <div class="card-head">
+                    <span>Address Book</span>
+                    <button class="btn" onclick="toggleContactsList()" style="font-size:0.65rem;padding:2px 8px;opacity:0.7;">Close</button>
+                </div>
+                <div class="card-body">
+                    <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
+                        <input class="input" id="contacts-search" placeholder="Search contacts..." oninput="loadContactsList(this.value)" style="flex:1;">
+                    </div>
+                    <div id="contacts-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;">
+                        <div style="color:var(--text-2);text-align:center;padding:20px;">Loading...</div>
+                    </div>
                 </div>
             </div>
 
@@ -1505,6 +1525,16 @@
                 <span id="postings-status-msg" style="font-size:0.72rem;color:var(--text-2);margin-left:4px;"></span>
             </div>
 
+            <!-- Performance Summary Card -->
+            <div id="postings-perf-summary" style="display:none;margin-bottom:10px;">
+                <div class="metrics">
+                    <div class="metric"><div class="label">Active</div><div class="val" id="pp-active">—</div></div>
+                    <div class="metric"><div class="label">Avg Days to Sell</div><div class="val" id="pp-avg-days">—</div></div>
+                    <div class="metric"><div class="label">Avg Price Drops</div><div class="val" id="pp-avg-drops">—</div></div>
+                    <div class="metric"><div class="label">Fastest Seller</div><div class="val" id="pp-fastest" style="font-size:0.7rem;color:var(--green);">—</div></div>
+                </div>
+            </div>
+
             <!-- Active Postings Panel -->
             <div id="postings-panel-active">
                 <div class="card">
@@ -1519,10 +1549,12 @@
                                 <th>Description</th>
                                 <th class="right">Price</th>
                                 <th class="right">Posted</th>
+                                <th class="right">Days</th>
+                                <th class="right">Chg</th>
                                 <th>Actions</th>
                             </tr></thead>
                             <tbody id="postings-active-tbody">
-                                <tr><td colspan="6" style="text-align:center;color:var(--text-2);padding:20px;">Loading...</td></tr>
+                                <tr><td colspan="8" style="text-align:center;color:var(--text-2);padding:20px;">Loading...</td></tr>
                             </tbody>
                         </table>
                         <div class="postings-mobile" id="postings-active-cards" style="display:none;"></div>
@@ -9113,6 +9145,459 @@ async function loadPayments() {
             }
         }, { passive: true });
     }
+
+    // ══════════════════════════════════════════════════
+    // PROFIT CALCULATOR
+    // ══════════════════════════════════════════════════
+
+    function showProfitCalc(buyPrice, medianPrice) {
+        const panel = document.getElementById('profit-calc-panel');
+        if (!panel) return;
+        panel.style.display = '';
+        const buyEl = document.getElementById('pc-buy');
+        const sellEl = document.getElementById('pc-sell');
+        if (buyEl && buyPrice) buyEl.value = Math.round(buyPrice);
+        if (sellEl && medianPrice) sellEl.value = Math.round(medianPrice);
+        calcProfit();
+    }
+
+    function calcProfit() {
+        const buy = parseFloat(document.getElementById('pc-buy')?.value) || 0;
+        const sell = parseFloat(document.getElementById('pc-sell')?.value) || 0;
+        const grossEl = document.getElementById('pc-gross');
+        const marginEl = document.getElementById('pc-margin');
+        const netEl = document.getElementById('pc-net');
+        if (!grossEl) return;
+        if (!buy || !sell) {
+            grossEl.textContent = '—';
+            marginEl.textContent = '—';
+            netEl.textContent = '—';
+            return;
+        }
+        const gross = sell - buy;
+        const marginPct = (gross / sell * 100);
+        const shipping = 50;
+        const insurance = sell * 0.005;
+        const net = gross - shipping - insurance;
+        grossEl.textContent = '$' + Math.round(gross).toLocaleString();
+        grossEl.style.color = gross >= 0 ? 'var(--green)' : 'var(--red)';
+        marginEl.textContent = marginPct.toFixed(1) + '%';
+        marginEl.style.color = marginPct >= 10 ? 'var(--green)' : marginPct >= 5 ? 'var(--orange)' : 'var(--red)';
+        netEl.textContent = '$' + Math.round(net).toLocaleString();
+        netEl.style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
+    }
+
+    function setMarginTarget(margin) {
+        const buy = parseFloat(document.getElementById('pc-buy')?.value) || 0;
+        if (!buy) return;
+        // sell = buy / (1 - margin)
+        const sell = buy / (1 - margin);
+        const sellEl = document.getElementById('pc-sell');
+        if (sellEl) { sellEl.value = Math.round(sell); calcProfit(); }
+    }
+
+    // Hook into doLookup to auto-populate profit calculator
+    const _origDoLookup = doLookup;
+    doLookup = async function() {
+        await _origDoLookup.apply(this, arguments);
+        // After lookup completes, try to fill profit calc from search results
+        setTimeout(() => {
+            const q = (document.getElementById('ref-search')?.value || '').trim();
+            if (!q) { const p = document.getElementById('profit-calc-panel'); if (p) p.style.display = 'none'; return; }
+            // Try to get prices from cheapest listings
+            const listings = window._cheapestAll || [];
+            if (listings.length > 0) {
+                const lowestPrice = listings[0]?.price_usd || listings[0]?.price;
+                // Compute approximate median
+                const prices = listings.map(l => l.price_usd || l.price).filter(Boolean).sort((a,b)=>a-b);
+                const medianPrice = prices.length > 0 ? prices[Math.floor(prices.length / 2)] : null;
+                showProfitCalc(lowestPrice, medianPrice);
+            } else {
+                const p = document.getElementById('profit-calc-panel');
+                if (p) p.style.display = 'none';
+            }
+        }, 200);
+    };
+
+    // ══════════════════════════════════════════════════
+    // DAILY BRIEFING
+    // ══════════════════════════════════════════════════
+
+    async function loadBriefingPage() {
+        const subtitle = document.getElementById('briefing-subtitle');
+        if (subtitle) subtitle.textContent = 'Loading briefing...';
+        try {
+            const r = await fetch('/api/daily-digest');
+            const d = await r.json();
+            if (!d.ok) throw new Error(d.error || 'Failed');
+
+            const act = d.activity || {};
+            const pending = d.pending || {};
+            const cash = d.cash || {};
+            const movers = d.market_movers || [];
+
+            // Activity counts
+            const setCount = (id, items) => {
+                const el = document.getElementById(id + '-count');
+                if (el) el.textContent = items.length;
+                const listEl = document.getElementById(id + '-list');
+                if (listEl) {
+                    listEl.innerHTML = items.slice(0,3).map(i =>
+                        `<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${i.ref || i.description?.slice(0,20) || '—'}</div>`
+                    ).join('') + (items.length > 3 ? `<div style="color:var(--text-2);">+${items.length-3} more</div>` : '');
+                }
+            };
+            setCount('briefing-bought', act.bought || []);
+            setCount('briefing-sold', act.sold || []);
+            setCount('briefing-arrived', act.arrived || []);
+            setCount('briefing-shipped', act.shipped || []);
+
+            // Cash
+            const fmtCash = n => n ? '$' + Math.round(n).toLocaleString() : '—';
+            const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            setEl('briefing-capital', fmtCash(cash.capital_deployed));
+            setEl('briefing-receivables', fmtCash(cash.receivables));
+            setEl('briefing-revenue', fmtCash(cash.total_revenue));
+            setEl('briefing-profit', fmtCash(cash.total_profit));
+
+            // Market movers
+            const moversEl = document.getElementById('briefing-movers');
+            if (moversEl) {
+                if (!movers.length) {
+                    moversEl.innerHTML = '<div style="color:var(--text-2);text-align:center;padding:12px;">No significant moves today</div>';
+                } else {
+                    moversEl.innerHTML = movers.map(m => {
+                        const color = m.pct >= 0 ? 'var(--green)' : 'var(--red)';
+                        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
+                            <span style="font-weight:600;font-family:var(--mono);">${m.ref}</span>
+                            <span style="font-family:var(--mono);font-size:0.78rem;">$${Math.round(m.yesterday).toLocaleString()} → $${Math.round(m.today).toLocaleString()}</span>
+                            <span style="color:${color};font-weight:700;font-family:var(--mono);">${m.pct >= 0 ? '+' : ''}${m.pct}%</span>
+                        </div>`;
+                    }).join('');
+                }
+            }
+
+            // Pending
+            const renderPending = (id, countId, items) => {
+                const el = document.getElementById(id);
+                const cEl = document.getElementById(countId);
+                if (cEl) cEl.textContent = items.length;
+                if (el) {
+                    if (!items.length) { el.innerHTML = '<div style="color:var(--text-2);">None</div>'; return; }
+                    el.innerHTML = items.map(i => `<div style="padding:4px 0;border-bottom:1px solid var(--border);">
+                        <div style="font-weight:600;font-size:0.72rem;">${i.ref || '—'}</div>
+                        <div style="color:var(--text-2);font-size:0.68rem;">${(i.description||'').slice(0,40)}</div>
+                    </div>`).join('');
+                }
+            };
+            renderPending('briefing-unshipped', 'briefing-unshipped-count', pending.unsold_unshipped || []);
+            renderPending('briefing-unpaid', 'briefing-unpaid-count', pending.unpaid || []);
+            renderPending('briefing-notarrived', 'briefing-notarrived-count', pending.not_arrived || []);
+
+            if (subtitle) subtitle.textContent = `Daily digest — ${d.date} · yesterday: ${d.yesterday}`;
+        } catch(e) {
+            if (subtitle) subtitle.textContent = 'Error: ' + e.message;
+        }
+    }
+
+    // Hook showPage to auto-load briefing
+    const _sbShowPage = showPage;
+    showPage = function(page) {
+        _sbShowPage(page);
+        if (page === 'briefing') loadBriefingPage();
+    };
+
+    // ══════════════════════════════════════════════════
+    // POSTING PERFORMANCE
+    // ══════════════════════════════════════════════════
+
+    let _postingPerformanceData = {};
+
+    async function loadPostingPerformance() {
+        try {
+            const r = await fetch('/api/posting-performance');
+            const d = await r.json();
+            if (!d.ok) return;
+            _postingPerformanceData = {};
+            (d.metrics || []).forEach(m => {
+                if (m.message_id) _postingPerformanceData[String(m.message_id)] = m;
+            });
+            const summary = d.summary || {};
+            // Show performance summary card
+            const summaryEl = document.getElementById('postings-perf-summary');
+            if (summaryEl) summaryEl.style.display = '';
+            const setV = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+            setV('pp-active', summary.total_active ?? '—');
+            setV('pp-avg-days', summary.avg_days_to_sell != null ? summary.avg_days_to_sell + 'd' : '—');
+            setV('pp-avg-drops', summary.avg_price_drops ?? '—');
+            setV('pp-fastest', summary.fastest_seller ? (summary.fastest_seller.ref || summary.fastest_seller.description?.slice(0,15) || '—') + ' (' + summary.fastest_seller.days_listed + 'd)' : '—');
+        } catch(e) {}
+    }
+
+    // Override renderActivePostings to include performance columns
+    const _origRenderActivePostings = renderActivePostings;
+    renderActivePostings = function(postings) {
+        const tbody = document.getElementById('postings-active-tbody');
+        const countEl = document.getElementById('postings-active-count');
+        if (countEl) countEl.textContent = `${postings.length} posting${postings.length !== 1 ? 's' : ''}`;
+        if (!postings.length) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-2);padding:20px;">No active postings</td></tr>';
+            return;
+        }
+        tbody.innerHTML = postings.map(p => {
+            const desc = (p.description || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            const shortDesc = desc.length > 55 ? desc.slice(0, 55) + '…' : desc;
+            const posted = (p.posted_at || p.posted_date || '').slice(0, 10);
+            const price = p.price ? '$' + Number(p.price).toLocaleString() : '—';
+            const mid = p.message_id || '';
+            const photoHtml = p.photo
+                ? `<img src="/api/posting-photo/${p.photo}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">`
+                : '<span style="color:var(--text-2);font-size:0.65rem;">No photo</span>';
+            const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\');
+            const safePhoto = (p.photo || '').replace(/'/g,'&apos;');
+            const priceRaw = p.price || '';
+            const perf = _postingPerformanceData[String(mid)] || {};
+            const daysHtml = perf.days_listed != null
+                ? `<span style="font-family:var(--mono);font-size:0.72rem;color:${perf.days_listed > 30 ? 'var(--orange)' : perf.days_listed > 14 ? 'var(--text-1)' : 'var(--green)'};">${perf.days_listed}d</span>`
+                : '—';
+            const changesHtml = perf.price_changes
+                ? `<span style="font-family:var(--mono);font-size:0.72rem;color:var(--orange);">${perf.price_changes}</span>`
+                : '<span style="color:var(--text-2);">0</span>';
+            return `<tr>
+                <td style="vertical-align:middle;">${photoHtml}</td>
+                <td style="font-weight:600;white-space:nowrap;">${p.ref || '—'}</td>
+                <td style="max-width:220px;font-size:0.72rem;" title="${desc}">${shortDesc}</td>
+                <td class="right" style="font-size:0.72rem;font-family:monospace;font-weight:600;">${price}</td>
+                <td class="right" style="font-size:0.72rem;white-space:nowrap;">${posted}</td>
+                <td class="right">${daysHtml}</td>
+                <td class="right">${changesHtml}</td>
+                <td style="white-space:nowrap;">
+                    <button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;"
+                        onclick="openPriceEditModal('${mid}','${priceRaw}')">Edit $</button>
+                    <button class="btn" style="font-size:0.65rem;padding:3px 8px;background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);"
+                        onclick="openPostingDeleteModal('${mid}','${safeDesc}','${safePhoto}','${priceRaw}')">Delete</button>
+                </td>
+            </tr>`;
+        }).join('');
+
+        // Mobile card view (simplified — just call original for cards)
+        const cardsEl = document.getElementById('postings-active-cards');
+        if (cardsEl) {
+            cardsEl.innerHTML = postings.map(p => {
+                const desc = (p.description || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                const posted = (p.posted_at || p.posted_date || '').slice(0, 10);
+                const price = p.price ? '$' + Number(p.price).toLocaleString() : '—';
+                const mid = p.message_id || '';
+                const priceRaw = p.price || '';
+                const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\');
+                const safePhoto = (p.photo || '').replace(/'/g,'&apos;');
+                const imgTag = p.photo ? `<img src="/api/posting-photo/${p.photo}" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">` : '';
+                const perf = _postingPerformanceData[String(mid)] || {};
+                const daysText = perf.days_listed != null ? ` · ${perf.days_listed}d listed` : '';
+                return `<div class="posting-card">
+                    ${imgTag}
+                    <div class="posting-card-body">
+                        <div class="posting-card-ref">${p.ref || '—'}</div>
+                        <div class="posting-card-desc">${desc}</div>
+                        <div class="posting-card-meta">
+                            <span class="posting-card-price">${price}</span>
+                            <span class="posting-card-date">${posted}${daysText}</span>
+                        </div>
+                        <div class="posting-card-actions">
+                            <button class="btn" onclick="openPriceEditModal('${mid}','${priceRaw}')">Edit $</button>
+                            <button class="btn" style="background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);"
+                                onclick="openPostingDeleteModal('${mid}','${safeDesc}','${safePhoto}','${priceRaw}')">Delete</button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+    };
+
+    // Override loadPostingsPage to also load performance data
+    const _baseLoadPostingsPage = loadPostingsPage;
+    loadPostingsPage = async function() {
+        await _baseLoadPostingsPage();
+        await loadPostingPerformance();
+    };
+
+    // ══════════════════════════════════════════════════
+    // ADDRESS BOOK / CONTACTS
+    // ══════════════════════════════════════════════════
+
+    let _contactsData = [];
+    let _contactsPanelOpen = false;
+
+    async function loadContactsList(q) {
+        try {
+            const url = '/api/contacts' + (q ? '?q=' + encodeURIComponent(q) : '');
+            const r = await fetch(url);
+            const d = await r.json();
+            if (!d.ok) return;
+            _contactsData = d.contacts || [];
+            renderContactsList(_contactsData);
+        } catch(e) {}
+    }
+
+    function renderContactsList(contacts) {
+        const el = document.getElementById('contacts-list');
+        if (!el) return;
+        if (!contacts.length) {
+            el.innerHTML = '<div style="color:var(--text-2);text-align:center;padding:20px;grid-column:1/-1;">No contacts yet — fill out the form and click "Save as Contact"</div>';
+            return;
+        }
+        el.innerHTML = contacts.map(c => `
+            <div style="background:var(--bg-3);border-radius:var(--radius);padding:10px;position:relative;">
+                <div style="font-weight:600;font-size:0.82rem;">${esc(c.name || '—')}</div>
+                ${c.company ? `<div style="font-size:0.68rem;color:var(--text-2);">${esc(c.company)}</div>` : ''}
+                <div style="font-size:0.68rem;color:var(--text-1);margin-top:2px;">${esc(c.address || '')}${c.apt ? ' ' + esc(c.apt) : ''}</div>
+                <div style="font-size:0.68rem;color:var(--text-1);">${esc(c.city || '')}, ${esc(c.state || '')} ${esc(c.zip || '')}</div>
+                ${c.phone ? `<div style="font-size:0.65rem;color:var(--text-2);">${esc(c.phone)}</div>` : ''}
+                <div style="display:flex;gap:6px;margin-top:8px;">
+                    <button class="btn" style="font-size:0.65rem;padding:3px 8px;flex:1;" onclick="applyContact(${JSON.stringify(c).replace(/"/g,'&quot;')})">Use</button>
+                    <button class="btn" style="font-size:0.65rem;padding:3px 8px;background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);" onclick="deleteContact('${c.contact_id}')">Del</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function filterContactsDropdown(q) {
+        const dropdown = document.getElementById('ship-contacts-dropdown');
+        if (!dropdown) return;
+        if (!q || q.trim().length < 1) {
+            dropdown.style.display = 'none';
+            return;
+        }
+        const filtered = _contactsData.filter(c =>
+            (c.name||'').toLowerCase().includes(q.toLowerCase()) ||
+            (c.company||'').toLowerCase().includes(q.toLowerCase()) ||
+            (c.city||'').toLowerCase().includes(q.toLowerCase())
+        );
+        if (!filtered.length) {
+            dropdown.style.display = 'none';
+            return;
+        }
+        dropdown.style.display = '';
+        dropdown.innerHTML = filtered.map(c => `
+            <div style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:0.78rem;"
+                 onmouseenter="this.style.background='var(--bg-3)'"
+                 onmouseleave="this.style.background=''"
+                 onclick='applyContact(${JSON.stringify(c).replace(/'/g,"&#39;")})'>
+                <div style="font-weight:600;">${esc(c.name||'—')}</div>
+                <div style="color:var(--text-2);font-size:0.68rem;">${esc(c.city||'')} ${esc(c.state||'')} ${c.company ? '· ' + esc(c.company) : ''}</div>
+            </div>
+        `).join('');
+    }
+
+    function applyContact(contact) {
+        if (typeof contact === 'string') {
+            try { contact = JSON.parse(contact); } catch(e) { return; }
+        }
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+        set('ship-contact', contact.name);
+        set('ship-company', contact.company);
+        set('ship-address', contact.address);
+        set('ship-apt', contact.apt);
+        set('ship-phone', contact.phone);
+        set('ship-city', contact.city);
+        set('ship-state', contact.state);
+        set('ship-zip', contact.zip);
+        // Residential
+        const resEl = document.getElementById('ship-residential');
+        if (resEl) resEl.checked = !!contact.is_residential;
+        // HAL
+        const halEl = document.getElementById('ship-hal');
+        if (halEl) {
+            halEl.checked = !!contact.hal_preference;
+            if (typeof toggleHalFields === 'function') toggleHalFields();
+        }
+        if (contact.hal_preference) {
+            set('hal-address', contact.hal_address);
+            set('hal-city', contact.hal_city);
+            set('hal-state', contact.hal_state);
+            set('hal-zip', contact.hal_zip);
+        }
+        // Close dropdown and search field
+        const dropdown = document.getElementById('ship-contacts-dropdown');
+        if (dropdown) dropdown.style.display = 'none';
+        const searchEl = document.getElementById('ship-contact-search');
+        if (searchEl) searchEl.value = contact.name || '';
+    }
+
+    async function saveCurrentAsContact() {
+        const getVal = id => (document.getElementById(id)?.value || '').trim();
+        const name = getVal('ship-contact');
+        if (!name) { alert('Please enter a recipient name first.'); return; }
+        const contact = {
+            name,
+            company: getVal('ship-company'),
+            address: getVal('ship-address'),
+            apt: getVal('ship-apt'),
+            phone: getVal('ship-phone'),
+            city: getVal('ship-city'),
+            state: getVal('ship-state'),
+            zip: getVal('ship-zip'),
+            is_residential: document.getElementById('ship-residential')?.checked || false,
+            hal_preference: document.getElementById('ship-hal')?.checked || false,
+            hal_address: getVal('hal-address'),
+            hal_city: getVal('hal-city'),
+            hal_state: getVal('hal-state'),
+            hal_zip: getVal('hal-zip'),
+        };
+        try {
+            const r = await fetch('/api/contacts', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(contact)
+            });
+            const d = await r.json();
+            if (d.ok) {
+                _contactsData.push(d.contact);
+                alert('Contact saved: ' + name);
+            } else {
+                alert('Save failed: ' + d.error);
+            }
+        } catch(e) {
+            alert('Error: ' + e.message);
+        }
+    }
+
+    async function deleteContact(contactId) {
+        if (!confirm('Delete this contact?')) return;
+        try {
+            const r = await fetch('/api/contacts/' + contactId, { method: 'DELETE' });
+            const d = await r.json();
+            if (d.ok) {
+                _contactsData = _contactsData.filter(c => c.contact_id !== contactId);
+                renderContactsList(_contactsData);
+            }
+        } catch(e) {}
+    }
+
+    function toggleContactsList() {
+        const panel = document.getElementById('contacts-panel');
+        if (!panel) return;
+        _contactsPanelOpen = !_contactsPanelOpen;
+        panel.style.display = _contactsPanelOpen ? '' : 'none';
+        if (_contactsPanelOpen) loadContactsList('');
+    }
+
+    // Load contacts when shipping page opens
+    const _origLoadShippingPage2 = loadShippingPage;
+    loadShippingPage = async function() {
+        await _origLoadShippingPage2.apply(this, arguments);
+        loadContactsList('');
+    };
+
+    // Close contacts dropdown when clicking outside
+    document.addEventListener('click', e => {
+        const dropdown = document.getElementById('ship-contacts-dropdown');
+        const searchEl = document.getElementById('ship-contact-search');
+        if (dropdown && searchEl && !searchEl.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+
 
 </script>
 
