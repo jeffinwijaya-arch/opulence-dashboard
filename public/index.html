@@ -5048,6 +5048,8 @@ fxLoadRates();
 fxCalc();
 // Refresh FX rates every hour (free Wise API, no cost)
 setInterval(()=>{ fxLoadRates(); }, 3600000);
+// Refresh ticker every hour
+setInterval(renderTicker, 3600000);
 fetch('/api/portfolio_insights').then(r=>r.json()).then(d=>{DATA.portfolio=d;renderPortfolioSnapshot();}).catch(()=>{});
 // Restore page from URL AFTER init
 {
