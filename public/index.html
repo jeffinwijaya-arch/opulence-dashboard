@@ -5041,6 +5041,8 @@ async function fxLoadRates() {
 
 // ── INIT ──
 loadData();
+// Retry ticker after 3s in case initial load was slow
+setTimeout(renderTicker, 3000);
 loadNews();
 fxLoadRates();
 fxCalc();
