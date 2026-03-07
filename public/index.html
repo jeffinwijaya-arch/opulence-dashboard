@@ -588,6 +588,177 @@
             background:var(--bg-2); color:var(--text-0); border-color:var(--border-strong);
         }
         html.light .footer { background:var(--bg-1); }
+
+        /* ── UNIFIED SEARCH ── */
+        .usearch-bar {
+            display:none; position:sticky; top:0; z-index:150;
+            background:var(--bg-1); border-bottom:1px solid var(--border-strong);
+            padding:8px 12px; gap:8px;
+        }
+        @media(max-width:900px) { .usearch-bar { display:flex; align-items:center; } }
+        .usearch-input {
+            flex:1; background:var(--bg-3); border:1px solid var(--border-strong);
+            border-radius:22px; padding:9px 16px; font-size:0.9rem; color:var(--text-0);
+            font-family:var(--font); outline:none; transition:all 0.2s;
+            min-height:44px;
+        }
+        .usearch-input:focus { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-glow); }
+        .usearch-input::placeholder { color:var(--text-2); }
+        .usearch-btn {
+            background:var(--accent); color:var(--bg-0); border:none; border-radius:22px;
+            padding:0 18px; font-size:0.85rem; font-weight:700; cursor:pointer;
+            min-height:44px; min-width:44px; display:flex; align-items:center; justify-content:center;
+            transition:all 0.15s;
+        }
+        .usearch-btn:active { transform:scale(0.96); }
+
+        /* Overlay */
+        #usearch-overlay {
+            display:none; position:fixed; inset:0; z-index:2000;
+            background:rgba(0,0,0,0.7); backdrop-filter:blur(4px);
+            -webkit-backdrop-filter:blur(4px);
+        }
+        #usearch-overlay.open { display:flex; flex-direction:column; }
+        .usearch-panel {
+            background:var(--bg-1); width:100%; max-width:680px; margin:0 auto;
+            border-radius:0 0 var(--radius-lg) var(--radius-lg);
+            max-height:85vh; display:flex; flex-direction:column;
+            box-shadow:0 8px 40px rgba(0,0,0,0.6);
+        }
+        @media(max-width:900px) {
+            .usearch-panel { max-width:100%; border-radius:0 0 16px 16px; }
+        }
+        .usearch-panel-top {
+            padding:12px 16px; display:flex; align-items:center; gap:10px;
+            border-bottom:1px solid var(--border);
+        }
+        .usearch-panel-input {
+            flex:1; background:var(--bg-3); border:1px solid var(--border-strong);
+            border-radius:22px; padding:10px 18px; font-size:1rem; color:var(--text-0);
+            font-family:var(--font); outline:none; transition:all 0.2s; min-height:44px;
+        }
+        .usearch-panel-input:focus { border-color:var(--accent); }
+        .usearch-panel-input::placeholder { color:var(--text-2); }
+        .usearch-close {
+            background:none; border:none; color:var(--text-2); cursor:pointer;
+            font-size:1.4rem; padding:4px 8px; border-radius:6px; line-height:1;
+            min-height:44px; min-width:44px; display:flex; align-items:center; justify-content:center;
+        }
+        .usearch-close:hover { color:var(--text-0); background:var(--bg-3); }
+        .usearch-results { overflow-y:auto; padding:10px 0 16px; }
+        .usearch-category {
+            padding:8px 16px 4px; font-size:0.62rem; font-weight:700;
+            text-transform:uppercase; letter-spacing:1.2px; color:var(--text-2);
+            font-family:var(--mono); display:flex; align-items:center; gap:6px;
+        }
+        .usearch-category .uc-count {
+            background:var(--accent-dim); color:var(--accent); border-radius:10px;
+            padding:1px 7px; font-size:0.6rem;
+        }
+        .usearch-item {
+            padding:10px 16px; display:flex; align-items:center; gap:10px;
+            cursor:pointer; transition:background 0.1s; min-height:44px;
+        }
+        .usearch-item:hover { background:var(--bg-2); }
+        .usearch-item:active { background:var(--bg-3); }
+        .usearch-item-icon {
+            width:32px; height:32px; border-radius:8px; background:var(--bg-3);
+            display:flex; align-items:center; justify-content:center;
+            font-size:1rem; flex-shrink:0;
+        }
+        .usearch-item-body { flex:1; min-width:0; }
+        .usearch-item-title { font-size:0.82rem; font-weight:600; color:var(--text-0); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .usearch-item-sub { font-size:0.68rem; color:var(--text-2); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .usearch-item-right { font-family:var(--mono); font-size:0.78rem; font-weight:700; color:var(--green); flex-shrink:0; }
+        .usearch-empty { text-align:center; padding:30px; color:var(--text-2); font-size:0.82rem; }
+        .usearch-loading { text-align:center; padding:20px; color:var(--text-2); }
+        .usearch-divider { height:1px; background:var(--border); margin:4px 16px; }
+
+        /* ── MOBILE UX IMPROVEMENTS ── */
+        /* Bigger tap targets for all interactive elements on mobile */
+        @media(max-width:900px) {
+            /* Bottom nav with icons */
+            .mobile-nav { height:auto; padding:4px 4px max(8px,env(safe-area-inset-bottom)); }
+            .mobile-nav a { min-height:52px; min-width:52px; padding:6px 4px; font-size:0.6rem; }
+            .mn-icon { font-size:1.2rem; line-height:1; display:block; }
+
+            /* More menu items - bigger tap targets */
+            .more-grid-item {
+                min-height:56px; border-radius:10px; display:flex; flex-direction:column;
+                align-items:center; justify-content:center; gap:3px;
+                background:var(--bg-2); color:var(--text-1); font-size:0.65rem;
+                text-decoration:none; cursor:pointer; transition:all 0.15s;
+                -webkit-tap-highlight-color:rgba(212,175,55,0.15);
+            }
+            .more-grid-item:active { background:var(--bg-3); transform:scale(0.96); }
+            .more-grid-item .mgi-icon { font-size:1.3rem; line-height:1; }
+
+            /* Sticky search bar on mobile */
+            .mobile-search-sticky {
+                position:sticky; top:0; z-index:100;
+                background:var(--bg-1); padding:6px 10px;
+                border-bottom:1px solid var(--border);
+            }
+
+            /* Inventory cards on mobile */
+            .inv-card {
+                background:var(--bg-2); border:1px solid var(--border);
+                border-radius:var(--radius-lg); padding:12px; margin-bottom:10px;
+                position:relative; overflow:hidden;
+                transition:transform 0.15s, box-shadow 0.15s;
+            }
+            .inv-card:active { transform:scale(0.99); }
+            .inv-card-header { display:flex; align-items:flex-start; gap:10px; margin-bottom:8px; }
+            .inv-card-ref { font-family:var(--mono); font-weight:700; font-size:1rem; color:var(--accent); }
+            .inv-card-desc { font-size:0.72rem; color:var(--text-1); line-height:1.4; margin-top:2px; }
+            .inv-card-badges { display:flex; gap:4px; flex-wrap:wrap; margin-top:6px; }
+            .inv-badge {
+                font-size:0.58rem; padding:2px 7px; border-radius:10px;
+                font-weight:600; text-transform:uppercase; letter-spacing:0.3px;
+            }
+            .inv-badge-arrived { background:rgba(0,230,118,0.12); color:var(--green); }
+            .inv-badge-posted { background:rgba(212,175,55,0.12); color:var(--accent); }
+            .inv-badge-sold { background:rgba(255,23,68,0.1); color:var(--red); }
+            .inv-badge-pending { background:var(--bg-3); color:var(--text-2); }
+            .inv-card-prices { display:flex; gap:16px; margin:8px 0; }
+            .inv-card-price-item { flex:1; }
+            .inv-card-price-label { font-size:0.58rem; color:var(--text-2); text-transform:uppercase; letter-spacing:0.5px; }
+            .inv-card-price-val { font-family:var(--mono); font-size:0.88rem; font-weight:700; color:var(--text-0); margin-top:2px; }
+            .inv-card-actions {
+                display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;
+                border-top:1px solid var(--border); padding-top:10px;
+            }
+            .inv-card-actions .btn { flex:1; min-height:40px; font-size:0.72rem; text-align:center; }
+
+            /* Swipeable actions */
+            .inv-card-swipe-wrap { position:relative; overflow:hidden; border-radius:var(--radius-lg); margin-bottom:10px; }
+            .inv-card-swipe-actions {
+                position:absolute; right:0; top:0; bottom:0;
+                display:flex; align-items:stretch;
+                transform:translateX(100%); transition:transform 0.25s ease;
+            }
+            .inv-card-swipe-wrap.swiped .inv-card-swipe-actions { transform:translateX(0); }
+            .inv-card-swipe-wrap.swiped .inv-card { border-radius:var(--radius-lg) 0 0 var(--radius-lg); }
+            .inv-swipe-action {
+                display:flex; flex-direction:column; align-items:center; justify-content:center;
+                gap:3px; padding:0 16px; cursor:pointer; font-size:0.62rem; font-weight:700;
+                min-width:64px;
+            }
+            .inv-swipe-action .isa-icon { font-size:1.3rem; }
+
+            /* Pull-to-refresh indicator */
+            .ptr-indicator {
+                display:flex; align-items:center; justify-content:center; gap:8px;
+                padding:12px; font-size:0.75rem; color:var(--text-2);
+                height:0; overflow:hidden; transition:height 0.2s;
+            }
+            .ptr-indicator.visible { height:48px; }
+            .ptr-spinner {
+                width:18px; height:18px; border:2px solid var(--border-strong);
+                border-top-color:var(--accent); border-radius:50%;
+                animation:spin 0.7s linear infinite;
+            }
+        }
     </style>
 </head>
 <body>
@@ -613,6 +784,7 @@
             <a data-page="alerts" onclick="showPage('alerts')">Alerts <span class="badge" id="alerts-count">0</span></a>
             <a data-page="analytics" onclick="showPage('analytics')">Analytics</a>
             <a data-page="aging" onclick="showPage('aging')">Aging</a>
+            <a data-page="briefing" onclick="showPage('briefing')">Briefing</a>
         </nav>
         <div class="theme-toggle" onclick="toggleTheme()" id="themeToggle" title="Toggle light/dark mode"></div>
     </header>
@@ -620,25 +792,55 @@
     <!-- TICKER -->
     <div class="ticker-bar"><div class="ticker-inner" id="ticker-track"></div></div>
 
+    <!-- UNIFIED SEARCH OVERLAY -->
+    <div id="usearch-overlay" onclick="closeUnifiedSearch(event)">
+        <div class="usearch-panel" onclick="event.stopPropagation()">
+            <div class="usearch-panel-top">
+                <input class="usearch-panel-input" id="usearch-input" type="text"
+                    placeholder="Search watches, invoices, labels…"
+                    oninput="debouncedUnifiedSearch(this.value)"
+                    onkeydown="if(event.key==='Escape')closeUnifiedSearch()">
+                <button class="usearch-close" onclick="closeUnifiedSearch()">✕</button>
+            </div>
+            <div class="usearch-results" id="usearch-results">
+                <div class="usearch-empty">Type to search across all data</div>
+            </div>
+        </div>
+    </div>
+
     <!-- MOBILE NAV -->
     <nav class="mobile-nav" id="mobile-nav">
-        <a data-page="dashboard" class="active" onclick="showPage('dashboard')">Home</a>
-        <a data-page="lookup" onclick="showPage('lookup')">Lookup</a>
-        <a data-page="portfolio" onclick="showPage('portfolio')">Portfolio</a>
-        <a data-page="deals" onclick="showPage('deals')">Deals</a>
-        <a id="more-toggle" onclick="toggleMobileMore()" style="position:relative;">More</a>
+        <a data-page="dashboard" class="active" onclick="showPage('dashboard')">
+            <span class="mn-icon">🏠</span>Home
+        </a>
+        <a data-page="inventory" onclick="showPage('inventory')">
+            <span class="mn-icon">📋</span>Stock
+        </a>
+        <a onclick="openUnifiedSearch()" style="position:relative;">
+            <span class="mn-icon">🔍</span>Search
+        </a>
+        <a data-page="deals" onclick="showPage('deals')">
+            <span class="mn-icon">💰</span>Deals
+        </a>
+        <a id="more-toggle" onclick="toggleMobileMore()" style="position:relative;">
+            <span class="mn-icon">⋯</span>More
+        </a>
     </nav>
-    <div id="mobile-more-menu" style="display:none;position:fixed;bottom:52px;left:0;right:0;z-index:9998;background:var(--bg-1);border-top:1px solid var(--border);padding:10px 12px;display:none;">
+    <div id="mobile-more-menu" style="display:none;position:fixed;bottom:60px;left:0;right:0;z-index:9998;background:var(--bg-1);border-top:1px solid var(--border);padding:12px;">
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;">
-            <a onclick="mobileNav('arbitrage')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Arb</a>
-            <a onclick="mobileNav('invoices')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Invoices</a>
-            <a onclick="mobileNav('shipping')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Ship</a>
-            <a onclick="mobileNav('inventory')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Inventory</a>
-            <a onclick="mobileNav('payments')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Payments</a>
-            <a onclick="mobileNav('postings')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Postings</a>
-            <a onclick="mobileNav('photos')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Photos</a>
-            <a onclick="mobileNav('browse')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Market</a>
-            <a onclick="mobileNav('analytics')" style="padding:10px 0;border-radius:6px;background:var(--bg-2);color:var(--text-1);font-size:0.7rem;text-decoration:none;cursor:pointer;">Data</a>
+            <a class="more-grid-item" onclick="mobileNav('lookup')"><span class="mgi-icon">💹</span>Prices</a>
+            <a class="more-grid-item" onclick="mobileNav('portfolio')"><span class="mgi-icon">📊</span>Portfolio</a>
+            <a class="more-grid-item" onclick="mobileNav('arbitrage')"><span class="mgi-icon">⚡</span>Arb</a>
+            <a class="more-grid-item" onclick="mobileNav('invoices')"><span class="mgi-icon">🧾</span>Invoices</a>
+            <a class="more-grid-item" onclick="mobileNav('shipping')"><span class="mgi-icon">📦</span>Shipping</a>
+            <a class="more-grid-item" onclick="mobileNav('payments')"><span class="mgi-icon">💳</span>Payments</a>
+            <a class="more-grid-item" onclick="mobileNav('postings')"><span class="mgi-icon">📢</span>Postings</a>
+            <a class="more-grid-item" onclick="mobileNav('photos')"><span class="mgi-icon">📷</span>Photos</a>
+            <a class="more-grid-item" onclick="mobileNav('browse')"><span class="mgi-icon">🌐</span>Market</a>
+            <a class="more-grid-item" onclick="mobileNav('analytics')"><span class="mgi-icon">📈</span>Analytics</a>
+            <a class="more-grid-item" onclick="mobileNav('alerts')"><span class="mgi-icon">🔔</span>Alerts</a>
+            <a class="more-grid-item" onclick="mobileNav('aging')"><span class="mgi-icon">⏳</span>Aging</a>
+            <a class="more-grid-item" onclick="mobileNav('briefing')"><span class="mgi-icon">📋</span>Briefing</a>
         </div>
     </div>
 
@@ -787,6 +989,44 @@
                 <p>Search by ref, nickname, or natural language — e.g. "daytona panda", "black sub", "126334 blue jubilee"</p>
             </div>
             <input class="input" id="ref-search" placeholder="e.g. 126500, daytona panda, black sub, gmt pepsi jubilee..." oninput="debounceSearch()" style="max-width:480px;">
+            <!-- Profit Calculator -->
+            <div id="profit-calc-panel" style="display:none;margin-top:12px;max-width:480px;">
+                <div class="card" style="border-left:3px solid var(--green);">
+                    <div class="card-head"><span>Profit Calculator</span></div>
+                    <div class="card-body" style="display:grid;gap:10px;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <div>
+                                <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Buy Price</label>
+                                <input class="input" id="pc-buy" type="number" placeholder="0" oninput="calcProfit()" style="width:100%;margin-top:3px;">
+                            </div>
+                            <div>
+                                <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Sell Price</label>
+                                <input class="input" id="pc-sell" type="number" placeholder="0" oninput="calcProfit()" style="width:100%;margin-top:3px;">
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:6px;">
+                            <button class="btn" onclick="setMarginTarget(0.05)" style="font-size:0.68rem;padding:4px 10px;">+5%</button>
+                            <button class="btn" onclick="setMarginTarget(0.10)" style="font-size:0.68rem;padding:4px 10px;">+10%</button>
+                            <button class="btn" onclick="setMarginTarget(0.15)" style="font-size:0.68rem;padding:4px 10px;">+15%</button>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;" id="pc-results">
+                            <div style="background:var(--bg-3);border-radius:6px;padding:8px;text-align:center;">
+                                <div style="font-size:0.6rem;color:var(--text-2);text-transform:uppercase;">Gross Profit</div>
+                                <div id="pc-gross" style="font-size:1rem;font-weight:700;color:var(--green);margin-top:2px;">—</div>
+                            </div>
+                            <div style="background:var(--bg-3);border-radius:6px;padding:8px;text-align:center;">
+                                <div style="font-size:0.6rem;color:var(--text-2);text-transform:uppercase;">Margin</div>
+                                <div id="pc-margin" style="font-size:1rem;font-weight:700;color:var(--accent);margin-top:2px;">—</div>
+                            </div>
+                            <div style="background:var(--bg-3);border-radius:6px;padding:8px;text-align:center;">
+                                <div style="font-size:0.6rem;color:var(--text-2);text-transform:uppercase;">Net (after costs)</div>
+                                <div id="pc-net" style="font-size:1rem;font-weight:700;color:var(--text-1);margin-top:2px;">—</div>
+                            </div>
+                        </div>
+                        <div style="font-size:0.62rem;color:var(--text-2);">Costs: ~$50 shipping + ~0.5% insurance</div>
+                    </div>
+                </div>
+            </div>
             <div id="lookup-result" style="margin-top:12px;"></div>
             <div id="lookup-market-summary" style="margin-top:24px;"></div>
         </div>
@@ -1726,6 +1966,94 @@
                 <div class="metric"><div class="label">Old (60+d)</div><div class="val" id="aging-red" style="color:#ff453a;">0</div></div>
             </div>
             <div id="aging-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;"></div>
+        </div>
+
+        <!-- ═══ BRIEFING ═══ -->
+        <div class="page" id="page-briefing">
+            <div class="page-head" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                <div>
+                    <h1>Morning Briefing</h1>
+                    <p id="briefing-subtitle">Daily digest — activity, pending actions, market movers</p>
+                </div>
+                <button class="btn" onclick="loadBriefingPage()" style="opacity:0.8;">&#8635; Refresh</button>
+            </div>
+
+            <!-- Activity Row -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;" id="briefing-activity-row">
+                <div class="card" style="text-align:center;">
+                    <div style="font-size:0.62rem;color:var(--text-2);text-transform:uppercase;letter-spacing:1px;padding:8px 0 2px;">Bought</div>
+                    <div id="briefing-bought-count" style="font-size:2rem;font-weight:700;color:var(--accent);padding:4px 0;">—</div>
+                    <div id="briefing-bought-list" style="font-size:0.68rem;color:var(--text-2);padding:0 8px 8px;"></div>
+                </div>
+                <div class="card" style="text-align:center;">
+                    <div style="font-size:0.62rem;color:var(--text-2);text-transform:uppercase;letter-spacing:1px;padding:8px 0 2px;">Sold</div>
+                    <div id="briefing-sold-count" style="font-size:2rem;font-weight:700;color:var(--green);padding:4px 0;">—</div>
+                    <div id="briefing-sold-list" style="font-size:0.68rem;color:var(--text-2);padding:0 8px 8px;"></div>
+                </div>
+                <div class="card" style="text-align:center;">
+                    <div style="font-size:0.62rem;color:var(--text-2);text-transform:uppercase;letter-spacing:1px;padding:8px 0 2px;">Arrived</div>
+                    <div id="briefing-arrived-count" style="font-size:2rem;font-weight:700;color:var(--blue);padding:4px 0;">—</div>
+                    <div id="briefing-arrived-list" style="font-size:0.68rem;color:var(--text-2);padding:0 8px 8px;"></div>
+                </div>
+                <div class="card" style="text-align:center;">
+                    <div style="font-size:0.62rem;color:var(--text-2);text-transform:uppercase;letter-spacing:1px;padding:8px 0 2px;">Shipped</div>
+                    <div id="briefing-shipped-count" style="font-size:2rem;font-weight:700;color:var(--orange);padding:4px 0;">—</div>
+                    <div id="briefing-shipped-list" style="font-size:0.68rem;color:var(--text-2);padding:0 8px 8px;"></div>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+                <!-- Cash Position -->
+                <div class="card">
+                    <div class="card-head"><span>Cash Position</span></div>
+                    <div class="card-body" id="briefing-cash" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                        <div style="background:var(--bg-3);border-radius:8px;padding:10px;">
+                            <div style="font-size:0.62rem;color:var(--text-2);text-transform:uppercase;">Capital Deployed</div>
+                            <div id="briefing-capital" style="font-size:1.2rem;font-weight:700;color:var(--accent);margin-top:4px;">—</div>
+                        </div>
+                        <div style="background:var(--bg-3);border-radius:8px;padding:10px;">
+                            <div style="font-size:0.62rem;color:var(--text-2);text-transform:uppercase;">Receivables</div>
+                            <div id="briefing-receivables" style="font-size:1.2rem;font-weight:700;color:var(--orange);margin-top:4px;">—</div>
+                        </div>
+                        <div style="background:var(--bg-3);border-radius:8px;padding:10px;">
+                            <div style="font-size:0.62rem;color:var(--text-2);text-transform:uppercase;">Total Revenue</div>
+                            <div id="briefing-revenue" style="font-size:1.2rem;font-weight:700;color:var(--green);margin-top:4px;">—</div>
+                        </div>
+                        <div style="background:var(--bg-3);border-radius:8px;padding:10px;">
+                            <div style="font-size:0.62rem;color:var(--text-2);text-transform:uppercase;">Total Profit</div>
+                            <div id="briefing-profit" style="font-size:1.2rem;font-weight:700;color:var(--green);margin-top:4px;">—</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Market Movers -->
+                <div class="card">
+                    <div class="card-head"><span>Market Movers</span><span style="font-size:0.65rem;color:var(--text-2);font-weight:400;">Refs you hold · yesterday vs today</span></div>
+                    <div class="card-body" id="briefing-movers">
+                        <div style="color:var(--text-2);text-align:center;padding:12px;">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Actions -->
+            <div class="card">
+                <div class="card-head"><span>Pending Actions</span></div>
+                <div class="card-body">
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                        <div>
+                            <div style="font-size:0.65rem;color:var(--orange);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Sold — Not Shipped (<span id="briefing-unshipped-count">0</span>)</div>
+                            <div id="briefing-unshipped" style="font-size:0.72rem;"></div>
+                        </div>
+                        <div>
+                            <div style="font-size:0.65rem;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Unpaid Invoices (<span id="briefing-unpaid-count">0</span>)</div>
+                            <div id="briefing-unpaid" style="font-size:0.72rem;"></div>
+                        </div>
+                        <div>
+                            <div style="font-size:0.65rem;color:var(--blue);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Awaiting Arrival (<span id="briefing-notarrived-count">0</span>)</div>
+                            <div id="briefing-notarrived" style="font-size:0.72rem;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <footer class="footer"><span>MK Opulence</span><span>&middot;</span><span>Market Intelligence</span><span>&middot;</span><span id="update-time">--</span><span>&middot;</span><span class="sync-timer" id="sync-timer">Last synced: --</span><span class="kbd-hint" style="opacity:0.4;font-size:0.58rem;">Keys: 1-7 nav / search R refresh</span></footer>
@@ -5282,7 +5610,7 @@ function filterInventory() {
 }
 
 function renderInventoryTable(rows) {
-    const isMobile = window.innerWidth < 768;
+    const isMobile = window.innerWidth < 900;
     const tableWrap = document.getElementById('im-table-wrap');
     const cardsEl = document.getElementById('im-cards');
     if (tableWrap) tableWrap.style.display = isMobile ? 'none' : 'block';
@@ -5354,28 +5682,53 @@ function renderInventoryTable(rows) {
         </tr>`).join('');
     }
     
-    // Mobile cards
+    // Mobile cards (enhanced with swipe actions)
     if (cardsEl) {
+        const badgeHtml = r => {
+            let b = '';
+            if (r.arrived==='Yes') b += '<span class="inv-badge inv-badge-arrived">Arrived</span>';
+            else b += '<span class="inv-badge inv-badge-pending">In Transit</span>';
+            if (r.posted==='Yes') b += '<span class="inv-badge inv-badge-posted">Posted</span>';
+            if (r.sold==='Yes') b += '<span class="inv-badge inv-badge-sold">Sold</span>';
+            return b;
+        };
+        const swipeActionsHtml = r => {
+            let html = '';
+            if (r.arrived!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--accent);color:var(--bg-0);" onclick="event.stopPropagation();quickAction(${r.row},'arrived')"><span class="isa-icon">📥</span>Arrive</div>`;
+            if (r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--green);color:var(--bg-0);" onclick="event.stopPropagation();showSellModal(${r.row})"><span class="isa-icon">💵</span>Sell</div>`;
+            if (r.sold==='Yes'&&r.shipped!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--blue);color:var(--bg-0);" onclick="event.stopPropagation();showShipModal(${r.row})"><span class="isa-icon">📦</span>Ship</div>`;
+            return html;
+        };
         cardsEl.innerHTML = rows.map(r => {
             const diff = pnlCalc(r);
-            const pnlStr = diff !== null ? `<span style="color:${diff>=0?'var(--green)':'var(--red)'};">${diff>=0?'+':''}$${Math.round(diff).toLocaleString()}</span>` : '';
-            return `<div style="background:var(--bg-2);border-radius:var(--radius);padding:10px;margin-bottom:6px;" onclick="editWatch(${r.row})">
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
-                    <div style="font-size:0.78rem;font-weight:600;flex:1;margin-right:8px;">${r.description||''}</div>
-                    <div style="font-size:0.62rem;white-space:nowrap;">${statusTags(r)}</div>
+            const pnlStr = diff !== null ? `<span style="color:${diff>=0?'var(--green)':'var(--red)'};">${diff>=0?'+':''}$${Math.round(Math.abs(diff)).toLocaleString()}</span>` : '';
+            const swipeContent = swipeActionsHtml(r);
+            return `<div class="inv-card-swipe-wrap">
+                <div class="inv-card" onclick="editWatch(${r.row})">
+                    <div class="inv-card-header">
+                        <div style="flex:1;">
+                            <div class="inv-card-ref">${r.description ? r.description.match(/\b\d{5,6}[A-Z]*\b/)?.[0] || '' : ''}</div>
+                            <div class="inv-card-desc">${r.description||''}</div>
+                        </div>
+                        ${swipeContent ? '<div style="font-size:0.65rem;color:var(--text-2);flex-shrink:0;">← swipe</div>' : ''}
+                    </div>
+                    <div class="inv-card-badges">${badgeHtml(r)}</div>
+                    <div class="inv-card-prices">
+                        <div class="inv-card-price-item">
+                            <div class="inv-card-price-label">Cost</div>
+                            <div class="inv-card-price-val">${price(r.cost_price)}</div>
+                        </div>
+                        ${r.sold==='Yes'?`<div class="inv-card-price-item"><div class="inv-card-price-label">Sold</div><div class="inv-card-price-val">${price(r.sold_price)}</div></div>`:''}
+                        ${diff!==null?`<div class="inv-card-price-item"><div class="inv-card-price-label">P&L</div><div class="inv-card-price-val">${pnlStr}</div></div>`:''}
+                        ${r.bought_from?`<div class="inv-card-price-item"><div class="inv-card-price-label">From</div><div class="inv-card-price-val" style="font-size:0.72rem;color:var(--text-1);">${r.bought_from}</div></div>`:''}
+                    </div>
+                    <div class="inv-card-actions" onclick="event.stopPropagation();">${actions(r)}</div>
                 </div>
-                <div style="display:flex;gap:12px;font-size:0.72rem;color:var(--text-2);margin-bottom:6px;">
-                    ${r.bought_from?`<span>From: ${r.bought_from}</span>`:''}
-                    ${r.sold_to?`<span>To: ${r.sold_to}</span>`:''}
-                </div>
-                <div style="display:flex;gap:12px;font-size:0.72rem;margin-bottom:8px;">
-                    <span>Cost: ${price(r.cost_price)}</span>
-                    ${r.sold==='Yes'?`<span>Sold: ${price(r.sold_price)}</span>`:''}
-                    ${pnlStr?`<span>P&L: ${pnlStr}</span>`:''}
-                </div>
-                <div style="display:flex;gap:4px;flex-wrap:wrap;" onclick="event.stopPropagation();">${actions(r)}</div>
+                ${swipeContent ? `<div class="inv-card-swipe-actions">${swipeContent}</div>` : ''}
             </div>`;
         }).join('');
+        // Init swipe interactions after render
+        setTimeout(initSwipeActions, 50);
     }
 }
 
@@ -8541,6 +8894,225 @@ async function loadPayments() {
         loadTrackerPage();
         if (typeof _origLoadShippingPage === 'function') _origLoadShippingPage();
     };
+
+    // ══════════════════════════════════════════════════
+    // UNIFIED SEARCH
+    // ══════════════════════════════════════════════════
+    let _usearchTimer = null;
+    let _usearchAbort = null;
+
+    function openUnifiedSearch() {
+        const overlay = document.getElementById('usearch-overlay');
+        if (!overlay) return;
+        overlay.classList.add('open');
+        const inp = document.getElementById('usearch-input');
+        if (inp) { inp.value = ''; inp.focus(); }
+        document.getElementById('usearch-results').innerHTML = '<div class="usearch-empty">Type to search across all data</div>';
+    }
+
+    function closeUnifiedSearch(e) {
+        if (e && e.target !== document.getElementById('usearch-overlay')) return;
+        document.getElementById('usearch-overlay')?.classList.remove('open');
+        if (_usearchAbort) { _usearchAbort.abort(); _usearchAbort = null; }
+        clearTimeout(_usearchTimer);
+    }
+
+    function debouncedUnifiedSearch(q) {
+        clearTimeout(_usearchTimer);
+        if (!q || q.trim().length < 2) {
+            document.getElementById('usearch-results').innerHTML = '<div class="usearch-empty">Type at least 2 characters</div>';
+            return;
+        }
+        document.getElementById('usearch-results').innerHTML = '<div class="usearch-loading"><span>Searching…</span></div>';
+        _usearchTimer = setTimeout(() => runUnifiedSearch(q.trim()), 280);
+    }
+
+    async function runUnifiedSearch(q) {
+        if (_usearchAbort) _usearchAbort.abort();
+        _usearchAbort = new AbortController();
+        try {
+            const r = await fetch('/api/unified_search?q=' + encodeURIComponent(q), { signal: _usearchAbort.signal });
+            const d = await r.json();
+            renderUnifiedSearchResults(d, q);
+        } catch(e) {
+            if (e.name === 'AbortError') return;
+            document.getElementById('usearch-results').innerHTML = '<div class="usearch-empty">Search error — try again</div>';
+        }
+    }
+
+    function renderUnifiedSearchResults(d, q) {
+        const el = document.getElementById('usearch-results');
+        if (!d.ok) { el.innerHTML = '<div class="usearch-empty">No results</div>'; return; }
+
+        const { results } = d;
+        let html = '';
+        let anyResults = false;
+
+        // Category config: icon, label, renderer
+        const categories = [
+            { key: 'inventory',  icon: '📋', label: 'Inventory',  render: renderUSInventory  },
+            { key: 'market',     icon: '💹', label: 'Market',     render: renderUSMarket     },
+            { key: 'invoices',   icon: '🧾', label: 'Invoices',   render: renderUSInvoices   },
+            { key: 'labels',     icon: '📦', label: 'Labels',     render: renderUSLabels     },
+            { key: 'postings',   icon: '📢', label: 'Postings',   render: renderUSPostings   },
+        ];
+
+        for (const cat of categories) {
+            const section = results[cat.key];
+            if (!section || section.total === 0) continue;
+            anyResults = true;
+            html += `<div class="usearch-category">${cat.icon} ${cat.label}<span class="uc-count">${section.total}</span></div>`;
+            html += section.items.slice(0, 6).map(item => cat.render(item, q)).join('');
+            html += '<div class="usearch-divider"></div>';
+        }
+
+        if (!anyResults) {
+            el.innerHTML = `<div class="usearch-empty">No results for "<strong>${esc(q)}</strong>"</div>`;
+            return;
+        }
+        el.innerHTML = html;
+    }
+
+    function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function fmt$(n) { if (!n && n !== 0) return '—'; return '$' + Number(n).toLocaleString(); }
+
+    function renderUSInventory(item, q) {
+        const status = item.sold === 'Yes' ? 'Sold' : item.arrived === 'Yes' ? 'In Stock' : 'In Transit';
+        const color = item.sold === 'Yes' ? 'var(--red)' : item.arrived === 'Yes' ? 'var(--green)' : 'var(--orange)';
+        return `<div class="usearch-item" onclick="closeUnifiedSearch();showPage('inventory')">
+            <div class="usearch-item-icon" style="background:var(--accent-dim);color:var(--accent);">📋</div>
+            <div class="usearch-item-body">
+                <div class="usearch-item-title">${esc(item.ref || '')} — ${esc(item.description || '').slice(0,60)}</div>
+                <div class="usearch-item-sub" style="color:${color};">${status}</div>
+            </div>
+            <div class="usearch-item-right">${fmt$(item.cost)}</div>
+        </div>`;
+    }
+
+    function renderUSMarket(item, q) {
+        const region = item.region ? `<span style="color:var(--blue);margin-left:4px;">${esc(item.region)}</span>` : '';
+        return `<div class="usearch-item" onclick="closeUnifiedSearch();showPage('lookup');setTimeout(()=>{const si=$('#ref-search');if(si){si.value='${esc(item.ref)}';doLookup();}},300);">
+            <div class="usearch-item-icon" style="background:var(--blue-dim);color:var(--blue);">💹</div>
+            <div class="usearch-item-body">
+                <div class="usearch-item-title">${esc(item.ref || '')}${region}</div>
+                <div class="usearch-item-sub">${esc(item.condition || '')} · ${esc(item.dial || '')} ${esc(item.bracelet || '')}</div>
+            </div>
+            <div class="usearch-item-right">${fmt$(item.price_usd)}</div>
+        </div>`;
+    }
+
+    function renderUSInvoices(item, q) {
+        const statusColor = {paid:'var(--green)',draft:'var(--text-2)',sent:'var(--blue)',overdue:'var(--red)'}[item.status] || 'var(--text-1)';
+        return `<div class="usearch-item" onclick="closeUnifiedSearch();showPage('invoices')">
+            <div class="usearch-item-icon" style="background:rgba(251,146,60,0.1);color:var(--orange);">🧾</div>
+            <div class="usearch-item-body">
+                <div class="usearch-item-title">${esc(item.invoice_number || '')} — ${esc(item.customer_name || '')}</div>
+                <div class="usearch-item-sub" style="color:${statusColor};">${esc(item.status || '')} · ${esc(item.date || '')}</div>
+            </div>
+            <div class="usearch-item-right">${fmt$(item.total)}</div>
+        </div>`;
+    }
+
+    function renderUSLabels(item, q) {
+        return `<div class="usearch-item" onclick="closeUnifiedSearch();showPage('shipping')">
+            <div class="usearch-item-icon" style="background:var(--green-dim);color:var(--green);">📦</div>
+            <div class="usearch-item-body">
+                <div class="usearch-item-title">${esc(item.tracking)}</div>
+                <div class="usearch-item-sub">${esc(item.created || '')} · ${item.size_kb}KB</div>
+            </div>
+            <div class="usearch-item-right" style="color:var(--text-2);font-size:0.68rem;">PDF</div>
+        </div>`;
+    }
+
+    function renderUSPostings(item, q) {
+        const when = item.posted_at ? item.posted_at.slice(0, 10) : '';
+        return `<div class="usearch-item" onclick="closeUnifiedSearch();showPage('postings')">
+            <div class="usearch-item-icon" style="background:rgba(212,175,55,0.1);color:var(--accent);">📢</div>
+            <div class="usearch-item-body">
+                <div class="usearch-item-title">${esc(item.ref || '')} — ${esc(item.description || '').slice(0,50)}</div>
+                <div class="usearch-item-sub">${when}</div>
+            </div>
+            <div class="usearch-item-right">${fmt$(item.price)}</div>
+        </div>`;
+    }
+
+    // Close search overlay with Escape key globally
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeUnifiedSearch(); });
+
+    // ══════════════════════════════════════════════════
+    // PULL-TO-REFRESH
+    // ══════════════════════════════════════════════════
+    (function initPullToRefresh() {
+        if (window.innerWidth > 900) return; // Desktop only uses normal refresh
+        let startY = 0, pulling = false, threshold = 70;
+        const ptrEl = document.createElement('div');
+        ptrEl.className = 'ptr-indicator';
+        ptrEl.innerHTML = '<div class="ptr-spinner"></div><span>Release to refresh</span>';
+        document.querySelector('.main')?.prepend(ptrEl);
+
+        document.addEventListener('touchstart', e => {
+            if (window.scrollY === 0) { startY = e.touches[0].clientY; pulling = true; }
+        }, { passive: true });
+
+        document.addEventListener('touchmove', e => {
+            if (!pulling) return;
+            const dy = e.touches[0].clientY - startY;
+            if (dy > 20) ptrEl.classList.add('visible');
+        }, { passive: true });
+
+        document.addEventListener('touchend', e => {
+            if (!pulling) return;
+            pulling = false;
+            const dy = e.changedTouches[0].clientY - startY;
+            if (dy > threshold) {
+                // Trigger refresh for current active page
+                const active = document.querySelector('.page.active');
+                if (active) {
+                    const pgName = active.id.replace('page-', '');
+                    const refreshFns = {
+                        dashboard: () => location.reload(),
+                        inventory: loadInventoryPage,
+                        postings: () => typeof loadPostingsPage === 'function' && loadPostingsPage(),
+                        invoices: loadInvoicePage,
+                        shipping: loadShippingPage,
+                        payments: loadPayments,
+                    };
+                    if (refreshFns[pgName]) refreshFns[pgName]();
+                }
+            }
+            ptrEl.classList.remove('visible');
+        }, { passive: true });
+    })();
+
+    // ══════════════════════════════════════════════════
+    // INVENTORY CARD SWIPE ACTIONS (mobile)
+    // ══════════════════════════════════════════════════
+    function initSwipeActions() {
+        if (window.innerWidth > 900) return;
+        const cards = document.querySelectorAll('.inv-card-swipe-wrap');
+        cards.forEach(wrap => {
+            let startX = 0, swiped = false;
+            wrap.addEventListener('touchstart', e => {
+                startX = e.touches[0].clientX;
+                swiped = wrap.classList.contains('swiped');
+            }, { passive: true });
+            wrap.addEventListener('touchend', e => {
+                const dx = startX - e.changedTouches[0].clientX;
+                if (dx > 50 && !swiped) wrap.classList.add('swiped');
+                else if (dx < -30 && swiped) wrap.classList.remove('swiped');
+            }, { passive: true });
+            // Tap on card body to close swipe
+            wrap.querySelector('.inv-card')?.addEventListener('click', () => {
+                wrap.classList.remove('swiped');
+            });
+        });
+        // Close all swipes when tapping elsewhere
+        document.addEventListener('touchstart', e => {
+            if (!e.target.closest('.inv-card-swipe-wrap')) {
+                document.querySelectorAll('.inv-card-swipe-wrap.swiped').forEach(w => w.classList.remove('swiped'));
+            }
+        }, { passive: true });
+    }
 
 </script>
 
