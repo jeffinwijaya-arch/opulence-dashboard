@@ -1862,10 +1862,10 @@ function renderAll() { renderTicker(); renderDashboard(); renderDeals(); renderA
 
 async function renderTicker() {
     try {
-        const r = await fetch('/api/market_ticker');
-        if (!r.ok) return;
+        const r = await fetch('/api/market_ticker', {credentials: 'same-origin'});
+        if (!r.ok) { setTimeout(renderTicker, 5000); return; }
         const tickers = await r.json();
-        if (!tickers.length) return;
+        if (!tickers.length) { setTimeout(renderTicker, 5000); return; }
 
         const fmtPrice = (p, prefix) => {
             if (!prefix) return p >= 100 ? p.toFixed(1) : p.toFixed(2);
