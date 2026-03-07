@@ -4,6 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MK Opulence — Market Intelligence</title>
+    
+    <!-- PWA Configuration -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="MK Opulence">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    <meta name="theme-color" content="#C9A84C">
+    
+    <!-- iOS Splash Screens -->
+    <meta name="apple-touch-startup-image" content="/icon-512.png">
+    <meta name="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" content="/icon-512.png">
+    <meta name="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" content="/icon-512.png">
+    <meta name="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)" content="/icon-512.png";
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -366,6 +381,13 @@
             #ship-layout { grid-template-columns:1fr !important; }
             #ref-search, #im-search { max-width:100% !important; }
         }
+        /* ── Mobile Inventory Improvements ── */
+        @media(max-width:900px) {
+            #page-inventory > div:nth-child(3) { position:sticky; top:0; z-index:10; background:var(--bg-1); padding:6px 0; }
+            #im-cards > div { -webkit-tap-highlight-color: rgba(255,255,255,0.1); transition: transform 0.1s; }
+            #im-cards > div:active { transform: scale(0.98); }
+            #aging-grid { grid-template-columns: 1fr !important; }
+        }
         .postings-mobile { display:none; }
         .posting-card {
             background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius);
@@ -590,6 +612,7 @@
             <a data-page="photos" onclick="showPage('photos')">Photos</a>
             <a data-page="alerts" onclick="showPage('alerts')">Alerts <span class="badge" id="alerts-count">0</span></a>
             <a data-page="analytics" onclick="showPage('analytics')">Analytics</a>
+            <a data-page="aging" onclick="showPage('aging')">Aging</a>
         </nav>
         <div class="theme-toggle" onclick="toggleTheme()" id="themeToggle" title="Toggle light/dark mode"></div>
     </header>
@@ -1068,11 +1091,19 @@
                 <button class="btn" onclick="showAddWatchModal()" style="background:var(--green);color:var(--bg-1);white-space:nowrap;">+ Add Watch</button>
                 <button class="btn" onclick="loadInventoryPage()" style="opacity:0.6;">Refresh</button>
             </div>
+            <!-- Batch Toolbar -->
+            <div id="batch-toolbar" style="display:none;padding:8px 12px;background:rgba(10,132,255,0.1);border:1px solid var(--accent);border-radius:var(--radius);margin-bottom:8px;display:none;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span id="batch-count" style="font-size:0.75rem;color:var(--accent);font-weight:600;">0 selected</span>
+                <button class="btn" onclick="batchArrived()" style="font-size:0.7rem;padding:4px 10px;background:var(--accent);color:var(--bg-1);">Mark Arrived</button>
+                <button class="btn" onclick="batchPost()" style="font-size:0.7rem;padding:4px 10px;background:#f0c040;color:var(--bg-1);">Mark Posted</button>
+                <button class="btn" onclick="clearBatchSelection()" style="font-size:0.7rem;padding:4px 10px;opacity:0.6;">Clear</button>
+            </div>
             <div id="im-completed-toggle" style="display:none;text-align:center;padding:8px 0;border-bottom:1px solid var(--border);"></div>
             <!-- Table (desktop) -->
             <div id="im-table-wrap" style="overflow-x:auto;">
                 <table class="tbl" id="im-table">
                     <thead><tr>
+                        <th style="width:30px;"><input type="checkbox" id="im-select-all" onchange="toggleSelectAll(this)"></th>
                         <th style="cursor:pointer;" onclick="sortInventory('description')">Description <span id="imh-description"></span></th>
                         <th style="cursor:pointer;" onclick="sortInventory('bought_from')">From <span id="imh-bought_from"></span></th>
                         <th style="cursor:pointer;" onclick="sortInventory('sold_to')">To <span id="imh-sold_to"></span></th>
@@ -1122,6 +1153,18 @@
                             <input class="input" id="wm-serial" style="width:100%;margin-top:3px;"></div>
                         <div><label style="font-size:0.68rem;color:var(--text-2);">Card Date</label>
                             <input class="input" id="wm-card-date" style="width:100%;margin-top:3px;" placeholder="MM/YYYY"></div>
+                    </div>
+                    <!-- Photo Upload -->
+                    <div id="wm-photos-section" style="display:none;">
+                        <label style="font-size:0.68rem;color:var(--text-2);">Photos</label>
+                        <div id="wm-photos-grid" style="display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px;"></div>
+                        <div style="display:flex;gap:6px;align-items:center;">
+                            <label class="btn" style="cursor:pointer;font-size:0.7rem;background:var(--bg-3);padding:6px 12px;">
+                                📷 Upload Photo
+                                <input type="file" id="wm-photo-input" accept="image/*,.heic,.heif" style="display:none;" onchange="uploadWatchPhoto(this)">
+                            </label>
+                            <span id="wm-photo-status" style="font-size:0.68rem;color:var(--text-2);"></span>
+                        </div>
                     </div>
                     <div style="display:flex;gap:12px;flex-wrap:wrap;">
                         <label style="font-size:0.72rem;display:flex;align-items:center;gap:4px;cursor:pointer;">
@@ -1202,6 +1245,7 @@
                 </div>
                 <input type="hidden" id="pm-row">
                 <div id="pm-watch-info" style="font-size:0.75rem;color:var(--text-2);margin-bottom:10px;padding:8px;background:var(--bg-3);border-radius:var(--radius);"></div>
+                <div id="pm-suggestion" style="display:none;padding:8px;background:rgba(240,192,64,0.1);border:1px solid rgba(240,192,64,0.3);border-radius:var(--radius);margin-bottom:8px;font-size:0.72rem;color:#f0c040;"></div>
                 <div style="display:grid;gap:8px;">
                     <div><label style="font-size:0.68rem;color:var(--text-2);">Asking Price ($)</label>
                         <input class="input" id="pm-price" type="number" style="width:100%;margin-top:3px;" placeholder="e.g. 21800"></div>
@@ -1680,6 +1724,21 @@
             </div>
         </div>
 
+        <!-- ═══ AGING HEATMAP ═══ -->
+        <div class="page" id="page-aging">
+            <div class="page-head">
+                <h1>Inventory Aging</h1>
+                <p>Watches by days since purchase — color-coded by age</p>
+            </div>
+            <div class="metrics" id="aging-summary" style="margin-bottom:12px;">
+                <div class="metric"><div class="label">Fresh (0-14d)</div><div class="val" id="aging-green" style="color:#30d158;">0</div></div>
+                <div class="metric"><div class="label">Aging (15-30d)</div><div class="val" id="aging-yellow" style="color:#ffd60a;">0</div></div>
+                <div class="metric"><div class="label">Stale (31-60d)</div><div class="val" id="aging-orange" style="color:#ff9f0a;">0</div></div>
+                <div class="metric"><div class="label">Old (60+d)</div><div class="val" id="aging-red" style="color:#ff453a;">0</div></div>
+            </div>
+            <div id="aging-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;"></div>
+        </div>
+
         <footer class="footer"><span>MK Opulence</span><span>&middot;</span><span>Market Intelligence</span><span>&middot;</span><span id="update-time">--</span><span>&middot;</span><span class="sync-timer" id="sync-timer">Last synced: --</span><span class="kbd-hint" style="opacity:0.4;font-size:0.58rem;">Keys: 1-7 nav / search R refresh</span></footer>
     </div>
 </div>
@@ -1770,6 +1829,7 @@ function showPage(name, pushState=true) {
     if (name === 'photos') loadPhotoLibrary();
     if (name === 'alerts') loadAlerts();
     if (name === 'analytics') loadAnalytics();
+    if (name === 'aging') loadAgingHeatmap();
     if (pushState) {
         const params = new URLSearchParams(window.location.search);
         params.set('p', name);
@@ -5273,7 +5333,7 @@ function renderInventoryTable(rows) {
     if (!rows.length) {
         const emptyMsg = '<div style="text-align:center;padding:20px;color:var(--text-2);">No watches found</div>';
         const tbody = document.getElementById('im-tbody');
-        if (tbody) tbody.innerHTML = `<tr><td colspan="12">${emptyMsg}</td></tr>`;
+        if (tbody) tbody.innerHTML = `<tr><td colspan="13">${emptyMsg}</td></tr>`;
         if (cardsEl) cardsEl.innerHTML = emptyMsg;
         return;
     }
@@ -5282,6 +5342,7 @@ function renderInventoryTable(rows) {
     const tbody = document.getElementById('im-tbody');
     if (tbody) {
         tbody.innerHTML = rows.map(r => `<tr style="cursor:pointer;" ondblclick="editWatch(${r.row})">
+            <td onclick="event.stopPropagation();"><input type="checkbox" class="im-row-check" data-row="${r.row}" onchange="updateBatchToolbar()"></td>
             <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(r.description||'').replace(/"/g,'&quot;')}">${r.description||''}</td>
             <td style="font-size:0.72rem;">${r.bought_from||'-'}</td>
             <td style="font-size:0.72rem;">${r.sold_to||'-'}</td>
@@ -5333,8 +5394,30 @@ function showPostModal(row) {
     document.getElementById('pm-watch-info').textContent = watch.description || `Row ${row}`;
     document.getElementById('pm-price').value = watch.sale_price ? parseFloat(String(watch.sale_price).replace(/[$,]/g,'')) : '';
     document.getElementById('pm-status').style.display = 'none';
+    const sugEl = document.getElementById('pm-suggestion');
+    sugEl.style.display = 'none';
+    sugEl.textContent = '';
     document.getElementById('post-modal').style.display = 'flex';
     setTimeout(() => document.getElementById('pm-price').focus(), 100);
+    // Auto-fetch price suggestion
+    const desc = watch.description || '';
+    const refMatch = desc.match(/\b(\d{5,6}[A-Z]*)\b/);
+    if (refMatch) {
+        sugEl.style.display = 'block';
+        sugEl.textContent = 'Loading market data...';
+        fetch(`/api/market/price-suggest/${refMatch[1]}`).then(r=>r.json()).then(d => {
+            if (d.ok && d.suggested_price) {
+                const fmt = n => '$' + n.toLocaleString();
+                sugEl.innerHTML = `💡 Suggested: <strong>${fmt(d.suggested_price)}</strong> (US low: ${fmt(d.us_low)})` +
+                    (d.median ? ` · Median: ${fmt(d.median)}` : '');
+                if (!document.getElementById('pm-price').value) {
+                    document.getElementById('pm-price').value = d.suggested_price;
+                }
+            } else {
+                sugEl.textContent = 'No market data available for ' + refMatch[1];
+            }
+        }).catch(() => { sugEl.style.display = 'none'; });
+    }
 }
 function closePostModal() { document.getElementById('post-modal').style.display = 'none'; }
 async function submitPost() {
@@ -5355,6 +5438,130 @@ async function submitPost() {
         else { status.style.color='var(--red)'; status.textContent='Error: '+(d.error||'Unknown'); }
     } catch(e) { status.style.color='var(--red)'; status.textContent='Error: '+e.message; }
     btn.disabled = false; btn.textContent = 'Post';
+}
+
+// ── Photo Upload ──
+async function uploadWatchPhoto(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const row = document.getElementById('wm-row').value;
+    if (!row) { alert('Save the watch first before uploading photos.'); return; }
+    const statusEl = document.getElementById('wm-photo-status');
+    statusEl.textContent = 'Uploading...';
+    const fd = new FormData();
+    fd.append('photo', file);
+    try {
+        const r = await fetch(`/api/inventory/${row}/photo`, {method:'POST', body: fd});
+        const d = await r.json();
+        if (d.ok) { statusEl.textContent = '✅ Uploaded!'; loadWatchPhotos(row); }
+        else { statusEl.textContent = '❌ ' + (d.error||'Failed'); }
+    } catch(e) { statusEl.textContent = '❌ ' + e.message; }
+    input.value = '';
+}
+async function loadWatchPhotos(row) {
+    const grid = document.getElementById('wm-photos-grid');
+    try {
+        const r = await fetch(`/api/inventory/${row}/photos`);
+        const d = await r.json();
+        if (d.ok && d.photos.length) {
+            grid.innerHTML = d.photos.map(p => `<img src="${p.url}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--border);">`).join('');
+        } else { grid.innerHTML = '<span style="font-size:0.68rem;color:var(--text-2);">No photos yet</span>'; }
+    } catch(e) { grid.innerHTML = ''; }
+}
+
+// ── Batch Operations ──
+let batchSelected = new Set();
+function toggleSelectAll(el) {
+    document.querySelectorAll('.im-row-check').forEach(cb => { cb.checked = el.checked; });
+    updateBatchToolbar();
+}
+function updateBatchToolbar() {
+    batchSelected = new Set();
+    document.querySelectorAll('.im-row-check:checked').forEach(cb => batchSelected.add(parseInt(cb.dataset.row)));
+    const toolbar = document.getElementById('batch-toolbar');
+    if (batchSelected.size > 0) {
+        toolbar.style.display = 'flex';
+        document.getElementById('batch-count').textContent = batchSelected.size + ' selected';
+    } else {
+        toolbar.style.display = 'none';
+    }
+}
+function clearBatchSelection() {
+    document.querySelectorAll('.im-row-check').forEach(cb => cb.checked = false);
+    document.getElementById('im-select-all').checked = false;
+    updateBatchToolbar();
+}
+async function batchArrived() {
+    if (!confirm(`Mark ${batchSelected.size} watches as arrived?`)) return;
+    try {
+        const r = await fetch('/api/inventory/batch-arrived', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rows:[...batchSelected]})});
+        const d = await r.json();
+        if (d.ok) { clearBatchSelection(); loadInventoryPage(); }
+        else alert('Error: '+(d.error||'Unknown'));
+    } catch(e) { alert('Error: '+e.message); }
+}
+async function batchPost() {
+    if (!confirm(`Post ${batchSelected.size} watches with auto-pricing?`)) return;
+    const items = [...batchSelected].map(row => ({row}));
+    try {
+        const r = await fetch('/api/inventory/batch-post', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items})});
+        const d = await r.json();
+        if (d.ok) { clearBatchSelection(); loadInventoryPage(); }
+        else alert('Error: '+(d.error||'Unknown'));
+    } catch(e) { alert('Error: '+e.message); }
+}
+
+// ── Aging Heatmap ──
+async function loadAgingHeatmap() {
+    const grid = document.getElementById('aging-grid');
+    if (!grid) return;
+    grid.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-2);">Loading...</div>';
+    try {
+        const r = await fetch('/api/inventory/rows');
+        const d = await r.json();
+        if (!d.ok) { grid.innerHTML = '<div style="color:var(--red);">Error loading</div>'; return; }
+        const unsold = (d.rows||[]).filter(r => r.sold !== 'Yes');
+        const now = Date.now();
+        const aged = unsold.map(r => {
+            const buyDate = r.bought_date ? new Date(r.bought_date) : null;
+            const days = buyDate ? Math.floor((now - buyDate.getTime()) / 86400000) : 999;
+            return {...r, days};
+        }).sort((a,b) => b.days - a.days);
+        
+        const green = aged.filter(r => r.days <= 14).length;
+        const yellow = aged.filter(r => r.days > 14 && r.days <= 30).length;
+        const orange = aged.filter(r => r.days > 30 && r.days <= 60).length;
+        const red = aged.filter(r => r.days > 60).length;
+        document.getElementById('aging-green').textContent = green;
+        document.getElementById('aging-yellow').textContent = yellow;
+        document.getElementById('aging-orange').textContent = orange;
+        document.getElementById('aging-red').textContent = red;
+        
+        const ageColor = days => {
+            if (days <= 14) return {bg:'rgba(48,209,88,0.12)',border:'rgba(48,209,88,0.4)',text:'#30d158'};
+            if (days <= 30) return {bg:'rgba(255,214,10,0.12)',border:'rgba(255,214,10,0.4)',text:'#ffd60a'};
+            if (days <= 60) return {bg:'rgba(255,159,10,0.12)',border:'rgba(255,159,10,0.4)',text:'#ff9f0a'};
+            return {bg:'rgba(255,69,58,0.12)',border:'rgba(255,69,58,0.4)',text:'#ff453a'};
+        };
+        const price = v => { if (!v) return '-'; const n = parseFloat(String(v).replace(/[$,]/g,'')); return isNaN(n)?v:'$'+n.toLocaleString(); };
+        
+        grid.innerHTML = aged.map(r => {
+            const c = ageColor(r.days);
+            return `<div style="background:${c.bg};border:1px solid ${c.border};border-radius:var(--radius);padding:10px;cursor:pointer;" onclick="editWatch(${r.row})">
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                    <span style="font-size:0.78rem;font-weight:600;">${r.description||''}</span>
+                    <span style="font-size:0.72rem;font-weight:700;color:${c.text};">${r.days}d</span>
+                </div>
+                <div style="font-size:0.7rem;color:var(--text-2);">
+                    Cost: ${price(r.cost_price)} ${r.sale_price?'· Ask: '+price(r.sale_price):''} ${r.bought_from?'· From: '+r.bought_from:''}
+                </div>
+                <div style="font-size:0.65rem;color:var(--text-2);margin-top:2px;">
+                    ${r.arrived==='Yes'?'✅ Arrived':'⏳ In Transit'} ${r.posted==='Yes'?'· 📢 Posted':''}
+                </div>
+            </div>`;
+        }).join('');
+        if (!aged.length) grid.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-2);">No unsold watches</div>';
+    } catch(e) { grid.innerHTML = `<div style="color:var(--red);">Error: ${e.message}</div>`; }
 }
 
 async function quickAction(row, action) {
@@ -5461,6 +5668,7 @@ function showAddWatchModal() {
     document.getElementById('watch-modal-title').textContent = 'Add Watch';
     document.getElementById('wm-row').value = '';
     document.getElementById('wm-delete').style.display = 'none';
+    document.getElementById('wm-photos-section').style.display = 'none';
     ['wm-desc','wm-from','wm-cost','wm-to','wm-sold-price','wm-sale-price','wm-serial','wm-card-date'].forEach(id => {
         const el = document.getElementById(id); if(el) el.value = '';
     });
@@ -5494,7 +5702,9 @@ function editWatch(row) {
     document.getElementById('wm-paid-m').checked = w.paid_after_sold === 'Yes';
     document.getElementById('wm-wt').checked = w.wt === 'Yes';
     document.getElementById('wm-status').style.display = 'none';
+    document.getElementById('wm-photos-section').style.display = 'block';
     document.getElementById('watch-modal').style.display = 'flex';
+    loadWatchPhotos(row);
 }
 
 function closeWatchModal() {
@@ -8340,5 +8550,21 @@ async function loadPayments() {
     };
 
 </script>
+
+<!-- PWA Service Worker Registration -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(registration => {
+        console.log('SW registered:', registration);
+      })
+      .catch(error => {
+        console.log('SW registration failed:', error);
+      });
+  });
+}
+</script>
+
 </body>
 </html>
