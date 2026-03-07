@@ -1,6 +1,16 @@
 {
   "articles": [
     {
+      "id": "fda35d9a9534",
+      "title": "The ABCs of Time \u2013 The Most Popular Watch Styles Explained",
+      "link": "https://monochrome-watches.com/the-abcs-of-time-the-most-populard-watch-styles-explained/",
+      "desc": "There\u2019s an endless amount of mechanical wristwatches on the market today from a seemingly endless amount of brands (large and small), but almost all watches fall into a specific style (assuming it\u2019s n",
+      "date": "2026-03-07T15:00:16+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/the-abcs-of-time-the-most-populard-watch-styles-explained-600x237.jpg",
+      "relevance": 10
+    },
+    {
       "id": "552647c45ee6",
       "title": "Should Serviceability Be A Factor When Buying A Watch?",
       "link": "https://www.fratellowatches.com/should-serviceability-be-a-factor-when-buying-a-watch/",
@@ -11,8 +21,8 @@
       "relevance": 0
     },
     {
-      "id": "29bfc7ae29d8",
-      "title": "The Petrolhead Corner \u2013 The Autoforma Norrsken P1800 ES Revives Sweden\u2019s Coolest Shooting Break",
+      "id": "ebb93b341839",
+      "title": "The Petrolhead Corner \u2013 The Autoforma Norrsken P1800 ES Revives Sweden\u2019s Coolest Shooting Brake",
       "link": "https://monochrome-watches.com/the-petrolhead-corner-autoforma-norrsken-p1800-es-restomod-niels-van-roij/",
       "desc": "If you think about Volvo estate cars, you probably will think about those large, boxy ones from the 1980s and 1990s. While very practical, they weren\u2019t necessarily the most sexy cars, apart from a few",
       "date": "2026-03-07T09:35:23+00:00",
@@ -201,16 +211,6 @@
       "relevance": 0
     },
     {
-      "id": "423ff912b25b",
-      "title": "Introducing \u2013 Lebois & Co Heritage Sector Chronograph Aventurine",
-      "link": "https://monochrome-watches.com/lebois-and-co-heritage-sector-chronograph-aventurine-introducing-price/",
-      "desc": "Indie brand Lebois & Co expands its Heritage collection with the Heritage Sector Chronograph Aventurine, a new version of the brand\u2019s vintage-inspired chronograph distinguished by a textured aventurin",
-      "date": "2026-03-05T10:01:28+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/Lebois-and-Co-Heritage-Sector-Chronograph-Aventurine-324.444-1-600x237.jpg",
-      "relevance": 10
-    },
-    {
       "id": "c44d2fe4c585",
       "title": "Hands-On With The Zenith Defy Revival A3643",
       "link": "https://www.fratellowatches.com/hands-on-zenith-defy-revival-a3643/",
@@ -361,7 +361,7 @@
       "relevance": 10
     }
   ],
-  "fetched_at": "2026-03-07T14:00:04.025144+00:00",
+  "fetched_at": "2026-03-07T16:33:11.884746+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
