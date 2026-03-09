@@ -365,6 +365,17 @@
         * { scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.06) transparent; }
 
         /* ── RESPONSIVE ── */
+        /* iPad / Tablet — use bottom nav like mobile */
+        @media(max-width:1400px) and (min-width:768px) {
+            .top-bar { display:none !important; }
+            .mobile-nav { display:flex !important; justify-content:space-around; }
+            .page { display:none; }
+            .page.active { display:block; }
+            .main { padding:16px 20px; max-width:100%; padding-bottom:calc(60px + env(safe-area-inset-bottom)); }
+            .metrics { grid-template-columns:repeat(4,1fr); gap:10px; }
+            .detail-grid { grid-template-columns:1fr 1fr; gap:14px; }
+            .popular-grid { grid-template-columns:repeat(3,1fr); }
+        }
         @media(max-width:900px) {
             .top-bar { display:none; }
             .mobile-nav { display:flex; justify-content:space-around; }
@@ -749,7 +760,8 @@
             .inv-swipe-action .isa-icon { font-size:1.3rem; }
 
             /* Pull-to-refresh indicator */
-            .ptr-indicator {
+            .ptr-indicator { display:none !important; }
+            .ptr-indicator-OLD {
                 display:flex; align-items:center; justify-content:center; gap:8px;
                 padding:12px; font-size:0.75rem; color:var(--text-2);
                 height:0; overflow:hidden; transition:height 0.2s;
@@ -1156,6 +1168,8 @@
                             <div><label style="font-size:0.68rem;color:var(--text-2);">Phone</label>
                                 <input class="input" id="ship-phone" placeholder="Phone" style="width:100%;margin-top:3px;"></div>
                         </div>
+                        <div><label style="font-size:0.68rem;color:var(--text-2);">Email</label>
+                            <input class="input" id="ship-email" placeholder="Email (optional)" type="email" style="width:100%;margin-top:3px;"></div>
                         <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;">
                             <div><label style="font-size:0.68rem;color:var(--text-2);">City</label>
                                 <input class="input" id="ship-city" placeholder="City" style="width:100%;margin-top:3px;"></div>
@@ -1572,19 +1586,34 @@
                         <!-- Edit Price Modal -->
                         <div id="posting-price-edit-modal" style="display:none;position:fixed;inset:0;z-index:1002;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
                             <div style="background:var(--bg-2);border-radius:var(--radius);padding:20px;max-width:340px;width:90%;">
-                                <h3 style="margin:0 0 10px;font-size:0.9rem;">Edit Price</h3>
+                                <h3 style="margin:0 0 10px;font-size:0.9rem;">Edit Posting</h3>
                                 <input type="hidden" id="epm-message-id">
                                 <div style="margin-bottom:10px;">
-                                    <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Current Price</label>
-                                    <div id="epm-current-price" style="font-size:0.8rem;font-family:monospace;padding:6px 0;color:var(--text-1);"></div>
+                                    <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Photo</label>
+                                    <div id="epm-photo-preview" style="display:flex;gap:6px;align-items:center;margin-top:4px;min-height:50px;">
+                                        <img id="epm-photo-img" src="" style="display:none;width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--border);">
+                                        <span id="epm-no-photo" style="font-size:0.68rem;color:var(--text-2);">No photo</span>
+                                        <label style="font-size:0.65rem;color:var(--green);cursor:pointer;border:1px dashed var(--green);border-radius:var(--radius);padding:4px 10px;margin-left:auto;" for="epm-photo-upload">
+                                            <span id="epm-photo-label">+ Add Photo</span>
+                                        </label>
+                                        <input type="file" id="epm-photo-upload" accept="image/*,.heic,.heif" style="display:none" onchange="handleEditPostingPhoto(this)">
+                                    </div>
+                                    <div id="epm-suggested-photos" style="display:none;margin-top:6px;">
+                                        <label style="font-size:0.62rem;color:var(--text-2);text-transform:uppercase;">Suggested</label>
+                                        <div id="epm-suggested-list" style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;"></div>
+                                    </div>
+                                </div>
+                                <div style="margin-bottom:10px;">
+                                    <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Caption</label>
+                                    <textarea class="input" id="epm-caption" rows="3" style="width:100%;margin-top:4px;font-family:var(--mono);font-size:0.74rem;resize:vertical;"></textarea>
                                 </div>
                                 <div style="margin-bottom:14px;">
-                                    <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">New Price ($)</label>
+                                    <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Price ($)</label>
                                     <input class="input" id="epm-new-price" type="number" placeholder="e.g. 15500" style="width:100%;margin-top:4px;" />
                                 </div>
                                 <div style="display:flex;gap:8px;justify-content:flex-end;">
                                     <button class="btn" onclick="closePriceEditModal()" style="opacity:0.6;">Cancel</button>
-                                    <button class="btn" id="epm-confirm" onclick="submitPriceEdit()" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);">Update Price</button>
+                                    <button class="btn" id="epm-confirm" onclick="submitPriceEdit()" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);">Save</button>
                                 </div>
                                 <div id="epm-status" style="display:none;margin-top:8px;padding:8px;border-radius:var(--radius);font-size:0.72rem;"></div>
                             </div>
@@ -2122,6 +2151,13 @@ function toggleTheme() {
     document.addEventListener('DOMContentLoaded', function() {
         const btn = document.getElementById('themeToggle');
         if (btn) btn.textContent = document.documentElement.classList.contains('light') ? '' : '';
+        // Force tablet/iPad to use bottom nav
+        if (window.innerWidth <= 1400 && window.innerWidth >= 768) {
+            const tb = document.querySelector('.top-bar');
+            if (tb) tb.style.display = 'none';
+            const mn = document.querySelector('.mobile-nav');
+            if (mn) mn.style.display = 'flex';
+        }
     });
 })();
 
@@ -6216,6 +6252,7 @@ function applyShipPreset() {
     document.getElementById('ship-state').value = p.state || '';
     document.getElementById('ship-zip').value = p.zip || '';
     document.getElementById('ship-phone').value = p.phone || '';
+    document.getElementById('ship-email').value = p.email || '';
     document.getElementById('ship-residential').checked = p.residential || false;
 }
 
@@ -6290,7 +6327,7 @@ function selectHalLocation(index) {
 }
 function clearShipForm(keepPreset) {
     if (!keepPreset) document.getElementById('ship-preset').value = '';
-    ['ship-contact','ship-company','ship-address','ship-apt','ship-city','ship-state','ship-zip','ship-value','ship-phone'].forEach(id => {
+    ['ship-contact','ship-company','ship-address','ship-apt','ship-city','ship-state','ship-zip','ship-value','ship-phone','ship-email'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });
@@ -6318,6 +6355,7 @@ async function submitShipLabel() {
         state: g('ship-state'),
         zip: g('ship-zip'),
         phone: g('ship-phone') || '424-502-9600',
+        email: g('ship-email') || 'jeffinwijaya@gmail.com',
         value: g('ship-value'),
         weight: g('ship-weight') || '1',
         service: g('ship-service'),
@@ -8418,7 +8456,7 @@ async function loadPayments() {
             const photoHtml = p.photo
                 ? `<img src="/api/posting-photo/${p.photo}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">`
                 : '<span style="color:var(--text-2);font-size:0.65rem;">No photo</span>';
-            const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\');
+            const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\').replace(/\n/g,' ').replace(/\r/g,'');
             const safePhoto = (p.photo || '').replace(/'/g,'&apos;');
             const priceRaw = p.price || '';
             return `<tr>
@@ -8429,7 +8467,7 @@ async function loadPayments() {
                 <td class="right" style="font-size:0.72rem;white-space:nowrap;">${posted}</td>
                 <td style="white-space:nowrap;">
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;"
-                        onclick="openPriceEditModal('${mid}','${priceRaw}')">Edit $</button>
+                        onclick="openPriceEditModal('${mid}','${priceRaw}','${safeDesc}','${safePhoto}','${p.row||""}')">Edit</button>
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);"
                         onclick="openPostingDeleteModal('${mid}','${safeDesc}','${safePhoto}','${priceRaw}')">Delete</button>
                 </td>
@@ -8445,7 +8483,7 @@ async function loadPayments() {
                 const price = p.price ? '$' + Number(p.price).toLocaleString() : '—';
                 const mid = p.message_id || '';
                 const priceRaw = p.price || '';
-                const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\');
+                const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\').replace(/\n/g,' ').replace(/\r/g,'');
                 const safePhoto = (p.photo || '').replace(/'/g,'&apos;');
                 const imgTag = p.photo
                     ? `<img src="/api/posting-photo/${p.photo}" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">`
@@ -8460,7 +8498,7 @@ async function loadPayments() {
                             <span class="posting-card-date">${posted}</span>
                         </div>
                         <div class="posting-card-actions">
-                            <button class="btn" onclick="openPriceEditModal('${mid}','${priceRaw}')">Edit $</button>
+                            <button class="btn" onclick="openPriceEditModal('${mid}','${priceRaw}','${safeDesc}','${safePhoto}','${p.row||""}')">Edit</button>
                             <button class="btn" style="background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);"
                                 onclick="openPostingDeleteModal('${mid}','${safeDesc}','${safePhoto}','${priceRaw}')">Delete</button>
                         </div>
@@ -8591,14 +8629,113 @@ async function loadPayments() {
     }
 
     // ── PRICE EDIT MODAL ──
-    function openPriceEditModal(messageId, currentPrice) {
+    let _epmPhotoFile = null;
+    let _epmCurrentPhoto = '';
+    let _epmCurrentRow = null;
+    function openPriceEditModal(messageId, currentPrice, caption, photo, row) {
+        _epmPhotoFile = null;
+        _epmCurrentPhoto = photo || '';
+        _epmCurrentRow = row || null;
         document.getElementById('epm-message-id').value = messageId;
-        document.getElementById('epm-current-price').textContent = currentPrice ? '$' + Number(currentPrice).toLocaleString() : '—';
-        document.getElementById('epm-new-price').value = '';
+        document.getElementById('epm-caption').value = (caption || '').replace(/&apos;/g, "'");
+        document.getElementById('epm-new-price').value = currentPrice || '';
         document.getElementById('epm-status').style.display = 'none';
         document.getElementById('epm-confirm').disabled = false;
+        document.getElementById('epm-confirm').textContent = 'Save';
+        document.getElementById('epm-photo-upload').value = '';
+        // Show existing photo or placeholder
+        const img = document.getElementById('epm-photo-img');
+        const noPhoto = document.getElementById('epm-no-photo');
+        const label = document.getElementById('epm-photo-label');
+        if (photo) {
+            img.src = '/api/posting-photo/' + photo;
+            img.style.display = 'block';
+            noPhoto.style.display = 'none';
+            label.textContent = 'Change';
+        } else {
+            img.style.display = 'none';
+            noPhoto.style.display = 'inline';
+            label.textContent = '+ Add Photo';
+        }
         document.getElementById('posting-price-edit-modal').style.display = 'flex';
-        setTimeout(() => document.getElementById('epm-new-price').focus(), 100);
+        setTimeout(() => document.getElementById('epm-caption').focus(), 100);
+        // Load suggested photos from watch storage
+        _epmLoadSuggested();
+    }
+
+    async function _epmLoadSuggested() {
+        const row = _epmCurrentRow;
+        const wrap = document.getElementById('epm-suggested-photos');
+        const list = document.getElementById('epm-suggested-list');
+        wrap.style.display = 'none';
+        list.innerHTML = '';
+        if (!row) return;
+        try {
+            // Try row-based photos first
+            const r = await fetch('/api/watch-photos/' + row);
+            let photos = [];
+            if (r.ok) {
+                const info = await r.json();
+                photos = info.photos || [];
+            }
+            // If no row photos, try searching library by ref from caption
+            if (!photos.length) {
+                const caption = document.getElementById('epm-caption').value;
+                const refMatch = caption.match(/\b(\d{5,6}[A-Z]*)\b/);
+                if (refMatch) {
+                    const r2 = await fetch('/api/watch-photos/search-library?ref=' + encodeURIComponent(refMatch[1]) + '&limit=6');
+                    if (r2.ok) {
+                        const libData = await r2.json();
+                        photos = (libData.photos || []).map(p => ({...p, _isLibrary: true}));
+                    }
+                }
+            }
+            if (!photos.length) return;
+            wrap.style.display = 'block';
+            photos.slice(0, 6).forEach(p => {
+                const fn = typeof p === 'string' ? p : (p.filename || p.name || '');
+                if (!fn) return;
+                const img = document.createElement('img');
+                if (p._isLibrary) {
+                    img.src = `/api/watch-photos/library-image/${p.watch_id || p.id}`;
+                } else {
+                    img.src = `/api/watch-photos/${row}/images/${fn}`;
+                }
+                img.style.cssText = 'width:50px;height:50px;object-fit:cover;border-radius:4px;cursor:pointer;border:2px solid transparent;';
+                img.title = 'Click to use this photo';
+                img.onclick = () => _epmSelectSuggested(img.src, fn, row);
+                list.appendChild(img);
+            });
+        } catch(e) { /* ignore */ }
+    }
+
+    async function _epmSelectSuggested(src, filename, row) {
+        // Fetch the image as a File object
+        try {
+            const r = await fetch(src);
+            const blob = await r.blob();
+            _epmPhotoFile = new File([blob], filename, { type: 'image/jpeg' });
+            const img = document.getElementById('epm-photo-img');
+            img.src = src;
+            img.style.display = 'block';
+            document.getElementById('epm-no-photo').style.display = 'none';
+            document.getElementById('epm-photo-label').textContent = 'Change';
+            // Highlight selected
+            document.querySelectorAll('#epm-suggested-list img').forEach(i => i.style.borderColor = 'transparent');
+            document.querySelector(`#epm-suggested-list img[src="${src}"]`).style.borderColor = 'var(--green)';
+        } catch(e) { console.error('Failed to select photo:', e); }
+    }
+
+    function handleEditPostingPhoto(input) {
+        if (!input.files || !input.files[0]) return;
+        _epmPhotoFile = input.files[0];
+        const img = document.getElementById('epm-photo-img');
+        const noPhoto = document.getElementById('epm-no-photo');
+        const label = document.getElementById('epm-photo-label');
+        img.src = URL.createObjectURL(_epmPhotoFile);
+        img.style.display = 'block';
+        noPhoto.style.display = 'none';
+        label.textContent = 'Change';
     }
 
     function closePriceEditModal() {
@@ -8608,32 +8745,43 @@ async function loadPayments() {
     async function submitPriceEdit() {
         const messageId = document.getElementById('epm-message-id').value;
         const newPrice = document.getElementById('epm-new-price').value;
+        const newCaption = document.getElementById('epm-caption').value.trim();
         const statusEl = document.getElementById('epm-status');
         const btn = document.getElementById('epm-confirm');
-        if (!newPrice || isNaN(Number(newPrice))) {
-            statusEl.style.cssText = 'display:block;background:rgba(255,23,68,0.1);color:var(--red);padding:8px;border-radius:var(--radius);font-size:0.72rem;margin-top:8px;';
-            statusEl.textContent = 'Enter a valid price';
-            return;
-        }
         btn.disabled = true;
-        btn.textContent = 'Updating...';
+        btn.textContent = 'Saving...';
         statusEl.style.display = 'none';
         try {
-            const r = await fetch('/api/my-postings/update-price', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({message_id: messageId, price: Number(newPrice)})
-            });
+            let r;
+            if (_epmPhotoFile) {
+                // Photo changed — use FormData with multipart upload
+                const fd = new FormData();
+                fd.append('message_id', messageId);
+                if (newPrice) fd.append('price', newPrice);
+                if (newCaption) fd.append('caption', newCaption);
+                fd.append('photo', _epmPhotoFile);
+                r = await fetch('/api/my-postings/update', { method: 'POST', body: fd });
+            } else {
+                // No photo change — JSON
+                const body = {message_id: messageId};
+                if (newPrice) body.price = Number(newPrice);
+                if (newCaption) body.caption = newCaption;
+                r = await fetch('/api/my-postings/update', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(body)
+                });
+            }
             const d = await r.json();
             if (!d.ok) throw new Error(d.error || 'Update failed');
             statusEl.style.cssText = 'display:block;background:rgba(0,230,118,0.1);color:var(--green);padding:8px;border-radius:var(--radius);font-size:0.72rem;margin-top:8px;';
-            statusEl.textContent = 'Price updated!';
+            statusEl.textContent = d.tg_updated ? '✅ Updated posting + Telegram' : '✅ Updated posting';
             setTimeout(() => { closePriceEditModal(); loadPostingsPage(); }, 1000);
         } catch (e) {
             statusEl.style.cssText = 'display:block;background:rgba(255,23,68,0.1);color:var(--red);padding:8px;border-radius:var(--radius);font-size:0.72rem;margin-top:8px;';
             statusEl.textContent = 'Error: ' + e.message;
             btn.disabled = false;
-            btn.textContent = 'Update Price';
+            btn.textContent = 'Save';
         }
     }
 
@@ -9152,44 +9300,8 @@ async function loadPayments() {
     // ══════════════════════════════════════════════════
     (function initPullToRefresh() {
         if (window.innerWidth > 900) return; // Desktop only uses normal refresh
-        let startY = 0, pulling = false, threshold = 70;
-        const ptrEl = document.createElement('div');
-        ptrEl.className = 'ptr-indicator';
-        ptrEl.innerHTML = '<div class="ptr-spinner"></div><span>Release to refresh</span>';
-        document.querySelector('.main')?.prepend(ptrEl);
-
-        document.addEventListener('touchstart', e => {
-            if (window.scrollY === 0) { startY = e.touches[0].clientY; pulling = true; }
-        }, { passive: true });
-
-        document.addEventListener('touchmove', e => {
-            if (!pulling) return;
-            const dy = e.touches[0].clientY - startY;
-            if (dy > 20) ptrEl.classList.add('visible');
-        }, { passive: true });
-
-        document.addEventListener('touchend', e => {
-            if (!pulling) return;
-            pulling = false;
-            const dy = e.changedTouches[0].clientY - startY;
-            if (dy > threshold) {
-                // Trigger refresh for current active page
-                const active = document.querySelector('.page.active');
-                if (active) {
-                    const pgName = active.id.replace('page-', '');
-                    const refreshFns = {
-                        dashboard: () => location.reload(),
-                        inventory: loadInventoryPage,
-                        postings: () => typeof loadPostingsPage === 'function' && loadPostingsPage(),
-                        invoices: loadInvoicePage,
-                        shipping: loadShippingPage,
-                        payments: loadPayments,
-                    };
-                    if (refreshFns[pgName]) refreshFns[pgName]();
-                }
-            }
-            ptrEl.classList.remove('visible');
-        }, { passive: true });
+        // Pull-to-refresh DISABLED — was auto-triggering on mobile
+        // Use browser native refresh or nav buttons instead
     })();
 
     // ══════════════════════════════════════════════════
@@ -9429,7 +9541,7 @@ async function loadPayments() {
             const photoHtml = p.photo
                 ? `<img src="/api/posting-photo/${p.photo}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">`
                 : '<span style="color:var(--text-2);font-size:0.65rem;">No photo</span>';
-            const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\');
+            const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\').replace(/\n/g,' ').replace(/\r/g,'');
             const safePhoto = (p.photo || '').replace(/'/g,'&apos;');
             const priceRaw = p.price || '';
             const perf = _postingPerformanceData[String(mid)] || {};
@@ -9449,7 +9561,7 @@ async function loadPayments() {
                 <td class="right">${changesHtml}</td>
                 <td style="white-space:nowrap;">
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;"
-                        onclick="openPriceEditModal('${mid}','${priceRaw}')">Edit $</button>
+                        onclick="openPriceEditModal('${mid}','${priceRaw}','${safeDesc}','${safePhoto}','${p.row||""}')">Edit</button>
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);"
                         onclick="openPostingDeleteModal('${mid}','${safeDesc}','${safePhoto}','${priceRaw}')">Delete</button>
                 </td>
@@ -9465,7 +9577,7 @@ async function loadPayments() {
                 const price = p.price ? '$' + Number(p.price).toLocaleString() : '—';
                 const mid = p.message_id || '';
                 const priceRaw = p.price || '';
-                const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\');
+                const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\').replace(/\n/g,' ').replace(/\r/g,'');
                 const safePhoto = (p.photo || '').replace(/'/g,'&apos;');
                 const imgTag = p.photo ? `<img src="/api/posting-photo/${p.photo}" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">` : '';
                 const perf = _postingPerformanceData[String(mid)] || {};
@@ -9480,7 +9592,7 @@ async function loadPayments() {
                             <span class="posting-card-date">${posted}${daysText}</span>
                         </div>
                         <div class="posting-card-actions">
-                            <button class="btn" onclick="openPriceEditModal('${mid}','${priceRaw}')">Edit $</button>
+                            <button class="btn" onclick="openPriceEditModal('${mid}','${priceRaw}','${safeDesc}','${safePhoto}','${p.row||""}')">Edit</button>
                             <button class="btn" style="background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);"
                                 onclick="openPostingDeleteModal('${mid}','${safeDesc}','${safePhoto}','${priceRaw}')">Delete</button>
                         </div>
@@ -9575,6 +9687,7 @@ async function loadPayments() {
         set('ship-address', contact.address);
         set('ship-apt', contact.apt);
         set('ship-phone', contact.phone);
+        set('ship-email', contact.email);
         set('ship-city', contact.city);
         set('ship-state', contact.state);
         set('ship-zip', contact.zip);
@@ -9610,6 +9723,7 @@ async function loadPayments() {
             address: getVal('ship-address'),
             apt: getVal('ship-apt'),
             phone: getVal('ship-phone'),
+            email: getVal('ship-email'),
             city: getVal('ship-city'),
             state: getVal('ship-state'),
             zip: getVal('ship-zip'),
@@ -9690,6 +9804,16 @@ if ('serviceWorker' in navigator) {
       });
   });
 }
+</script>
+<script>
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+window.addEventListener('offline', () => {
+  let b = document.getElementById('offline-banner');
+  if (!b) { b = document.createElement('div'); b.id = 'offline-banner';
+    b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#f59e0b;color:#000;text-align:center;padding:4px;font-size:0.7rem;font-weight:600;';
+    b.textContent = '⚡ Offline — showing cached data'; document.body.prepend(b); }
+});
+window.addEventListener('online', () => { const b = document.getElementById('offline-banner'); if (b) b.remove(); });
 </script>
 
 </body>
