@@ -2403,6 +2403,10 @@
                 .mc-card:nth-child(6){animation-delay:0.30s;}
                 .mc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
                 .mc-empty{text-align:center;color:var(--text-2);padding:40px 20px;font-size:0.8rem;}
+                .mc-log-line{padding:1px 0;border-bottom:1px solid rgba(255,255,255,0.03);}
+                .mc-log-time{color:var(--text-2);opacity:0.5;margin-right:8px;}
+                .mc-log-viewer::-webkit-scrollbar{width:4px;}
+                .mc-log-viewer::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;}
                 .mc-create-fab{position:fixed;bottom:80px;right:20px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#F59E0B,#E08830);border:none;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 4px 20px rgba(245,158,11,0.35);z-index:100;display:flex;align-items:center;justify-content:center;transition:transform 0.2s;}
                 .mc-create-fab:hover{transform:scale(1.08);}
             </style>
@@ -11073,7 +11077,13 @@ function renderTaskCard(task, status) {
     const statusBadge = status === 'active' ? `<span class="mc-tag" style="background:rgba(34,197,94,0.15);color:#4ADE80;">Running</span>` :
                         status === 'completed' ? (task.success ? `<span class="mc-tag" style="background:rgba(34,197,94,0.15);color:#4ADE80;">Done</span>` : `<span class="mc-tag" style="background:rgba(239,68,68,0.15);color:#F87171;">Failed</span>`) : '';
 
-    return `<div class="mc-card" ${status === 'queued' ? `onclick="startTask('${task.id}')"` : ''}>
+    const showLogs = status === 'active' || status === 'completed';
+    const logsDisplay = status === 'active' ? 'block' : 'none';
+    const logViewer = showLogs ? `
+        <div class="mc-log-viewer" id="mc-logs-${task.id}" style="display:${logsDisplay};max-height:180px;overflow-y:auto;background:rgba(0,0,0,0.3);border-radius:8px;padding:8px 10px;margin-top:8px;font-family:var(--mono);font-size:0.62rem;line-height:1.7;color:var(--text-2);scroll-behavior:smooth;"></div>
+    ` : '';
+
+    return `<div class="mc-card" ${status === 'queued' ? `onclick="startTask('${task.id}')"` : (showLogs ? `onclick="toggleTaskLogs('${task.id}')"` : '')}>
         <div class="mc-card-title">${task.title || 'Untitled Mission'}</div>
         <div class="mc-card-desc">${task.description || 'No description'}</div>
         <div class="mc-card-tags">
@@ -11086,8 +11096,9 @@ function renderTaskCard(task, status) {
             <div class="mc-card-time">${timeInfo}${duration ? ' · ' + duration : ''}</div>
             ${status === 'queued' ? `<button class="mc-start-btn" onclick="event.stopPropagation();startTask('${task.id}')">Start →</button>` : ''}
             ${status === 'active' ? `<div class="mc-running">Running</div>` : ''}
-            ${status === 'completed' ? `<div style="font-size:0.65rem;color:var(--text-2);">${task.success ? '✓ Complete' : '✗ Failed'}</div>` : ''}
+            ${status === 'completed' ? `<div style="font-size:0.65rem;color:var(--text-2);display:flex;align-items:center;gap:6px;">${task.success ? '✓ Complete' : '✗ Failed'}<span style="opacity:0.5;font-size:0.6rem;">tap for logs</span></div>` : ''}
         </div>
+        ${logViewer}
     </div>`;
 }
 
@@ -11118,15 +11129,97 @@ async function startTask(taskId) {
         const result = await r.json();
         
         if (result.ok) {
-            showToast('Task started successfully', 'success');
-            await refreshMissionTasks();
-            await refreshMissionStats();
+            showToast('Mission launched', 'success');
+            // Switch to Live Feed tab and start polling
+            switchMissionTab('live');
+            pollTaskLogs(taskId);
         } else {
-            showToast('Failed to start task: ' + (result.error || 'Unknown error'), 'error');
+            showToast('Failed: ' + (result.error || 'Unknown error'), 'error');
         }
     } catch(e) {
         console.error('Start task error:', e);
         showToast('Error starting task', 'error');
+    }
+}
+
+let activeLogPollers = {};
+
+async function pollTaskLogs(taskId) {
+    if (activeLogPollers[taskId]) return; // Already polling
+    activeLogPollers[taskId] = true;
+    let sinceIdx = 0;
+    
+    const poll = async () => {
+        try {
+            // Fetch logs
+            const lr = await fetch(`/api/mission-control/tasks/${taskId}/logs?since=${sinceIdx}`);
+            const logData = await lr.json();
+            
+            if (logData.logs && logData.logs.length > 0) {
+                sinceIdx = logData.total;
+                // Update the log viewer in the card
+                const logEl = document.getElementById(`mc-logs-${taskId}`);
+                if (logEl) {
+                    for (const entry of logData.logs) {
+                        const line = document.createElement('div');
+                        line.className = 'mc-log-line';
+                        const time = new Date(entry.ts).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+                        line.innerHTML = `<span class="mc-log-time">${time}</span> ${entry.msg}`;
+                        logEl.appendChild(line);
+                    }
+                    logEl.scrollTop = logEl.scrollHeight;
+                }
+            }
+            
+            // Refresh task list to update progress
+            await refreshMissionTasks();
+            await refreshMissionStats();
+            
+            // Check if task is still active
+            const tr = await fetch('/api/mission-control/tasks');
+            const tasks = await tr.json();
+            const task = tasks.find(t => t.id === taskId);
+            
+            if (task && task.status === 'active') {
+                setTimeout(poll, 1500);
+            } else {
+                delete activeLogPollers[taskId];
+                // Final refresh
+                await refreshMissionTasks();
+                await refreshMissionStats();
+            }
+        } catch(e) {
+            console.error('Poll error:', e);
+            delete activeLogPollers[taskId];
+        }
+    };
+    
+    poll();
+}
+
+function toggleTaskLogs(taskId) {
+    const logEl = document.getElementById(`mc-logs-${taskId}`);
+    if (logEl) {
+        const isHidden = logEl.style.display === 'none';
+        logEl.style.display = isHidden ? 'block' : 'none';
+        if (isHidden) {
+            // Fetch logs
+            fetch(`/api/mission-control/tasks/${taskId}/logs?since=0`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.logs) {
+                        logEl.innerHTML = '';
+                        for (const entry of data.logs) {
+                            const line = document.createElement('div');
+                            line.className = 'mc-log-line';
+                            const time = new Date(entry.ts).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+                            line.innerHTML = `<span class="mc-log-time">${time}</span> ${entry.msg}`;
+                            logEl.appendChild(line);
+                        }
+                        logEl.scrollTop = logEl.scrollHeight;
+                    }
+                });
+        }
     }
 }
 
