@@ -2349,103 +2349,145 @@
 
         <!-- ═══ MISSION CONTROL ═══ -->
         <div class="page" id="page-mission-control">
-            <div class="page-head">
-                <h1>Mission Control</h1>
-                <p>Autonomous work queue & live progress</p>
+            <style>
+                .mc-header{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
+                .mc-logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#F59E0B,#E08830);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:0 4px 16px rgba(245,158,11,0.25);}
+                .mc-title{font-size:1.35rem;font-weight:700;color:var(--text-0);letter-spacing:-0.3px;line-height:1.2;}
+                .mc-subtitle{font-size:0.78rem;color:var(--text-2);font-weight:400;margin-top:2px;}
+                .mc-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+                .mc-stat{background:var(--bg-3);border:1px solid var(--border);border-radius:12px;padding:16px 18px;transition:border-color 0.2s;}
+                .mc-stat:hover{border-color:var(--border-strong);}
+                .mc-stat-label{font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+                .mc-stat-val{font-size:1.8rem;font-weight:700;color:var(--text-0);font-family:var(--mono);font-variant-numeric:tabular-nums;}
+                .mc-toggle{display:flex;background:var(--bg-3);border-radius:999px;padding:3px;margin-bottom:20px;border:1px solid var(--border);}
+                .mc-toggle-btn{flex:1;text-align:center;padding:8px 16px;border-radius:999px;font-size:0.75rem;font-weight:600;cursor:pointer;transition:all 0.25s ease;color:var(--text-2);user-select:none;}
+                .mc-toggle-btn.active{background:#fff;color:#0B0D12;box-shadow:0 2px 8px rgba(0,0,0,0.15);}
+                .mc-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+                .mc-section-label{font-size:0.82rem;font-weight:600;color:var(--text-0);display:flex;align-items:center;gap:8px;}
+                .mc-badge{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:999px;font-size:0.65rem;font-weight:700;padding:0 7px;color:#fff;}
+                .mc-badge-orange{background:#E08830;}
+                .mc-badge-green{background:#22C55E;}
+                .mc-badge-red{background:#D94030;}
+                .mc-badge-blue{background:#3B82F6;}
+                .mc-list{display:flex;flex-direction:column;gap:12px;}
+                .mc-card{background:var(--bg-3);border:1px solid var(--border);border-radius:14px;padding:18px 20px;transition:all 0.2s ease;cursor:pointer;position:relative;overflow:hidden;}
+                .mc-card:hover{border-color:var(--border-strong);transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,0,0,0.15);}
+                .mc-card-title{font-size:0.9rem;font-weight:700;color:var(--text-0);margin-bottom:5px;line-height:1.3;}
+                .mc-card-desc{font-size:0.72rem;color:var(--text-2);line-height:1.5;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+                .mc-card-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+                .mc-tag{display:inline-flex;align-items:center;height:22px;border-radius:999px;font-size:0.6rem;font-weight:600;padding:0 10px;letter-spacing:0.3px;text-transform:uppercase;}
+                .mc-tag-sync{background:rgba(59,130,246,0.15);color:#60A5FA;}
+                .mc-tag-health{background:rgba(34,197,94,0.15);color:#4ADE80;}
+                .mc-tag-intel{background:rgba(168,85,247,0.15);color:#C084FC;}
+                .mc-tag-alert{background:rgba(239,68,68,0.15);color:#F87171;}
+                .mc-tag-finance{background:rgba(245,158,11,0.15);color:#FBBF24;}
+                .mc-tag-maint{background:rgba(148,163,184,0.15);color:#94A3B8;}
+                .mc-progress-wrap{margin-bottom:10px;}
+                .mc-progress-track{height:5px;background:var(--bg-4,#252830);border-radius:999px;overflow:hidden;}
+                .mc-progress-fill{height:100%;border-radius:999px;transition:width 0.8s ease-out;}
+                .mc-progress-multi{display:flex;height:100%;gap:2px;}
+                .mc-progress-seg{height:100%;border-radius:999px;transition:width 0.6s ease-out;}
+                .mc-card-footer{display:flex;align-items:center;justify-content:space-between;}
+                .mc-card-time{font-size:0.65rem;color:var(--text-2);}
+                .mc-start-btn{background:none;border:none;color:#22C55E;font-size:0.75rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;padding:4px 0;transition:all 0.15s;}
+                .mc-start-btn:hover{color:#4ADE80;transform:translateX(2px);}
+                .mc-running{font-size:0.65rem;color:#22C55E;font-weight:600;display:flex;align-items:center;gap:4px;}
+                .mc-running::before{content:'';width:6px;height:6px;border-radius:50%;background:#22C55E;animation:mc-pulse 1.5s infinite;}
+                @keyframes mc-pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+                @keyframes mc-fadein{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+                .mc-card{animation:mc-fadein 0.4s ease backwards;}
+                .mc-card:nth-child(2){animation-delay:0.06s;}
+                .mc-card:nth-child(3){animation-delay:0.12s;}
+                .mc-card:nth-child(4){animation-delay:0.18s;}
+                .mc-card:nth-child(5){animation-delay:0.24s;}
+                .mc-card:nth-child(6){animation-delay:0.30s;}
+                .mc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+                .mc-empty{text-align:center;color:var(--text-2);padding:40px 20px;font-size:0.8rem;}
+                .mc-create-fab{position:fixed;bottom:80px;right:20px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#F59E0B,#E08830);border:none;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 4px 20px rgba(245,158,11,0.35);z-index:100;display:flex;align-items:center;justify-content:center;transition:transform 0.2s;}
+                .mc-create-fab:hover{transform:scale(1.08);}
+            </style>
+
+            <!-- Header -->
+            <div class="mc-header">
+                <div class="mc-logo">🎯</div>
+                <div>
+                    <div class="mc-title">Mission Control Workshop</div>
+                    <div class="mc-subtitle">Autonomous work queue & live progress</div>
+                </div>
             </div>
 
-            <!-- Stats bar -->
-            <div class="metrics" style="margin-bottom:16px;">
-                <div class="metric">
-                    <div class="label">Queued</div>
-                    <div class="val" id="mc-queued">0</div>
+            <!-- Stats -->
+            <div class="mc-stats">
+                <div class="mc-stat">
+                    <div class="mc-stat-label">⏳ Queued</div>
+                    <div class="mc-stat-val" id="mc-queued">0</div>
                 </div>
-                <div class="metric">
-                    <div class="label">Active</div>
-                    <div class="val" id="mc-active">0</div>
-                </div>
-                <div class="metric">
-                    <div class="label">Completed Today</div>
-                    <div class="val" id="mc-completed-today">0</div>
-                </div>
-                <div class="metric">
-                    <div class="label">Success Rate</div>
-                    <div class="val" id="mc-success-rate">0%</div>
+                <div class="mc-stat">
+                    <div class="mc-stat-label">▶ Active</div>
+                    <div class="mc-stat-val" id="mc-active" style="color:var(--green)">0</div>
                 </div>
             </div>
 
-            <!-- Tabs -->
-            <div class="tabs" style="margin-bottom:16px;">
-                <div class="tab active" id="mc-tab-queued" onclick="switchMissionTab('queued', this)">Queued</div>
-                <div class="tab" id="mc-tab-live" onclick="switchMissionTab('live', this)">Live Feed</div>
-                <div class="tab" id="mc-tab-completed" onclick="switchMissionTab('completed', this)">Completed</div>
+            <!-- Toggle -->
+            <div class="mc-toggle">
+                <div class="mc-toggle-btn active" id="mc-tab-queued" onclick="switchMissionTab('queued')">Queued</div>
+                <div class="mc-toggle-btn" id="mc-tab-live" onclick="switchMissionTab('live')">Live Feed</div>
+                <div class="mc-toggle-btn" id="mc-tab-completed" onclick="switchMissionTab('completed')">Completed</div>
             </div>
 
             <!-- Queued Panel -->
-            <div id="mc-panel-queued" class="card">
-                <div class="card-head">
-                    <span>Queued Tasks</span>
-                    <div style="display:flex;gap:8px;">
-                        <button class="btn" onclick="showMissionCreateModal()" style="font-size:0.7rem;padding:4px 8px;background:var(--accent);color:var(--bg-1);">+ Create</button>
-                        <button class="btn" onclick="loadMissionControl()" style="font-size:0.7rem;padding:4px 8px;opacity:0.7;">Refresh</button>
-                    </div>
+            <div id="mc-panel-queued">
+                <div class="mc-section-head">
+                    <div class="mc-section-label">Queued <span class="mc-badge mc-badge-orange" id="mc-queued-badge">0</span></div>
+                    <button class="btn" onclick="loadMissionControl()" style="font-size:0.65rem;padding:3px 10px;opacity:0.5;">↻</button>
                 </div>
-                <div class="card-body">
-                    <div id="mc-queued-tasks" style="display:flex;flex-direction:column;gap:8px;">
-                        <div style="text-align:center;color:var(--text-2);padding:20px;">Loading tasks...</div>
-                    </div>
+                <div class="mc-list" id="mc-queued-tasks">
+                    <div class="mc-empty">Loading tasks...</div>
                 </div>
             </div>
 
             <!-- Live Feed Panel -->
-            <div id="mc-panel-live" class="card" style="display:none;">
-                <div class="card-head">
-                    <span>Live Feed</span>
-                    <span style="font-size:0.65rem;color:var(--green);" id="mc-live-indicator">● Live</span>
+            <div id="mc-panel-live" style="display:none;">
+                <div class="mc-section-head">
+                    <div class="mc-section-label">Active <span style="color:#22C55E;">▶</span></div>
                 </div>
-                <div class="card-body">
-                    <div id="mc-live-tasks" style="display:flex;flex-direction:column;gap:8px;">
-                        <div style="text-align:center;color:var(--text-2);padding:20px;">No active tasks</div>
-                    </div>
+                <div class="mc-list" id="mc-live-tasks">
+                    <div class="mc-empty">No active tasks</div>
                 </div>
             </div>
 
             <!-- Completed Panel -->
-            <div id="mc-panel-completed" class="card" style="display:none;">
-                <div class="card-head">
-                    <span>Completed Tasks</span>
-                    <select class="input" id="mc-completed-filter" style="width:120px;margin-left:auto;" onchange="filterCompletedTasks()">
-                        <option value="today">Today</option>
-                        <option value="week">This Week</option>
-                        <option value="month">This Month</option>
-                    </select>
+            <div id="mc-panel-completed" style="display:none;">
+                <div class="mc-section-head">
+                    <div class="mc-section-label">Completed</div>
                 </div>
-                <div class="card-body">
-                    <div id="mc-completed-tasks" style="display:flex;flex-direction:column;gap:8px;">
-                        <div style="text-align:center;color:var(--text-2);padding:20px;">No completed tasks</div>
-                    </div>
+                <div class="mc-list" id="mc-completed-tasks">
+                    <div class="mc-empty">No completed tasks yet</div>
                 </div>
             </div>
 
+            <!-- FAB Create Button -->
+            <button class="mc-create-fab" onclick="showMissionCreateModal()" title="Create Task">+</button>
+
             <!-- Create Task Modal -->
             <div id="mc-create-modal" style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
-                <div style="background:var(--bg-2);border-radius:var(--radius);padding:20px;max-width:500px;width:90%;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                        <h3 style="margin:0;">Create Task</h3>
-                        <button onclick="closeMissionCreateModal()" style="background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;">×</button>
+                <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:480px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                        <h3 style="margin:0;font-size:1.05rem;">New Mission</h3>
+                        <button onclick="closeMissionCreateModal()" style="background:none;border:none;color:var(--text-2);font-size:1.3rem;cursor:pointer;padding:4px;">×</button>
                     </div>
-                    <div style="display:grid;gap:8px;">
+                    <div style="display:grid;gap:12px;">
                         <div>
-                            <label style="font-size:0.68rem;color:var(--text-2);">Title</label>
-                            <input class="input" id="mc-task-title" style="width:100%;margin-top:3px;" placeholder="e.g. Bot Sheet Health Check">
+                            <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Title</label>
+                            <input class="input" id="mc-task-title" style="width:100%;margin-top:4px;" placeholder="e.g. Bot Sheet Health Check">
                         </div>
                         <div>
-                            <label style="font-size:0.68rem;color:var(--text-2);">Description</label>
-                            <textarea class="input" id="mc-task-desc" rows="2" style="width:100%;margin-top:3px;" placeholder="Brief description of what this task does"></textarea>
+                            <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Description</label>
+                            <textarea class="input" id="mc-task-desc" rows="3" style="width:100%;margin-top:4px;resize:vertical;" placeholder="What should this mission accomplish?"></textarea>
                         </div>
                         <div>
-                            <label style="font-size:0.68rem;color:var(--text-2);">Type</label>
-                            <select class="input" id="mc-task-type" style="width:100%;margin-top:3px;">
+                            <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Type</label>
+                            <select class="input" id="mc-task-type" style="width:100%;margin-top:4px;">
                                 <option value="data_sync">Data Sync</option>
                                 <option value="health_check">Health Check</option>
                                 <option value="analysis">Analysis</option>
@@ -2453,11 +2495,11 @@
                                 <option value="alert">Alert</option>
                             </select>
                         </div>
-                        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
-                            <button class="btn" onclick="closeMissionCreateModal()" style="opacity:0.6;">Cancel</button>
-                            <button class="btn" onclick="submitMissionTask()" style="background:var(--accent);color:var(--bg-1);">Create Task</button>
+                        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+                            <button class="btn" onclick="closeMissionCreateModal()" style="opacity:0.5;font-size:0.75rem;">Cancel</button>
+                            <button class="btn" onclick="submitMissionTask()" style="background:linear-gradient(135deg,#F59E0B,#E08830);color:#fff;font-size:0.75rem;padding:8px 20px;border-radius:999px;">Create Mission</button>
                         </div>
-                        <div id="mc-create-status" style="display:none;padding:8px;border-radius:var(--radius);font-size:0.75rem;"></div>
+                        <div id="mc-create-status" style="display:none;padding:8px;border-radius:8px;font-size:0.75rem;"></div>
                     </div>
                 </div>
             </div>
@@ -10948,13 +10990,11 @@ function renderMissionStats() {
     const stats = missionControlData.stats;
     const queuedEl = document.getElementById('mc-queued');
     const activeEl = document.getElementById('mc-active');
-    const completedEl = document.getElementById('mc-completed-today');
-    const successEl = document.getElementById('mc-success-rate');
+    const badgeEl = document.getElementById('mc-queued-badge');
 
     if (queuedEl) queuedEl.textContent = stats.queued || 0;
     if (activeEl) activeEl.textContent = stats.active || 0;
-    if (completedEl) completedEl.textContent = stats.completed_today || 0;
-    if (successEl) successEl.textContent = (stats.success_rate || 0).toFixed(1) + '%';
+    if (badgeEl) badgeEl.textContent = stats.queued || 0;
 }
 
 function renderMissionTasks() {
@@ -10973,9 +11013,9 @@ function renderTaskList(containerId, tasks, status) {
     if (!container) return;
 
     if (tasks.length === 0) {
-        const emptyMsg = status === 'queued' ? 'No queued tasks' :
-                        status === 'active' ? 'No running tasks' : 'No completed tasks';
-        container.innerHTML = `<div style="text-align:center;color:var(--text-2);padding:20px;">${emptyMsg}</div>`;
+        const emptyMsg = status === 'queued' ? 'No queued missions' :
+                        status === 'active' ? 'No active missions' : 'No completed missions';
+        container.innerHTML = `<div class="mc-empty">${emptyMsg}</div>`;
         return;
     }
 
@@ -10984,9 +11024,17 @@ function renderTaskList(containerId, tasks, status) {
 
 function renderTaskCard(task, status) {
     const progress = task.progress || 0;
-    const progressColor = progress < 30 ? 'var(--red)' : progress < 70 ? 'var(--orange)' : 'var(--green)';
-    const statusDotColor = status === 'active' ? 'var(--green)' : 
-                          status === 'queued' ? 'var(--orange)' : 'var(--text-2)';
+    const typeMap = {
+        'data_sync': {cls:'mc-tag-sync', label:'Sync'},
+        'sync': {cls:'mc-tag-sync', label:'Sync'},
+        'health_check': {cls:'mc-tag-health', label:'Health'},
+        'maintenance': {cls:'mc-tag-maint', label:'Maintenance'},
+        'intelligence': {cls:'mc-tag-intel', label:'Intel'},
+        'analysis': {cls:'mc-tag-intel', label:'Analysis'},
+        'alert': {cls:'mc-tag-alert', label:'Alert'},
+        'finance': {cls:'mc-tag-finance', label:'Finance'}
+    };
+    const typeInfo = typeMap[task.type] || {cls:'mc-tag-maint', label: task.type || 'Task'};
 
     const timeInfo = task.created_at ? 
         new Date(task.created_at).toLocaleString('en-US', {
@@ -10996,48 +11044,57 @@ function renderTaskCard(task, status) {
     const duration = task.started_at && task.completed_at ? 
         Math.round((new Date(task.completed_at) - new Date(task.started_at)) / 1000) + 's' : '';
 
-    return `<div style="background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;transition:all 0.2s ease;cursor:${status === 'queued' ? 'pointer' : 'default'};"
-                 onmouseover="this.style.borderColor='var(--border-strong)';this.style.transform='translateY(-1px)'"
-                 onmouseout="this.style.borderColor='var(--border)';this.style.transform='translateY(0)'"
-                 ${status === 'queued' ? `onclick="startTask('${task.id}')"` : ''}>
-        <div style="display:flex;align-items:flex-start;gap:12px;">
-            <div style="width:8px;height:8px;border-radius:50%;background:${statusDotColor};margin-top:6px;flex-shrink:0;"></div>
-            <div style="flex:1;min-width:0;">
-                <div style="font-family:var(--mono);font-weight:700;font-size:0.88rem;color:var(--text-0);margin-bottom:4px;">
-                    ${task.title || 'Untitled Task'}
-                </div>
-                <div style="color:var(--text-2);font-size:0.72rem;line-height:1.4;margin-bottom:8px;">
-                    ${task.description || 'No description'}
-                </div>
-                
-                <!-- Progress Bar -->
-                <div style="margin-bottom:8px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                        <span style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Progress</span>
-                        <span style="font-size:0.7rem;font-weight:600;color:${progressColor};">${progress}%</span>
-                    </div>
-                    <div style="background:var(--bg-4);border-radius:4px;height:6px;overflow:hidden;">
-                        <div style="background:${progressColor};height:100%;width:${progress}%;transition:all 0.3s ease;border-radius:4px;"></div>
-                    </div>
-                </div>
-
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <div style="font-size:0.68rem;color:var(--text-2);">
-                        ${timeInfo} ${duration ? '· ' + duration : ''}
-                    </div>
-                    ${status === 'queued' ? `<button style="background:var(--accent);color:var(--bg-1);border:none;border-radius:var(--radius);padding:4px 12px;font-size:0.7rem;font-weight:600;cursor:pointer;">Start</button>` : ''}
-                    ${status === 'active' ? `<div style="font-size:0.65rem;color:var(--green);font-weight:600;">● Running</div>` : ''}
-                    ${status === 'completed' ? `<div style="font-size:0.65rem;color:var(--text-2);">${task.success ? '✓ Success' : '✗ Failed'}</div>` : ''}
+    // Multi-segment progress for active tasks
+    let progressHtml = '';
+    if (status === 'active' && progress > 0) {
+        const seg1 = Math.min(progress, 33);
+        const seg2 = Math.max(0, Math.min(progress - 33, 34));
+        const seg3 = Math.max(0, progress - 67);
+        progressHtml = `<div class="mc-progress-wrap">
+            <div class="mc-progress-track">
+                <div class="mc-progress-multi">
+                    <div class="mc-progress-seg" style="width:${seg1/33*33}%;background:#D94030;"></div>
+                    <div class="mc-progress-seg" style="width:${seg2/34*34}%;background:#E08830;"></div>
+                    <div class="mc-progress-seg" style="width:${seg3/33*33}%;background:#22C55E;"></div>
                 </div>
             </div>
+        </div>`;
+    } else if (progress > 0) {
+        const col = progress >= 100 ? '#22C55E' : progress >= 50 ? '#E08830' : '#D94030';
+        progressHtml = `<div class="mc-progress-wrap">
+            <div class="mc-progress-track">
+                <div class="mc-progress-fill" style="width:${progress}%;background:${col};"></div>
+            </div>
+        </div>`;
+    }
+
+    // Progress badge
+    const progressBadge = progress > 0 ? `<span class="mc-tag" style="background:rgba(34,197,94,0.15);color:#4ADE80;">+${progress}%</span>` : '';
+    const statusBadge = status === 'active' ? `<span class="mc-tag" style="background:rgba(34,197,94,0.15);color:#4ADE80;">Running</span>` :
+                        status === 'completed' ? (task.success ? `<span class="mc-tag" style="background:rgba(34,197,94,0.15);color:#4ADE80;">Done</span>` : `<span class="mc-tag" style="background:rgba(239,68,68,0.15);color:#F87171;">Failed</span>`) : '';
+
+    return `<div class="mc-card" ${status === 'queued' ? `onclick="startTask('${task.id}')"` : ''}>
+        <div class="mc-card-title">${task.title || 'Untitled Mission'}</div>
+        <div class="mc-card-desc">${task.description || 'No description'}</div>
+        <div class="mc-card-tags">
+            <span class="mc-tag ${typeInfo.cls}">${typeInfo.label}</span>
+            ${statusBadge}
+            ${progressBadge}
+        </div>
+        ${progressHtml}
+        <div class="mc-card-footer">
+            <div class="mc-card-time">${timeInfo}${duration ? ' · ' + duration : ''}</div>
+            ${status === 'queued' ? `<button class="mc-start-btn" onclick="event.stopPropagation();startTask('${task.id}')">Start →</button>` : ''}
+            ${status === 'active' ? `<div class="mc-running">Running</div>` : ''}
+            ${status === 'completed' ? `<div style="font-size:0.65rem;color:var(--text-2);">${task.success ? '✓ Complete' : '✗ Failed'}</div>` : ''}
         </div>
     </div>`;
 }
 
-function switchMissionTab(tab, element) {
-    // Update tab styling
-    document.querySelectorAll('#page-mission-control .tab').forEach(t => t.classList.remove('active'));
-    element.classList.add('active');
+function switchMissionTab(tab) {
+    // Update toggle styling
+    document.querySelectorAll('.mc-toggle-btn').forEach(t => t.classList.remove('active'));
+    document.getElementById('mc-tab-' + tab)?.classList.add('active');
 
     // Show/hide panels
     document.getElementById('mc-panel-queued').style.display = tab === 'queued' ? 'block' : 'none';
