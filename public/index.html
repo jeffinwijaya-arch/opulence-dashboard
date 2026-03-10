@@ -2438,6 +2438,15 @@
                 .changelog-msg{font-size:0.75rem;color:var(--text-0);}
                 .changelog-files{font-size:0.65rem;color:var(--text-3);margin-top:4px;}
 
+                @media(max-width:768px){
+                    .kanban-board{grid-template-columns:1fr !important;gap:12px;}
+                    .mc-tab-nav{flex-wrap:wrap;border-radius:12px;}
+                    .mc-tab-btn{flex:0 0 calc(33.33% - 4px);font-size:0.6rem;padding:6px 4px;}
+                    .health-grid{grid-template-columns:1fr 1fr !important;}
+                    .schedule-card{flex-direction:column;align-items:flex-start;}
+                    .schedule-actions{align-self:flex-end;}
+                    .backlog-card{padding:12px;}
+                }
                 .mc-empty{text-align:center;color:var(--text-2);padding:40px 20px;font-size:0.8rem;}
                 .mc-btn{background:var(--accent);color:var(--bg-1);border:none;padding:6px 12px;border-radius:6px;font-size:0.7rem;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:0.5px;}
                 .mc-btn:hover{background:var(--accent-hover);}
@@ -10969,11 +10978,12 @@ function flashSuccess(el) {
 let missionControlData = { tasks: [], stats: { queued: 0, active: 0, completed_today: 0, success_rate: 0 } };
 let mcCurrentTab = 'backlog';
 
-function switchMcTab(tab) {
+function switchMcTab(tab, evt) {
     mcCurrentTab = tab;
-    document.querySelectorAll('.mc-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.mc-tab-btn').forEach(b => {
+        b.classList.toggle('active', b.textContent.trim().toLowerCase() === tab.toLowerCase());
+    });
     document.querySelectorAll('.mc-section').forEach(s => s.classList.remove('active'));
-    event.target.classList.add('active');
     const section = document.getElementById('mc-' + tab);
     if (section) section.classList.add('active');
     loadMcTab(tab);
@@ -11008,9 +11018,13 @@ async function loadMcBacklog() {
     document.getElementById('progress-count').textContent = inProgress.length;
     document.getElementById('done-count').textContent = done.length;
     
-    document.getElementById('todo-items').innerHTML = todo.map(renderBacklogCard).join('') || '<div class="mc-empty">No items</div>';
-    document.getElementById('progress-items').innerHTML = inProgress.map(renderBacklogCard).join('') || '<div class="mc-empty">No items</div>';
-    document.getElementById('done-items').innerHTML = done.map(renderBacklogCard).join('') || '<div class="mc-empty">No items</div>';
+    // Sort by priority within each column
+    const priOrder = {'P0':0,'P1':1,'P2':2,'P3':3};
+    const sortPri = (a,b) => (priOrder[a.priority]||9) - (priOrder[b.priority]||9);
+    
+    document.getElementById('todo-items').innerHTML = todo.sort(sortPri).map(renderBacklogCard).join('') || '<div class="mc-empty">Nothing to do 🎉</div>';
+    document.getElementById('progress-items').innerHTML = inProgress.sort(sortPri).map(renderBacklogCard).join('') || '<div class="mc-empty">Nothing active</div>';
+    document.getElementById('done-items').innerHTML = done.sort((a,b) => (b.completed||'').localeCompare(a.completed||'')).map(renderBacklogCard).join('') || '<div class="mc-empty">Nothing completed yet</div>';
 }
 
 function renderBacklogCard(item) {
@@ -11105,9 +11119,9 @@ async function loadMcHealth() {
             <div class="health-status status-good">${m.photo_refs || 0} refs covered</div>
         </div>
         <div class="health-card">
-            <div class="health-value">${m.supermemory_count || 0}</div>
+            <div class="health-value">${m.supermemory_count ? m.supermemory_count.toLocaleString() : '0'}</div>
             <div class="health-label">SuperMemory</div>
-            <div class="health-status status-good">${m.supermemory || 'N/A'}</div>
+            <div class="health-status ${m.supermemory_count > 0 ? 'status-excellent' : 'status-warning'}">${m.supermemory || 'N/A'} index</div>
         </div>
         <div class="health-card">
             <div class="health-value">${m.memory_size || '?'}</div>
