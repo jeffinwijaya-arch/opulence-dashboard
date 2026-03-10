@@ -5965,6 +5965,7 @@ function renderInventoryTable(rows) {
         if (r.sold==='Yes'&&r.paid_after_sold!=='Yes') html += `<a onclick="quickAction(${r.row},'paid')" style="cursor:pointer;color:var(--green);margin-right:6px;padding:4px 8px;border:1px solid var(--green);border-radius:4px;font-size:0.7rem;">Paid</a>`;
         html += `<a onclick="editWatch(${r.row})" style="cursor:pointer;color:var(--text-2);margin-right:6px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:0.7rem;">Edit</a>`;
         html += `<a onclick="processOCR(${r.row})" style="cursor:pointer;color:#9b59b6;margin-right:6px;padding:4px 8px;border:1px solid #9b59b6;border-radius:4px;font-size:0.7rem;">OCR</a>`;
+        html += `<a onclick="viewWatchPhotos('${r.description}', ${r.row})" style="cursor:pointer;color:#06b6d4;margin-right:6px;padding:4px 8px;border:1px solid #06b6d4;border-radius:4px;font-size:0.7rem;">Photos</a>`;
         html += `<a onclick="documentSingleWatch(${r.row})" style="cursor:pointer;color:#2563eb;padding:4px 8px;border:1px solid #2563eb;border-radius:4px;font-size:0.7rem;">Doc</a>`;
         return html;
     };
@@ -5998,6 +5999,7 @@ function renderInventoryTable(rows) {
                 ${r.sold==='Yes'&&r.paid_after_sold!=='Yes'?`<a onclick="quickAction(${r.row},'paid')" style="cursor:pointer;color:var(--green);margin-right:4px;">Paid</a>`:''}
                 <a onclick="editWatch(${r.row})" style="cursor:pointer;color:var(--text-2);margin-right:4px;">Edit</a>
                 <a onclick="processOCR(${r.row})" style="cursor:pointer;color:#9b59b6;margin-right:4px;">OCR</a>
+                <a onclick="viewWatchPhotos('${r.description}', ${r.row})" style="cursor:pointer;color:#06b6d4;margin-right:4px;">Photos</a>
                 <a onclick="documentSingleWatch(${r.row})" style="cursor:pointer;color:#2563eb;">Doc</a>
             </td>
         </tr>`).join('');
@@ -6017,6 +6019,7 @@ function renderInventoryTable(rows) {
             let html = '';
             if (r.arrived!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--accent);color:var(--bg-0);" onclick="event.stopPropagation();quickAction(${r.row},'arrived')"><span class="isa-icon">📥</span>Arrive</div>`;
             if (r.posted==='Yes'&&r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:#e9a445;color:var(--bg-0);" onclick="event.stopPropagation();repostWatch(${r.row})"><span class="isa-icon">🔄</span>Repost</div>`;
+            html += `<div class="inv-swipe-action" style="background:#06b6d4;color:var(--bg-0);" onclick="event.stopPropagation();viewWatchPhotos('${r.description}', ${r.row})"><span class="isa-icon">●</span>Photos</div>`;
             if (r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--green);color:var(--bg-0);" onclick="event.stopPropagation();showSellModal(${r.row})"><span class="isa-icon">💵</span>Sell</div>`;
             if (r.sold==='Yes'&&r.shipped!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--blue);color:var(--bg-0);" onclick="event.stopPropagation();showShipModal(${r.row})"><span class="isa-icon">📦</span>Ship</div>`;
             return html;
@@ -6444,7 +6447,7 @@ function renderDocumentationReport(data) {
                     <div class="doc-watch-meta">
                         <span class="doc-watch-row">Row ${watch.row}</span>
                         <span class="doc-watch-photos">${watch.photo_count} photos</span>
-                        <button class="btn" onclick="viewWatchPhotos('${sku.sku}_${watch.serial}')" 
+                        <button class="btn" onclick="viewSpecificWatchPhotos('${sku.sku}_${watch.serial}')" 
                                 style="font-size:0.65rem;padding:2px 6px;">View</button>
                     </div>
                 </div>
@@ -6475,30 +6478,60 @@ function toggleSkuSection(sku) {
     const section = document.getElementById(`doc-sku-${sku}`);
     const toggle = document.querySelector(`[onclick="toggleSkuSection('${sku}')"] .doc-sku-toggle`);
     
-    if (section.style.display === 'none') {
-        section.style.display = 'block';
-        toggle.textContent = '▼';
-    } else {
-        section.style.display = 'none';
-        toggle.textContent = '▶';
+    if (section && toggle) {
+        if (section.style.display === 'none') {
+            section.style.display = 'block';
+            toggle.textContent = '▼';
+        } else {
+            section.style.display = 'none';
+            toggle.textContent = '▶';
+        }
     }
 }
 
 function filterSkuBrowser() {
     const search = document.getElementById('sku-search').value.toLowerCase();
     const sections = document.querySelectorAll('.doc-sku-section');
+    let visibleCount = 0;
     
     sections.forEach(section => {
         const text = section.textContent.toLowerCase();
-        if (text.includes(search)) {
+        if (text.includes(search) || !search) {
             section.style.display = 'block';
+            visibleCount++;
+            
+            // Auto-expand if searching and only one result
+            if (search && visibleCount === 1) {
+                const watchesSection = section.querySelector('.doc-sku-watches');
+                const toggle = section.querySelector('.doc-sku-toggle');
+                if (watchesSection && toggle && watchesSection.style.display === 'none') {
+                    watchesSection.style.display = 'block';
+                    toggle.textContent = '▼';
+                }
+            }
         } else {
             section.style.display = 'none';
         }
     });
+    
+    // Show message if no results
+    const browser = document.getElementById('sku-browser');
+    if (search && visibleCount === 0 && sections.length > 0) {
+        const existing = browser.querySelector('.no-results-message');
+        if (!existing) {
+            const msg = document.createElement('div');
+            msg.className = 'no-results-message';
+            msg.style.cssText = 'text-align:center;padding:20px;color:var(--text-2);';
+            msg.textContent = `No matches found for "${search}"`;
+            browser.appendChild(msg);
+        }
+    } else {
+        const existing = browser.querySelector('.no-results-message');
+        if (existing) existing.remove();
+    }
 }
 
-async function viewWatchPhotos(watchId) {
+async function viewDocumentedWatchPhotos(watchId) {
     try {
         const r = await fetch('/api/watch-documentation', {
             method: 'POST',
@@ -6759,6 +6792,91 @@ docStyles.textContent = `
 }
 `;
 document.head.appendChild(docStyles);
+
+// ── Quick Photo Access from Inventory ──
+function viewWatchPhotos(description, row) {
+    // Navigate to Photos page and switch to Documentation tab
+    showPage('photos');
+    
+    // Small delay to ensure page loads, then switch to documentation
+    setTimeout(() => {
+        switchPhotosTab('documentation');
+        
+        // Extract ref from description for searching
+        const refMatch = description.match(/\b(\d{5,6}[A-Z]*)\b/);
+        const ref = refMatch ? refMatch[1] : '';
+        
+        // Show toast to indicate navigation
+        showToast(`Searching for ${ref || 'watch'} photos...`, 'info');
+        
+        // Auto-search for the ref if we found one
+        if (ref) {
+            setTimeout(() => {
+                const searchInput = document.getElementById('sku-search');
+                if (searchInput) {
+                    searchInput.value = ref;
+                    filterSkuBrowser();
+                    
+                    // Expand the matching SKU section automatically
+                    setTimeout(() => {
+                        const skuSection = document.querySelector(`[onclick="toggleSkuSection('${ref}')"]`);
+                        if (skuSection) {
+                            const toggleElement = skuSection.querySelector('.doc-sku-toggle');
+                            const watchesSection = document.getElementById(`doc-sku-${ref}`);
+                            if (watchesSection && watchesSection.style.display === 'none') {
+                                skuSection.click(); // This will toggle it open
+                            }
+                            
+                            // Scroll to the section
+                            skuSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            
+                            // Highlight briefly
+                            skuSection.style.background = 'var(--accent-glow)';
+                            setTimeout(() => {
+                                skuSection.style.background = '';
+                            }, 2000);
+                        }
+                    }, 500);
+                }
+            }, 300);
+        } else {
+            // If no ref found, just refresh the documentation report
+            setTimeout(() => {
+                refreshDocumentationReport();
+            }, 300);
+        }
+    }, 200);
+}
+
+// Enhanced view watch photos modal (for when we have the exact watch_id)
+async function viewSpecificWatchPhotos(watchId) {
+    try {
+        const r = await fetch('/api/watch-documentation', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+                action: 'get_photos',
+                watch_id: watchId
+            })
+        });
+        const d = await r.json();
+        
+        if (d.success) {
+            showWatchPhotoModal(d.watch_info);
+        } else {
+            // If not found in documentation, try regular photo viewer
+            const parts = watchId.split('_');
+            if (parts.length === 2) {
+                const [ref, serial] = parts;
+                showToast(`${ref} ${serial} photos not found in documentation system`, 'warning');
+            } else {
+                showToast('Watch photos not found', 'warning');
+            }
+        }
+    } catch(e) {
+        showToast('Error loading photos: ' + e.message, 'error');
+    }
+}
 
 // ── Aging Heatmap ──
 async function loadAgingHeatmap() {
