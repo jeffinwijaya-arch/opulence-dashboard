@@ -936,6 +936,28 @@
         @media(max-width:900px) {
             ::-webkit-scrollbar { width: 0; height: 0; }
         }
+        
+        /* ── MODAL POSITIONING FIXES ── */
+        #watch-modal {
+            display: none !important;
+        }
+        #watch-modal[style*="flex"] {
+            display: flex !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 10001 !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        
+        /* Prevent input issues in modals */
+        #watch-modal input, #watch-modal select, #watch-modal textarea {
+            pointer-events: auto !important;
+            touch-action: manipulation !important;
+        }
     </style>
 </head>
 <body>
@@ -1559,8 +1581,8 @@
         </div>
 
         <!-- Add/Edit Watch Modal -->
-        <div id="watch-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;">
-            <div style="background:var(--bg-2);border-radius:var(--radius);padding:20px;max-width:500px;width:90%;max-height:85vh;overflow-y:auto;">
+        <div id="watch-modal" style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;" onclick="event.target===this && closeWatchModal()">
+            <div style="background:var(--bg-2);border-radius:var(--radius);padding:20px;max-width:500px;width:90%;max-height:85vh;overflow-y:auto;" onclick="event.stopPropagation();">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                     <h3 id="watch-modal-title" style="margin:0;">Add Watch</h3>
                     <button onclick="closeWatchModal()" style="background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;">X</button>
@@ -7071,7 +7093,15 @@ function showAddWatchModal() {
         const el = document.getElementById(id); if(el) el.checked = false;
     });
     document.getElementById('wm-status').style.display = 'none';
-    document.getElementById('watch-modal').style.display = 'flex';
+    const modal = document.getElementById('watch-modal');
+    modal.style.display = 'flex';
+    // Ensure modal appears in viewport
+    modal.scrollIntoView({ behavior: 'instant', block: 'center' });
+    // Focus first input after modal opens
+    setTimeout(() => {
+        const firstInput = modal.querySelector('input:not([type="hidden"]):not([type="checkbox"]):not([type="file"])');
+        if (firstInput) firstInput.focus();
+    }, 100);
 }
 
 function editWatch(row) {
@@ -7097,7 +7127,15 @@ function editWatch(row) {
     document.getElementById('wm-wt').checked = w.wt === 'Yes';
     document.getElementById('wm-status').style.display = 'none';
     document.getElementById('wm-photos-section').style.display = 'block';
-    document.getElementById('watch-modal').style.display = 'flex';
+    const modal = document.getElementById('watch-modal');
+    modal.style.display = 'flex';
+    // Ensure modal appears in viewport
+    modal.scrollIntoView({ behavior: 'instant', block: 'center' });
+    // Focus first input after modal opens
+    setTimeout(() => {
+        const firstInput = modal.querySelector('input:not([type="hidden"]):not([type="checkbox"]):not([type="file"])');
+        if (firstInput) firstInput.focus();
+    }, 100);
     loadWatchPhotos(row);
 }
 

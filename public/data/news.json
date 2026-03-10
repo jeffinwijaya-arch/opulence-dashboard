@@ -1,6 +1,16 @@
 {
   "articles": [
     {
+      "id": "689f5ae79f41",
+      "title": "Introducing \u2013 The Sensible New Mido Commander Datoday",
+      "link": "https://monochrome-watches.com/2026-mido-commander-datoday-collection-introducing-price/",
+      "desc": "When it comes to finding a solid, accessible yet appealing watch meant to be a reliable companion for most of the moments in your life, from the office to the weekend fun, the choice is wide, to say t",
+      "date": "2026-03-10T12:00:26+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/2026-Mido-Commander-Datoday-Collection-1-600x237.jpg",
+      "relevance": 0
+    },
+    {
       "id": "b13170f022be",
       "title": "Introducing \u2013 Junghans Gets Serious About Diving with the new Aquaris Series",
       "link": "https://monochrome-watches.com/junghans-aquaris-diver-collection-introducing-price/",
@@ -211,16 +221,6 @@
       "relevance": 0
     },
     {
-      "id": "3ece86e2989d",
-      "title": "Introducing \u2013 Bremont Goes Playful with the Altitude MB Meteor \u201cFelix the Cat\u201d Edition",
-      "link": "https://monochrome-watches.com/introducing-bremont-altitude-mb-meteor-felix-the-cat-edition-black-dlc-specs-price/",
-      "desc": "Bremont\u2018s aviation-focused Altitude collection just added a new reference with a playful yet historically grounded collaboration: the Altitude MB Meteor Felix the Cat, created in partnership with Univ",
-      "date": "2026-03-06T14:00:17+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/Bremont-Altitude-MB-Meteor-Felix-the-Cat-Edition-Black-DLC-1-600x237.jpg",
-      "relevance": 0
-    },
-    {
       "id": "dad3608af117",
       "title": "Introducing: De Rijke & Co. Launches Three Special Edition Amalfi Designs In Ceramic (Live Pics)",
       "link": "https://www.hodinkee.com/articles/de-rijke-and-co-launches-three-special-edition-amalfi-designs-in-ceramic-in-collaboration-with-guy-a",
@@ -361,7 +361,7 @@
       "relevance": 10
     }
   ],
-  "fetched_at": "2026-03-10T08:33:12.676082+00:00",
+  "fetched_at": "2026-03-10T12:33:16.342124+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
