@@ -87,6 +87,7 @@
             --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
         }
         * { margin:0; padding:0; box-sizing:border-box; }
+        html, body { overflow-x:hidden; max-width:100vw; }
         html { font-size:13px; scroll-behavior:smooth; -webkit-font-smoothing:antialiased; }
         body {
             background:var(--bg-0); color:var(--text-0); font-family:var(--font); min-height:100vh;
@@ -118,7 +119,7 @@
             backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
             border-bottom:1px solid var(--border-strong);
             height:48px; display:flex; align-items:center; padding:0 24px;
-            position:sticky; top:0; z-index:100;
+            position:sticky; top:0; z-index:100; overflow-x:auto; overflow-y:hidden;
         }
         .logo {
             font-family:var(--mono); font-size:0.85rem; font-weight:700; letter-spacing:3px;
@@ -158,6 +159,7 @@
         .ticker-bar {
             background:var(--bg-0); border-bottom:1px solid var(--border);
             overflow:hidden; white-space:nowrap; height:30px; line-height:30px;
+            max-width:100vw;
         }
         .ticker-inner { display:inline-flex; animation:scroll 80s linear infinite; }
         .ticker-inner:hover { animation-play-state:paused; }
@@ -174,14 +176,14 @@
         @keyframes scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
 
         /* ── MAIN ── */
-        .main { flex:1; padding:16px 20px; max-width:1440px; margin:0 auto; width:100%; }
+        .main { flex:1; padding:16px 20px; max-width:1440px; margin:0 auto; width:100%; overflow-x:hidden; }
 
         /* ── CARDS ── */
         .card {
             background:var(--bg-2); border:1px solid var(--border);
             border-radius:var(--radius-lg); margin-bottom:12px;
             box-shadow:var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.02);
-            transition:border-color 0.2s ease;
+            transition:border-color 0.2s ease; max-width:100%; overflow:hidden;
         }
         .card:hover { border-color:var(--border-strong); box-shadow:var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.03); }
         .card-head {
