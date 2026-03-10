@@ -2114,33 +2114,34 @@
 
                 <!-- Documentation Controls -->
                 <div class="card" style="margin-bottom:16px;">
-                    <div class="card-head"><span>Documentation Actions</span></div>
-                    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px;">
-                        <button class="btn" onclick="documentAllInventory()" style="background:var(--accent);color:var(--bg-1);">
-                            📸 Document All Inventory
+                    <div class="card-head"><span>Actions</span></div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;padding:12px;">
+                        <button class="btn" onclick="documentAllInventory()" style="background:var(--accent);color:var(--bg-1);flex:1;min-width:140px;">
+                            Document All Inventory
                         </button>
-                        <button class="btn" onclick="refreshDocumentationReport()" style="background:var(--blue);color:var(--bg-1);">
-                            🔄 Refresh Report
+                        <button class="btn" onclick="refreshDocumentationReport()" style="background:var(--blue);color:var(--bg-1);flex:1;min-width:120px;">
+                            Refresh Report
                         </button>
-                        <button class="btn" onclick="setupAutoDocumentation()" style="background:var(--green);color:var(--bg-1);">
-                            🤖 Setup Auto-Documentation
+                        <button class="btn" onclick="setupAutoDocumentation()" style="background:var(--green);color:var(--bg-1);flex:1;min-width:150px;">
+                            Setup Auto-Documentation
                         </button>
                         <div style="flex:1;"></div>
-                        <div style="font-size:0.72rem;color:var(--text-2);" id="doc-last-updated">
-                            Last updated: Never
+                        <div style="font-size:0.7rem;color:var(--text-3);text-align:right;" id="doc-last-updated">
+                            Not loaded
                         </div>
                     </div>
                 </div>
 
                 <!-- SKU Browser -->
                 <div class="card">
-                    <div class="card-head"><span>Browse by SKU</span></div>
-                    <div style="padding:8px;">
-                        <input class="input" id="sku-search" placeholder="Search SKUs, serials, or models..." 
-                               oninput="filterSkuBrowser()" style="width:100%;margin-bottom:12px;">
+                    <div class="card-head"><span>Browse by Model</span></div>
+                    <div style="padding:12px;">
+                        <input class="input" id="sku-search" placeholder="Search models, serials, or SKUs..." 
+                               oninput="filterSkuBrowser()" style="width:100%;margin-bottom:16px;">
                         <div id="sku-browser" style="max-height:600px;overflow-y:auto;">
                             <div style="text-align:center;padding:40px;color:var(--text-2);">
-                                Click "Refresh Report" to load documentation data
+                                <div style="margin-bottom:8px;">Ready to load</div>
+                                <div style="font-size:0.8rem;color:var(--text-3);">Click "Refresh Report" to load documentation data</div>
                             </div>
                         </div>
                     </div>
@@ -6417,17 +6418,17 @@ function renderDocumentationReport(data) {
     
     // Update last updated time
     document.getElementById('doc-last-updated').textContent = 
-        `Last updated: ${new Date().toLocaleTimeString()}`;
+        `Updated ${new Date().toLocaleTimeString()}`;
     
     // Render SKU browser
     const browser = document.getElementById('sku-browser');
     if (!data.skus || data.skus.length === 0) {
         browser.innerHTML = `
             <div style="text-align:center;padding:40px;color:var(--text-2);">
-                No watches documented yet
-                <br><br>
-                <button class="btn" onclick="documentAllInventory()" style="background:var(--accent);color:var(--bg-1);">
-                    📸 Start Documentation
+                <div style="margin-bottom:16px;font-size:1.1rem;">No watches documented yet</div>
+                <div style="margin-bottom:24px;font-size:0.9rem;color:var(--text-3);">Start documenting your inventory to create organized photo archives</div>
+                <button class="btn" onclick="documentAllInventory()" style="background:var(--accent);color:var(--bg-1);padding:12px 24px;font-weight:600;">
+                    Start Documentation
                 </button>
             </div>
         `;
@@ -6563,7 +6564,7 @@ function showWatchPhotoModal(watchInfo) {
 
 function setupAutoDocumentation() {
     showToast('Auto-documentation system is ready to deploy!', 'success');
-    alert(`🤖 AUTO-DOCUMENTATION SYSTEM
+    alert(`AUTO-DOCUMENTATION SYSTEM
 
 The system is ready to automatically document future arrivals.
 
@@ -6700,6 +6701,61 @@ docStyles.textContent = `
 
 .doc-watch-photos {
     color: var(--blue);
+}
+
+/* Mobile improvements for documentation */
+@media (max-width: 768px) {
+    .doc-sku-header {
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+    
+    .doc-sku-ref {
+        font-size: 0.85rem;
+    }
+    
+    .doc-sku-name {
+        font-size: 0.8rem;
+    }
+    
+    .doc-watch-item {
+        padding: 10px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .doc-watch-serial {
+        min-width: 80px;
+        font-size: 0.75rem;
+    }
+    
+    .doc-watch-desc {
+        font-size: 0.7rem;
+        line-height: 1.3;
+    }
+    
+    .doc-watch-meta {
+        font-size: 0.65rem;
+        flex-wrap: wrap;
+    }
+    
+    /* Better metrics layout on mobile */
+    #doc-summary {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+    
+    #doc-summary .metric {
+        padding: 12px;
+    }
+    
+    #doc-summary .metric .label {
+        font-size: 0.65rem;
+    }
+    
+    #doc-summary .metric .val {
+        font-size: 1.1rem;
+    }
 }
 `;
 document.head.appendChild(docStyles);
