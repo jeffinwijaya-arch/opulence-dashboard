@@ -977,6 +977,7 @@
             <a data-page="invoices" onclick="showPage('invoices')">Invoices</a>
             <a data-page="shipping" onclick="showPage('shipping')">Shipping</a>
             <a data-page="inventory" onclick="showPage('inventory')">Inventory</a>
+            <a data-page="mission-control" onclick="showPage('mission-control')">Mission Control</a>
             <a data-page="payments" onclick="showPage('payments')">Payments <span class="badge" id="payments-count">0</span></a>
             <a data-page="postings" onclick="showPage('postings')">My Postings</a>
             <a data-page="photos" onclick="showPage('photos')">Photos</a>
@@ -1040,6 +1041,7 @@
             <a class="more-grid-item" onclick="mobileNav('alerts')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></span>Alerts</a>
             <a class="more-grid-item" onclick="mobileNav('aging')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>Aging</a>
             <a class="more-grid-item" onclick="mobileNav('briefing')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></span>Briefing</a>
+            <a class="more-grid-item" onclick="mobileNav('mission-control')"><span class="mgi-icon">🎯</span>Mission Control</a>
         </div>
     </div>
 
@@ -2345,6 +2347,122 @@
             </div>
         </div>
 
+        <!-- ═══ MISSION CONTROL ═══ -->
+        <div class="page" id="page-mission-control">
+            <div class="page-head">
+                <h1>Mission Control</h1>
+                <p>Autonomous work queue & live progress</p>
+            </div>
+
+            <!-- Stats bar -->
+            <div class="metrics" style="margin-bottom:16px;">
+                <div class="metric">
+                    <div class="label">Queued</div>
+                    <div class="val" id="mc-queued">0</div>
+                </div>
+                <div class="metric">
+                    <div class="label">Active</div>
+                    <div class="val" id="mc-active">0</div>
+                </div>
+                <div class="metric">
+                    <div class="label">Completed Today</div>
+                    <div class="val" id="mc-completed-today">0</div>
+                </div>
+                <div class="metric">
+                    <div class="label">Success Rate</div>
+                    <div class="val" id="mc-success-rate">0%</div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs" style="margin-bottom:16px;">
+                <div class="tab active" id="mc-tab-queued" onclick="switchMissionTab('queued', this)">Queued</div>
+                <div class="tab" id="mc-tab-live" onclick="switchMissionTab('live', this)">Live Feed</div>
+                <div class="tab" id="mc-tab-completed" onclick="switchMissionTab('completed', this)">Completed</div>
+            </div>
+
+            <!-- Queued Panel -->
+            <div id="mc-panel-queued" class="card">
+                <div class="card-head">
+                    <span>Queued Tasks</span>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn" onclick="showMissionCreateModal()" style="font-size:0.7rem;padding:4px 8px;background:var(--accent);color:var(--bg-1);">+ Create</button>
+                        <button class="btn" onclick="loadMissionControl()" style="font-size:0.7rem;padding:4px 8px;opacity:0.7;">Refresh</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="mc-queued-tasks" style="display:flex;flex-direction:column;gap:8px;">
+                        <div style="text-align:center;color:var(--text-2);padding:20px;">Loading tasks...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Feed Panel -->
+            <div id="mc-panel-live" class="card" style="display:none;">
+                <div class="card-head">
+                    <span>Live Feed</span>
+                    <span style="font-size:0.65rem;color:var(--green);" id="mc-live-indicator">● Live</span>
+                </div>
+                <div class="card-body">
+                    <div id="mc-live-tasks" style="display:flex;flex-direction:column;gap:8px;">
+                        <div style="text-align:center;color:var(--text-2);padding:20px;">No active tasks</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Completed Panel -->
+            <div id="mc-panel-completed" class="card" style="display:none;">
+                <div class="card-head">
+                    <span>Completed Tasks</span>
+                    <select class="input" id="mc-completed-filter" style="width:120px;margin-left:auto;" onchange="filterCompletedTasks()">
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                    </select>
+                </div>
+                <div class="card-body">
+                    <div id="mc-completed-tasks" style="display:flex;flex-direction:column;gap:8px;">
+                        <div style="text-align:center;color:var(--text-2);padding:20px;">No completed tasks</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Create Task Modal -->
+            <div id="mc-create-modal" style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+                <div style="background:var(--bg-2);border-radius:var(--radius);padding:20px;max-width:500px;width:90%;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <h3 style="margin:0;">Create Task</h3>
+                        <button onclick="closeMissionCreateModal()" style="background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;">×</button>
+                    </div>
+                    <div style="display:grid;gap:8px;">
+                        <div>
+                            <label style="font-size:0.68rem;color:var(--text-2);">Title</label>
+                            <input class="input" id="mc-task-title" style="width:100%;margin-top:3px;" placeholder="e.g. Bot Sheet Health Check">
+                        </div>
+                        <div>
+                            <label style="font-size:0.68rem;color:var(--text-2);">Description</label>
+                            <textarea class="input" id="mc-task-desc" rows="2" style="width:100%;margin-top:3px;" placeholder="Brief description of what this task does"></textarea>
+                        </div>
+                        <div>
+                            <label style="font-size:0.68rem;color:var(--text-2);">Type</label>
+                            <select class="input" id="mc-task-type" style="width:100%;margin-top:3px;">
+                                <option value="data_sync">Data Sync</option>
+                                <option value="health_check">Health Check</option>
+                                <option value="analysis">Analysis</option>
+                                <option value="maintenance">Maintenance</option>
+                                <option value="alert">Alert</option>
+                            </select>
+                        </div>
+                        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
+                            <button class="btn" onclick="closeMissionCreateModal()" style="opacity:0.6;">Cancel</button>
+                            <button class="btn" onclick="submitMissionTask()" style="background:var(--accent);color:var(--bg-1);">Create Task</button>
+                        </div>
+                        <div id="mc-create-status" style="display:none;padding:8px;border-radius:var(--radius);font-size:0.75rem;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <footer class="footer"><span>MK Opulence</span><span>&middot;</span><span>Market Intelligence</span><span>&middot;</span><span id="update-time">--</span><span>&middot;</span><span class="sync-timer" id="sync-timer">Last synced: --</span><span class="kbd-hint" style="opacity:0.4;font-size:0.58rem;">Keys: 1-7 nav / search R refresh</span></footer>
     </div>
 </div>
@@ -2400,7 +2518,7 @@ let browseOffset = 0;
 const BROWSE_PAGE = 80;
 let currentDealsRegion = 'all';
 
-const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals',arbitrage:'Arbitrage',browse:'Market',invoices:'Invoices',shipping:'Shipping',inventory:'Inventory',payments:'Payments',photos:'Photos',alerts:'Alerts',analytics:'Analytics'};
+const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals',arbitrage:'Arbitrage',browse:'Market',invoices:'Invoices',shipping:'Shipping',inventory:'Inventory',payments:'Payments',photos:'Photos',alerts:'Alerts',analytics:'Analytics','mission-control':'Mission Control'};
 
 function toggleMobileMore() {
     const m = document.getElementById('mobile-more-menu');
@@ -2443,6 +2561,7 @@ function showPage(name, pushState=true) {
     if (name === 'alerts') loadAlerts();
     if (name === 'analytics') loadAnalytics();
     if (name === 'aging') loadAgingHeatmap();
+    if (name === 'mission-control') loadMissionControl();
     if (pushState) {
         const params = new URLSearchParams(window.location.search);
         params.set('p', name);
@@ -10774,6 +10893,268 @@ function flashSuccess(el) {
     if (!el) return;
     el.classList.add('flash-success');
     setTimeout(() => el.classList.remove('flash-success'), 800);
+}
+
+// ── MISSION CONTROL ──
+let missionControlData = { tasks: [], stats: { queued: 0, active: 0, completed_today: 0, success_rate: 0 } };
+let missionControlInterval = null;
+let currentMissionTab = 'queued';
+
+async function loadMissionControl() {
+    try {
+        // Start live updates
+        if (!missionControlInterval) {
+            missionControlInterval = setInterval(() => {
+                if (currentMissionTab === 'live') {
+                    refreshMissionTasks();
+                }
+            }, 2000);
+        }
+
+        // Load initial data
+        await refreshMissionTasks();
+        await refreshMissionStats();
+    } catch(e) {
+        console.error('Mission Control load failed:', e);
+        showToast('Failed to load Mission Control', 'error');
+    }
+}
+
+async function refreshMissionTasks() {
+    try {
+        const r = await fetch('/api/mission-control/tasks');
+        if (r.ok) {
+            missionControlData.tasks = await r.json();
+            renderMissionTasks();
+        }
+    } catch(e) {
+        console.error('Failed to refresh tasks:', e);
+    }
+}
+
+async function refreshMissionStats() {
+    try {
+        const r = await fetch('/api/mission-control/stats');
+        if (r.ok) {
+            missionControlData.stats = await r.json();
+            renderMissionStats();
+        }
+    } catch(e) {
+        console.error('Failed to refresh stats:', e);
+    }
+}
+
+function renderMissionStats() {
+    const stats = missionControlData.stats;
+    const queuedEl = document.getElementById('mc-queued');
+    const activeEl = document.getElementById('mc-active');
+    const completedEl = document.getElementById('mc-completed-today');
+    const successEl = document.getElementById('mc-success-rate');
+
+    if (queuedEl) queuedEl.textContent = stats.queued || 0;
+    if (activeEl) activeEl.textContent = stats.active || 0;
+    if (completedEl) completedEl.textContent = stats.completed_today || 0;
+    if (successEl) successEl.textContent = (stats.success_rate || 0).toFixed(1) + '%';
+}
+
+function renderMissionTasks() {
+    const tasks = missionControlData.tasks || [];
+    const queuedTasks = tasks.filter(t => t.status === 'queued');
+    const activeTasks = tasks.filter(t => t.status === 'active');
+    const completedTasks = tasks.filter(t => t.status === 'completed');
+
+    renderTaskList('mc-queued-tasks', queuedTasks, 'queued');
+    renderTaskList('mc-live-tasks', activeTasks, 'active');
+    renderTaskList('mc-completed-tasks', completedTasks, 'completed');
+}
+
+function renderTaskList(containerId, tasks, status) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    if (tasks.length === 0) {
+        const emptyMsg = status === 'queued' ? 'No queued tasks' :
+                        status === 'active' ? 'No running tasks' : 'No completed tasks';
+        container.innerHTML = `<div style="text-align:center;color:var(--text-2);padding:20px;">${emptyMsg}</div>`;
+        return;
+    }
+
+    container.innerHTML = tasks.map(task => renderTaskCard(task, status)).join('');
+}
+
+function renderTaskCard(task, status) {
+    const progress = task.progress || 0;
+    const progressColor = progress < 30 ? 'var(--red)' : progress < 70 ? 'var(--orange)' : 'var(--green)';
+    const statusDotColor = status === 'active' ? 'var(--green)' : 
+                          status === 'queued' ? 'var(--orange)' : 'var(--text-2)';
+
+    const timeInfo = task.created_at ? 
+        new Date(task.created_at).toLocaleString('en-US', {
+            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        }) : '';
+
+    const duration = task.started_at && task.completed_at ? 
+        Math.round((new Date(task.completed_at) - new Date(task.started_at)) / 1000) + 's' : '';
+
+    return `<div style="background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;transition:all 0.2s ease;cursor:${status === 'queued' ? 'pointer' : 'default'};"
+                 onmouseover="this.style.borderColor='var(--border-strong)';this.style.transform='translateY(-1px)'"
+                 onmouseout="this.style.borderColor='var(--border)';this.style.transform='translateY(0)'"
+                 ${status === 'queued' ? `onclick="startTask('${task.id}')"` : ''}>
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+            <div style="width:8px;height:8px;border-radius:50%;background:${statusDotColor};margin-top:6px;flex-shrink:0;"></div>
+            <div style="flex:1;min-width:0;">
+                <div style="font-family:var(--mono);font-weight:700;font-size:0.88rem;color:var(--text-0);margin-bottom:4px;">
+                    ${task.title || 'Untitled Task'}
+                </div>
+                <div style="color:var(--text-2);font-size:0.72rem;line-height:1.4;margin-bottom:8px;">
+                    ${task.description || 'No description'}
+                </div>
+                
+                <!-- Progress Bar -->
+                <div style="margin-bottom:8px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                        <span style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Progress</span>
+                        <span style="font-size:0.7rem;font-weight:600;color:${progressColor};">${progress}%</span>
+                    </div>
+                    <div style="background:var(--bg-4);border-radius:4px;height:6px;overflow:hidden;">
+                        <div style="background:${progressColor};height:100%;width:${progress}%;transition:all 0.3s ease;border-radius:4px;"></div>
+                    </div>
+                </div>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="font-size:0.68rem;color:var(--text-2);">
+                        ${timeInfo} ${duration ? '· ' + duration : ''}
+                    </div>
+                    ${status === 'queued' ? `<button style="background:var(--accent);color:var(--bg-1);border:none;border-radius:var(--radius);padding:4px 12px;font-size:0.7rem;font-weight:600;cursor:pointer;">Start</button>` : ''}
+                    ${status === 'active' ? `<div style="font-size:0.65rem;color:var(--green);font-weight:600;">● Running</div>` : ''}
+                    ${status === 'completed' ? `<div style="font-size:0.65rem;color:var(--text-2);">${task.success ? '✓ Success' : '✗ Failed'}</div>` : ''}
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+function switchMissionTab(tab, element) {
+    // Update tab styling
+    document.querySelectorAll('#page-mission-control .tab').forEach(t => t.classList.remove('active'));
+    element.classList.add('active');
+
+    // Show/hide panels
+    document.getElementById('mc-panel-queued').style.display = tab === 'queued' ? 'block' : 'none';
+    document.getElementById('mc-panel-live').style.display = tab === 'live' ? 'block' : 'none';
+    document.getElementById('mc-panel-completed').style.display = tab === 'completed' ? 'block' : 'none';
+
+    currentMissionTab = tab;
+    
+    // Refresh data if switching to live
+    if (tab === 'live') {
+        refreshMissionTasks();
+    }
+}
+
+async function startTask(taskId) {
+    try {
+        const r = await fetch(`/api/mission-control/tasks/${taskId}/start`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        });
+        const result = await r.json();
+        
+        if (result.ok) {
+            showToast('Task started successfully', 'success');
+            await refreshMissionTasks();
+            await refreshMissionStats();
+        } else {
+            showToast('Failed to start task: ' + (result.error || 'Unknown error'), 'error');
+        }
+    } catch(e) {
+        console.error('Start task error:', e);
+        showToast('Error starting task', 'error');
+    }
+}
+
+async function completeTask(taskId) {
+    try {
+        const r = await fetch(`/api/mission-control/tasks/${taskId}/complete`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        });
+        const result = await r.json();
+        
+        if (result.ok) {
+            showToast('Task completed', 'success');
+            await refreshMissionTasks();
+            await refreshMissionStats();
+        } else {
+            showToast('Failed to complete task: ' + (result.error || 'Unknown error'), 'error');
+        }
+    } catch(e) {
+        console.error('Complete task error:', e);
+        showToast('Error completing task', 'error');
+    }
+}
+
+function showMissionCreateModal() {
+    const modal = document.getElementById('mc-create-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeMissionCreateModal() {
+    const modal = document.getElementById('mc-create-modal');
+    if (modal) modal.style.display = 'none';
+    
+    // Clear form
+    const titleEl = document.getElementById('mc-task-title');
+    const descEl = document.getElementById('mc-task-desc');
+    const typeEl = document.getElementById('mc-task-type');
+    
+    if (titleEl) titleEl.value = '';
+    if (descEl) descEl.value = '';
+    if (typeEl) typeEl.selectedIndex = 0;
+}
+
+async function submitMissionTask() {
+    const titleEl = document.getElementById('mc-task-title');
+    const descEl = document.getElementById('mc-task-desc');
+    const typeEl = document.getElementById('mc-task-type');
+    const statusEl = document.getElementById('mc-create-status');
+    
+    const title = titleEl?.value?.trim();
+    const description = descEl?.value?.trim();
+    const type = typeEl?.value;
+    
+    if (!title) {
+        showToast('Please enter a task title', 'error');
+        return;
+    }
+    
+    try {
+        const r = await fetch('/api/mission-control/tasks', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ title, description, type })
+        });
+        
+        const result = await r.json();
+        
+        if (result.ok) {
+            showToast('Task created successfully', 'success');
+            closeMissionCreateModal();
+            await refreshMissionTasks();
+            await refreshMissionStats();
+        } else {
+            showToast('Failed to create task: ' + (result.error || 'Unknown error'), 'error');
+        }
+    } catch(e) {
+        console.error('Create task error:', e);
+        showToast('Error creating task', 'error');
+    }
+}
+
+function filterCompletedTasks() {
+    // This would filter completed tasks by timeframe
+    // For now, just refresh the data
+    refreshMissionTasks();
 }
 </script>
 
