@@ -2354,157 +2354,181 @@
                 .mc-logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#F59E0B,#E08830);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:0 4px 16px rgba(245,158,11,0.25);}
                 .mc-title{font-size:1.35rem;font-weight:700;color:var(--text-0);letter-spacing:-0.3px;line-height:1.2;}
                 .mc-subtitle{font-size:0.78rem;color:var(--text-2);font-weight:400;margin-top:2px;}
-                .mc-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
-                .mc-stat{background:var(--bg-3);border:1px solid var(--border);border-radius:12px;padding:16px 18px;transition:border-color 0.2s;}
-                .mc-stat:hover{border-color:var(--border-strong);}
-                .mc-stat-label{font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;display:flex;align-items:center;gap:6px;margin-bottom:6px;}
-                .mc-stat-val{font-size:1.8rem;font-weight:700;color:var(--text-0);font-family:var(--mono);font-variant-numeric:tabular-nums;}
-                .mc-toggle{display:flex;background:var(--bg-3);border-radius:999px;padding:3px;margin-bottom:20px;border:1px solid var(--border);}
-                .mc-toggle-btn{flex:1;text-align:center;padding:8px 16px;border-radius:999px;font-size:0.75rem;font-weight:600;cursor:pointer;transition:all 0.25s ease;color:var(--text-2);user-select:none;}
-                .mc-toggle-btn.active{background:#fff;color:#0B0D12;box-shadow:0 2px 8px rgba(0,0,0,0.15);}
-                .mc-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
-                .mc-section-label{font-size:0.82rem;font-weight:600;color:var(--text-0);display:flex;align-items:center;gap:8px;}
-                .mc-badge{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:999px;font-size:0.65rem;font-weight:700;padding:0 7px;color:#fff;}
-                .mc-badge-orange{background:#E08830;}
-                .mc-badge-green{background:#22C55E;}
-                .mc-badge-red{background:#D94030;}
-                .mc-badge-blue{background:#3B82F6;}
-                .mc-list{display:flex;flex-direction:column;gap:12px;}
-                .mc-card{background:var(--bg-3);border:1px solid var(--border);border-radius:14px;padding:18px 20px;transition:all 0.2s ease;cursor:pointer;position:relative;overflow:hidden;}
-                .mc-card:hover{border-color:var(--border-strong);transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,0,0,0.15);}
-                .mc-card-title{font-size:0.9rem;font-weight:700;color:var(--text-0);margin-bottom:5px;line-height:1.3;}
-                .mc-card-desc{font-size:0.72rem;color:var(--text-2);line-height:1.5;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-                .mc-card-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
-                .mc-tag{display:inline-flex;align-items:center;height:22px;border-radius:999px;font-size:0.6rem;font-weight:600;padding:0 10px;letter-spacing:0.3px;text-transform:uppercase;}
-                .mc-tag-sync{background:rgba(59,130,246,0.15);color:#60A5FA;}
-                .mc-tag-health{background:rgba(34,197,94,0.15);color:#4ADE80;}
-                .mc-tag-intel{background:rgba(168,85,247,0.15);color:#C084FC;}
-                .mc-tag-alert{background:rgba(239,68,68,0.15);color:#F87171;}
-                .mc-tag-finance{background:rgba(245,158,11,0.15);color:#FBBF24;}
-                .mc-tag-maint{background:rgba(148,163,184,0.15);color:#94A3B8;}
-                .mc-progress-wrap{margin-bottom:10px;}
-                .mc-progress-track{height:5px;background:var(--bg-4,#252830);border-radius:999px;overflow:hidden;}
-                .mc-progress-fill{height:100%;border-radius:999px;transition:width 0.8s ease-out;}
-                .mc-progress-multi{display:flex;height:100%;gap:2px;}
-                .mc-progress-seg{height:100%;border-radius:999px;transition:width 0.6s ease-out;}
-                .mc-card-footer{display:flex;align-items:center;justify-content:space-between;}
-                .mc-card-time{font-size:0.65rem;color:var(--text-2);}
-                .mc-start-btn{background:none;border:none;color:#22C55E;font-size:0.75rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;padding:4px 0;transition:all 0.15s;}
-                .mc-start-btn:hover{color:#4ADE80;transform:translateX(2px);}
-                .mc-running{font-size:0.65rem;color:#22C55E;font-weight:600;display:flex;align-items:center;gap:4px;}
-                .mc-running::before{content:'';width:6px;height:6px;border-radius:50%;background:#22C55E;animation:mc-pulse 1.5s infinite;}
-                @keyframes mc-pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
-                @keyframes mc-fadein{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
-                .mc-card{animation:mc-fadein 0.4s ease backwards;}
-                .mc-card:nth-child(2){animation-delay:0.06s;}
-                .mc-card:nth-child(3){animation-delay:0.12s;}
-                .mc-card:nth-child(4){animation-delay:0.18s;}
-                .mc-card:nth-child(5){animation-delay:0.24s;}
-                .mc-card:nth-child(6){animation-delay:0.30s;}
-                .mc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+                
+                .mc-tab-nav{display:flex;background:var(--bg-3);border-radius:999px;padding:3px;margin-bottom:20px;border:1px solid var(--border);}
+                .mc-tab-btn{flex:1;text-align:center;padding:8px 12px;border-radius:999px;font-size:0.7rem;font-weight:600;cursor:pointer;transition:all 0.25s ease;color:var(--text-2);user-select:none;text-transform:uppercase;letter-spacing:0.5px;}
+                .mc-tab-btn.active{background:var(--accent);color:var(--bg-1);box-shadow:0 2px 8px rgba(245,158,11,0.2);}
+                .mc-tab-btn:not(.active):hover{color:var(--text-1);}
+
+                .mc-section{display:none;}
+                .mc-section.active{display:block;}
+
+                /* Kanban Board */
+                .kanban-board{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px;}
+                .kanban-col{background:var(--bg-3);border:1px solid var(--border);border-radius:12px;padding:16px;}
+                .kanban-header{display:flex;align-items:center;justify-content:between;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+                .kanban-title{font-size:0.75rem;font-weight:700;color:var(--text-1);text-transform:uppercase;letter-spacing:0.8px;}
+                .kanban-count{background:var(--bg-4);color:var(--text-2);font-size:0.7rem;padding:2px 6px;border-radius:999px;margin-left:8px;}
+                .kanban-items{display:flex;flex-direction:column;gap:8px;min-height:200px;}
+
+                .backlog-card{background:var(--bg-2);border:1px solid var(--border);border-radius:10px;padding:14px;transition:all 0.2s ease;cursor:pointer;}
+                .backlog-card:hover{border-color:var(--border-strong);transform:translateY(-1px);}
+                .backlog-card-header{display:flex;align-items:flex-start;justify-content:between;margin-bottom:8px;}
+                .backlog-title{font-size:0.8rem;font-weight:600;color:var(--text-0);line-height:1.3;flex:1;}
+                .priority-badge{font-size:0.65rem;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:8px;}
+                .priority-p0{background:rgba(239,68,68,0.15);color:#F87171;}
+                .priority-p1{background:rgba(245,158,11,0.15);color:#FBBF24;}
+                .priority-p2{background:rgba(59,130,246,0.15);color:#60A5FA;}
+                .priority-p3{background:rgba(107,114,128,0.15);color:#9CA3AF;}
+                .backlog-desc{font-size:0.7rem;color:var(--text-2);line-height:1.4;margin-bottom:10px;}
+                .backlog-meta{display:flex;align-items:center;gap:8px;font-size:0.65rem;color:var(--text-3);}
+                .category-tag{background:var(--bg-4);color:var(--text-2);padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:0.3px;}
+                .effort-badge{background:rgba(34,197,94,0.1);color:#4ADE80;padding:2px 5px;border-radius:3px;}
+
+                /* Error Log */
+                .error-list{display:flex;flex-direction:column;gap:12px;}
+                .error-card{background:var(--bg-3);border:1px solid var(--border);border-radius:10px;padding:16px;border-left:3px solid var(--red);}
+                .error-header{display:flex;align-items:flex-start;justify-content:between;margin-bottom:8px;}
+                .error-title{font-size:0.85rem;font-weight:600;color:var(--text-0);}
+                .error-date{font-size:0.7rem;color:var(--text-3);}
+                .severity-badge{font-size:0.65rem;font-weight:700;padding:2px 6px;border-radius:4px;text-transform:uppercase;}
+                .severity-critical{background:rgba(239,68,68,0.15);color:#F87171;}
+                .severity-major{background:rgba(245,158,11,0.15);color:#FBBF24;}
+                .severity-minor{background:rgba(107,114,128,0.15);color:#9CA3AF;}
+                .error-details{margin:8px 0;font-size:0.75rem;color:var(--text-2);line-height:1.4;}
+                .error-fix{background:var(--bg-4);padding:8px;border-radius:6px;margin-top:8px;font-size:0.7rem;color:var(--text-2);}
+
+                /* Health Metrics */
+                .health-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px;}
+                .health-card{background:var(--bg-3);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center;}
+                .health-value{font-size:1.8rem;font-weight:700;color:var(--accent);font-family:var(--mono);margin-bottom:4px;}
+                .health-label{font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;}
+                .health-status{font-size:0.65rem;margin-top:4px;padding:2px 6px;border-radius:4px;}
+                .status-excellent{background:rgba(34,197,94,0.1);color:#4ADE80;}
+                .status-good{background:rgba(59,130,246,0.1);color:#60A5FA;}
+                .status-warning{background:rgba(245,158,11,0.1);color:#FBBF24;}
+
+                /* Scheduler */
+                .schedule-list{display:flex;flex-direction:column;gap:12px;}
+                .schedule-card{background:var(--bg-3);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;align-items:center;gap:16px;}
+                .schedule-status{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+                .schedule-status.enabled{background:#4ADE80;}
+                .schedule-status.disabled{background:#6B7280;}
+                .schedule-info{flex:1;}
+                .schedule-name{font-size:0.85rem;font-weight:600;color:var(--text-0);margin-bottom:2px;}
+                .schedule-desc{font-size:0.7rem;color:var(--text-2);line-height:1.3;margin-bottom:6px;}
+                .schedule-meta{display:flex;align-items:center;gap:12px;font-size:0.65rem;color:var(--text-3);}
+                .schedule-actions{display:flex;gap:6px;}
+
+                /* Journal */
+                .journal-list{display:flex;flex-direction:column;gap:12px;}
+                .journal-card{background:var(--bg-3);border:1px solid var(--border);border-radius:10px;padding:16px;}
+                .journal-header{display:flex;align-items:flex-start;justify-content:between;margin-bottom:8px;}
+                .journal-lesson{font-size:0.85rem;font-weight:600;color:var(--text-0);line-height:1.3;}
+                .journal-date{font-size:0.7rem;color:var(--text-3);}
+                .journal-source{font-size:0.7rem;color:var(--text-2);margin-bottom:6px;font-style:italic;}
+                .journal-category{background:var(--bg-4);color:var(--text-2);font-size:0.65rem;padding:2px 6px;border-radius:4px;text-transform:uppercase;}
+
+                /* Changelog */
+                .changelog-list{display:flex;flex-direction:column;gap:8px;}
+                .changelog-day{margin-bottom:16px;}
+                .changelog-date{font-size:0.8rem;font-weight:600;color:var(--text-1);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border);}
+                .changelog-item{background:var(--bg-3);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:6px;}
+                .changelog-commit{font-family:var(--mono);font-size:0.7rem;color:var(--text-2);margin-bottom:4px;}
+                .changelog-msg{font-size:0.75rem;color:var(--text-0);}
+                .changelog-files{font-size:0.65rem;color:var(--text-3);margin-top:4px;}
+
                 .mc-empty{text-align:center;color:var(--text-2);padding:40px 20px;font-size:0.8rem;}
-                .mc-log-line{padding:1px 0;border-bottom:1px solid rgba(255,255,255,0.03);}
-                .mc-log-time{color:var(--text-2);opacity:0.5;margin-right:8px;}
-                .mc-log-viewer::-webkit-scrollbar{width:4px;}
-                .mc-log-viewer::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;}
-                .mc-create-fab{position:fixed;bottom:80px;right:20px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#F59E0B,#E08830);border:none;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 4px 20px rgba(245,158,11,0.35);z-index:100;display:flex;align-items:center;justify-content:center;transition:transform 0.2s;}
-                .mc-create-fab:hover{transform:scale(1.08);}
+                .mc-btn{background:var(--accent);color:var(--bg-1);border:none;padding:6px 12px;border-radius:6px;font-size:0.7rem;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:0.5px;}
+                .mc-btn:hover{background:var(--accent-hover);}
+                .mc-btn-secondary{background:var(--bg-4);color:var(--text-1);}
             </style>
 
             <!-- Header -->
             <div class="mc-header">
                 <div class="mc-logo">🎯</div>
                 <div>
-                    <div class="mc-title">Mission Control Workshop</div>
-                    <div class="mc-subtitle">Autonomous work queue & live progress</div>
+                    <div class="mc-title">Mission Control</div>
+                    <div class="mc-subtitle">Bot Self-Development & Autonomous Work Queue</div>
                 </div>
             </div>
 
-            <!-- Stats -->
-            <div class="mc-stats">
-                <div class="mc-stat">
-                    <div class="mc-stat-label">⏳ Queued</div>
-                    <div class="mc-stat-val" id="mc-queued">0</div>
-                </div>
-                <div class="mc-stat">
-                    <div class="mc-stat-label">▶ Active</div>
-                    <div class="mc-stat-val" id="mc-active" style="color:var(--green)">0</div>
-                </div>
+            <!-- Tab Navigation -->
+            <div class="mc-tab-nav">
+                <div class="mc-tab-btn active" onclick="switchMcTab('backlog')">Backlog</div>
+                <div class="mc-tab-btn" onclick="switchMcTab('errors')">Errors</div>
+                <div class="mc-tab-btn" onclick="switchMcTab('changelog')">Changelog</div>
+                <div class="mc-tab-btn" onclick="switchMcTab('health')">Health</div>
+                <div class="mc-tab-btn" onclick="switchMcTab('scheduler')">Scheduler</div>
+                <div class="mc-tab-btn" onclick="switchMcTab('journal')">Journal</div>
             </div>
 
-            <!-- Toggle -->
-            <div class="mc-toggle">
-                <div class="mc-toggle-btn active" id="mc-tab-queued" onclick="switchMissionTab('queued')">Queued</div>
-                <div class="mc-toggle-btn" id="mc-tab-live" onclick="switchMissionTab('live')">Live Feed</div>
-                <div class="mc-toggle-btn" id="mc-tab-completed" onclick="switchMissionTab('completed')">Completed</div>
-            </div>
-
-            <!-- Queued Panel -->
-            <div id="mc-panel-queued">
-                <div class="mc-section-head">
-                    <div class="mc-section-label">Queued <span class="mc-badge mc-badge-orange" id="mc-queued-badge">0</span></div>
-                    <button class="btn" onclick="loadMissionControl()" style="font-size:0.65rem;padding:3px 10px;opacity:0.5;">↻</button>
-                </div>
-                <div class="mc-list" id="mc-queued-tasks">
-                    <div class="mc-empty">Loading tasks...</div>
-                </div>
-            </div>
-
-            <!-- Live Feed Panel -->
-            <div id="mc-panel-live" style="display:none;">
-                <div class="mc-section-head">
-                    <div class="mc-section-label">Active <span style="color:#22C55E;">▶</span></div>
-                </div>
-                <div class="mc-list" id="mc-live-tasks">
-                    <div class="mc-empty">No active tasks</div>
-                </div>
-            </div>
-
-            <!-- Completed Panel -->
-            <div id="mc-panel-completed" style="display:none;">
-                <div class="mc-section-head">
-                    <div class="mc-section-label">Completed</div>
-                </div>
-                <div class="mc-list" id="mc-completed-tasks">
-                    <div class="mc-empty">No completed tasks yet</div>
-                </div>
-            </div>
-
-            <!-- FAB Create Button -->
-            <button class="mc-create-fab" onclick="showMissionCreateModal()" title="Create Task">+</button>
-
-            <!-- Create Task Modal -->
-            <div id="mc-create-modal" style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
-                <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:480px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                        <h3 style="margin:0;font-size:1.05rem;">New Mission</h3>
-                        <button onclick="closeMissionCreateModal()" style="background:none;border:none;color:var(--text-2);font-size:1.3rem;cursor:pointer;padding:4px;">×</button>
+            <!-- Backlog Section (Kanban) -->
+            <div class="mc-section active" id="mc-backlog">
+                <div class="kanban-board">
+                    <div class="kanban-col">
+                        <div class="kanban-header">
+                            <span class="kanban-title">To Do</span>
+                            <span class="kanban-count" id="todo-count">0</span>
+                        </div>
+                        <div class="kanban-items" id="todo-items"></div>
                     </div>
-                    <div style="display:grid;gap:12px;">
-                        <div>
-                            <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Title</label>
-                            <input class="input" id="mc-task-title" style="width:100%;margin-top:4px;" placeholder="e.g. Bot Sheet Health Check">
+                    <div class="kanban-col">
+                        <div class="kanban-header">
+                            <span class="kanban-title">In Progress</span>
+                            <span class="kanban-count" id="progress-count">0</span>
                         </div>
-                        <div>
-                            <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Description</label>
-                            <textarea class="input" id="mc-task-desc" rows="3" style="width:100%;margin-top:4px;resize:vertical;" placeholder="What should this mission accomplish?"></textarea>
-                        </div>
-                        <div>
-                            <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Type</label>
-                            <select class="input" id="mc-task-type" style="width:100%;margin-top:4px;">
-                                <option value="data_sync">Data Sync</option>
-                                <option value="health_check">Health Check</option>
-                                <option value="analysis">Analysis</option>
-                                <option value="maintenance">Maintenance</option>
-                                <option value="alert">Alert</option>
-                            </select>
-                        </div>
-                        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
-                            <button class="btn" onclick="closeMissionCreateModal()" style="opacity:0.5;font-size:0.75rem;">Cancel</button>
-                            <button class="btn" onclick="submitMissionTask()" style="background:linear-gradient(135deg,#F59E0B,#E08830);color:#fff;font-size:0.75rem;padding:8px 20px;border-radius:999px;">Create Mission</button>
-                        </div>
-                        <div id="mc-create-status" style="display:none;padding:8px;border-radius:8px;font-size:0.75rem;"></div>
+                        <div class="kanban-items" id="progress-items"></div>
                     </div>
+                    <div class="kanban-col">
+                        <div class="kanban-header">
+                            <span class="kanban-title">Done</span>
+                            <span class="kanban-count" id="done-count">0</span>
+                        </div>
+                        <div class="kanban-items" id="done-items"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Log Section -->
+            <div class="mc-section" id="mc-errors">
+                <div class="error-list" id="error-list"></div>
+            </div>
+
+            <!-- Changelog Section -->
+            <div class="mc-section" id="mc-changelog">
+                <div class="changelog-list" id="changelog-list">
+                    <div class="mc-empty">Loading git commits...</div>
+                </div>
+            </div>
+
+            <!-- Health Metrics Section -->
+            <div class="mc-section" id="mc-health">
+                <div class="health-grid" id="health-grid"></div>
+            </div>
+
+            <!-- Work Scheduler Section -->
+            <div class="mc-section" id="mc-scheduler">
+                <div style="display:flex;justify-content:between;align-items:center;margin-bottom:16px;">
+                    <h3 style="margin:0;font-size:0.9rem;color:var(--text-1);">Scheduled Autonomous Work</h3>
+                    <button class="mc-btn" onclick="showNewTaskModal()">+ New Task</button>
+                </div>
+                <div class="schedule-list" id="schedule-list"></div>
+            </div>
+
+            <!-- Learning Journal Section -->
+            <div class="mc-section" id="mc-journal">
+                <div style="display:flex;justify-content:between;align-items:center;margin-bottom:16px;">
+                    <h3 style="margin:0;font-size:0.9rem;color:var(--text-1);">Learning Journal</h3>
+                    <button class="mc-btn" onclick="showNewJournalModal()">+ Add Entry</button>
+                </div>
+                <div class="journal-list" id="journal-list"></div>
+            </div>
+
+            <!-- Modals -->
+            <div id="mc-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10001;align-items:center;justify-content:center;">
+                <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:480px;width:90%;">
+                    <div id="mc-modal-content"></div>
                 </div>
             </div>
         </div>
@@ -10943,369 +10967,293 @@ function flashSuccess(el) {
 
 // ── MISSION CONTROL ──
 let missionControlData = { tasks: [], stats: { queued: 0, active: 0, completed_today: 0, success_rate: 0 } };
-let missionControlInterval = null;
-let currentMissionTab = 'queued';
+let mcCurrentTab = 'backlog';
+
+function switchMcTab(tab) {
+    mcCurrentTab = tab;
+    document.querySelectorAll('.mc-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.mc-section').forEach(s => s.classList.remove('active'));
+    event.target.classList.add('active');
+    const section = document.getElementById('mc-' + tab);
+    if (section) section.classList.add('active');
+    loadMcTab(tab);
+}
 
 async function loadMissionControl() {
+    loadMcTab('backlog');
+}
+
+async function loadMcTab(tab) {
     try {
-        // Start live updates
-        if (!missionControlInterval) {
-            missionControlInterval = setInterval(() => {
-                if (currentMissionTab === 'live') {
-                    refreshMissionTasks();
-                }
-            }, 2000);
+        switch(tab) {
+            case 'backlog': await loadMcBacklog(); break;
+            case 'errors': await loadMcErrors(); break;
+            case 'changelog': await loadMcChangelog(); break;
+            case 'health': await loadMcHealth(); break;
+            case 'scheduler': await loadMcScheduler(); break;
+            case 'journal': await loadMcJournal(); break;
         }
-
-        // Load initial data
-        await refreshMissionTasks();
-        await refreshMissionStats();
-    } catch(e) {
-        console.error('Mission Control load failed:', e);
-        showToast('Failed to load Mission Control', 'error');
-    }
+    } catch(e) { console.error('MC tab load error:', e); }
 }
 
-async function refreshMissionTasks() {
-    try {
-        const r = await fetch('/api/mission-control/tasks');
-        if (r.ok) {
-            missionControlData.tasks = await r.json();
-            renderMissionTasks();
-        }
-    } catch(e) {
-        console.error('Failed to refresh tasks:', e);
-    }
+// ── BACKLOG ──
+async function loadMcBacklog() {
+    const r = await fetch('/api/mission-control/backlog');
+    const items = await r.json();
+    const todo = items.filter(i => i.status === 'todo');
+    const inProgress = items.filter(i => i.status === 'in_progress');
+    const done = items.filter(i => i.status === 'done');
+    
+    document.getElementById('todo-count').textContent = todo.length;
+    document.getElementById('progress-count').textContent = inProgress.length;
+    document.getElementById('done-count').textContent = done.length;
+    
+    document.getElementById('todo-items').innerHTML = todo.map(renderBacklogCard).join('') || '<div class="mc-empty">No items</div>';
+    document.getElementById('progress-items').innerHTML = inProgress.map(renderBacklogCard).join('') || '<div class="mc-empty">No items</div>';
+    document.getElementById('done-items').innerHTML = done.map(renderBacklogCard).join('') || '<div class="mc-empty">No items</div>';
 }
 
-async function refreshMissionStats() {
-    try {
-        const r = await fetch('/api/mission-control/stats');
-        if (r.ok) {
-            missionControlData.stats = await r.json();
-            renderMissionStats();
-        }
-    } catch(e) {
-        console.error('Failed to refresh stats:', e);
-    }
-}
-
-function renderMissionStats() {
-    const stats = missionControlData.stats;
-    const queuedEl = document.getElementById('mc-queued');
-    const activeEl = document.getElementById('mc-active');
-    const badgeEl = document.getElementById('mc-queued-badge');
-
-    if (queuedEl) queuedEl.textContent = stats.queued || 0;
-    if (activeEl) activeEl.textContent = stats.active || 0;
-    if (badgeEl) badgeEl.textContent = stats.queued || 0;
-}
-
-function renderMissionTasks() {
-    const tasks = missionControlData.tasks || [];
-    const queuedTasks = tasks.filter(t => t.status === 'queued');
-    const activeTasks = tasks.filter(t => t.status === 'active');
-    const completedTasks = tasks.filter(t => t.status === 'completed');
-
-    renderTaskList('mc-queued-tasks', queuedTasks, 'queued');
-    renderTaskList('mc-live-tasks', activeTasks, 'active');
-    renderTaskList('mc-completed-tasks', completedTasks, 'completed');
-}
-
-function renderTaskList(containerId, tasks, status) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    if (tasks.length === 0) {
-        const emptyMsg = status === 'queued' ? 'No queued missions' :
-                        status === 'active' ? 'No active missions' : 'No completed missions';
-        container.innerHTML = `<div class="mc-empty">${emptyMsg}</div>`;
-        return;
-    }
-
-    container.innerHTML = tasks.map(task => renderTaskCard(task, status)).join('');
-}
-
-function renderTaskCard(task, status) {
-    const progress = task.progress || 0;
-    const typeMap = {
-        'data_sync': {cls:'mc-tag-sync', label:'Sync'},
-        'sync': {cls:'mc-tag-sync', label:'Sync'},
-        'health_check': {cls:'mc-tag-health', label:'Health'},
-        'maintenance': {cls:'mc-tag-maint', label:'Maintenance'},
-        'intelligence': {cls:'mc-tag-intel', label:'Intel'},
-        'analysis': {cls:'mc-tag-intel', label:'Analysis'},
-        'alert': {cls:'mc-tag-alert', label:'Alert'},
-        'finance': {cls:'mc-tag-finance', label:'Finance'}
-    };
-    const typeInfo = typeMap[task.type] || {cls:'mc-tag-maint', label: task.type || 'Task'};
-
-    const timeInfo = task.created_at ? 
-        new Date(task.created_at).toLocaleString('en-US', {
-            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-        }) : '';
-
-    const duration = task.started_at && task.completed_at ? 
-        Math.round((new Date(task.completed_at) - new Date(task.started_at)) / 1000) + 's' : '';
-
-    // Multi-segment progress for active tasks
-    let progressHtml = '';
-    if (status === 'active' && progress > 0) {
-        const seg1 = Math.min(progress, 33);
-        const seg2 = Math.max(0, Math.min(progress - 33, 34));
-        const seg3 = Math.max(0, progress - 67);
-        progressHtml = `<div class="mc-progress-wrap">
-            <div class="mc-progress-track">
-                <div class="mc-progress-multi">
-                    <div class="mc-progress-seg" style="width:${seg1/33*33}%;background:#D94030;"></div>
-                    <div class="mc-progress-seg" style="width:${seg2/34*34}%;background:#E08830;"></div>
-                    <div class="mc-progress-seg" style="width:${seg3/33*33}%;background:#22C55E;"></div>
-                </div>
-            </div>
-        </div>`;
-    } else if (progress > 0) {
-        const col = progress >= 100 ? '#22C55E' : progress >= 50 ? '#E08830' : '#D94030';
-        progressHtml = `<div class="mc-progress-wrap">
-            <div class="mc-progress-track">
-                <div class="mc-progress-fill" style="width:${progress}%;background:${col};"></div>
-            </div>
-        </div>`;
-    }
-
-    // Progress badge
-    const progressBadge = progress > 0 ? `<span class="mc-tag" style="background:rgba(34,197,94,0.15);color:#4ADE80;">+${progress}%</span>` : '';
-    const statusBadge = status === 'active' ? `<span class="mc-tag" style="background:rgba(34,197,94,0.15);color:#4ADE80;">Running</span>` :
-                        status === 'completed' ? (task.success ? `<span class="mc-tag" style="background:rgba(34,197,94,0.15);color:#4ADE80;">Done</span>` : `<span class="mc-tag" style="background:rgba(239,68,68,0.15);color:#F87171;">Failed</span>`) : '';
-
-    const showLogs = status === 'active' || status === 'completed';
-    const logsDisplay = status === 'active' ? 'block' : 'none';
-    const logViewer = showLogs ? `
-        <div class="mc-log-viewer" id="mc-logs-${task.id}" style="display:${logsDisplay};max-height:180px;overflow-y:auto;background:rgba(0,0,0,0.3);border-radius:8px;padding:8px 10px;margin-top:8px;font-family:var(--mono);font-size:0.62rem;line-height:1.7;color:var(--text-2);scroll-behavior:smooth;"></div>
-    ` : '';
-
-    return `<div class="mc-card" ${status === 'queued' ? `onclick="startTask('${task.id}')"` : (showLogs ? `onclick="toggleTaskLogs('${task.id}')"` : '')}>
-        <div class="mc-card-title">${task.title || 'Untitled Mission'}</div>
-        <div class="mc-card-desc">${task.description || 'No description'}</div>
-        <div class="mc-card-tags">
-            <span class="mc-tag ${typeInfo.cls}">${typeInfo.label}</span>
-            ${statusBadge}
-            ${progressBadge}
+function renderBacklogCard(item) {
+    const priorityClass = 'priority-' + (item.priority || 'p2').toLowerCase();
+    const statusActions = item.status === 'todo' 
+        ? `<span style="font-size:0.6rem;color:var(--accent);cursor:pointer" onclick="event.stopPropagation();updateBacklog('${item.id}','in_progress')">▶ Start</span>`
+        : item.status === 'in_progress'
+        ? `<span style="font-size:0.6rem;color:var(--green);cursor:pointer" onclick="event.stopPropagation();updateBacklog('${item.id}','done')">✓ Done</span>`
+        : `<span style="font-size:0.6rem;color:var(--green)">✅</span>`;
+    return `<div class="backlog-card">
+        <div class="backlog-card-header">
+            <div class="backlog-title">${item.title}</div>
+            <span class="priority-badge ${priorityClass}">${item.priority || 'P2'}</span>
         </div>
-        ${progressHtml}
-        <div class="mc-card-footer">
-            <div class="mc-card-time">${timeInfo}${duration ? ' · ' + duration : ''}</div>
-            ${status === 'queued' ? `<button class="mc-start-btn" onclick="event.stopPropagation();startTask('${task.id}')">Start →</button>` : ''}
-            ${status === 'active' ? `<div class="mc-running">Running</div>` : ''}
-            ${status === 'completed' ? `<div style="font-size:0.65rem;color:var(--text-2);display:flex;align-items:center;gap:6px;">${task.success ? '✓ Complete' : '✗ Failed'}<span style="opacity:0.5;font-size:0.6rem;">tap for logs</span></div>` : ''}
+        <div class="backlog-desc">${item.description || ''}</div>
+        <div class="backlog-meta">
+            <span class="category-tag">${item.category || 'general'}</span>
+            <span class="effort-badge">${item.effort || 'M'}</span>
+            <span>${item.created || ''}</span>
+            <span style="margin-left:auto">${statusActions}</span>
         </div>
-        ${logViewer}
     </div>`;
 }
 
-function switchMissionTab(tab) {
-    // Update toggle styling
-    document.querySelectorAll('.mc-toggle-btn').forEach(t => t.classList.remove('active'));
-    document.getElementById('mc-tab-' + tab)?.classList.add('active');
-
-    // Show/hide panels
-    document.getElementById('mc-panel-queued').style.display = tab === 'queued' ? 'block' : 'none';
-    document.getElementById('mc-panel-live').style.display = tab === 'live' ? 'block' : 'none';
-    document.getElementById('mc-panel-completed').style.display = tab === 'completed' ? 'block' : 'none';
-
-    currentMissionTab = tab;
-    
-    // Refresh data if switching to live
-    if (tab === 'live') {
-        refreshMissionTasks();
-    }
+async function updateBacklog(id, newStatus) {
+    await fetch('/api/mission-control/backlog/' + id, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({status: newStatus})
+    });
+    loadMcBacklog();
 }
 
-async function startTask(taskId) {
-    try {
-        const r = await fetch(`/api/mission-control/tasks/${taskId}/start`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'}
-        });
-        const result = await r.json();
-        
-        if (result.ok) {
-            showToast('Mission launched', 'success');
-            // Switch to Live Feed tab and start polling
-            switchMissionTab('live');
-            pollTaskLogs(taskId);
-        } else {
-            showToast('Failed: ' + (result.error || 'Unknown error'), 'error');
-        }
-    } catch(e) {
-        console.error('Start task error:', e);
-        showToast('Error starting task', 'error');
-    }
+// ── ERRORS ──
+async function loadMcErrors() {
+    const r = await fetch('/api/mission-control/errors');
+    const items = await r.json();
+    const el = document.getElementById('error-list');
+    if (!items.length) { el.innerHTML = '<div class="mc-empty">No errors logged 🎉</div>'; return; }
+    el.innerHTML = items.map(e => {
+        const sevClass = 'severity-' + (e.severity || 'minor');
+        const statusIcon = e.status === 'fixed' ? '✅' : e.status === 'investigating' ? '🔍' : '⚠️';
+        return `<div class="error-card" style="border-left-color:${e.severity==='critical'?'var(--red)':e.severity==='major'?'var(--orange)':'var(--text-2)'}">
+            <div class="error-header">
+                <div style="flex:1">
+                    <div class="error-title">${statusIcon} ${e.title}</div>
+                    <div class="error-date">${e.date || ''}</div>
+                </div>
+                <span class="severity-badge ${sevClass}">${e.severity || 'minor'}</span>
+            </div>
+            <div class="error-details">${e.description || ''}</div>
+            ${e.root_cause ? `<div class="error-fix"><strong>Root cause:</strong> ${e.root_cause}</div>` : ''}
+            ${e.fix ? `<div class="error-fix" style="margin-top:4px"><strong>Fix:</strong> ${e.fix}</div>` : ''}
+            ${e.prevention ? `<div class="error-fix" style="margin-top:4px;border-left:2px solid var(--green);padding-left:8px"><strong>Prevention:</strong> ${e.prevention}</div>` : ''}
+        </div>`;
+    }).join('');
 }
 
-let activeLogPollers = {};
-
-async function pollTaskLogs(taskId) {
-    if (activeLogPollers[taskId]) return; // Already polling
-    activeLogPollers[taskId] = true;
-    let sinceIdx = 0;
-    
-    const poll = async () => {
-        try {
-            // Fetch logs
-            const lr = await fetch(`/api/mission-control/tasks/${taskId}/logs?since=${sinceIdx}`);
-            const logData = await lr.json();
-            
-            if (logData.logs && logData.logs.length > 0) {
-                sinceIdx = logData.total;
-                // Update the log viewer in the card
-                const logEl = document.getElementById(`mc-logs-${taskId}`);
-                if (logEl) {
-                    for (const entry of logData.logs) {
-                        const line = document.createElement('div');
-                        line.className = 'mc-log-line';
-                        const time = new Date(entry.ts).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-                        line.innerHTML = `<span class="mc-log-time">${time}</span> ${entry.msg}`;
-                        logEl.appendChild(line);
-                    }
-                    logEl.scrollTop = logEl.scrollHeight;
-                }
-            }
-            
-            // Refresh task list to update progress
-            await refreshMissionTasks();
-            await refreshMissionStats();
-            
-            // Check if task is still active
-            const tr = await fetch('/api/mission-control/tasks');
-            const tasks = await tr.json();
-            const task = tasks.find(t => t.id === taskId);
-            
-            if (task && task.status === 'active') {
-                setTimeout(poll, 1500);
-            } else {
-                delete activeLogPollers[taskId];
-                // Final refresh
-                await refreshMissionTasks();
-                await refreshMissionStats();
-            }
-        } catch(e) {
-            console.error('Poll error:', e);
-            delete activeLogPollers[taskId];
-        }
-    };
-    
-    poll();
+// ── CHANGELOG ──
+async function loadMcChangelog() {
+    const r = await fetch('/api/mission-control/changelog');
+    const data = await r.json();
+    const el = document.getElementById('changelog-list');
+    if (!data.days || !data.days.length) { el.innerHTML = '<div class="mc-empty">No commits found</div>'; return; }
+    el.innerHTML = data.days.map(day => {
+        const commits = day.commits.map(c => {
+            const repoColor = c.repo === 'frontend' ? 'var(--accent)' : c.repo === 'price_analyzer' ? '#C084FC' : 'var(--green)';
+            return `<div class="changelog-item">
+                <div class="changelog-commit"><span style="color:${repoColor}">${c.repo}</span> · ${c.hash}</div>
+                <div class="changelog-msg">${c.message}</div>
+            </div>`;
+        }).join('');
+        return `<div class="changelog-day">
+            <div class="changelog-date">📅 ${day.date}</div>
+            ${commits}
+        </div>`;
+    }).join('');
 }
 
-function toggleTaskLogs(taskId) {
-    const logEl = document.getElementById(`mc-logs-${taskId}`);
-    if (logEl) {
-        const isHidden = logEl.style.display === 'none';
-        logEl.style.display = isHidden ? 'block' : 'none';
-        if (isHidden) {
-            // Fetch logs
-            fetch(`/api/mission-control/tasks/${taskId}/logs?since=0`)
-                .then(r => r.json())
-                .then(data => {
-                    if (data.logs) {
-                        logEl.innerHTML = '';
-                        for (const entry of data.logs) {
-                            const line = document.createElement('div');
-                            line.className = 'mc-log-line';
-                            const time = new Date(entry.ts).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-                            line.innerHTML = `<span class="mc-log-time">${time}</span> ${entry.msg}`;
-                            logEl.appendChild(line);
-                        }
-                        logEl.scrollTop = logEl.scrollHeight;
-                    }
-                });
-        }
-    }
+// ── HEALTH ──
+async function loadMcHealth() {
+    const r = await fetch('/api/mission-control/health');
+    const m = await r.json();
+    document.getElementById('health-grid').innerHTML = `
+        <div class="health-card">
+            <div class="health-value">${m.botsheet_rows || '?'}</div>
+            <div class="health-label">Bot Sheet Rows</div>
+            <div class="health-status status-good">${m.botsheet_missing_serial || 0} missing serial</div>
+        </div>
+        <div class="health-card">
+            <div class="health-value">${m.photo_count || 0}</div>
+            <div class="health-label">Watch Photos</div>
+            <div class="health-status status-good">${m.photo_refs || 0} refs covered</div>
+        </div>
+        <div class="health-card">
+            <div class="health-value">${m.supermemory_count || 0}</div>
+            <div class="health-label">SuperMemory</div>
+            <div class="health-status status-good">${m.supermemory || 'N/A'}</div>
+        </div>
+        <div class="health-card">
+            <div class="health-value">${m.memory_size || '?'}</div>
+            <div class="health-label">MEMORY.md</div>
+            <div class="health-status status-good">${m.daily_files || 0} daily files</div>
+        </div>
+        <div class="health-card">
+            <div class="health-value">${m.backlog_done || 0}/${m.backlog_total || 0}</div>
+            <div class="health-label">Backlog Done</div>
+            <div class="health-status ${(m.backlog_done||0)/(m.backlog_total||1) > 0.5 ? 'status-good' : 'status-warning'}">${Math.round((m.backlog_done||0)/(m.backlog_total||1)*100)}% complete</div>
+        </div>
+        <div class="health-card">
+            <div class="health-value">${m.errors_fixed || 0}/${m.errors_total || 0}</div>
+            <div class="health-label">Errors Fixed</div>
+            <div class="health-status ${(m.errors_fixed||0)/(m.errors_total||1) > 0.7 ? 'status-excellent' : 'status-warning'}">${Math.round((m.errors_fixed||0)/(m.errors_total||1)*100)}% resolved</div>
+        </div>
+        <div class="health-card">
+            <div class="health-value">${m.journal_entries || 0}</div>
+            <div class="health-label">Lessons Learned</div>
+            <div class="health-status status-good">Growing knowledge base</div>
+        </div>
+        <div class="health-card">
+            <div class="health-value">${m.uptime || '?'}</div>
+            <div class="health-label">Dashboard Uptime</div>
+            <div class="health-status status-excellent">Running</div>
+        </div>
+    `;
 }
 
-async function completeTask(taskId) {
-    try {
-        const r = await fetch(`/api/mission-control/tasks/${taskId}/complete`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'}
-        });
-        const result = await r.json();
-        
-        if (result.ok) {
-            showToast('Task completed', 'success');
-            await refreshMissionTasks();
-            await refreshMissionStats();
-        } else {
-            showToast('Failed to complete task: ' + (result.error || 'Unknown error'), 'error');
-        }
-    } catch(e) {
-        console.error('Complete task error:', e);
-        showToast('Error completing task', 'error');
-    }
+// ── SCHEDULER ──
+async function loadMcScheduler() {
+    const r = await fetch('/api/mission-control/schedule');
+    const items = await r.json();
+    const el = document.getElementById('schedule-list');
+    if (!items.length) { el.innerHTML = '<div class="mc-empty">No scheduled tasks</div>'; return; }
+    el.innerHTML = items.map(s => {
+        const statusClass = s.enabled ? 'enabled' : 'disabled';
+        const lastRun = s.last_run ? new Date(s.last_run).toLocaleString() : 'Never';
+        const resultIcon = s.last_result === 'success' ? '✅' : s.last_result === 'failed' ? '❌' : '—';
+        return `<div class="schedule-card">
+            <div class="schedule-status ${statusClass}"></div>
+            <div class="schedule-info">
+                <div class="schedule-name">${s.name}</div>
+                <div class="schedule-desc">${s.description || ''}</div>
+                <div class="schedule-meta">
+                    <span>⏰ ${s.cron}</span>
+                    <span>🕐 Last: ${lastRun}</span>
+                    <span>${resultIcon}</span>
+                </div>
+            </div>
+            <div class="schedule-actions">
+                <button class="mc-btn ${s.enabled ? 'mc-btn-secondary' : ''}" style="font-size:0.6rem;padding:4px 8px" onclick="toggleSchedule('${s.id}',${!s.enabled})">${s.enabled ? 'Disable' : 'Enable'}</button>
+            </div>
+        </div>`;
+    }).join('');
 }
 
-function showMissionCreateModal() {
-    const modal = document.getElementById('mc-create-modal');
-    if (modal) modal.style.display = 'flex';
+async function toggleSchedule(id, enable) {
+    await fetch('/api/mission-control/schedule/' + id, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({enabled: enable})
+    });
+    loadMcScheduler();
 }
 
-function closeMissionCreateModal() {
-    const modal = document.getElementById('mc-create-modal');
-    if (modal) modal.style.display = 'none';
-    
-    // Clear form
-    const titleEl = document.getElementById('mc-task-title');
-    const descEl = document.getElementById('mc-task-desc');
-    const typeEl = document.getElementById('mc-task-type');
-    
-    if (titleEl) titleEl.value = '';
-    if (descEl) descEl.value = '';
-    if (typeEl) typeEl.selectedIndex = 0;
+function showNewTaskModal() {
+    const modal = document.getElementById('mc-modal-bg');
+    document.getElementById('mc-modal-content').innerHTML = `
+        <h3 style="color:var(--text-0);margin:0 0 16px">New Scheduled Task</h3>
+        <input id="mc-sched-name" placeholder="Task name" style="width:100%;margin-bottom:8px;padding:10px;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;color:var(--text-0);font-size:0.85rem">
+        <input id="mc-sched-cron" placeholder="Cron expression (e.g. 0 2 * * *)" style="width:100%;margin-bottom:8px;padding:10px;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;color:var(--text-0);font-size:0.85rem">
+        <textarea id="mc-sched-desc" placeholder="Description" rows="3" style="width:100%;margin-bottom:12px;padding:10px;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;color:var(--text-0);font-size:0.85rem;resize:none"></textarea>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button class="mc-btn mc-btn-secondary" onclick="document.getElementById('mc-modal-bg').style.display='none'">Cancel</button>
+            <button class="mc-btn" onclick="submitNewSchedule()">Create</button>
+        </div>
+    `;
+    modal.style.display = 'flex';
 }
 
-async function submitMissionTask() {
-    const titleEl = document.getElementById('mc-task-title');
-    const descEl = document.getElementById('mc-task-desc');
-    const typeEl = document.getElementById('mc-task-type');
-    const statusEl = document.getElementById('mc-create-status');
-    
-    const title = titleEl?.value?.trim();
-    const description = descEl?.value?.trim();
-    const type = typeEl?.value;
-    
-    if (!title) {
-        showToast('Please enter a task title', 'error');
-        return;
-    }
-    
-    try {
-        const r = await fetch('/api/mission-control/tasks', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ title, description, type })
-        });
-        
-        const result = await r.json();
-        
-        if (result.ok) {
-            showToast('Task created successfully', 'success');
-            closeMissionCreateModal();
-            await refreshMissionTasks();
-            await refreshMissionStats();
-        } else {
-            showToast('Failed to create task: ' + (result.error || 'Unknown error'), 'error');
-        }
-    } catch(e) {
-        console.error('Create task error:', e);
-        showToast('Error creating task', 'error');
-    }
+async function submitNewSchedule() {
+    const name = document.getElementById('mc-sched-name').value.trim();
+    const cron = document.getElementById('mc-sched-cron').value.trim();
+    const desc = document.getElementById('mc-sched-desc').value.trim();
+    if (!name || !cron) { showToast('Name and cron required', 'error'); return; }
+    await fetch('/api/mission-control/schedule', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({name, cron, tz:'America/New_York', description: desc})
+    });
+    document.getElementById('mc-modal-bg').style.display = 'none';
+    loadMcScheduler();
+    showToast('Task scheduled', 'success');
 }
 
-function filterCompletedTasks() {
-    // This would filter completed tasks by timeframe
-    // For now, just refresh the data
-    refreshMissionTasks();
+// ── JOURNAL ──
+async function loadMcJournal() {
+    const r = await fetch('/api/mission-control/journal');
+    const items = await r.json();
+    const el = document.getElementById('journal-list');
+    if (!items.length) { el.innerHTML = '<div class="mc-empty">No lessons yet</div>'; return; }
+    el.innerHTML = items.map(j => `<div class="journal-card">
+        <div class="journal-header">
+            <div class="journal-lesson">${j.lesson}</div>
+            <div class="journal-date">${j.date || ''}</div>
+        </div>
+        <div class="journal-source">Triggered by: ${j.source || 'Unknown'}</div>
+        <span class="journal-category">${j.category || 'general'}</span>
+    </div>`).join('');
 }
+
+function showNewJournalModal() {
+    const modal = document.getElementById('mc-modal-bg');
+    document.getElementById('mc-modal-content').innerHTML = `
+        <h3 style="color:var(--text-0);margin:0 0 16px">New Learning Entry</h3>
+        <textarea id="mc-journal-lesson" placeholder="What did you learn?" rows="3" style="width:100%;margin-bottom:8px;padding:10px;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;color:var(--text-0);font-size:0.85rem;resize:none"></textarea>
+        <input id="mc-journal-source" placeholder="What triggered this lesson?" style="width:100%;margin-bottom:8px;padding:10px;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;color:var(--text-0);font-size:0.85rem">
+        <select id="mc-journal-cat" style="width:100%;margin-bottom:12px;padding:10px;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;color:var(--text-0);font-size:0.85rem">
+            <option value="automation">Automation</option>
+            <option value="data-safety">Data Safety</option>
+            <option value="workflow">Workflow</option>
+            <option value="parsing">Parsing</option>
+            <option value="business">Business</option>
+            <option value="data-model">Data Model</option>
+        </select>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button class="mc-btn mc-btn-secondary" onclick="document.getElementById('mc-modal-bg').style.display='none'">Cancel</button>
+            <button class="mc-btn" onclick="submitNewJournal()">Save</button>
+        </div>
+    `;
+    modal.style.display = 'flex';
+}
+
+async function submitNewJournal() {
+    const lesson = document.getElementById('mc-journal-lesson').value.trim();
+    const source = document.getElementById('mc-journal-source').value.trim();
+    const category = document.getElementById('mc-journal-cat').value;
+    if (!lesson) { showToast('Lesson text required', 'error'); return; }
+    await fetch('/api/mission-control/journal', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({lesson, source, category})
+    });
+    document.getElementById('mc-modal-bg').style.display = 'none';
+    loadMcJournal();
+    showToast('Lesson saved', 'success');
+}
+
 </script>
 
 </body>
