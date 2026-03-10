@@ -1,6 +1,126 @@
 {
   "articles": [
     {
+      "id": "b83c841f99c0",
+      "title": "Hands-on \u2013 Impressions about the Tudor Ranger 36mm, Including the new Dune White Dial",
+      "link": "https://monochrome-watches.com/tudor-ranger-36mm-dune-white-dial-review-price/",
+      "desc": "If you\u2019ve been reading MONOCHROME for some time now, you might know that I have a very strong connection with the Rolex Explorer 36mm, in particular the 1990s reference 14270. Not only is it a watch t",
+      "date": "2026-03-09T18:10:14+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/Tudor-Ranger-36mm-Dune-White-Review-Comparison-Ranger-39mm-1-600x237.jpg",
+      "relevance": 10
+    },
+    {
+      "id": "342c2ecb64ec",
+      "title": "Introducing \u2013 The Vulcain Skindiver Nautique Meteorite, a New Dial for a Compact Diver",
+      "link": "https://monochrome-watches.com/vulcain-skindiver-nautique-meteorite-vintage-inspired-compact-dive-watch-introducing-price/",
+      "desc": "Since its debut in 2023, Vulcain\u2019s Skindiver Nautique has quickly moved from a niche revival piece to a regular part of the brand\u2019s present-day catalogue. These watches draw\u00a0inspiration\u00a0from Vulcain\u2019s",
+      "date": "2026-03-09T13:00:50+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/Vulcain-Skindiver-Nautique-Meteorite-3-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "0f08752e7ccf",
+      "title": "Business News: A Push For More High Horology At Germany\u2019s Top Jewelry Fair",
+      "link": "https://www.hodinkee.com/articles/a-push-for-more-high-horology-at-germanys-top-jewelry-fair",
+      "desc": "One of Europe's largest jewelry shows, Inhorgenta is again a hub for watch brands seeking fresh clientele.",
+      "date": "2026-03-09T11:00:00-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/07ff34f7-7142-44b0-b05e-93c7a3183088/DSCF4760.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "relevance": 0
+    },
+    {
+      "id": "8c839f8c0a99",
+      "title": "Finding My Seiko UFO 6138: A Collector\u2019s Lesson In Humility, Patience, And Rediscovery",
+      "link": "https://www.fratellowatches.com/seiko-watches/finding-my-seiko-ufo-6138-a-collectors-lesson-in-humility-patience-and-rediscovery/",
+      "desc": "Vintage Seiko chronographs have a way of pulling you in. They\u2019re mechanically ambitious, unapologetically \u201970s, and just rough enough around the edges to feel honest. Spend enough time around referenc",
+      "date": "2026-03-09T10:00:32+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 20
+    },
+    {
+      "id": "c8c379b06d3a",
+      "title": "Introducing: The Kurono Tokyo 'Diver's'\u2014 A Two-in-One Reimagining Of Dive Watch Case Construction",
+      "link": "https://www.hodinkee.com/articles/introducing-kurono-tokyo-divers",
+      "desc": "If you've ever had to decide between grabbing your dive watch or your dress watch, well, why not both?",
+      "date": "2026-03-09T09:00:00-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/61a23301-8c5b-4505-ba33-48788bea7b72/KuronoDivers.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "relevance": 0
+    },
+    {
+      "id": "49b22d402d49",
+      "title": "Introducing \u2013 A Celestial Dial for the Glash\u00fctte Original Serenade Luna \u201cSkyline Blue\u201d",
+      "link": "https://monochrome-watches.com/glashutte-original-serenade-luna-skyline-blue-celestial-dial-introducing-price/",
+      "desc": "Glash\u00fctte Original\u00a0released its Serenade Luna in 2024, featuring moon phase indications. Unlike the Panomatic Luna, which is essentially a scaled-down adaptation of the men\u2019s PanomaticLunar with its o",
+      "date": "2026-03-09T08:00:34+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/Glashutte-Original-Serenade-Luna-Skyline-Blue-3-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "9ae31a7f3e5f",
+      "title": "Introducing: The Parmigiani Fleurier Tonda PF Automatic 36mm Alta Rosa",
+      "link": "https://www.fratellowatches.com/introducing-the-parmigiani-fleurier-tonda-pf-automatic-36mm-alta-rosa/",
+      "desc": "Parmigiani Fleurier keeps unveiling new versions of existing watches that feel fresh and different. It\u2019s a remarkable phenomenon that proves how well the brand chooses its dial colors across the diffe",
+      "date": "2026-03-09T06:00:15+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "7cc2c3cbd65f",
+      "title": "Hands-On With The Stylish Lebond Attraction",
+      "link": "https://www.fratellowatches.com/hands-on-with-the-stylish-lebond-attraction/",
+      "desc": "Lebond has carved out a special niche for itself in the watch industry. The Spanish brand creates watches for architecture enthusiasts. For its first two releases, Lebond collaborated with famous arch",
+      "date": "2026-03-09T04:00:25+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "86b79a722302",
+      "title": "Introducing: The Hanhart 417 Ti Desert Pilot Limited Editions",
+      "link": "https://www.fratellowatches.com/introducing-the-hanhart-417-ti-desert-pilot-limited-editions/",
+      "desc": "While Hanhart is known for its historically inspired pilot\u2019s chronographs, today\u2019s latest model takes its cues from a very different form of motor-powered conveyance. The 417 Ti Desert Pilot Limited E",
+      "date": "2026-03-08T13:00:45+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 10
+    },
+    {
+      "id": "fc28e6cc017f",
+      "title": "Buying Guide \u2013 Small But Mighty \u2013 Six Versatile Watches of 36mm and Under",
+      "link": "https://monochrome-watches.com/buying-guide-small-watches-35mm-36mm-nomos-toledano-and-chan-tudor-pequignet-jaeger-lecoultre-rolex-prices-specs/",
+      "desc": "People often say \u201cbigger is better\u201d, but also \u201cbig things come in small packages\u201d. While both statements can be very true in multiple aspects of life, it also goes for watches. In some instances, you ",
+      "date": "2026-03-08T10:35:55+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2025/12/2025-Jaeger-LeCoultre-Master-Control-Classic-36mm-Limited-Edition-1995-re-edition-review-2-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "8de0adfdb038",
+      "title": "Is Panerai\u2019s Purest Radiomir Its Most Versatile Modern Watch?",
+      "link": "https://www.fratellowatches.com/is-panerais-purest-radiomir-its-most-versatile-modern-watch/",
+      "desc": "When I first picked up the Panerai Radiomir Quaranta PAM01572, I wasn\u2019t quite sure what to expect. I\u2019ve tried on a few Panerai watches over the years, most of them big, bold, uncompromising instrument",
+      "date": "2026-03-08T10:00:30+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "0a8c16737210",
+      "title": "Sunday Morning Showdown: Tudor Ranger (39mm) Vs. Longines Spirit Pilot",
+      "link": "https://www.fratellowatches.com/sunday-morning-showdown-tudor-ranger-39mm-vs-longines-spirit-pilot/",
+      "desc": "Good morning, and welcome to another Sunday Morning Showdown. Last year, Tudor added a new 36mm size and a beige-dial option to its entry-level Ranger lineup. In November, we put it up against the Chr",
+      "date": "2026-03-08T06:00:58+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
       "id": "fda35d9a9534",
       "title": "The ABCs of Time \u2013 The Most Popular Watch Styles Explained",
       "link": "https://monochrome-watches.com/the-abcs-of-time-the-most-populard-watch-styles-explained/",
@@ -111,16 +231,6 @@
       "relevance": 0
     },
     {
-      "id": "61259b0736df",
-      "title": "Introducing \u2013 A New Red Grape Dial for the Raymond Weil Toccata Heritage",
-      "link": "https://monochrome-watches.com/raymond-weil-toccata-heritage-red-grape-dial-rose-gold-pvd-introducing-price/",
-      "desc": "Following the\u00a0success of the Millesime collection, a series of vintage-inspired, 1930s-based watches, Raymond Weil\u00a0went on to revamp one of its older collections, the Toccata. For nearly 50 years, the",
-      "date": "2026-03-06T08:00:31+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/Raymond-Weil-Toccata-Heritage-Red-Dial-rose-gold-PVD-1-600x237.jpg",
-      "relevance": 0
-    },
-    {
       "id": "d1b67e34f10c",
       "title": "Subprime Reporting? Thoughts On The Recent Morgan Stanley/Swatch Group Controversy",
       "link": "https://www.fratellowatches.com/faulty-reporting-morgan-stanley-swatch-group-controversy/",
@@ -139,36 +249,6 @@
       "source": "REVOLUTION",
       "image": "",
       "relevance": 0
-    },
-    {
-      "id": "1fbb7efab1ca",
-      "title": "Introducing \u2013 Kurono Tokyo Launches its First Diver, a Two-in-One Watch with Sealed Outer Case",
-      "link": "https://monochrome-watches.com/2026-kurono-tokyo-diver-two-in-one-watch-with-sealed-outer-diving-case-introducing-price/",
-      "desc": "When you think about Kurono Tokyo, the side-brand of Japanese independent watchmaker Hajime Asaoka, you should picture something compact and elegant in your mind. Watches often focus on traditional cr",
-      "date": "2026-03-05T17:00:20+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/2026-Kurono-Tokyo-Diver-two-in-one-watch-with-sealed-outer-diving-case-introducing-1-600x237.jpg",
-      "relevance": 0
-    },
-    {
-      "id": "6e598a2935a2",
-      "title": "Introducing \u2013 The S\u00e9rie R01 Depancel x DAMS Lucas Oil Limited Edition",
-      "link": "https://monochrome-watches.com/serie-r01-depancel-x-dams-lucas-oil-limited-edition-introducing-price/",
-      "desc": "The connection between Depancel and the automotive world is rather obvious and quite cool. The very name of the brand says it all, being the contraction of vintage French car manufacturers Delage, Pan",
-      "date": "2026-03-05T15:01:23+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/Depancel-\u00d7-DAMS-Lucas-Oil-Serie-R01-Limited-Edition-1-600x237.jpg",
-      "relevance": 0
-    },
-    {
-      "id": "7d33edf65a7e",
-      "title": "Hands-On With The Collaborative S\u00e9rie R01 Depancel \u00d7 DAMS Lucas Oil",
-      "link": "https://www.fratellowatches.com/hands-on-serie-r01-depancel-x-dams-lucas-oil/",
-      "desc": "Depancel has made a name for itself by creating an extensive collection of race-inspired chronographs. For its newest effort, the brand teamed up with an actual racing team to become an active partner",
-      "date": "2026-03-05T15:00:52+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 10
     },
     {
       "id": "7ed3f6ea1599",
@@ -195,40 +275,10 @@
       "title": "A Closer Look At Russell Crowe's (Previously Secret) TikTok Watch Account",
       "link": "https://www.hodinkee.com/articles/a-closer-look-at-russell-crowes-previously-secret-tiktok-watch-account",
       "desc": "The Oscar Award-winning actor goes incognito on TikTok and gives us a personal glimpse into his watch collection.",
-      "date": "2026-03-05T11:12:19-05:00",
+      "date": "2026-03-05T11:12:00-05:00",
       "source": "HODINKEE",
       "image": "https://hodinkee.imgix.net/uploads/images/52f930d4-d8cc-4834-b107-bb57c8e8f45d/r-s-hero-2.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
       "relevance": 0
-    },
-    {
-      "id": "e83df4c419fb",
-      "title": "Introducing \u2013 Parmigiani Fleurier Tonda PF Automatic 36mm Alta Rosa",
-      "link": "https://monochrome-watches.com/parmigiani-fleurier-tonda-pf-automatic-36mm-alta-rosa-pink-dial-introducing-price/",
-      "desc": "Parmigiani Fleurier\u2019s luxury sports watch collection, the Tonda PF, was introduced in 2021. A refined, minimalist interpretation of the luxury sports watch, the Tonda PF collection is home to several ",
-      "date": "2026-03-05T11:01:49+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/Parmigiani-Fleurier-Tonda-PF-36mm-Alta-Rose-pink-dial-1-600x237.jpg",
-      "relevance": 0
-    },
-    {
-      "id": "c44d2fe4c585",
-      "title": "Hands-On With The Zenith Defy Revival A3643",
-      "link": "https://www.fratellowatches.com/hands-on-zenith-defy-revival-a3643/",
-      "desc": "During LVMH Watch Week in Milan, I was especially interested in the new Zenith releases. It is no secret that I love Zenith. The brand has managed to amaze me time and again with releases that combine",
-      "date": "2026-03-05T06:00:58+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "b39ad8074821",
-      "title": "Fratello Talks: New and Pre-Owned Watches We\u2019d Buy For \u20ac5,000",
-      "link": "https://www.fratellowatches.com/fratello-talks-new-and-pre-owned-watches-wed-buy-for-e5000/",
-      "desc": "What watch would you buy with \u20ac5k in your pocket today? And what if you could spend no less than \u20ac4,500? That\u2019s the hypothetical dilemma we\u2019re tackling on Fratello Talks today. RJ, Daan, and Nacho hav",
-      "date": "2026-03-05T05:00:43+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 10
     },
     {
       "id": "50b22e3acddb",
@@ -251,16 +301,6 @@
       "relevance": 0
     },
     {
-      "id": "fb96d3ee1933",
-      "title": "Rolex: \u201cSorry, Sir, We Don\u2019t Serve Pepsi Here Anymore\u201d",
-      "link": "https://www.fratellowatches.com/rolex-sorry-sir-we-dont-serve-pepsi-here-anymore/",
-      "desc": "\u201cSorry, sir, we don\u2019t serve Pepsi here anymore.\u201d I have heard this before. Last time, I was presented with a disgusting hipster alternative, locally sourced and seemingly made of organic wastewater fr",
-      "date": "2026-03-04T06:00:58+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 10
-    },
-    {
       "id": "a24f648a1a15",
       "title": "Hands-On: The Doxa SUB 750T \u2013 A Big Watch That Wears Just Right",
       "link": "https://www.hodinkee.com/articles/hands-on-doxa-sub-750t",
@@ -269,16 +309,6 @@
       "source": "HODINKEE",
       "image": "https://hodinkee.imgix.net/uploads/images/19eb7268-5e6e-4b59-b804-29a7ac546581/20250906_DoxaSub750T_020.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
       "relevance": 10
-    },
-    {
-      "id": "89b8cdc70c56",
-      "title": "Long-Term Review: Omega Speedmaster Professional 310.30.42.50.01.001",
-      "link": "https://www.fratellowatches.com/long-term-review-omega-speedmaster-professional-310-30-42-50-01-001/",
-      "desc": "The current Omega Speedmaster Professional Moonwatch 310.30.42.50.01.001 debuted on January 8th, 2021. The Moonwatch received a ton of updates, making many Speedmaster enthusiasts very happy. Those wh",
-      "date": "2026-03-03T14:00:44+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 0
     },
     {
       "id": "5fd1ce118cb3",
@@ -291,16 +321,6 @@
       "relevance": 10
     },
     {
-      "id": "14d051422fc3",
-      "title": "Hands-On With The Remarkable Leica ZM 1 And ZM 2",
-      "link": "https://www.fratellowatches.com/hands-on-with-the-remarkable-leica-zm-1-and-zm-2/",
-      "desc": "The name Leica often comes up in the Fratello office. Usually, it\u2019s in reference to its famous cameras, but ever since the German brand introduced its first mechanical watches, we\u2019ve also begun associ",
-      "date": "2026-03-03T12:00:34+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 0
-    },
-    {
       "id": "73787f8afd0e",
       "title": "Swatch Group Responds to Morgan Stanley Report in Open Letter",
       "link": "https://revolutionwatch.com/swatch-group-responds-to-morgan-stanley-report-in-open-letter/",
@@ -311,16 +331,6 @@
       "relevance": 0
     },
     {
-      "id": "1099293eeb7f",
-      "title": "Introducing: The Ming 57.04 Phoenix Offers A More Restrained Take On The Brand's Destro Monopusher Chronograph",
-      "link": "https://www.hodinkee.com/articles/the-ming-5704-phoenix-offers-a-more-restrained-take-on-the-brands-destro-monopusher-chronograph",
-      "desc": "Following the popularity of the limited-edition 57.04 Iris, Ming is adding a toned-down (but still colorful) version to the core collection.",
-      "date": "2026-03-03T10:22:07-05:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/d1f0d7a1-86e8-49f3-bddf-4934ac2fe68c/5704_Phoenix_1.jpeg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 10
-    },
-    {
       "id": "cb927487a7c0",
       "title": "The Ressence Type 9 IKE creates a rainbow light show for the wrist",
       "link": "https://revolutionwatch.com/the-ressence-type-9-ike-creates-a-rainbow-light-show-for-the-wrist/",
@@ -328,16 +338,6 @@
       "date": "2026-03-03T05:32:45+00:00",
       "source": "REVOLUTION",
       "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "b487e9404136",
-      "title": "One To Watch: The Ardra Labs Delta Type Offers A Unique GMT Display For All Time Zones",
-      "link": "https://www.hodinkee.com/articles/the-ardra-labs-delta-type-offers-a-unique-gmt-display-for-all-time-zones",
-      "desc": "A distinctive travel watch featuring a clever new system that accommodates both thirty-minute and forty-five-minute offset time zones.",
-      "date": "2026-03-02T11:01:00-05:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/967eda00-bf1f-4f34-a0db-4d4fe302438d/tan2h-ardralabs-gmt-complete-07602-header.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
       "relevance": 0
     },
     {
@@ -361,7 +361,7 @@
       "relevance": 10
     }
   ],
-  "fetched_at": "2026-03-07T16:33:11.884746+00:00",
+  "fetched_at": "2026-03-10T01:00:04.036984+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",

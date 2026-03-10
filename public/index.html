@@ -2524,7 +2524,7 @@ function openPaymentModal(item) {
             <span style="color:var(--green);font-weight:600;">${price}</span>
         </div>
         <div style="display:flex;gap:8px;">
-            <button class="btn" onclick="confirmMarkPaid(${item.row})" style="flex:1;background:var(--green);color:var(--bg-1);padding:10px;font-weight:600;">
+            <button class="btn" onclick="confirmMarkPaid(${item.row},this)" style="flex:1;background:var(--green);color:var(--bg-1);padding:10px;font-weight:600;">
                 Mark Paid
             </button>
             <button class="btn" onclick="document.getElementById('payment-modal').remove()" style="flex:1;padding:10px;opacity:0.7;">
@@ -2535,7 +2535,8 @@ function openPaymentModal(item) {
     document.body.appendChild(overlay);
 }
 
-async function confirmMarkPaid(row) {
+async function confirmMarkPaid(row, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = '...'; }
     const modal = document.getElementById('payment-modal');
     try {
         const r = await fetch('/api/inventory/mark-paid', {
@@ -2545,15 +2546,18 @@ async function confirmMarkPaid(row) {
         });
         const d = await r.json();
         if (d.ok) {
+            if (btn) { btn.textContent = '✓'; btn.style.opacity = '0.6'; }
             if (modal) modal.innerHTML = `<div style="background:var(--bg-1);border:1px solid var(--green);border-radius:var(--radius-lg);max-width:400px;width:90%;padding:20px;text-align:center;font-family:var(--font);">
                 <div style="font-size:1.2rem;margin-bottom:8px;color:var(--green);font-weight:700;">Done</div>
                 <div style="color:var(--green);font-weight:600;">Marked as Paid</div>
             </div>`;
-            setTimeout(() => { if (modal) modal.remove(); loadData(); }, 1500);
+            setTimeout(() => { if (modal) modal.remove(); loadData(); }, 1200);
         } else {
+            if (btn) { btn.textContent = 'Paid'; btn.disabled = false; }
             alert('Error: ' + (d.error || 'Unknown'));
         }
     } catch(e) {
+        if (btn) { btn.textContent = 'Paid'; btn.disabled = false; }
         alert('Error: ' + e.message);
     }
 }
@@ -7380,8 +7384,8 @@ async function loadPayments() {
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
                 <span style="color:var(${type === 'recv' ? '--green' : '--red'});font-family:var(--mono);">${fmt(p.amount)}</span>
-                ${type === 'recv' ? `<button onclick="confirmMarkPaid(${p.row})" style="background:var(--green);color:var(--bg-1);border:none;border-radius:3px;padding:2px 8px;font-size:0.65rem;cursor:pointer;font-weight:600;">Paid</button>` : ''}
-                ${type === 'pay' ? `<button onclick="confirmMarkSellerPaid(${p.row})" style="background:var(--red);color:var(--bg-1);border:none;border-radius:3px;padding:2px 8px;font-size:0.65rem;cursor:pointer;font-weight:600;">Paid</button>` : ''}
+                ${type === 'recv' ? `<button onclick="confirmMarkPaid(${p.row},this)" style="background:var(--green);color:var(--bg-1);border:none;border-radius:6px;padding:8px 16px;font-size:0.8rem;cursor:pointer;font-weight:600;min-height:36px;min-width:60px;">Paid</button>` : ''}
+                ${type === 'pay' ? `<button onclick="confirmMarkSellerPaid(${p.row})" style="background:var(--red);color:var(--bg-1);border:none;border-radius:6px;padding:8px 16px;font-size:0.8rem;cursor:pointer;font-weight:600;min-height:36px;min-width:60px;">Paid</button>` : ''}
             </div>
         </div>`;
         
