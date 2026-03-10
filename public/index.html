@@ -955,7 +955,6 @@
             <a data-page="invoices" onclick="showPage('invoices')">Invoices</a>
             <a data-page="shipping" onclick="showPage('shipping')">Shipping</a>
             <a data-page="inventory" onclick="showPage('inventory')">Inventory</a>
-            <a data-page="documentation" onclick="showPage('documentation')">Documentation</a>
             <a data-page="payments" onclick="showPage('payments')">Payments <span class="badge" id="payments-count">0</span></a>
             <a data-page="postings" onclick="showPage('postings')">My Postings</a>
             <a data-page="photos" onclick="showPage('photos')">Photos</a>
@@ -1978,12 +1977,20 @@
         <!-- ═══ PHOTOS ═══ -->
         <div class="page" id="page-photos">
             <div class="page-head">
-                <h1>Watch Photo Library</h1>
-                <p>49 processed watch photos — serial numbers redacted, fully cataloged</p>
+                <h1>Photos & Documentation</h1>
+                <p>Watch photo library, documentation system, and serial-specific archives</p>
             </div>
 
-            <!-- Photo Stats -->
-            <div class="metrics" id="photo-stats" style="margin-bottom:16px;">
+            <!-- View Tabs -->
+            <div class="tabs" style="margin-bottom:16px;">
+                <div class="tab active" id="photos-tab-library" onclick="switchPhotosTab('library',this)">Photo Library</div>
+                <div class="tab" id="photos-tab-documentation" onclick="switchPhotosTab('documentation',this)">Documentation</div>
+            </div>
+
+            <!-- Photo Library Panel -->
+            <div id="photos-panel-library">
+                <!-- Photo Stats -->
+                <div class="metrics" id="photo-stats" style="margin-bottom:16px;">
                 <div class="metric">
                     <div class="label">Total Photos</div>
                     <div class="val" id="photo-count">49</div>
@@ -2081,64 +2088,60 @@
                     </details>
                 </div>
             </div>
-        </div>
-
-        <!-- ═══ DOCUMENTATION ═══ -->
-        <div class="page" id="page-documentation">
-            <div class="page-head">
-                <h1>Watch Documentation</h1>
-                <p>Unique photo documentation for each watch by serial number, organized by SKU</p>
             </div>
 
-            <!-- Documentation Summary -->
-            <div class="metrics" id="doc-summary" style="margin-bottom:16px;">
-                <div class="metric">
-                    <div class="label">Total Watches</div>
-                    <div class="val" id="doc-total-watches">—</div>
-                </div>
-                <div class="metric">
-                    <div class="label">SKUs</div>
-                    <div class="val" id="doc-total-skus">—</div>
-                </div>
-                <div class="metric">
-                    <div class="label">Photos</div>
-                    <div class="val" id="doc-total-photos">—</div>
-                </div>
-                <div class="metric">
-                    <div class="label">Coverage</div>
-                    <div class="val" id="doc-coverage">—</div>
-                </div>
-            </div>
-
-            <!-- Documentation Controls -->
-            <div class="card" style="margin-bottom:16px;">
-                <div class="card-head"><span>Documentation Actions</span></div>
-                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px;">
-                    <button class="btn" onclick="documentAllInventory()" style="background:var(--accent);color:var(--bg-1);">
-                        📸 Document All Inventory
-                    </button>
-                    <button class="btn" onclick="refreshDocumentationReport()" style="background:var(--blue);color:var(--bg-1);">
-                        🔄 Refresh Report
-                    </button>
-                    <button class="btn" onclick="setupAutoDocumentation()" style="background:var(--green);color:var(--bg-1);">
-                        🤖 Setup Auto-Documentation
-                    </button>
-                    <div style="flex:1;"></div>
-                    <div style="font-size:0.72rem;color:var(--text-2);" id="doc-last-updated">
-                        Last updated: Never
+            <!-- Documentation Panel -->
+            <div id="photos-panel-documentation" style="display:none;">
+                <!-- Documentation Summary -->
+                <div class="metrics" id="doc-summary" style="margin-bottom:16px;">
+                    <div class="metric">
+                        <div class="label">Total Watches</div>
+                        <div class="val" id="doc-total-watches">—</div>
+                    </div>
+                    <div class="metric">
+                        <div class="label">SKUs</div>
+                        <div class="val" id="doc-total-skus">—</div>
+                    </div>
+                    <div class="metric">
+                        <div class="label">Photos</div>
+                        <div class="val" id="doc-total-photos">—</div>
+                    </div>
+                    <div class="metric">
+                        <div class="label">Coverage</div>
+                        <div class="val" id="doc-coverage">—</div>
                     </div>
                 </div>
-            </div>
 
-            <!-- SKU Browser -->
-            <div class="card">
-                <div class="card-head"><span>Browse by SKU</span></div>
-                <div style="padding:8px;">
-                    <input class="input" id="sku-search" placeholder="Search SKUs, serials, or models..." 
-                           oninput="filterSkuBrowser()" style="width:100%;margin-bottom:12px;">
-                    <div id="sku-browser" style="max-height:600px;overflow-y:auto;">
-                        <div style="text-align:center;padding:40px;color:var(--text-2);">
-                            Click "Refresh Report" to load documentation data
+                <!-- Documentation Controls -->
+                <div class="card" style="margin-bottom:16px;">
+                    <div class="card-head"><span>Documentation Actions</span></div>
+                    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px;">
+                        <button class="btn" onclick="documentAllInventory()" style="background:var(--accent);color:var(--bg-1);">
+                            📸 Document All Inventory
+                        </button>
+                        <button class="btn" onclick="refreshDocumentationReport()" style="background:var(--blue);color:var(--bg-1);">
+                            🔄 Refresh Report
+                        </button>
+                        <button class="btn" onclick="setupAutoDocumentation()" style="background:var(--green);color:var(--bg-1);">
+                            🤖 Setup Auto-Documentation
+                        </button>
+                        <div style="flex:1;"></div>
+                        <div style="font-size:0.72rem;color:var(--text-2);" id="doc-last-updated">
+                            Last updated: Never
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SKU Browser -->
+                <div class="card">
+                    <div class="card-head"><span>Browse by SKU</span></div>
+                    <div style="padding:8px;">
+                        <input class="input" id="sku-search" placeholder="Search SKUs, serials, or models..." 
+                               oninput="filterSkuBrowser()" style="width:100%;margin-bottom:12px;">
+                        <div id="sku-browser" style="max-height:600px;overflow-y:auto;">
+                            <div style="text-align:center;padding:40px;color:var(--text-2);">
+                                Click "Refresh Report" to load documentation data
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2449,9 +2452,8 @@ function showPage(name, pushState=true) {
     if (name === 'invoices') loadInvoicePage();
     if (name === 'shipping') loadShippingPage();
     if (name === 'inventory') loadInventoryPage();
-    if (name === 'documentation') loadDocumentationPage();
     if (name === 'payments') loadPayments();
-    if (name === 'photos') loadPhotoLibrary();
+    if (name === 'photos') { loadPhotoLibrary(); loadDocumentationPage(); }
     if (name === 'alerts') loadAlerts();
     if (name === 'analytics') loadAnalytics();
     if (name === 'aging') loadAgingHeatmap();
@@ -6318,7 +6320,8 @@ async function batchOCR() {
 
 // ── Watch Documentation System ──
 async function loadDocumentationPage() {
-    if (document.getElementById('page-documentation').classList.contains('active')) {
+    // Only auto-load if documentation tab is active or will be active
+    if (document.getElementById('page-photos').classList.contains('active') && _photosCurrentTab === 'documentation') {
         refreshDocumentationReport();
     }
 }
@@ -6572,6 +6575,23 @@ How it works:
 
 Current status: Ready to deploy
 Next step: Integrate with your Bot Sheet update workflow`);
+}
+
+// ── Photos Tab Switching ──
+let _photosCurrentTab = 'library';
+
+function switchPhotosTab(tab, el) {
+    if (_photosCurrentTab === tab) return;
+    _photosCurrentTab = tab;
+    document.querySelectorAll('#page-photos .tab').forEach(t => t.classList.remove('active'));
+    if (el) el.classList.add('active');
+    document.getElementById('photos-panel-library').style.display = tab === 'library' ? '' : 'none';
+    document.getElementById('photos-panel-documentation').style.display = tab === 'documentation' ? '' : 'none';
+    
+    // Load documentation data when switching to documentation tab
+    if (tab === 'documentation') {
+        refreshDocumentationReport();
+    }
 }
 
 // Add documentation styles
