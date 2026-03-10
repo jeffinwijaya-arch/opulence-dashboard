@@ -1,6 +1,36 @@
 {
   "articles": [
     {
+      "id": "b13170f022be",
+      "title": "Introducing \u2013 Junghans Gets Serious About Diving with the new Aquaris Series",
+      "link": "https://monochrome-watches.com/junghans-aquaris-diver-collection-introducing-price/",
+      "desc": "Junghans is better known for its Bauhaus-inspired pieces, such as the Max Bill series, but the German watchmaker has also ventured into the pilots\u2019 and sports territories. With the new Aquaris series,",
+      "date": "2026-03-10T08:00:52+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/Junghans-Aquaris-Diver-Collection-1-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "377f6e136b38",
+      "title": "Fratello On Air: When A Cult Brand You Enjoy Goes Mainstream",
+      "link": "https://www.fratellowatches.com/fratello-on-air-when-a-cult-brand-you-enjoy-goes-mainstream/",
+      "desc": "Welcome back to another episode of Fratello On Air! We\u2019re back (sort of) after more travels, and this week, we discuss the fallout that happens once a formerly unloved brand becomes popular. Call it s",
+      "date": "2026-03-10T08:00:30+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "43c7a3b09f52",
+      "title": "Better Than They Should Be: Five Top-Value Watches That Punch Above Their Weight",
+      "link": "https://www.fratellowatches.com/better-than-they-should-be-five-top-value-watches-that-punch-above-their-weight/",
+      "desc": "When it comes to luxury products, \u201cvalue\u201d is a somewhat contradictory term. After all, isn\u2019t the entire point that a luxury product offers something magical that transcends the mere function at the ex",
+      "date": "2026-03-10T06:00:37+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
       "id": "b83c841f99c0",
       "title": "Hands-on \u2013 Impressions about the Tudor Ranger 36mm, Including the new Dune White Dial",
       "link": "https://monochrome-watches.com/tudor-ranger-36mm-dune-white-dial-review-price/",
@@ -201,16 +231,6 @@
       "relevance": 0
     },
     {
-      "id": "5bedf99fc008",
-      "title": "First Look \u2013 The Omega Seamaster Diver 300M Milano Cortina 2026 for the Paralympic Games",
-      "link": "https://monochrome-watches.com/omega-seamaster-diver-300m-paralympic-winter-games-milano-cortina-2026-white-ceramic-review-price/",
-      "desc": "While the Milano Cortina 2026 Winter Games have recently come to an end, it is time now for the Paralympic Winter Games to begin, as they will be held between March 6th and 15th, once again in Norther",
-      "date": "2026-03-06T11:01:14+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/Omega-Seamaster-Diver-300M-Milano-Cortina-2026-Paralympic-Games-Edition-White-Ceramic-review-7-600x237.jpg",
-      "relevance": 0
-    },
-    {
       "id": "67b0339e1bd9",
       "title": "Bring a Loupe: An Audemars Piguet VZ SSC, A Girard-Perregaux 'Playboy,' And More",
       "link": "https://www.hodinkee.com/articles/bring-a-loupe-march-4",
@@ -219,26 +239,6 @@
       "source": "HODINKEE",
       "image": "https://hodinkee.imgix.net/uploads/images/a5337535-bac1-4193-b01a-5c0f329a615e/Untitled-1.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
       "relevance": 10
-    },
-    {
-      "id": "27e984c7b640",
-      "title": "Fratello\u2019s Top 5 Watches Released In February 2026",
-      "link": "https://www.fratellowatches.com/fratellos-top-5-watches-released-in-february-2026/",
-      "desc": "Another Friday, another list! This week, we have the second installment in the series highlighting the best releases of 2026. With this series, we want to keep you informed about the best new watches ",
-      "date": "2026-03-06T10:00:24+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "d1b67e34f10c",
-      "title": "Subprime Reporting? Thoughts On The Recent Morgan Stanley/Swatch Group Controversy",
-      "link": "https://www.fratellowatches.com/faulty-reporting-morgan-stanley-swatch-group-controversy/",
-      "desc": "Morgan Stanley Investment Management published its Ninth Annual Swiss Watcher on February 19th. The report dives deep into the commercial performance of the Swiss watch market on a brand-by-brand leve",
-      "date": "2026-03-06T06:00:19+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 20
     },
     {
       "id": "ca9a735d11ff",
@@ -361,7 +361,7 @@
       "relevance": 10
     }
   ],
-  "fetched_at": "2026-03-10T04:33:12.769619+00:00",
+  "fetched_at": "2026-03-10T08:33:12.676082+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",

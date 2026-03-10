@@ -5890,6 +5890,7 @@ function renderInventoryTable(rows) {
         let html = '';
         if (r.arrived!=='Yes') html += `<a onclick="quickAction(${r.row},'arrived')" style="cursor:pointer;color:var(--accent);margin-right:6px;padding:4px 8px;border:1px solid var(--accent);border-radius:4px;font-size:0.7rem;">Arr</a>`;
         if (r.arrived==='Yes'&&r.posted!=='Yes'&&r.sold!=='Yes') html += `<a onclick="showPostModal(${r.row})" style="cursor:pointer;color:#f0c040;margin-right:6px;padding:4px 8px;border:1px solid #f0c040;border-radius:4px;font-size:0.7rem;">Post</a>`;
+        if (r.posted==='Yes'&&r.sold!=='Yes') html += `<a onclick="repostWatch(${r.row})" style="cursor:pointer;color:#e9a445;margin-right:6px;padding:4px 8px;border:1px solid #e9a445;border-radius:4px;font-size:0.7rem;">Repost</a>`;
         if (r.sold!=='Yes') html += `<a onclick="showSellModal(${r.row})" style="cursor:pointer;color:var(--green);margin-right:6px;padding:4px 8px;border:1px solid var(--green);border-radius:4px;font-size:0.7rem;">Sell</a>`;
         if (r.sold==='Yes'&&r.shipped!=='Yes') html += `<a onclick="showShipModal(${r.row})" style="cursor:pointer;color:var(--accent);margin-right:6px;padding:4px 8px;border:1px solid var(--accent);border-radius:4px;font-size:0.7rem;">Ship</a>`;
         if (r.sold==='Yes'&&r.paid_after_sold!=='Yes') html += `<a onclick="quickAction(${r.row},'paid')" style="cursor:pointer;color:var(--green);margin-right:6px;padding:4px 8px;border:1px solid var(--green);border-radius:4px;font-size:0.7rem;">Paid</a>`;
@@ -5920,6 +5921,7 @@ function renderInventoryTable(rows) {
             <td style="white-space:nowrap;font-size:0.68rem;">
                 ${r.arrived!=='Yes'?`<a onclick="quickAction(${r.row},'arrived')" style="cursor:pointer;color:var(--accent);margin-right:4px;">Arr</a>`:''}
                 ${r.arrived==='Yes'&&r.posted!=='Yes'&&r.sold!=='Yes'?`<a onclick="showPostModal(${r.row})" style="cursor:pointer;color:#f0c040;margin-right:4px;">Post</a>`:''}
+                ${r.posted==='Yes'&&r.sold!=='Yes'?`<a onclick="repostWatch(${r.row})" style="cursor:pointer;color:#e9a445;margin-right:4px;">Repost</a>`:''}
                 ${r.sold!=='Yes'?`<a onclick="showSellModal(${r.row})" style="cursor:pointer;color:var(--green);margin-right:4px;">Sell</a>`:''}
                 ${r.sold==='Yes'&&r.shipped!=='Yes'?`<a onclick="showShipModal(${r.row})" style="cursor:pointer;color:var(--accent);margin-right:4px;">Ship</a>`:''}
                 ${r.sold==='Yes'&&r.paid_after_sold!=='Yes'?`<a onclick="quickAction(${r.row},'paid')" style="cursor:pointer;color:var(--green);margin-right:4px;">Paid</a>`:''}
@@ -5941,6 +5943,7 @@ function renderInventoryTable(rows) {
         const swipeActionsHtml = r => {
             let html = '';
             if (r.arrived!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--accent);color:var(--bg-0);" onclick="event.stopPropagation();quickAction(${r.row},'arrived')"><span class="isa-icon">📥</span>Arrive</div>`;
+            if (r.posted==='Yes'&&r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:#e9a445;color:var(--bg-0);" onclick="event.stopPropagation();repostWatch(${r.row})"><span class="isa-icon">🔄</span>Repost</div>`;
             if (r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--green);color:var(--bg-0);" onclick="event.stopPropagation();showSellModal(${r.row})"><span class="isa-icon">💵</span>Sell</div>`;
             if (r.sold==='Yes'&&r.shipped!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--blue);color:var(--bg-0);" onclick="event.stopPropagation();showShipModal(${r.row})"><span class="isa-icon">📦</span>Ship</div>`;
             return html;
@@ -6180,6 +6183,33 @@ function showSellModal(row) {
     document.getElementById('sm-status').style.display = 'none';
     document.getElementById('sell-modal').style.display = 'flex';
     setTimeout(() => document.getElementById('sm-to').focus(), 100);
+}
+
+// ── Repost Action ──
+async function repostWatch(row) {
+    const watch = invMgmtData.find(r => r.row === row);
+    if (!watch) return;
+    const desc = watch.description || `Row ${row}`;
+    if (!confirm(`Repost "${desc}" to My Postings with existing photos and updated caption?`)) return;
+    
+    try {
+        showToast('Reposting to My Postings...', 'info');
+        const r = await fetch('/api/repost-watch', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ row: row })
+        });
+        const d = await r.json();
+        if (d.success) {
+            showToast(`Successfully reposted ${desc}`, 'success');
+            loadInventoryPage();
+            if (typeof loadPostingsPage === 'function') loadPostingsPage();
+        } else {
+            showToast('Error: ' + (d.error || 'Failed to repost'), 'error');
+        }
+    } catch(e) {
+        showToast('Error: ' + e.message, 'error');
+    }
 }
 function closeSellModal() { document.getElementById('sell-modal').style.display = 'none'; }
 async function submitSale() {
