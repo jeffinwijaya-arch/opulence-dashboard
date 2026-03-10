@@ -1533,6 +1533,8 @@
                 <span id="batch-count" style="font-size:0.75rem;color:var(--accent);font-weight:600;">0 selected</span>
                 <button class="btn" onclick="batchArrived()" style="font-size:0.7rem;padding:4px 10px;background:var(--accent);color:var(--bg-1);">Mark Arrived</button>
                 <button class="btn" onclick="batchPost()" style="font-size:0.7rem;padding:4px 10px;background:#f0c040;color:var(--bg-1);">Mark Posted</button>
+                <button class="btn" onclick="batchInvoice()" style="font-size:0.7rem;padding:4px 10px;background:var(--green);color:var(--bg-1);">Batch Invoice</button>
+                <button class="btn" onclick="batchOCR()" style="font-size:0.7rem;padding:4px 10px;background:#9b59b6;color:var(--bg-1);">OCR Extract</button>
                 <button class="btn" onclick="clearBatchSelection()" style="font-size:0.7rem;padding:4px 10px;opacity:0.6;">Clear</button>
             </div>
             <div id="im-completed-toggle" style="display:none;text-align:center;padding:8px 0;border-bottom:1px solid var(--border);"></div>
@@ -5894,7 +5896,8 @@ function renderInventoryTable(rows) {
         if (r.sold!=='Yes') html += `<a onclick="showSellModal(${r.row})" style="cursor:pointer;color:var(--green);margin-right:6px;padding:4px 8px;border:1px solid var(--green);border-radius:4px;font-size:0.7rem;">Sell</a>`;
         if (r.sold==='Yes'&&r.shipped!=='Yes') html += `<a onclick="showShipModal(${r.row})" style="cursor:pointer;color:var(--accent);margin-right:6px;padding:4px 8px;border:1px solid var(--accent);border-radius:4px;font-size:0.7rem;">Ship</a>`;
         if (r.sold==='Yes'&&r.paid_after_sold!=='Yes') html += `<a onclick="quickAction(${r.row},'paid')" style="cursor:pointer;color:var(--green);margin-right:6px;padding:4px 8px;border:1px solid var(--green);border-radius:4px;font-size:0.7rem;">Paid</a>`;
-        html += `<a onclick="editWatch(${r.row})" style="cursor:pointer;color:var(--text-2);padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:0.7rem;">Edit</a>`;
+        html += `<a onclick="editWatch(${r.row})" style="cursor:pointer;color:var(--text-2);margin-right:6px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:0.7rem;">Edit</a>`;
+        html += `<a onclick="processOCR(${r.row})" style="cursor:pointer;color:#9b59b6;padding:4px 8px;border:1px solid #9b59b6;border-radius:4px;font-size:0.7rem;">OCR</a>`;
         return html;
     };
     
@@ -5925,7 +5928,8 @@ function renderInventoryTable(rows) {
                 ${r.sold!=='Yes'?`<a onclick="showSellModal(${r.row})" style="cursor:pointer;color:var(--green);margin-right:4px;">Sell</a>`:''}
                 ${r.sold==='Yes'&&r.shipped!=='Yes'?`<a onclick="showShipModal(${r.row})" style="cursor:pointer;color:var(--accent);margin-right:4px;">Ship</a>`:''}
                 ${r.sold==='Yes'&&r.paid_after_sold!=='Yes'?`<a onclick="quickAction(${r.row},'paid')" style="cursor:pointer;color:var(--green);margin-right:4px;">Paid</a>`:''}
-                <a onclick="editWatch(${r.row})" style="cursor:pointer;color:var(--text-2);">Edit</a>
+                <a onclick="editWatch(${r.row})" style="cursor:pointer;color:var(--text-2);margin-right:4px;">Edit</a>
+                <a onclick="processOCR(${r.row})" style="cursor:pointer;color:#9b59b6;">OCR</a>
             </td>
         </tr>`).join('');
     }
@@ -6104,6 +6108,146 @@ async function batchPost() {
         if (d.ok) { clearBatchSelection(); loadInventoryPage(); }
         else alert('Error: '+(d.error||'Unknown'));
     } catch(e) { alert('Error: '+e.message); }
+}
+async function batchInvoice() {
+    // Filter selected rows to only sold watches that need invoicing
+    const soldRows = [...batchSelected].filter(row => {
+        const watch = invMgmtData.find(r => r.row === row);
+        return watch && watch.sold === 'Yes' && watch.sold_to && watch.sold_to !== '';
+    });
+    
+    if (soldRows.length === 0) {
+        alert('No sold watches selected that need invoicing');
+        return;
+    }
+    
+    if (!confirm(`Create ${soldRows.length} invoices for sold watches?`)) return;
+    
+    try {
+        showToast(`Creating ${soldRows.length} invoices...`, 'info');
+        const r = await fetch('/api/batch-invoice', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({rows: soldRows})
+        });
+        const d = await r.json();
+        
+        if (d.success) {
+            showToast(`Successfully created ${d.created} invoices, ${d.skipped} skipped`, 'success');
+            clearBatchSelection();
+            loadInventoryPage();
+            // Optionally refresh invoices page if it exists
+            if (typeof loadInvoicesPage === 'function') loadInvoicesPage();
+        } else {
+            showToast('Error: ' + (d.error || 'Unknown error'), 'error');
+        }
+    } catch(e) {
+        showToast('Error: ' + e.message, 'error');
+    }
+}
+async function processOCR(row) {
+    const watch = invMgmtData.find(r => r.row === row);
+    if (!watch) return;
+    const desc = watch.description || `Row ${row}`;
+    
+    if (!confirm(`Extract text from photos for "${desc}" using OCR?`)) return;
+    
+    try {
+        showToast(`Processing photos for row ${row}...`, 'info');
+        const r = await fetch('/api/ocr-process', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+                row: row, 
+                update_sheet: confirm('Update Bot Sheet with extracted data?') 
+            })
+        });
+        const d = await r.json();
+        
+        if (d.success) {
+            let message = `OCR complete for row ${row}`;
+            
+            // Show extracted data
+            const extracted = d.extracted_data || {};
+            if (Object.keys(extracted).length > 0) {
+                message += '\n\nExtracted data:';
+                for (const [type, data] of Object.entries(extracted)) {
+                    message += `\n${type.toUpperCase()}:`;
+                    for (const [key, value] of Object.entries(data)) {
+                        message += `\n  ${key}: ${value}`;
+                    }
+                }
+            }
+            
+            if (d.updated_sheet) {
+                message += '\n\n✅ Bot Sheet updated';
+                loadInventoryPage(); // Refresh to show updates
+            }
+            
+            alert(message);
+        } else {
+            showToast('OCR Error: ' + (d.error || 'Failed to extract text'), 'error');
+        }
+    } catch(e) {
+        showToast('OCR Error: ' + e.message, 'error');
+    }
+}
+async function batchOCR() {
+    if (batchSelected.size === 0) {
+        alert('No watches selected');
+        return;
+    }
+    
+    if (!confirm(`Process OCR for ${batchSelected.size} watches? This may take several minutes.`)) return;
+    
+    const updateSheet = confirm('Update Bot Sheet with extracted data?');
+    
+    try {
+        showToast(`Processing OCR for ${batchSelected.size} watches...`, 'info');
+        const r = await fetch('/api/ocr-batch', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+                rows: [...batchSelected], 
+                update_sheet: updateSheet 
+            })
+        });
+        const d = await r.json();
+        
+        if (d.success) {
+            let summary = `OCR batch complete:\n• ${d.processed} watches processed\n• ${d.updated} Bot Sheet updates`;
+            
+            // Show some sample extracted data
+            const results = d.results || [];
+            const successful = results.filter(r => r.extracted_data && Object.keys(r.extracted_data).length > 0);
+            
+            if (successful.length > 0) {
+                summary += '\n\nSample extractions:';
+                successful.slice(0, 3).forEach(result => {
+                    summary += `\nRow ${result.row}:`;
+                    for (const [type, data] of Object.entries(result.extracted_data)) {
+                        const keys = Object.keys(data);
+                        if (keys.length > 0) {
+                            summary += ` ${keys.join(', ')}`;
+                        }
+                    }
+                });
+            }
+            
+            showToast(`OCR batch complete: ${d.processed}/${d.total_rows} processed`, 'success');
+            alert(summary);
+            
+            if (d.updated > 0) {
+                loadInventoryPage(); // Refresh to show updates
+            }
+            
+            clearBatchSelection();
+        } else {
+            showToast('Batch OCR Error: ' + (d.error || 'Unknown error'), 'error');
+        }
+    } catch(e) {
+        showToast('Batch OCR Error: ' + e.message, 'error');
+    }
 }
 
 // ── Aging Heatmap ──
