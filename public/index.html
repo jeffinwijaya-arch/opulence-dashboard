@@ -3144,26 +3144,36 @@ function openPostingModal(item, photoCount) {
     if (desc.toLowerCase().includes('pre-owned')) condition = 'Pre-Owned';
     else if (desc.toLowerCase().includes('retail ready')) condition = 'Retail Ready';
 
-    // Build month/year from card date
-    let monthYear = '';
+    // Build month/year from card date (handles "03/2026", "March 2026", "March 7, 2026")
+    const months = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+    let monthYear = '', cardMM = 0;
     if (cardDate) {
-        const [mm, yyyy] = cardDate.split('/');
-        const months = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
-        monthYear = (months[parseInt(mm)] || '') + ' ' + yyyy;
+        const slashMatch = cardDate.match(/^(\d{1,2})\/(\d{4})$/);
+        if (slashMatch) {
+            cardMM = parseInt(slashMatch[1]);
+            monthYear = (months[cardMM] || '') + ' ' + slashMatch[2];
+        } else {
+            // Try "March 2026" or "March 7, 2026"
+            const textMatch = cardDate.match(/([A-Za-z]+)\s+(?:\d+,?\s+)?(\d{4})/);
+            if (textMatch) {
+                const mi = months.findIndex(m => m.toLowerCase() === textMatch[1].toLowerCase());
+                if (mi > 0) { cardMM = mi; monthYear = months[mi] + ' ' + textMatch[2]; }
+                else monthYear = cardDate;
+            }
+        }
     }
 
     // Serial prefix (card date code)
     let serialPrefix = '';
-    if (cardDate) {
-        const [mm] = cardDate.split('/');
-        serialPrefix = 'N' + parseInt(mm);
-    }
+    if (cardMM > 0) serialPrefix = 'N' + cardMM;
 
     // Full ref vs short ref
     const refMatch = ref.match(/^(\d{5,6})([A-Z]+)$/);
     const refLine = refMatch ? `${ref} ${refMatch[1]}` : ref;
 
-    const postingText = `${condition} Full Set ${refLine} ${bracelet} ${dial} Dial ${cardDate} ${monthYear} ${serialPrefix} ${wt}`.replace(/\s+/g,' ').trim();
+    // Caption uses MM/YYYY format
+    const cardDateMMYYYY = cardMM > 0 ? (String(cardMM).padStart(2,'0') + '/' + (cardDate.match(/(\d{4})/)?.[1]||'')) : cardDate;
+    const postingText = `${condition} Full Set ${refLine} ${bracelet} ${dial} Dial ${cardDateMMYYYY} ${monthYear} ${serialPrefix} ${wt}`.replace(/\s+/g,' ').trim();
 
     // Show modal
     const overlay = document.createElement('div');
