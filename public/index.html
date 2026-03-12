@@ -972,7 +972,6 @@
             <a data-page="lookup" onclick="showPage('lookup')">Prices</a>
             <a data-page="portfolio" onclick="showPage('portfolio')">Portfolio</a>
             <a data-page="deals" onclick="showPage('deals')">Deals <span class="badge" id="deals-count">0</span></a>
-            <a data-page="arbitrage" onclick="showPage('arbitrage')">Arbitrage</a>
             <a data-page="browse" onclick="showPage('browse')">Market</a>
             <a data-page="invoices" onclick="showPage('invoices')">Invoices</a>
             <a data-page="shipping" onclick="showPage('shipping')">Shipping</a>
@@ -981,8 +980,7 @@
             <a data-page="payments" onclick="showPage('payments')">Payments <span class="badge" id="payments-count">0</span></a>
             <a data-page="postings" onclick="showPage('postings')">My Postings</a>
             <a data-page="photos" onclick="showPage('photos')">Photos</a>
-            <a data-page="alerts" onclick="showPage('alerts')">Alerts <span class="badge" id="alerts-count">0</span></a>
-            <a data-page="analytics" onclick="showPage('analytics')">Analytics</a>
+
             <a data-page="aging" onclick="showPage('aging')">Aging</a>
             <a data-page="briefing" onclick="showPage('briefing')">Briefing</a>
         </nav>
@@ -1030,15 +1028,14 @@
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;">
             <a class="more-grid-item" onclick="mobileNav('deals')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>Deals</a>
             <a class="more-grid-item" onclick="mobileNav('portfolio')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 118 2.83"/><path d="M22 12A10 10 0 0012 2v10z"/></svg></span>Portfolio</a>
-            <a class="more-grid-item" onclick="mobileNav('arbitrage')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>Arb</a>
+
             <a class="more-grid-item" onclick="mobileNav('invoices')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>Invoices</a>
             <a class="more-grid-item" onclick="mobileNav('shipping')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span>Shipping</a>
             <a class="more-grid-item" onclick="mobileNav('payments')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>Payments</a>
             <a class="more-grid-item" onclick="mobileNav('postings')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></span>Postings</a>
             <a class="more-grid-item" onclick="mobileNav('photos')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></span>Photos</a>
             <a class="more-grid-item" onclick="mobileNav('browse')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></span>Market</a>
-            <a class="more-grid-item" onclick="mobileNav('analytics')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>Analytics</a>
-            <a class="more-grid-item" onclick="mobileNav('alerts')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></span>Alerts</a>
+
             <a class="more-grid-item" onclick="mobileNav('aging')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>Aging</a>
             <a class="more-grid-item" onclick="mobileNav('briefing')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></span>Briefing</a>
             <a class="more-grid-item" onclick="mobileNav('mission-control')"><span class="mgi-icon">🎯</span>Mission Control</a>
@@ -1105,7 +1102,7 @@
                     <div class="tbl-wrap"><table class="tbl" id="dash-deals"><tbody></tbody></table></div>
                 </div>
                 <div class="card">
-                    <div class="card-head"><span>Arbitrage</span><a class="link" onclick="showPage('arbitrage')">View all</a></div>
+                    <div class="card-head"><span>Arbitrage</span><a class="link" onclick="showPage('deals');switchDealsSubtab('arb',document.getElementById('deals-subtab-arb'))">View all</a></div>
                     <div class="tbl-wrap"><table class="tbl" id="dash-arb"><tbody></tbody></table></div>
                 </div>
             </div>
@@ -1142,45 +1139,48 @@
         <!-- ═══ DEALS ═══ -->
         <div class="page" id="page-deals">
             <div class="page-head">
-                <h1>Deal Scanner</h1>
-                <p>Below-market opportunities ranked by confidence and expected profit.</p>
+                <h1>Deals & Arbitrage</h1>
+                <p>Below-market opportunities and cross-region price differentials.</p>
             </div>
-            <div style="display:flex;gap:6px;margin-bottom:10px;">
-                <input class="input" id="deals-search" placeholder="Filter ref, model, dial, seller..." oninput="filterDeals()" style="flex:1;">
-                <select class="input" id="deals-tier" onchange="filterDeals()" style="width:100px;">
-                    <option value="">All Tiers</option><option value="A">A-Tier</option><option value="B">B-Tier</option><option value="C">C-Tier</option>
-                </select>
+            <!-- Sub-tabs -->
+            <div class="tabs" style="margin-bottom:12px;">
+                <div class="tab active" id="deals-subtab-market" onclick="switchDealsSubtab('market',this)">Below Market</div>
+                <div class="tab" id="deals-subtab-arb" onclick="switchDealsSubtab('arb',this)">Arbitrage</div>
             </div>
-            <div class="tabs">
-                <div class="tab active" onclick="setDealsRegion('all',this)">All</div>
-                <div class="tab" onclick="setDealsRegion('US',this)">US</div>
-                <div class="tab" onclick="setDealsRegion('HK',this)">HK Import</div>
-            </div>
-            <div id="deals-cards"></div>
-            <div id="deals-detail" style="display:none;margin-top:8px;"></div>
-        </div>
 
-        <!-- ═══ ARBITRAGE ═══ -->
-        <div class="page" id="page-arbitrage">
-            <div class="page-head">
-                <h1>Cross-Region Arbitrage</h1>
-                <p>Regional price differentials net of import costs, wire fees, and shipping.</p>
+            <!-- Below Market sub-section -->
+            <div id="deals-market-section">
+                <div style="display:flex;gap:6px;margin-bottom:10px;">
+                    <input class="input" id="deals-search" placeholder="Filter ref, model, dial, seller..." oninput="filterDeals()" style="flex:1;">
+                    <select class="input" id="deals-tier" onchange="filterDeals()" style="width:100px;">
+                        <option value="">All Tiers</option><option value="A">A-Tier</option><option value="B">B-Tier</option><option value="C">C-Tier</option>
+                    </select>
+                </div>
+                <div class="tabs">
+                    <div class="tab active" onclick="setDealsRegion('all',this)">All</div>
+                    <div class="tab" onclick="setDealsRegion('US',this)">US</div>
+                    <div class="tab" onclick="setDealsRegion('HK',this)">HK Import</div>
+                </div>
+                <div id="deals-cards"></div>
+                <div id="deals-detail" style="display:none;margin-top:8px;"></div>
             </div>
-            <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;">
-                <select class="input" id="arb-direction" onchange="renderArbitrage()" style="width:160px;">
-                    <option value="hk_to_us">HK → US (Import)</option>
-                    <option value="us_to_hk">US → HK (Export)</option>
-                    <option value="all">All Directions</option>
-                </select>
-                <input class="input" id="arb-search" placeholder="Filter ref, model..." oninput="renderArbitrage()" style="flex:1;max-width:240px;">
-                <span class="dim" style="font-size:0.72rem;font-family:var(--mono);" id="arb-summary"></span>
-            </div>
-            <div class="card"><div class="tbl-wrap"><table class="tbl" id="arb-table"><thead><tr>
-                <th>Reference</th><th>Model</th><th class="right" id="arb-th-buy">Buy (HK)</th><th class="right" id="arb-th-sell">Sell (US)</th><th class="right">Fees</th><th class="right">Net Profit</th><th class="right">Margin</th><th>Conf</th><th>Depth</th>
-            </tr></thead><tbody></tbody></table></div></div>
 
-            <!-- Arbitrage Detail Panel -->
-            <div id="arb-detail" style="display:none;margin-top:8px;"></div>
+            <!-- Arbitrage sub-section (hidden by default) -->
+            <div id="deals-arb-section" style="display:none;">
+                <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;">
+                    <select class="input" id="arb-direction" onchange="renderArbitrage()" style="width:160px;">
+                        <option value="hk_to_us">HK → US (Import)</option>
+                        <option value="us_to_hk">US → HK (Export)</option>
+                        <option value="all">All Directions</option>
+                    </select>
+                    <input class="input" id="arb-search" placeholder="Filter ref, model..." oninput="renderArbitrage()" style="flex:1;max-width:240px;">
+                    <span class="dim" style="font-size:0.72rem;font-family:var(--mono);" id="arb-summary"></span>
+                </div>
+                <div class="card"><div class="tbl-wrap"><table class="tbl" id="arb-table"><thead><tr>
+                    <th>Reference</th><th>Model</th><th class="right" id="arb-th-buy">Buy (HK)</th><th class="right" id="arb-th-sell">Sell (US)</th><th class="right">Fees</th><th class="right">Net Profit</th><th class="right">Margin</th><th>Conf</th><th>Depth</th>
+                </tr></thead><tbody></tbody></table></div></div>
+                <div id="arb-detail" style="display:none;margin-top:8px;"></div>
+            </div>
         </div>
 
         <!-- ═══ PRICE LOOKUP ═══ -->
@@ -2137,112 +2137,7 @@
         </div>
 
         <!-- ═══ ALERTS ═══ -->
-        <div class="page" id="page-alerts">
-            <div class="page-head">
-                <h1>Business Alerts</h1>
-                <p>Real-time notifications and lifecycle gaps</p>
-            </div>
-
-            <!-- Alert Summary -->
-            <div class="metrics" id="alert-summary" style="margin-bottom:16px;">
-                <div class="metric">
-                    <div class="label">Active Alerts</div>
-                    <div class="val" id="alert-total">0</div>
-                </div>
-                <div class="metric">
-                    <div class="label">Urgent</div>
-                    <div class="val red" id="alert-urgent">0</div>
-                </div>
-                <div class="metric">
-                    <div class="label">High Priority</div>
-                    <div class="val orange" id="alert-high">0</div>
-                </div>
-                <div class="metric">
-                    <div class="label">Lifecycle Gaps</div>
-                    <div class="val" id="alert-lifecycle">0</div>
-                </div>
-            </div>
-
-            <!-- Alert Actions -->
-            <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-                <button class="btn" onclick="generateLifecycleAlerts()" style="background:var(--accent);color:var(--bg-1);">Generate Lifecycle Alerts</button>
-                <button class="btn" onclick="loadAlerts()">Refresh Alerts</button>
-                <button class="btn" onclick="acknowledgeAllAlerts()" style="opacity:0.7;">Acknowledge All</button>
-            </div>
-
-            <!-- Active Alerts -->
-            <div class="card" id="alerts-container">
-                <h3 style="margin:0 0 12px 0;">Active Alerts</h3>
-                <div id="alerts-list">Loading alerts...</div>
-            </div>
-        </div>
-
-        <!-- ═══ ANALYTICS ═══ -->
-        <div class="page" id="page-analytics">
-            <div class="page-head">
-                <h1>Business Analytics</h1>
-                <p>Comprehensive performance insights and reporting</p>
-            </div>
-
-            <!-- Business Health Score -->
-            <div class="card" style="margin-bottom:16px;text-align:center;">
-                <h3 style="margin:0 0 12px 0;">Business Health Score</h3>
-                <div style="position:relative;display:inline-block;width:120px;height:120px;margin-bottom:12px;">
-                    <svg width="120" height="120" style="transform:rotate(-90deg);">
-                        <circle cx="60" cy="60" r="50" fill="none" stroke="var(--bg-3)" stroke-width="8"/>
-                        <circle cx="60" cy="60" r="50" fill="none" stroke="var(--accent)" stroke-width="8" 
-                                stroke-dasharray="314" stroke-dashoffset="314" id="health-circle" 
-                                style="transition:stroke-dashoffset 1s ease;stroke-linecap:round;"/>
-                    </svg>
-                    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;">
-                        <div id="health-score" style="font-size:1.8rem;font-weight:700;color:var(--accent);">--</div>
-                        <div style="font-size:0.6rem;color:var(--text-2);text-transform:uppercase;">HEALTH</div>
-                    </div>
-                </div>
-                <div id="health-status" style="font-size:0.8rem;color:var(--text-1);">Loading...</div>
-            </div>
-
-            <!-- Key Metrics -->
-            <div class="metrics" id="analytics-summary" style="margin-bottom:16px;">
-                <div class="metric">
-                    <div class="label">Gross Margin</div>
-                    <div class="val" id="analytics-margin">0%</div>
-                </div>
-                <div class="metric">
-                    <div class="label">Inventory Turnover</div>
-                    <div class="val" id="analytics-turnover">0x</div>
-                </div>
-                <div class="metric">
-                    <div class="label">Avg Days to Sell</div>
-                    <div class="val" id="analytics-days">0</div>
-                </div>
-                <div class="metric">
-                    <div class="label">Working Capital</div>
-                    <div class="val" id="analytics-capital">$0</div>
-                </div>
-            </div>
-
-            <!-- Profit Analysis -->
-            <div class="card" style="margin-bottom:16px;">
-                <h3 style="margin:0 0 12px 0;">Profit Analysis</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                    <div>
-                        <h4 style="margin:0 0 8px 0;font-size:0.8rem;color:var(--text-2);text-transform:uppercase;">Top Performing Models</h4>
-                        <div id="top-models" style="font-size:0.75rem;"></div>
-                    </div>
-                    <div>
-                        <h4 style="margin:0 0 8px 0;font-size:0.8rem;color:var(--text-2);text-transform:uppercase;">Top Suppliers</h4>
-                        <div id="top-suppliers" style="font-size:0.75rem;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Performance Insights -->
-            <div class="card">
-                <h3 style="margin:0 0 12px 0;">Performance Insights</h3>
-                <div id="performance-insights">Loading insights...</div>
-            </div>
-        </div>
+        <!-- Analytics and Alerts removed (2026-03-12) -->
 
         <!-- ═══ AGING HEATMAP ═══ -->
         <div class="page" id="page-aging">
@@ -2597,7 +2492,7 @@ let browseOffset = 0;
 const BROWSE_PAGE = 80;
 let currentDealsRegion = 'all';
 
-const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals',arbitrage:'Arbitrage',browse:'Market',invoices:'Invoices',shipping:'Shipping',inventory:'Inventory',payments:'Payments',photos:'Photos',alerts:'Alerts',analytics:'Analytics','mission-control':'Mission Control'};
+const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals & Arbitrage',browse:'Market',invoices:'Invoices',shipping:'Shipping',inventory:'Inventory',payments:'Payments',photos:'Photos','mission-control':'Mission Control'};
 
 function toggleMobileMore() {
     const m = document.getElementById('mobile-more-menu');
@@ -2637,8 +2532,7 @@ function showPage(name, pushState=true) {
     if (name === 'inventory') loadInventoryPage();
     if (name === 'payments') loadPayments();
     if (name === 'photos') { loadPhotoLibrary(); loadDocumentationPage(); }
-    if (name === 'alerts') loadAlerts();
-    if (name === 'analytics') loadAnalytics();
+
     if (name === 'aging') loadAgingHeatmap();
     if (name === 'mission-control') loadMissionControl();
     if (pushState) {
@@ -2752,7 +2646,7 @@ function renderDashboard() {
     $('#dash-arb tbody').innerHTML = (DATA.arbitrage||[]).slice(0,6).map(a=>{
         const np = a.realistic_profit||a.profit||0;
         const dir = a.direction==='us_to_hk'?'US→HK':'HK→US';
-        return `<tr style="cursor:pointer" onclick="showPage('arbitrage')">
+        return `<tr style="cursor:pointer" onclick="showPage('deals');switchDealsSubtab('arb')">
             <td class="ref">${a.ref}</td>
             <td class="dim" style="max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${a.model||''}</td>
             <td class="right green">+${fmt(np)}</td>
@@ -3999,7 +3893,14 @@ async function submitPosting(row) {
 
 // ── DEALS ──
 function renderDeals() { applyDealsFilter(); }
-function setDealsRegion(r,el) { currentDealsRegion=r; $$('#page-deals .tab').forEach(t=>t.classList.remove('active')); el?.classList.add('active'); applyDealsFilter(); }
+function switchDealsSubtab(tab, el) {
+    document.getElementById('deals-subtab-market').classList.toggle('active', tab === 'market');
+    document.getElementById('deals-subtab-arb').classList.toggle('active', tab === 'arb');
+    document.getElementById('deals-market-section').style.display = tab === 'market' ? '' : 'none';
+    document.getElementById('deals-arb-section').style.display = tab === 'arb' ? '' : 'none';
+    if (tab === 'arb') renderArbitrage();
+}
+function setDealsRegion(r,el) { currentDealsRegion=r; $$('#deals-market-section .tab').forEach(t=>t.classList.remove('active')); el?.classList.add('active'); applyDealsFilter(); }
 function filterDeals() { applyDealsFilter(); }
 
 function applyDealsFilter() {
