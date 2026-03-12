@@ -1856,11 +1856,11 @@
                 <p>Internal invoice system — create, track, and download PDFs</p>
             </div>
             <!-- Summary cards -->
-            <div class="metrics" id="inv-summary" style="margin-bottom:12px;">
-                <div class="metric"><div class="label">Total</div><div class="val" id="inv-total-count">—</div></div>
-                <div class="metric"><div class="label">Outstanding</div><div class="val" id="inv-outstanding">—</div></div>
-                <div class="metric"><div class="label">Paid</div><div class="val green" id="inv-paid-count">—</div></div>
-                <div class="metric"><div class="label">Draft</div><div class="val" id="inv-draft-count">—</div></div>
+            <div id="inv-summary" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+                <div class="card" style="padding:12px;"><div style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Total</div><div style="font-size:1.3rem;font-weight:700;margin-top:2px;" id="inv-total-count">—</div></div>
+                <div class="card" style="padding:12px;"><div style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Outstanding</div><div style="font-size:1.3rem;font-weight:700;margin-top:2px;" id="inv-outstanding">—</div></div>
+                <div class="card" style="padding:12px;"><div style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Paid</div><div style="font-size:1.3rem;font-weight:700;margin-top:2px;color:var(--green);" id="inv-paid-count">—</div></div>
+                <div class="card" style="padding:12px;"><div style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Draft</div><div style="font-size:1.3rem;font-weight:700;margin-top:2px;" id="inv-draft-count">—</div></div>
             </div>
             <!-- Controls -->
             <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
@@ -1874,13 +1874,11 @@
                 <input class="input" id="inv-search" placeholder="Search customer or invoice #..." oninput="loadInternalInvoices()" style="flex:1;min-width:150px;">
                 <button class="btn" onclick="showNewInvoiceModal()" style="white-space:nowrap;background:var(--accent);color:var(--bg-1);">+ New Invoice</button>
             </div>
-            <!-- Invoice list (table for desktop, cards for mobile) -->
-            <div class="card" id="inv-table-wrap">
-                <div class="tbl-wrap"><table class="tbl" id="inv-table"><thead><tr>
-                    <th>Invoice #</th><th>Customer</th><th class="right">Amount</th><th>Date</th><th>Status</th><th>Actions</th>
-                </tr></thead><tbody id="inv-tbody"></tbody></table></div>
+            <!-- Invoice list -->
+            <div class="card" style="overflow:hidden;" id="inv-list-container"></div>
+            <div id="inv-load-more" style="display:none;text-align:center;padding:12px;">
+                <button class="btn" onclick="loadMoreInvoices()" style="width:100%;opacity:0.7;">Load More</button>
             </div>
-            <div id="inv-cards" style="display:none;"></div>
 
             <!-- New/Edit Invoice Modal -->
             <div id="inv-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;overflow-y:auto;" onclick="if(event.target===this)closeInvModal()">
@@ -7686,67 +7684,84 @@ async function loadInvoicePage() {
     } catch(e) {}
 }
 
-async function loadInternalInvoices() {
+let _invPage = 0;
+const _invPageSize = 30;
+let _invTotal = 0;
+
+function loadMoreInvoices() { _invPage++; loadInternalInvoices(true); }
+
+async function loadInternalInvoices(append) {
     const el = id => document.getElementById(id);
-    const tbody = el('inv-tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-2);">Loading...</td></tr>';
+    const container = el('inv-list-container');
+    if (!container) return;
+    if (!append) { _invPage = 0; container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-2);">Loading...</div>'; }
     
     const status = el('inv-filter')?.value || '';
     const search = el('inv-search')?.value || '';
     
     try {
-        let url = '/api/internal-invoices?';
+        let url = `/api/internal-invoices?limit=${_invPageSize}&offset=${_invPage * _invPageSize}&`;
         if (status) url += `status=${status}&`;
         if (search) url += `q=${encodeURIComponent(search)}&`;
         
         const r = await fetch(url);
         const d = await r.json();
-        if (!d.ok) { tbody.innerHTML = `<tr><td colspan="6" style="color:var(--red);">${d.error}</td></tr>`; return; }
+        if (!d.ok) { container.innerHTML = `<div style="color:var(--red);padding:12px;">${d.error}</div>`; return; }
         
-        _invData = d.invoices || [];
+        const newInvs = d.invoices || [];
+        _invTotal = d.total || 0;
+        if (append) { _invData = _invData.concat(newInvs); } else { _invData = newInvs; }
         
-        // Update summary
-        const total = _invData.length;
-        const outstanding = _invData.filter(i => i.status === 'sent').reduce((a, i) => a + (i.total || 0), 0);
-        const paidCount = _invData.filter(i => i.status === 'paid').length;
-        const draftCount = _invData.filter(i => i.status === 'draft').length;
+        // Summary from API stats (unfiltered)
+        const st = d.stats || {};
+        el('inv-total-count').textContent = st.total || _invTotal;
+        el('inv-outstanding').textContent = (st.outstanding||0) > 0 ? '$' + Math.round(st.outstanding).toLocaleString() : '$0';
+        el('inv-paid-count').textContent = st.paid || 0;
+        el('inv-draft-count').textContent = st.draft || 0;
         
-        el('inv-total-count').textContent = total;
-        el('inv-outstanding').textContent = outstanding > 0 ? '$' + Math.round(outstanding).toLocaleString() : '$0';
-        el('inv-paid-count').textContent = paidCount;
-        el('inv-draft-count').textContent = draftCount;
-        
-        // Render table
         const statusBadge = s => {
             const colors = {draft:'var(--text-2)',sent:'var(--blue)',paid:'var(--green)',void:'var(--red)'};
-            return `<span style="padding:2px 8px;border-radius:3px;font-size:0.68rem;background:${colors[s]||'var(--text-2)'};color:var(--bg-1);text-transform:uppercase;">${s}</span>`;
+            return `<span style="padding:2px 8px;border-radius:3px;font-size:0.68rem;background:${colors[s]||'var(--text-2)'};color:var(--bg-1);text-transform:uppercase;font-weight:600;">${s}</span>`;
         };
-        const fmtD = dt => { try { return new Date(dt).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}); } catch(e) { return dt || '—'; } };
+        const fmtD = dt => { try { return new Date(dt).toLocaleDateString('en-US', {month:'short',day:'numeric'}); } catch(e) { return dt || '—'; } };
         const fmtA = n => n ? '$' + Math.round(n).toLocaleString() : '$0';
         
         if (!_invData.length) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-2);">No invoices yet. Click "+ New Invoice" to create one.</td></tr>';
+            container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-2);">No invoices found.</div>';
+            el('inv-load-more').style.display = 'none';
             return;
         }
         
-        tbody.innerHTML = _invData.map(inv => `<tr>
-            <td style="font-family:var(--mono);font-weight:600;">${inv.invoice_number}</td>
-            <td>${(inv.customer_name||'').split('\\n')[0]}</td>
-            <td class="right" style="font-family:var(--mono);font-weight:600;">${fmtA(inv.total)}</td>
-            <td style="font-size:0.75rem;">${fmtD(inv.created_at)}</td>
-            <td>${statusBadge(inv.status)}</td>
-            <td style="white-space:nowrap;">
-                <a onclick="editInvModal(${inv.id})" style="cursor:pointer;margin-right:6px;font-size:0.72rem;">Edit</a>
-                <a href="/api/internal-invoices/${inv.id}/pdf" target="_blank" style="cursor:pointer;margin-right:6px;font-size:0.72rem;color:var(--accent);">PDF</a>
-                ${inv.status==='draft'?`<a onclick="invMarkSent(${inv.id})" style="cursor:pointer;margin-right:6px;font-size:0.72rem;color:var(--blue);">Send</a>`:''}
-                ${inv.status==='sent'?`<a onclick="invMarkPaid(${inv.id})" style="cursor:pointer;margin-right:6px;font-size:0.72rem;color:var(--green);">Paid</a>`:''}
-                ${inv.status!=='void'?`<a onclick="invVoid(${inv.id})" style="cursor:pointer;font-size:0.72rem;color:var(--red);opacity:0.6;">Void</a>`:''}
-            </td>
-        </tr>`).join('');
+        const html = _invData.map(inv => {
+            const customer = (inv.customer_name||'').split('\\n')[0];
+            const actions = [
+                `<a onclick="editInvModal(${inv.id})" style="cursor:pointer;font-size:0.72rem;">Edit</a>`,
+                `<a href="/api/internal-invoices/${inv.id}/pdf" target="_blank" style="cursor:pointer;font-size:0.72rem;color:var(--accent);">PDF</a>`,
+                inv.status==='draft'?`<a onclick="invMarkSent(${inv.id})" style="cursor:pointer;font-size:0.72rem;color:var(--blue);">Send</a>`:'',
+                inv.status==='sent'?`<a onclick="invMarkPaid(${inv.id})" style="cursor:pointer;font-size:0.72rem;color:var(--green);">Paid</a>`:'',
+                inv.status!=='void'?`<a onclick="invVoid(${inv.id})" style="cursor:pointer;font-size:0.72rem;color:var(--red);opacity:0.6;">Void</a>`:''
+            ].filter(Boolean).join('<span style="color:var(--text-3);margin:0 6px;">·</span>');
+            return `<div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;">
+                <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+                        <span style="font-family:var(--mono);font-size:0.72rem;color:var(--text-2);">${inv.invoice_number}</span>
+                        ${statusBadge(inv.status)}
+                        <span style="font-size:0.68rem;color:var(--text-3);margin-left:auto;">${fmtD(inv.created_at)}</span>
+                    </div>
+                    <div style="font-weight:600;font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${customer||'—'}</div>
+                    <div style="margin-top:4px;">${actions}</div>
+                </div>
+                <div style="font-family:var(--mono);font-weight:700;font-size:1rem;white-space:nowrap;">${fmtA(inv.total)}</div>
+            </div>`;
+        }).join('');
+        container.innerHTML = html;
+        
+        // Show/hide load more
+        const loaded = _invData.length;
+        el('inv-load-more').style.display = loaded < _invTotal ? 'block' : 'none';
         
     } catch(e) {
-        tbody.innerHTML = `<tr><td colspan="6" style="color:var(--red);">Error: ${e.message}</td></tr>`;
+        container.innerHTML = `<div style="color:var(--red);padding:12px;">Error: ${e.message}</div>`;
     }
 }
 
