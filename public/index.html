@@ -2609,8 +2609,6 @@
 </div>
 
 <script>
-// ── DEBUG: catch all errors and show in title ──
-window.onerror = function(msg, url, line, col, err) { document.title = 'JS ERR L' + line + ': ' + msg; };
 // ── Force clear stale service workers + cache on version mismatch ──
 (function(){const V='v3';if(navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(regs=>{regs.forEach(r=>{r.unregister();});});caches.keys().then(ks=>ks.forEach(k=>{if(!k.includes(V))caches.delete(k);}));}})();
 // ── Global fetch override: credentials + API key fallback for all API calls ──
@@ -5958,10 +5956,34 @@ async function fxLoadRates() {
     } catch(e) {}
 }
 
+// ═══ USER ROLE (must be in same script block as INIT) ═══
+let _userRole = { role: 'admin', allowedPages: null, jamTabs: ['dibeli','masuk','dijual','keluar'], name: 'Admin' };
+
+async function loadUserRole() {
+    try {
+        const r = await fetch('/api/user/role');
+        if (r.ok) _userRole = await r.json();
+        applyRoleRestrictions();
+    } catch(e) { console.error('Role check:', e); }
+}
+
+function applyRoleRestrictions() {
+    if (!_userRole.allowedPages) return;
+    $$('.nav a[data-page], .mobile-nav a[data-page], .more-grid-item').forEach(el => {
+        const page = el.dataset?.page || el.getAttribute('onclick')?.match(/mobileNav\('([^']+)'\)/)?.[1];
+        if (page && !_userRole.allowedPages.includes(page)) {
+            el.style.display = 'none';
+        }
+    });
+    const defaultPage = _userRole.allowedPages[0] || 'jam';
+    showPage(defaultPage);
+    const searchInput = document.querySelector('.header input[type="text"]');
+    if (searchInput && _userRole.role === 'logistics') searchInput.style.display = 'none';
+}
+
 // ── INIT ──
-document.title = 'INIT reached';
 loadUserRole(); // Load role before anything else
-loadData().then(() => { document.title = 'DATA loaded'; }).catch(e => { document.title = 'LOAD ERR: ' + e.message; });
+loadData();
 // Retry ticker after 3s in case initial load was slow
 setTimeout(renderTicker, 3000);
 loadNews();
@@ -11220,36 +11242,8 @@ async function submitNewJournal() {
     showToast('Lesson saved', 'success');
 }
 
-// ═══ USER ROLE ═══
-let _userRole = { role: 'admin', allowedPages: null, jamTabs: ['dibeli','masuk','dijual','keluar'], name: 'Admin' };
-
-async function loadUserRole() {
-    try {
-        const r = await fetch('/api/user/role');
-        if (r.ok) _userRole = await r.json();
-        applyRoleRestrictions();
-    } catch(e) { console.error('Role check:', e); }
-}
-
-function applyRoleRestrictions() {
-    if (!_userRole.allowedPages) return; // admin/full — no restrictions
-    
-    // Hide nav links for pages not in allowedPages
-    $$('.nav a[data-page], .mobile-nav a[data-page], .more-grid-item').forEach(el => {
-        const page = el.dataset?.page || el.getAttribute('onclick')?.match(/mobileNav\('([^']+)'\)/)?.[1];
-        if (page && !_userRole.allowedPages.includes(page)) {
-            el.style.display = 'none';
-        }
-    });
-    
-    // Auto-navigate to allowed page
-    const defaultPage = _userRole.allowedPages[0] || 'jam';
-    showPage(defaultPage);
-    
-    // Hide the search bar in header for logistics
-    const searchInput = document.querySelector('.header input[type="text"]');
-    if (searchInput && _userRole.role === 'logistics') searchInput.style.display = 'none';
-}
+// ═══ USER ROLE — defined in main script block (above INIT) ═══
+// _userRole, loadUserRole, applyRoleRestrictions moved to main block to avoid cross-block ReferenceError
 
 // ═══ JAM (Activity Feed) ═══
 const _jamState = { tab: 'dijual', feeds: {}, offsets: {}, totals: {}, stats: null };
