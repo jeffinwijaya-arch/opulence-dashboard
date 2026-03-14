@@ -979,6 +979,7 @@
             <a data-page="mission-control" onclick="showPage('mission-control')">Mission Control</a>
             <a data-page="payments" onclick="showPage('payments')">Payments <span class="badge" id="payments-count">0</span></a>
             <a data-page="postings" onclick="showPage('postings')">My Postings</a>
+            <a data-page="jam" onclick="showPage('jam')">Jam</a>
             <a data-page="photos" onclick="showPage('photos')">Photos</a>
 
             <a data-page="aging" onclick="showPage('aging')">Aging</a>
@@ -1039,6 +1040,7 @@
             <a class="more-grid-item" onclick="mobileNav('aging')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>Aging</a>
             <a class="more-grid-item" onclick="mobileNav('briefing')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></span>Briefing</a>
             <a class="more-grid-item" onclick="mobileNav('mission-control')"><span class="mgi-icon">🎯</span>Mission Control</a>
+            <a class="more-grid-item" onclick="mobileNav('jam')"><span class="mgi-icon">📋</span>Jam</a>
         </div>
     </div>
 
@@ -2451,6 +2453,113 @@
             </div>
         </div>
 
+        <!-- ═══ JAM (Activity Feed) ═══ -->
+        <div class="page" id="page-jam">
+            <style>
+                .jam-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+                .jam-stat{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;text-align:center;cursor:pointer;transition:all 0.2s;}
+                .jam-stat:hover{border-color:var(--accent-border);}
+                .jam-stat.active{border-color:var(--accent);background:var(--accent-dim);}
+                .jam-stat-count{font-size:1.5rem;font-weight:300;font-family:var(--mono);color:var(--text-0);line-height:1.2;}
+                .jam-stat-label{font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-2);margin-top:4px;}
+                .jam-stat-icon{font-size:1.1rem;margin-bottom:4px;}
+
+                .jam-alerts{margin-bottom:14px;display:flex;flex-wrap:wrap;gap:8px;}
+                .jam-alert{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:var(--radius);font-size:0.72rem;font-weight:600;font-family:var(--mono);}
+                .jam-alert-warn{background:rgba(251,146,60,0.1);color:var(--orange);border:1px solid rgba(251,146,60,0.2);}
+                .jam-alert-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,23,68,0.2);}
+
+                .jam-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px;}
+                .jam-tab{padding:10px 20px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-2);font-family:var(--mono);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;cursor:pointer;transition:all 0.2s;}
+                .jam-tab:hover{color:var(--text-1);background:rgba(255,255,255,0.02);}
+                .jam-tab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--accent-dim);}
+                .jam-tab .jam-tab-count{font-size:0.62rem;opacity:0.7;margin-left:4px;}
+
+                .jam-feed{display:flex;flex-direction:column;gap:10px;}
+                .jam-card{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;border-left:4px solid var(--accent);transition:all 0.2s;}
+                .jam-card:hover{border-color:var(--border-strong);background:var(--bg-3);}
+                .jam-card.type-dibeli{border-left-color:var(--accent);}
+                .jam-card.type-masuk{border-left-color:var(--green);}
+                .jam-card.type-dijual{border-left-color:var(--blue);}
+                .jam-card.type-keluar{border-left-color:var(--orange);}
+
+                .jam-card-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;}
+                .jam-card-title{font-size:0.85rem;font-weight:700;color:var(--text-0);line-height:1.3;}
+                .jam-card-id{font-size:0.65rem;color:var(--text-2);font-family:var(--mono);opacity:0.6;}
+                .jam-card-detail{font-size:0.73rem;color:var(--text-1);margin-bottom:4px;line-height:1.5;}
+                .jam-card-detail span{color:var(--text-2);}
+                .jam-card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px;}
+                .jam-pills{display:flex;gap:4px;flex-wrap:wrap;}
+                .jam-pill{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.65rem;font-weight:600;font-family:var(--mono);}
+                .jam-pill-yes{background:var(--green-dim);color:var(--green);}
+                .jam-pill-no{background:rgba(255,255,255,0.04);color:var(--text-2);}
+                .jam-pill-warn{background:rgba(251,146,60,0.1);color:var(--orange);}
+                .jam-card-date{font-size:0.68rem;color:var(--text-2);font-family:var(--mono);white-space:nowrap;}
+
+                .jam-load-more{width:100%;padding:12px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-1);font-size:0.75rem;font-weight:600;cursor:pointer;text-align:center;margin-top:8px;transition:all 0.2s;}
+                .jam-load-more:hover{background:var(--bg-3);border-color:var(--accent-border);}
+
+                .jam-money{color:var(--green);font-family:var(--mono);}
+                .jam-money.negative{color:var(--red);}
+
+                @media(max-width:768px){
+                    .jam-stats{grid-template-columns:repeat(2,1fr);}
+                    .jam-tab{padding:8px 12px;font-size:0.65rem;}
+                }
+                @media(max-width:480px){
+                    .jam-stats{grid-template-columns:repeat(2,1fr);gap:6px;}
+                    .jam-stat{padding:10px 8px;}
+                    .jam-stat-count{font-size:1.2rem;}
+                    .jam-tab{padding:6px 8px;font-size:0.6rem;}
+                }
+            </style>
+
+            <div class="page-head">
+                <h1>📋 Jam — Activity Feed</h1>
+                <p>Watch lifecycle tracking: Bought → Arrived → Sold → Shipped</p>
+            </div>
+
+            <!-- Stats -->
+            <div class="jam-stats" id="jam-stats">
+                <div class="jam-stat" onclick="switchJamTab('dibeli')">
+                    <div class="jam-stat-icon">🛒</div>
+                    <div class="jam-stat-count" id="jam-ct-dibeli">—</div>
+                    <div class="jam-stat-label">Dibeli</div>
+                </div>
+                <div class="jam-stat" onclick="switchJamTab('masuk')">
+                    <div class="jam-stat-icon">📦</div>
+                    <div class="jam-stat-count" id="jam-ct-masuk">—</div>
+                    <div class="jam-stat-label">Masuk</div>
+                </div>
+                <div class="jam-stat active" onclick="switchJamTab('dijual')">
+                    <div class="jam-stat-icon">💰</div>
+                    <div class="jam-stat-count" id="jam-ct-dijual">—</div>
+                    <div class="jam-stat-label">Dijual</div>
+                </div>
+                <div class="jam-stat" onclick="switchJamTab('keluar')">
+                    <div class="jam-stat-icon">✈️</div>
+                    <div class="jam-stat-count" id="jam-ct-keluar">—</div>
+                    <div class="jam-stat-label">Keluar</div>
+                </div>
+            </div>
+
+            <!-- Action Alerts -->
+            <div class="jam-alerts" id="jam-alerts"></div>
+
+            <!-- Tab bar -->
+            <div class="jam-tabs">
+                <button class="jam-tab" data-jam="dibeli" onclick="switchJamTab('dibeli')">🛒 Dibeli</button>
+                <button class="jam-tab" data-jam="masuk" onclick="switchJamTab('masuk')">📦 Masuk</button>
+                <button class="jam-tab active" data-jam="dijual" onclick="switchJamTab('dijual')">💰 Dijual</button>
+                <button class="jam-tab" data-jam="keluar" onclick="switchJamTab('keluar')">✈️ Keluar</button>
+            </div>
+
+            <!-- Feed -->
+            <div class="jam-feed" id="jam-feed">
+                <div style="text-align:center;color:var(--text-2);padding:24px;">Loading...</div>
+            </div>
+        </div>
+
         <footer class="footer"><span>MK Opulence</span><span>&middot;</span><span>Market Intelligence</span><span>&middot;</span><span id="update-time">--</span><span>&middot;</span><span class="sync-timer" id="sync-timer">Last synced: --</span><span class="kbd-hint" style="opacity:0.4;font-size:0.58rem;">Keys: 1-7 nav / search R refresh</span></footer>
     </div>
 </div>
@@ -2549,6 +2658,7 @@ function showPage(name, pushState=true) {
 
     if (name === 'aging') loadAgingHeatmap();
     if (name === 'mission-control') loadMissionControl();
+    if (name === 'jam') loadJamPage();
     if (pushState) {
         const params = new URLSearchParams(window.location.search);
         params.set('p', name);
@@ -11051,6 +11161,166 @@ async function submitNewJournal() {
     document.getElementById('mc-modal-bg').style.display = 'none';
     loadMcJournal();
     showToast('Lesson saved', 'success');
+}
+
+// ═══ JAM (Activity Feed) ═══
+const _jamState = { tab: 'dijual', feeds: {}, offsets: {}, totals: {}, stats: null };
+
+function _jamFmt(n) {
+    if (n == null || isNaN(n)) return '—';
+    return '$' + Number(n).toLocaleString('en-US', {maximumFractionDigits: 0});
+}
+
+async function loadJamPage() {
+    try {
+        const r = await fetch('/api/jam/stats');
+        if (!r.ok) throw new Error('stats failed');
+        _jamState.stats = await r.json();
+        const s = _jamState.stats;
+        
+        $('#jam-ct-dibeli').textContent = s.dibeli;
+        $('#jam-ct-masuk').textContent = s.masuk;
+        $('#jam-ct-dijual').textContent = s.dijual;
+        $('#jam-ct-keluar').textContent = s.keluar;
+        
+        // Action alerts
+        const alerts = [];
+        if (s.sold_not_shipped > 0) alerts.push({cls:'jam-alert-warn', text:`⚠️ ${s.sold_not_shipped} sold but not shipped`});
+        if (s.shipped_not_paid > 0) alerts.push({cls:'jam-alert-danger', text:`🔴 ${s.shipped_not_paid} shipped but not paid`});
+        if (s.arrived_not_posted > 0) alerts.push({cls:'jam-alert-warn', text:`📸 ${s.arrived_not_posted} arrived but not posted`});
+        
+        const alertsEl = $('#jam-alerts');
+        alertsEl.innerHTML = alerts.map(a => `<div class="jam-alert ${a.cls}">${a.text}</div>`).join('');
+    } catch(e) { console.error('Jam stats:', e); }
+    
+    // Load the active tab's feed
+    await loadJamFeed(_jamState.tab);
+}
+
+function switchJamTab(type) {
+    _jamState.tab = type;
+    $$('.jam-tab').forEach(t => t.classList.toggle('active', t.dataset.jam === type));
+    $$('.jam-stat').forEach((s, i) => {
+        const types = ['dibeli','masuk','dijual','keluar'];
+        s.classList.toggle('active', types[i] === type);
+    });
+    loadJamFeed(type);
+}
+
+async function loadJamFeed(type, append = false) {
+    const feed = $('#jam-feed');
+    if (!append) {
+        _jamState.offsets[type] = 0;
+        feed.innerHTML = '<div style="text-align:center;color:var(--text-2);padding:24px;">Loading...</div>';
+    }
+    
+    const offset = _jamState.offsets[type] || 0;
+    try {
+        const r = await fetch(`/api/jam/feed?type=${type}&limit=50&offset=${offset}`);
+        if (!r.ok) throw new Error('feed failed');
+        const data = await r.json();
+        _jamState.feeds[type] = append ? (_jamState.feeds[type] || []).concat(data.items) : data.items;
+        _jamState.totals[type] = data.total;
+        _jamState.offsets[type] = offset + data.items.length;
+        
+        renderJamFeed(type);
+    } catch(e) {
+        console.error('Jam feed:', e);
+        feed.innerHTML = '<div style="text-align:center;color:var(--red);padding:24px;">Failed to load feed</div>';
+    }
+}
+
+function renderJamFeed(type) {
+    const feed = $('#jam-feed');
+    const items = _jamState.feeds[type] || [];
+    const total = _jamState.totals[type] || 0;
+    
+    if (!items.length) {
+        feed.innerHTML = '<div style="text-align:center;color:var(--text-2);padding:24px;">No items</div>';
+        return;
+    }
+    
+    let html = items.map(item => _jamCard(type, item)).join('');
+    
+    if (items.length < total) {
+        html += `<button class="jam-load-more" onclick="loadJamFeed('${type}', true)">Load more (${items.length} of ${total})</button>`;
+    }
+    
+    feed.innerHTML = html;
+}
+
+function _jamCard(type, item) {
+    const desc = item.description || '';
+    // Extract ref from description (first 5-6 digit number with optional suffix)
+    const refMatch = desc.match(/\b(\d{5,6}[A-Z]{0,6})\b/);
+    const ref = refMatch ? refMatch[1] : desc.split(' ')[0];
+    const restDesc = desc.replace(ref, '').trim();
+    
+    let detailLine = '';
+    let pills = '';
+    
+    if (type === 'dibeli') {
+        const parts = [];
+        if (item.from) parts.push(`<span>From:</span> ${item.from}`);
+        if (item.cost) parts.push(`<span>Cost:</span> ${_jamFmt(item.cost)}`);
+        detailLine = parts.join('  •  ');
+        
+        pills = _jp(item.arrived, 'Arrived') + _jp(item.sold, 'Sold') + _jp(item.paid_supplier, 'Paid Supplier');
+    } else if (type === 'masuk') {
+        const parts = [];
+        if (item.from) parts.push(`<span>From:</span> ${item.from}`);
+        if (item.wt) parts.push('🏷️ WT');
+        detailLine = parts.join('  •  ');
+        
+        pills = _jp(item.posted, 'Posted') + _jp(item.sold, 'Sold');
+        if (item.at_store) pills += '<span class="jam-pill jam-pill-warn">At Store</span>';
+    } else if (type === 'dijual') {
+        const toName = (item.to || '').split('\n')[0]; // First line only (name)
+        const parts = [];
+        if (toName) parts.push(`<span>To:</span> ${toName}`);
+        if (item.sold_price) parts.push(`<span>Price:</span> ${_jamFmt(item.sold_price)}`);
+        if (item.profit != null) {
+            const profitCls = item.profit >= 0 ? '' : ' negative';
+            parts.push(`<span>Profit:</span> <span class="jam-money${profitCls}">${_jamFmt(item.profit)}</span>`);
+        }
+        detailLine = parts.join('  •  ');
+        
+        pills = _jp(item.shipped, 'Shipped') + _jp(item.paid, 'Paid');
+    } else if (type === 'keluar') {
+        const toName = (item.to || '').split('\n')[0];
+        const parts = [];
+        if (toName) parts.push(`<span>To:</span> ${toName}`);
+        if (item.sold_price) parts.push(`<span>Price:</span> ${_jamFmt(item.sold_price)}`);
+        detailLine = parts.join('  •  ');
+        
+        pills = _jp(item.paid, 'Paid');
+    }
+    
+    // Serial + card date line
+    let serialLine = '';
+    const sp = [];
+    if (item.serial) sp.push(`<span>Serial:</span> ${item.serial}`);
+    if (item.card_date) sp.push(`<span>Card:</span> ${item.card_date}`);
+    if (sp.length) serialLine = `<div class="jam-card-detail">${sp.join('  •  ')}</div>`;
+    
+    return `<div class="jam-card type-${type}">
+        <div class="jam-card-head">
+            <div class="jam-card-title">${ref} <span style="font-weight:400;color:var(--text-1);font-size:0.78rem;">${restDesc}</span></div>
+            <div class="jam-card-id">#${item.id}</div>
+        </div>
+        <div class="jam-card-detail">${detailLine}</div>
+        ${serialLine}
+        <div class="jam-card-footer">
+            <div class="jam-pills">${pills}</div>
+            <div class="jam-card-date">${item.date || ''}</div>
+        </div>
+    </div>`;
+}
+
+function _jp(val, label) {
+    return val 
+        ? `<span class="jam-pill jam-pill-yes">✅ ${label}</span>`
+        : `<span class="jam-pill jam-pill-no">○ ${label}</span>`;
 }
 
 </script>
