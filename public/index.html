@@ -5969,35 +5969,53 @@ async function loadUserRole() {
 
 function applyRoleRestrictions() {
     if (!_userRole.allowedPages) return;
+    // Hide ALL nav items not in allowedPages
     $$('.nav a[data-page], .mobile-nav a[data-page], .more-grid-item').forEach(el => {
         const page = el.dataset?.page || el.getAttribute('onclick')?.match(/mobileNav\('([^']+)'\)/)?.[1];
         if (page && !_userRole.allowedPages.includes(page)) {
             el.style.display = 'none';
         }
     });
+    // Hide ticker, search, header elements for restricted users
+    if (_userRole.role === 'logistics') {
+        const ticker = document.querySelector('.ticker');
+        if (ticker) ticker.style.display = 'none';
+        const searchInput = document.querySelector('.header input[type="text"]');
+        if (searchInput) searchInput.style.display = 'none';
+        // Hide the logo/brand area search
+        $$('.header > *').forEach(el => {
+            if (el.querySelector && el.querySelector('input')) el.style.display = 'none';
+        });
+    }
     const defaultPage = _userRole.allowedPages[0] || 'jam';
     showPage(defaultPage);
-    const searchInput = document.querySelector('.header input[type="text"]');
-    if (searchInput && _userRole.role === 'logistics') searchInput.style.display = 'none';
 }
 
 // ── INIT ──
-loadUserRole(); // Load role before anything else
-loadData();
-// Retry ticker after 3s in case initial load was slow
-setTimeout(renderTicker, 3000);
-loadNews();
-fxLoadRates();
-fxCalc();
-// Refresh FX rates every hour (free Wise API, no cost)
-setInterval(()=>{ fxLoadRates(); }, 3600000);
-// Refresh ticker every hour
-setInterval(renderTicker, 3600000);
-fetch('/api/portfolio_insights').then(r=>r.json()).then(d=>{DATA.portfolio=d;renderPortfolioSnapshot();}).catch(()=>{});
-// Restore page from URL AFTER init
+(async function _init() {
+    await loadUserRole(); // MUST complete before rendering
+    if (_userRole.allowedPages) {
+        // Restricted user — only load what they need
+        showPage(_userRole.allowedPages[0] || 'jam');
+    } else {
+        // Full access — load everything
+        loadData();
+        setTimeout(renderTicker, 3000);
+        loadNews();
+        fxLoadRates();
+        fxCalc();
+    }
+})();
+// These only run for full-access users
+if (!_userRole.allowedPages) {
+    setInterval(()=>{ fxLoadRates(); }, 3600000);
+    setInterval(renderTicker, 3600000);
+    fetch('/api/portfolio_insights').then(r=>r.json()).then(d=>{DATA.portfolio=d;renderPortfolioSnapshot();}).catch(()=>{});
+}
+// Restore page from URL AFTER init (only if allowed)
 {
     const _initPage = new URLSearchParams(window.location.search).get('p');
-    if (_initPage && _initPage !== 'dashboard') {
+    if (_initPage && _initPage !== 'dashboard' && (!_userRole.allowedPages || _userRole.allowedPages.includes(_initPage))) {
         showPage(_initPage, false);
     }
 }
