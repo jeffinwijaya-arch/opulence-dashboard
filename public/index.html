@@ -11415,7 +11415,7 @@ function renderJamFeed(type) {
         
         // Split into pending vs shipped
         const pending = items.filter(i => i.status === 'pending');
-        const shipped = items.filter(i => i.status === 'shipped');
+        const shipped = items.filter(i => i.status !== 'pending');
         
         if (pending.length) {
             html += `<div style="padding:8px 4px;margin-bottom:4px;">
@@ -11448,6 +11448,29 @@ function renderJamFeed(type) {
                 }
                 html += _jamCard(type, item);
             }
+        }
+    } else if (type === 'masuk') {
+        const today = new Date().toISOString().slice(0,10);
+        const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+        let lastDate = '';
+        for (const item of items) {
+            const d = item.date || 'Unknown';
+            if (d !== lastDate) {
+                let dateLabel = d;
+                if (d === today) dateLabel = 'TODAY';
+                else if (d === yesterday) dateLabel = 'YESTERDAY';
+                else {
+                    try {
+                        const dt = new Date(d + 'T12:00:00');
+                        dateLabel = dt.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+                    } catch(e) { dateLabel = d; }
+                }
+                html += `<div style="padding:10px 4px 6px;margin-top:${lastDate?'12px':'0'};border-bottom:2px solid var(--green);display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:0.78rem;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.5px;">${dateLabel}</span>
+                </div>`;
+                lastDate = d;
+            }
+            html += _jamCard(type, item);
         }
     } else {
         html = items.map(item => _jamCard(type, item)).join('');
