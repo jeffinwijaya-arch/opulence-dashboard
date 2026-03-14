@@ -2611,8 +2611,8 @@
 <script>
 // ── Force clear stale service workers + cache on version mismatch ──
 (function(){const V='v3';if(navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(regs=>{regs.forEach(r=>{r.unregister();});});caches.keys().then(ks=>ks.forEach(k=>{if(!k.includes(V))caches.delete(k);}));}})();
-// ── Global fetch override: always send credentials for API calls ──
-(function(){const _f=window.fetch;window.fetch=function(url,opts){opts=opts||{};if(typeof url==='string'&&url.startsWith('/api'))opts.credentials='same-origin';return _f.call(this,url,opts);}})();
+// ── Global fetch override: credentials + API key fallback for all API calls ──
+(function(){const _f=window.fetch;window.fetch=function(url,opts){opts=opts||{};if(typeof url==='string'&&url.startsWith('/api')){opts.credentials='same-origin';if(window.__API_KEY){opts.headers=opts.headers||{};if(opts.headers instanceof Headers){if(!opts.headers.has('Authorization'))opts.headers.set('Authorization','Bearer '+window.__API_KEY);}else{opts.headers['Authorization']=opts.headers['Authorization']||'Bearer '+window.__API_KEY;}}}return _f.call(this,url,opts);}})();
 // ── Theme Toggle ──
 function toggleTheme() {
     const html = document.documentElement;
