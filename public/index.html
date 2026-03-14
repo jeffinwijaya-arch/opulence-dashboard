@@ -11341,10 +11341,15 @@ function switchJamTab(type) {
         uploadTitle.textContent = 'Upload Arrival Photo';
         uploadSub.textContent = 'Tap to take a photo of the warranty card — serial & date auto-extracted';
     } else if (type === 'keluar') {
-        uploadZone.style.display = 'block';
-        uploadIcon.textContent = '';
-        uploadTitle.textContent = 'Upload Shipping Label';
-        uploadSub.textContent = 'Tap to attach a FedEx label PDF to a watch';
+        // Only show upload zone for admin, not logistics employees
+        if (_userRole === 'logistics') {
+            uploadZone.style.display = 'none';
+        } else {
+            uploadZone.style.display = 'block';
+            uploadIcon.textContent = '';
+            uploadTitle.textContent = 'Upload Shipping Label';
+            uploadSub.textContent = 'Tap to attach a FedEx label PDF to a watch';
+        }
     } else {
         uploadZone.style.display = 'none';
     }
@@ -11440,7 +11445,14 @@ function _jamCard(type, item) {
         detailLine = parts.join('  •  ');
         
         pills = _jp(item.paid, 'Paid');
-        pills += `<button class="jam-pill" onclick="event.stopPropagation();jamUploadLabel(${item.id})" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);"> Attach Label</button>`;
+        if (item.has_label && item.label_file) {
+            pills += `<button class="jam-pill" onclick="event.stopPropagation();window.open('/api/jam/label/${item.label_file}','_blank')" style="cursor:pointer;border:1px solid var(--green-border);background:var(--green-dim);color:var(--green);">VIEW LABEL</button>`;
+            pills += `<button class="jam-pill" onclick="event.stopPropagation();jamPrintLabel('${item.label_file}')" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);">PRINT</button>`;
+        } else if (_userRole !== 'logistics') {
+            pills += `<button class="jam-pill" onclick="event.stopPropagation();jamUploadLabel(${item.id})" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);">Attach Label</button>`;
+        } else {
+            pills += `<span class="jam-pill jam-pill-no">No Label</span>`;
+        }
     }
     
     // Serial + card date line
@@ -11650,6 +11662,15 @@ function _formatActivityTime(ts) {
         if (diffHr < 24) return `${diffHr}h ago`;
         return d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
     } catch(e) { return ts; }
+}
+
+function jamPrintLabel(labelFile) {
+    const printWin = window.open(`/api/jam/label/${labelFile}`, '_blank');
+    if (printWin) {
+        printWin.addEventListener('load', () => {
+            setTimeout(() => printWin.print(), 500);
+        });
+    }
 }
 
 function jamUploadLabel(watchId) {
