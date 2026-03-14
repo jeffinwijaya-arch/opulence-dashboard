@@ -2609,6 +2609,8 @@
 </div>
 
 <script>
+// ── DEBUG: catch all errors and show in title ──
+window.onerror = function(msg, url, line, col, err) { document.title = 'JS ERR L' + line + ': ' + msg; };
 // ── Force clear stale service workers + cache on version mismatch ──
 (function(){const V='v3';if(navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(regs=>{regs.forEach(r=>{r.unregister();});});caches.keys().then(ks=>ks.forEach(k=>{if(!k.includes(V))caches.delete(k);}));}})();
 // ── Global fetch override: credentials + API key fallback for all API calls ──
@@ -2720,14 +2722,19 @@ function showPage(name, pushState=true) {
 async function loadData() {
     try {
         const [dealsR, arbR, topR, syncR] = await Promise.all([fetch('/api/deals'), fetch('/api/arbitrage'), fetch('/api/top_refs'), fetch('/api/sync_info')]);
+        // If any response is 401, redirect to login
+        if (dealsR.status === 401) { window.location.href = '/login'; return; }
         DATA.deals = await dealsR.json();
-        DATA.arbitrage = await arbR.json();
-        DATA.topRefs = await topR.json();
+        if (!Array.isArray(DATA.deals)) { DATA.deals = []; }
+        DATA.arbitrage = arbR.ok ? await arbR.json() : [];
+        if (!Array.isArray(DATA.arbitrage)) DATA.arbitrage = [];
+        DATA.topRefs = topR.ok ? await topR.json() : [];
+        if (!Array.isArray(DATA.topRefs)) DATA.topRefs = [];
         try { DATA.syncInfo = await syncR.json(); } catch(e) {}
         try { const br = await fetch('/data/bundle.json'); if (br.ok) { const b = await br.json(); if (b.refs) DATA.refs=b.refs; if (b.sellers) DATA.sellers=b.sellers; if (b.summary) DATA.summary=b.summary; } } catch(e) {}
         renderAll();
         checkStale();
-    } catch(e) { console.error('Load failed:', e); $('#summary-subtitle').textContent = 'Failed to load data.'; }
+    } catch(e) { console.error('Load failed:', e); $('#summary-subtitle').textContent = 'Failed to load — pull down to refresh'; }
 }
 async function loadPortfolio() { try { const r = await fetch('/api/portfolio_insights'); DATA.portfolio = await r.json(); renderPortfolio(); } catch(e) { console.error(e); } }
 async function loadListings() {
@@ -5952,8 +5959,9 @@ async function fxLoadRates() {
 }
 
 // ── INIT ──
+document.title = 'INIT reached';
 loadUserRole(); // Load role before anything else
-loadData();
+loadData().then(() => { document.title = 'DATA loaded'; }).catch(e => { document.title = 'LOAD ERR: ' + e.message; });
 // Retry ticker after 3s in case initial load was slow
 setTimeout(renderTicker, 3000);
 loadNews();
