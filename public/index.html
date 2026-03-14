@@ -5904,6 +5904,7 @@ async function fxLoadRates() {
 }
 
 // ── INIT ──
+loadUserRole(); // Load role before anything else
 loadData();
 // Retry ticker after 3s in case initial load was slow
 setTimeout(renderTicker, 3000);
@@ -11163,6 +11164,37 @@ async function submitNewJournal() {
     showToast('Lesson saved', 'success');
 }
 
+// ═══ USER ROLE ═══
+let _userRole = { role: 'admin', allowedPages: null, jamTabs: ['dibeli','masuk','dijual','keluar'], name: 'Admin' };
+
+async function loadUserRole() {
+    try {
+        const r = await fetch('/api/user/role');
+        if (r.ok) _userRole = await r.json();
+        applyRoleRestrictions();
+    } catch(e) { console.error('Role check:', e); }
+}
+
+function applyRoleRestrictions() {
+    if (!_userRole.allowedPages) return; // admin/full — no restrictions
+    
+    // Hide nav links for pages not in allowedPages
+    $$('.nav a[data-page], .mobile-nav a[data-page], .more-grid-item').forEach(el => {
+        const page = el.dataset?.page || el.getAttribute('onclick')?.match(/mobileNav\('([^']+)'\)/)?.[1];
+        if (page && !_userRole.allowedPages.includes(page)) {
+            el.style.display = 'none';
+        }
+    });
+    
+    // Auto-navigate to allowed page
+    const defaultPage = _userRole.allowedPages[0] || 'jam';
+    showPage(defaultPage);
+    
+    // Hide the search bar in header for logistics
+    const searchInput = document.querySelector('.header input[type="text"]');
+    if (searchInput && _userRole.role === 'logistics') searchInput.style.display = 'none';
+}
+
 // ═══ JAM (Activity Feed) ═══
 const _jamState = { tab: 'dijual', feeds: {}, offsets: {}, totals: {}, stats: null };
 
@@ -11172,6 +11204,25 @@ function _jamFmt(n) {
 }
 
 async function loadJamPage() {
+    // Apply role restrictions to Jam tabs
+    const allowedTabs = _userRole.jamTabs || ['dibeli','masuk','dijual','keluar'];
+    $$('.jam-tab').forEach(t => {
+        if (!allowedTabs.includes(t.dataset.jam)) t.style.display = 'none';
+    });
+    $$('.jam-stat').forEach((s, i) => {
+        const types = ['dibeli','masuk','dijual','keluar'];
+        if (!allowedTabs.includes(types[i])) s.style.display = 'none';
+    });
+    // Hide alerts for logistics (they don't need business alerts)
+    if (_userRole.role === 'logistics') {
+        $('#jam-alerts').style.display = 'none';
+    }
+    
+    // Set default tab based on role
+    if (!allowedTabs.includes(_jamState.tab)) {
+        _jamState.tab = allowedTabs[0];
+    }
+    
     try {
         const r = await fetch('/api/jam/stats');
         if (!r.ok) throw new Error('stats failed');
@@ -11183,18 +11234,18 @@ async function loadJamPage() {
         $('#jam-ct-dijual').textContent = s.dijual;
         $('#jam-ct-keluar').textContent = s.keluar;
         
-        // Action alerts
-        const alerts = [];
-        if (s.sold_not_shipped > 0) alerts.push({cls:'jam-alert-warn', text:`⚠️ ${s.sold_not_shipped} sold but not shipped`});
-        if (s.shipped_not_paid > 0) alerts.push({cls:'jam-alert-danger', text:`🔴 ${s.shipped_not_paid} shipped but not paid`});
-        if (s.arrived_not_posted > 0) alerts.push({cls:'jam-alert-warn', text:`📸 ${s.arrived_not_posted} arrived but not posted`});
-        
-        const alertsEl = $('#jam-alerts');
-        alertsEl.innerHTML = alerts.map(a => `<div class="jam-alert ${a.cls}">${a.text}</div>`).join('');
+        // Action alerts (admin/full only)
+        if (_userRole.role !== 'logistics') {
+            const alerts = [];
+            if (s.sold_not_shipped > 0) alerts.push({cls:'jam-alert-warn', text:`⚠️ ${s.sold_not_shipped} sold but not shipped`});
+            if (s.shipped_not_paid > 0) alerts.push({cls:'jam-alert-danger', text:`🔴 ${s.shipped_not_paid} shipped but not paid`});
+            if (s.arrived_not_posted > 0) alerts.push({cls:'jam-alert-warn', text:`📸 ${s.arrived_not_posted} arrived but not posted`});
+            $('#jam-alerts').innerHTML = alerts.map(a => `<div class="jam-alert ${a.cls}">${a.text}</div>`).join('');
+        }
     } catch(e) { console.error('Jam stats:', e); }
     
-    // Load the active tab's feed
-    await loadJamFeed(_jamState.tab);
+    // Activate correct tab
+    switchJamTab(_jamState.tab);
 }
 
 function switchJamTab(type) {
@@ -11274,6 +11325,7 @@ function _jamCard(type, item) {
         
         pills = _jp(item.posted, 'Posted') + _jp(item.sold, 'Sold');
         if (item.at_store) pills += '<span class="jam-pill jam-pill-warn">At Store</span>';
+        if (!item.serial) pills += `<button class="jam-pill jam-pill-warn" onclick="event.stopPropagation();jamUploadArrival(${item.id})" style="cursor:pointer;border:none;">📸 Upload Card</button>`;
     } else if (type === 'dijual') {
         const toName = (item.to || '').split('\n')[0]; // First line only (name)
         const parts = [];
@@ -11294,6 +11346,7 @@ function _jamCard(type, item) {
         detailLine = parts.join('  •  ');
         
         pills = _jp(item.paid, 'Paid');
+        pills += `<button class="jam-pill" onclick="event.stopPropagation();jamUploadLabel(${item.id})" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);">📄 Attach Label</button>`;
     }
     
     // Serial + card date line
@@ -11321,6 +11374,80 @@ function _jp(val, label) {
     return val 
         ? `<span class="jam-pill jam-pill-yes">✅ ${label}</span>`
         : `<span class="jam-pill jam-pill-no">○ ${label}</span>`;
+}
+
+// ═══ JAM UPLOADS ═══
+let _jamUploadTarget = { type: '', watchId: null };
+
+function jamUploadArrival(watchId) {
+    _jamUploadTarget = { type: 'arrival', watchId };
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment'; // Back camera on mobile
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const card = document.querySelector(`.jam-card [onclick*="jamUploadArrival(${watchId})"]`);
+        if (card) card.textContent = '⏳ Processing...';
+        
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('watch_id', watchId);
+        
+        try {
+            const r = await fetch('/api/jam/upload-arrival', { method: 'POST', body: fd });
+            const data = await r.json();
+            if (data.ok) {
+                let msg = `✅ Saved to library`;
+                if (data.ocr?.serial) msg += `\nSerial: ${data.ocr.serial}`;
+                if (data.ocr?.card_date) msg += `\nCard: ${data.ocr.card_date}`;
+                if (data.ocr?.has_wt) msg += `\n🏷️ WT detected`;
+                alert(msg);
+                loadJamFeed(_jamState.tab); // Refresh
+            } else {
+                alert('Upload failed: ' + (data.error || 'unknown'));
+            }
+        } catch(e) {
+            alert('Upload error: ' + e.message);
+        }
+    };
+    input.click();
+}
+
+function jamUploadLabel(watchId) {
+    _jamUploadTarget = { type: 'label', watchId };
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,application/pdf';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const card = document.querySelector(`.jam-card [onclick*="jamUploadLabel(${watchId})"]`);
+        if (card) card.textContent = '⏳ Uploading...';
+        
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('watch_id', watchId);
+        
+        try {
+            const r = await fetch('/api/jam/upload-label', { method: 'POST', body: fd });
+            const data = await r.json();
+            if (data.ok) {
+                let msg = `✅ Label attached to #${watchId}`;
+                if (data.marked_shipped) msg += '\n📦 Marked as shipped';
+                alert(msg);
+                loadJamFeed(_jamState.tab); // Refresh
+            } else {
+                alert('Upload failed: ' + (data.error || 'unknown'));
+            }
+        } catch(e) {
+            alert('Upload error: ' + e.message);
+        }
+    };
+    input.click();
 }
 
 </script>
