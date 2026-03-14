@@ -5957,9 +5957,14 @@ async function fxLoadRates() {
 }
 
 // ═══ USER ROLE (must be in same script block as INIT) ═══
-let _userRole = { role: 'admin', allowedPages: null, jamTabs: ['dibeli','masuk','dijual','keluar'], name: 'Admin' };
+let _userRole = window.__USER_ROLE || { role: 'admin', allowedPages: null, jamTabs: ['dibeli','masuk','dijual','keluar'], name: 'Admin' };
 
 async function loadUserRole() {
+    if (window.__USER_ROLE) {
+        _userRole = window.__USER_ROLE;
+        applyRoleRestrictions();
+        return;
+    }
     try {
         const r = await fetch('/api/user/role');
         if (r.ok) _userRole = await r.json();
