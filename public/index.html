@@ -809,9 +809,9 @@
             width: fit-content; max-width: 100%;
         }
         .toast.toast-success { border-color: rgba(0,230,118,0.3); }
-        .toast.toast-success::before { content: '✓'; color: var(--green); font-weight: 700; font-size: 1rem; }
+        .toast.toast-success::before { content: ''; color: var(--green); font-weight: 700; font-size: 1rem; }
         .toast.toast-error { border-color: rgba(255,23,68,0.3); }
-        .toast.toast-error::before { content: '✕'; color: var(--red); font-weight: 700; font-size: 1rem; }
+        .toast.toast-error::before { content: 'X'; color: var(--red); font-weight: 700; font-size: 1rem; }
         .toast.toast-info { border-color: var(--accent-border); }
         .toast.toast-info::before { content: 'ℹ'; color: var(--accent); font-weight: 700; }
         .toast.toast-out { animation: toastOut 0.25s ease-in forwards; }
@@ -999,7 +999,7 @@
                     placeholder="Search watches, invoices, labels…"
                     oninput="debouncedUnifiedSearch(this.value)"
                     onkeydown="if(event.key==='Escape')closeUnifiedSearch()">
-                <button class="usearch-close" onclick="closeUnifiedSearch()">✕</button>
+                <button class="usearch-close" onclick="closeUnifiedSearch()">X</button>
             </div>
             <div class="usearch-results" id="usearch-results">
                 <div class="usearch-empty">Type to search across all data</div>
@@ -1039,7 +1039,7 @@
 
             <a class="more-grid-item" onclick="mobileNav('aging')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>Aging</a>
             <a class="more-grid-item" onclick="mobileNav('briefing')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></span>Briefing</a>
-            <a class="more-grid-item" onclick="mobileNav('mission-control')"><span class="mgi-icon">🎯</span>Mission Control</a>
+            <a class="more-grid-item" onclick="mobileNav('mission-control')"><span class="mgi-icon"></span>Mission Control</a>
             <a class="more-grid-item" onclick="mobileNav('jam')"><span class="mgi-icon" style="font-size:0.9rem;">OP</span>Operations</a>
         </div>
     </div>
@@ -1365,9 +1365,9 @@
                             <div id="hal-location-picker" style="margin-bottom:6px;">
                                 <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
                                     <input class="input" id="hal-zip-search" placeholder="Enter recipient ZIP to find FedEx Offices..." style="flex:1;" oninput="debounceHalSearch()">
-                                    <button class="btn" onclick="searchHalLocations()" id="hal-search-btn" style="padding:4px 10px;font-size:0.7rem;white-space:nowrap;">🔍 Find</button>
+                                    <button class="btn" onclick="searchHalLocations()" id="hal-search-btn" style="padding:4px 10px;font-size:0.7rem;white-space:nowrap;"> Find</button>
                                 </div>
-                                <div id="hal-loading" style="display:none;font-size:0.68rem;color:var(--accent);padding:4px 0;">⏳ Searching FedEx Offices...</div>
+                                <div id="hal-loading" style="display:none;font-size:0.68rem;color:var(--accent);padding:4px 0;"> Searching FedEx Offices...</div>
                                 <div id="hal-locations-list" style="max-height:180px;overflow-y:auto;"></div>
                             </div>
                             <div style="font-size:0.6rem;color:var(--text-3);margin-bottom:4px;">Or enter manually:</div>
@@ -1823,7 +1823,7 @@
                 <div style="background:var(--bg-1);border:1px solid var(--border-strong);border-radius:var(--radius-lg);max-width:500px;width:90%;padding:20px;font-family:var(--font);max-height:90vh;overflow-y:auto;">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
                         <span style="font-size:0.9rem;font-weight:600;color:var(--text-0);">Post to My Postings</span>
-                        <button onclick="closePostDirectModal()" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:1.1rem;">✕</button>
+                        <button onclick="closePostDirectModal()" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:1.1rem;">X</button>
                     </div>
                     <input type="hidden" id="pdm-row">
                     <div style="margin-bottom:10px;">
@@ -2000,7 +2000,7 @@
                 </div>
                 <div class="metric">
                     <div class="label">Redacted & Safe</div>
-                    <div class="val" style="color:var(--green);">✓</div>
+                    <div class="val" style="color:var(--green);"></div>
                 </div>
                 <div class="metric">
                     <div class="label">Grail Pieces</div>
@@ -2061,7 +2061,7 @@
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;color:white;flex-shrink:0;">
                         <h3 id="modal-title" style="margin:0;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%;"></h3>
                         <div style="display:flex;gap:6px;align-items:center;">
-                            <span id="editor-status" style="font-size:0.65rem;color:var(--green);display:none;">✓ Saved</span>
+                            <span id="editor-status" style="font-size:0.65rem;color:var(--green);display:none;"> Saved</span>
                             <button onclick="closePhotoModal()" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;line-height:1;">×</button>
                         </div>
                     </div>
@@ -2071,7 +2071,7 @@
                         <button class="btn" onclick="setEditorTool('view')" id="btn-view" style="padding:2px 8px;font-size:0.65rem;"> View</button>
                         <button class="btn" onclick="autoRedactPhoto()" id="btn-auto-redact" style="padding:2px 8px;font-size:0.65rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">Auto</button>
                         <button class="btn" onclick="undoRedaction()" style="padding:2px 8px;font-size:0.65rem;">↩</button>
-                        <button class="btn" onclick="clearRedactions()" style="padding:2px 8px;font-size:0.65rem;">✕</button>
+                        <button class="btn" onclick="clearRedactions()" style="padding:2px 8px;font-size:0.65rem;">X</button>
                         <button class="btn" onclick="saveRedactedPhoto()" style="padding:2px 8px;font-size:0.65rem;background:var(--green-dim);color:var(--green);border-color:var(--green);"> Save</button>
                         <div style="flex:1;"></div>
                         <button class="btn" onclick="confirmDeletePhoto()" style="padding:2px 8px;font-size:0.65rem;background:var(--red-dim);color:var(--red);border-color:var(--red);"></button>
@@ -2366,7 +2366,7 @@
 
             <!-- Header -->
             <div class="mc-header">
-                <div class="mc-logo">🎯</div>
+                <div class="mc-logo"></div>
                 <div>
                     <div class="mc-title">Mission Control</div>
                     <div class="mc-subtitle">Bot Self-Development & Autonomous Work Queue</div>
@@ -2570,7 +2570,7 @@
             <!-- Activity Log (admin only — Telegram-style feed of employee actions) -->
             <div id="jam-log-section" style="display:none;">
                 <div class="jam-log-toggle" onclick="toggleJamLog()">
-                    <span class="jam-log-icon">💬</span>
+                    <span class="jam-log-icon"></span>
                     <span class="jam-log-title">Activity Log</span>
                     <span class="jam-log-count" id="jam-log-count"></span>
                     <span class="jam-log-arrow">▼</span>
@@ -3032,7 +3032,7 @@ async function confirmMarkPaid(row, btn) {
         });
         const d = await r.json();
         if (d.ok) {
-            if (btn) { btn.textContent = '✓'; btn.style.opacity = '0.6'; }
+            if (btn) { btn.textContent = ''; btn.style.opacity = '0.6'; }
             if (modal) modal.innerHTML = `<div style="background:var(--bg-1);border:1px solid var(--green);border-radius:var(--radius-lg);max-width:400px;width:90%;padding:20px;text-align:center;font-family:var(--font);">
                 <div style="font-size:1.2rem;margin-bottom:8px;color:var(--green);font-weight:700;">Done</div>
                 <div style="color:var(--green);font-weight:600;">Marked as Paid</div>
@@ -6294,7 +6294,7 @@ function renderInventoryTable(rows) {
     if (tbody) {
         tbody.innerHTML = rows.map(r => `<tr style="cursor:pointer;" ondblclick="editWatch(${r.row})">
             <td onclick="event.stopPropagation();"><input type="checkbox" class="im-row-check" data-row="${r.row}" onchange="updateBatchToolbar()"></td>
-            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(r.description||'').replace(/"/g,'&quot;')}">${r.has_hero?`<span onclick="event.stopPropagation();viewWatchPhotos('${(r.description||'').replace(/'/g,"\\'")}',${r.row})" style="cursor:pointer;margin-right:4px;color:#22c55e;" title="Hero photo ✓">●</span>`:''}<span onclick="lookupRef('${r.ref}')" style="cursor:pointer;">${r.description||''}</span></td>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(r.description||'').replace(/"/g,'&quot;')}">${r.has_hero?`<span onclick="event.stopPropagation();viewWatchPhotos('${(r.description||'').replace(/'/g,"\\'")}',${r.row})" style="cursor:pointer;margin-right:4px;color:#22c55e;" title="Hero photo ">*</span>`:''}<span onclick="lookupRef('${r.ref}')" style="cursor:pointer;">${r.description||''}</span></td>
             <td style="font-size:0.72rem;">${r.bought_from||'-'}</td>
             <td style="font-size:0.72rem;">${r.sold_to||'-'}</td>
             <td class="right" style="font-size:0.72rem;">${price(r.cost_price)}</td>
@@ -6329,10 +6329,10 @@ function renderInventoryTable(rows) {
         };
         const swipeActionsHtml = r => {
             let html = '';
-            if (r.arrived!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--accent);color:var(--bg-0);" onclick="event.stopPropagation();quickAction(${r.row},'arrived')"><span class="isa-icon" style="font-size:0.7rem;">+</span>Arrive</div>`;
-            if (r.posted==='Yes'&&r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:#e9a445;color:var(--bg-0);" onclick="event.stopPropagation();repostWatch(${r.row})"><span class="isa-icon" style="font-size:0.7rem;">↻</span>Repost</div>`;
+            if (r.arrived!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--accent);color:var(--bg-0);" onclick="event.stopPropagation();quickAction(${r.row},'arrived')"><span class="isa-icon" Arrive</div>`;
+            if (r.posted==='Yes'&&r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:#e9a445;color:var(--bg-0);" onclick="event.stopPropagation();repostWatch(${r.row})"><span class="isa-icon" Repost</div>`;
             html += `<div class="inv-swipe-action" style="background:#06b6d4;color:var(--bg-0);" onclick="event.stopPropagation();viewWatchPhotos('${r.description}', ${r.row})">Photos</div>`;
-            if (r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--green);color:var(--bg-0);" onclick="event.stopPropagation();showSellModal(${r.row})"><span class="isa-icon" style="font-size:0.7rem;">$</span>Sell</div>`;
+            if (r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--green);color:var(--bg-0);" onclick="event.stopPropagation();showSellModal(${r.row})"><span class="isa-icon" Sell</div>`;
             if (r.sold==='Yes'&&r.shipped!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--blue);color:var(--bg-0);" onclick="event.stopPropagation();showShipModal(${r.row})">Ship</div>`;
             return html;
         };
@@ -6344,7 +6344,7 @@ function renderInventoryTable(rows) {
                 <div class="inv-card" onclick="editWatch(${r.row})">
                     <div class="inv-card-header">
                         <div style="flex:1;">
-                            <div class="inv-card-ref">${r.has_hero?'<span style="color:#22c55e;">● </span>':''}${r.description ? r.description.match(/\b\d{5,6}[A-Z]*\b/)?.[0] || '' : ''}</div>
+                            <div class="inv-card-ref">${r.has_hero?'<span style="color:#22c55e;font-size:0.6rem;font-weight:700;">PHOTO </span>':''}${r.description ? r.description.match(/\b\d{5,6}[A-Z]*\b/)?.[0] || '' : ''}</div>
                             <div class="inv-card-desc">${r.description||''}</div>
                         </div>
                         ${swipeContent ? '<div style="font-size:0.65rem;color:var(--text-2);flex-shrink:0;">← swipe</div>' : ''}
@@ -6391,7 +6391,7 @@ function showPostModal(row) {
         fetch(`/api/market/price-suggest/${refMatch[1]}`).then(r=>r.json()).then(d => {
             if (d.ok && d.suggested_price) {
                 const fmt = n => '$' + n.toLocaleString();
-                sugEl.innerHTML = `💡 Suggested: <strong>${fmt(d.suggested_price)}</strong> (US low: ${fmt(d.us_low)})` +
+                sugEl.innerHTML = ` Suggested: <strong>${fmt(d.suggested_price)}</strong> (US low: ${fmt(d.us_low)})` +
                     (d.median ? ` · Median: ${fmt(d.median)}` : '');
                 if (!document.getElementById('pm-price').value) {
                     document.getElementById('pm-price').value = d.suggested_price;
@@ -6436,9 +6436,9 @@ async function uploadWatchPhoto(input) {
     try {
         const r = await fetch(`/api/inventory/${row}/photo`, {method:'POST', body: fd});
         const d = await r.json();
-        if (d.ok) { statusEl.textContent = '✅ Uploaded!'; loadWatchPhotos(row); }
-        else { statusEl.textContent = '❌ ' + (d.error||'Failed'); }
-    } catch(e) { statusEl.textContent = '❌ ' + e.message; }
+        if (d.ok) { statusEl.textContent = ' Uploaded!'; loadWatchPhotos(row); }
+        else { statusEl.textContent = ' ' + (d.error||'Failed'); }
+    } catch(e) { statusEl.textContent = ' ' + e.message; }
     input.value = '';
 }
 async function loadWatchPhotos(row) {
@@ -6564,7 +6564,7 @@ async function processOCR(row) {
             }
             
             if (d.updated_sheet) {
-                message += '\n\n✅ Bot Sheet updated';
+                message += '\n\n Bot Sheet updated';
                 loadInventoryPage(); // Refresh to show updates
             }
             
@@ -7153,7 +7153,7 @@ async function viewWatchPhotos(description, row) {
         const renderPhoto = () => {
             const p = allPhotos[idx];
             overlay.innerHTML = `
-                <div onclick="document.getElementById('photo-lightbox').remove()" style="position:fixed;top:16px;right:20px;color:white;font-size:2rem;cursor:pointer;z-index:100000;line-height:1;padding:8px;">✕</div>
+                <div onclick="document.getElementById('photo-lightbox').remove()" style="position:fixed;top:16px;right:20px;color:white;font-size:2rem;cursor:pointer;z-index:100000;line-height:1;padding:8px;">X</div>
                 <div style="color:#aaa;font-size:0.8rem;margin-bottom:12px;text-align:center;">${ref} — ${p.type} ${allPhotos.length>1?`(${idx+1}/${allPhotos.length})`:''}</div>
                 <img src="${p.url}" style="max-width:calc(100vw - 32px);max-height:calc(100vh - 120px);border-radius:8px;object-fit:contain;" onerror="this.parentElement.querySelector('.photo-err').style.display='block'" />
                 <div class="photo-err" style="display:none;color:var(--red);padding:20px;">Failed to load photo</div>
@@ -7246,7 +7246,7 @@ async function loadAgingHeatmap() {
                     Cost: ${price(r.cost_price)} ${r.sale_price?'· Ask: '+price(r.sale_price):''} ${r.bought_from?'· From: '+r.bought_from:''}
                 </div>
                 <div style="font-size:0.65rem;color:var(--text-2);margin-top:2px;">
-                    ${r.arrived==='Yes'?'✅ Arrived':'⏳ In Transit'} ${r.posted==='Yes'?'· 📢 Posted':''}
+                    ${r.arrived==='Yes'?' Arrived':' In Transit'} ${r.posted==='Yes'?'·  Posted':''}
                 </div>
             </div>`;
         }).join('');
@@ -7324,9 +7324,9 @@ async function submitSale() {
         });
         const d = await r.json();
         if (d.ok) {
-            let msg = '✅ Sold! Posted to Telegram.';
+            let msg = ' Sold! Posted to Telegram.';
             if (d.invoice) msg += ` Invoice ${d.invoice.invoice_number} created & sent!`;
-            else if (d.invoice_error) msg += ` ⚠️ Invoice failed: ${d.invoice_error}`;
+            else if (d.invoice_error) msg += `  Invoice failed: ${d.invoice_error}`;
             status.style.color='var(--green)'; status.textContent=msg; setTimeout(()=>{closeSellModal();loadInventoryPage();},1500); }
         else { status.style.color='var(--red)'; status.textContent='Error: '+(d.error||'Unknown'); }
     } catch(e) { status.style.color='var(--red)'; status.textContent='Error: '+e.message; }
@@ -7611,7 +7611,7 @@ async function searchHalLocations() {
             <div onclick="selectHalLocation(${i})" data-loc='${JSON.stringify(loc).replace(/'/g,"&#39;")}'
                  style="padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:4px;cursor:pointer;font-size:0.72rem;transition:background 0.15s;"
                  onmouseover="this.style.background='var(--bg-3)'" onmouseout="this.style.background=''" >
-                <div style="font-weight:600;color:var(--text-0);">📍 ${loc.name}</div>
+                <div style="font-weight:600;color:var(--text-0);"> ${loc.name}</div>
                 <div style="color:var(--text-2);font-size:0.65rem;margin-top:2px;">${loc.full_address || loc.display}</div>
             </div>
         `).join('');
@@ -8008,7 +8008,7 @@ function addInvLineItem(name='', desc='', rate='') {
         <input class="input inv-li-name" value="${(name||'').replace(/"/g,'&quot;')}" placeholder="Item name (e.g. 126610LN Oyster Black)">
         <input class="input inv-li-desc" value="${(desc||'').replace(/"/g,'&quot;')}" placeholder="Description (e.g. serial MM/YYYY)">
         <input class="input inv-li-rate" type="number" value="${rate||''}" placeholder="Rate" oninput="calcInvTotals()">
-        <button onclick="this.parentElement.remove();calcInvTotals()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:1rem;">✕</button>
+        <button onclick="this.parentElement.remove();calcInvTotals()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:1rem;">X</button>
     `;
     container.appendChild(div);
 }
@@ -8484,7 +8484,7 @@ function showWatchDetail(row) {
     overlay.onclick = function(e) { if (e.target === this) closeWatchDetail(); };
 
     overlay.innerHTML = `<div style="background:var(--bg-1);border:1px solid var(--border);border-radius:8px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;padding:24px;position:relative;font-family:var(--font);">
-        <button onclick="closeWatchDetail()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;">✕</button>
+        <button onclick="closeWatchDetail()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;">X</button>
         <div style="margin-bottom:16px;">
             <div style="font-size:1.1rem;font-weight:700;color:var(--accent);margin-bottom:4px;">${item.ref}</div>
             <div style="font-size:0.8rem;color:var(--text-2);">${item.description}</div>
@@ -8911,7 +8911,7 @@ async function loadPayments() {
             return `<div onclick="pickSuggestion(this, '${input.id}')" style="padding:4px 8px;cursor:pointer;font-size:0.72rem;color:var(--text-0);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;"
                 onmouseover="this.style.background='var(--bg-3)'" onmouseout="this.style.background='none'">
                 <span>${opt}</span>
-                ${isKnown ? '<span style="font-size:0.6rem;color:var(--green);">✓ known</span>' : ''}
+                ${isKnown ? '<span style="font-size:0.6rem;color:var(--green);"> known</span>' : ''}
             </div>`;
         }).join('');
         suggestEl.style.display = 'block';
@@ -8987,7 +8987,7 @@ async function loadPayments() {
             const result = await r.json();
             if (!r.ok) throw new Error(result.error || 'Save failed');
 
-            statusEl.textContent = `✓ ${result.changes} field${result.changes>1?'s':''} updated`;
+            statusEl.textContent = ` ${result.changes} field${result.changes>1?'s':''} updated`;
             statusEl.style.color = 'var(--green)';
 
             // Update local data
@@ -9011,7 +9011,7 @@ async function loadPayments() {
             setTimeout(() => loadPhotoLibrary(), 500);
 
         } catch(e) {
-            statusEl.textContent = '✕ ' + e.message;
+            statusEl.textContent = 'X ' + e.message;
             statusEl.style.color = 'var(--red)';
         }
     }
@@ -9199,7 +9199,7 @@ async function loadPayments() {
             const result = await resp.json();
             
             if (result.redaction_count > 0) {
-                statusEl.textContent = `✓ Auto-redacted ${result.redaction_count} area${result.redaction_count > 1 ? 's' : ''}: ${result.detections.map(d => d.type).join(', ')}`;
+                statusEl.textContent = ` Auto-redacted ${result.redaction_count} area${result.redaction_count > 1 ? 's' : ''}: ${result.detections.map(d => d.type).join(', ')}`;
                 statusEl.style.color = 'var(--green)';
                 // Reload the image
                 editorImage.src = '/api/watch-photos/' + editorWatchId + '/image?t=' + Date.now();
@@ -9210,7 +9210,7 @@ async function loadPayments() {
                 statusEl.style.color = '#ffb400';
             }
         } catch(e) {
-            statusEl.textContent = '✕ Auto-redact failed: ' + e.message;
+            statusEl.textContent = 'X Auto-redact failed: ' + e.message;
             statusEl.style.color = 'var(--red)';
         }
         
@@ -9274,7 +9274,7 @@ async function loadPayments() {
             
             if (!resp.ok) throw new Error(await resp.text());
             
-            statusEl.textContent = '✓ Saved!';
+            statusEl.textContent = ' Saved!';
             statusEl.style.color = 'var(--green)';
             
             // Reload the image to show saved version
@@ -9285,7 +9285,7 @@ async function loadPayments() {
             setTimeout(() => loadPhotoLibrary(), 500);
             
         } catch (err) {
-            statusEl.textContent = '✕ Save failed: ' + err.message;
+            statusEl.textContent = 'X Save failed: ' + err.message;
             statusEl.style.color = 'var(--red)';
             console.error('Save error:', err);
         }
@@ -9425,7 +9425,7 @@ async function loadPayments() {
                     <strong style="color:${priorityColor};">${alert.title}</strong>
                     <div style="display:flex;gap:6px;">
                         <span style="font-size:0.65rem;padding:2px 6px;background:${priorityColor};color:var(--bg-1);border-radius:3px;text-transform:uppercase;">${alert.priority}</span>
-                        <button onclick="acknowledgeAlert('${alert.id}')" style="font-size:0.65rem;padding:2px 6px;background:var(--bg-1);border:1px solid var(--border);border-radius:3px;color:var(--text-2);cursor:pointer;">✓ ACK</button>
+                        <button onclick="acknowledgeAlert('${alert.id}')" style="font-size:0.65rem;padding:2px 6px;background:var(--bg-1);border:1px solid var(--border);border-radius:3px;color:var(--text-2);cursor:pointer;"> ACK</button>
                     </div>
                 </div>
                 <div style="font-size:0.75rem;color:var(--text-1);margin-bottom:8px;">${alert.message}</div>
@@ -9755,10 +9755,10 @@ async function loadPayments() {
             if (!d.ok) throw new Error(d.error || 'Delete failed');
             status.style.cssText = 'display:block;background:rgba(0,230,118,0.1);color:var(--green);padding:8px;border-radius:var(--radius);font-size:0.72rem;margin-top:8px;';
             if (d.tg_deleted) {
-                status.textContent = '✅ Deleted from Telegram and log.';
+                status.textContent = ' Deleted from Telegram and log.';
             } else {
                 status.style.cssText = 'display:block;background:rgba(255,152,0,0.1);color:#ff9800;padding:8px;border-radius:var(--radius);font-size:0.72rem;margin-top:8px;';
-                status.textContent = '⚠️ Removed from log but Telegram message NOT deleted. ' + (d.warning || 'Bot may need admin rights in the group.');
+                status.textContent = ' Removed from log but Telegram message NOT deleted. ' + (d.warning || 'Bot may need admin rights in the group.');
             }
             setTimeout(() => {
                 closePostingDeleteModal();
@@ -9943,7 +9943,7 @@ async function loadPayments() {
             const d = await r.json();
             if (!d.ok) throw new Error(d.error || 'Update failed');
             statusEl.style.cssText = 'display:block;background:rgba(0,230,118,0.1);color:var(--green);padding:8px;border-radius:var(--radius);font-size:0.72rem;margin-top:8px;';
-            statusEl.textContent = d.tg_updated ? '✅ Updated posting + Telegram' : '✅ Updated posting';
+            statusEl.textContent = d.tg_updated ? ' Updated posting + Telegram' : ' Updated posting';
             setTimeout(() => { closePriceEditModal(); loadPostingsPage(); }, 1000);
         } catch (e) {
             statusEl.style.cssText = 'display:block;background:rgba(255,23,68,0.1);color:var(--red);padding:8px;border-radius:var(--radius);font-size:0.72rem;margin-top:8px;';
@@ -10375,10 +10375,10 @@ async function loadPayments() {
         // Category config: icon, label, renderer
         const categories = [
             { key: 'inventory',  icon: 'INV', label: 'Inventory',  render: renderUSInventory  },
-            { key: 'market',     icon: '💹', label: 'Market',     render: renderUSMarket     },
-            { key: 'invoices',   icon: '🧾', label: 'Invoices',   render: renderUSInvoices   },
+            { key: 'market',     icon: '', label: 'Market',     render: renderUSMarket     },
+            { key: 'invoices',   icon: '', label: 'Invoices',   render: renderUSInvoices   },
             { key: 'labels',     icon: 'LBL', label: 'Labels',     render: renderUSLabels     },
-            { key: 'postings',   icon: '📢', label: 'Postings',   render: renderUSPostings   },
+            { key: 'postings',   icon: '', label: 'Postings',   render: renderUSPostings   },
         ];
 
         for (const cat of categories) {
@@ -10416,7 +10416,7 @@ async function loadPayments() {
     function renderUSMarket(item, q) {
         const region = item.region ? `<span style="color:var(--blue);margin-left:4px;">${esc(item.region)}</span>` : '';
         return `<div class="usearch-item" onclick="closeUnifiedSearch();showPage('lookup');setTimeout(()=>{const si=$('#ref-search');if(si){si.value='${esc(item.ref)}';doLookup();}},300);">
-            <div class="usearch-item-icon" style="background:var(--blue-dim);color:var(--blue);">💹</div>
+            <div class="usearch-item-icon" style="background:var(--blue-dim);color:var(--blue);"></div>
             <div class="usearch-item-body">
                 <div class="usearch-item-title">${esc(item.ref || '')}${region}</div>
                 <div class="usearch-item-sub">${esc(item.condition || '')} · ${esc(item.dial || '')} ${esc(item.bracelet || '')}</div>
@@ -10428,7 +10428,7 @@ async function loadPayments() {
     function renderUSInvoices(item, q) {
         const statusColor = {paid:'var(--green)',draft:'var(--text-2)',sent:'var(--blue)',overdue:'var(--red)'}[item.status] || 'var(--text-1)';
         return `<div class="usearch-item" onclick="closeUnifiedSearch();showPage('invoices')">
-            <div class="usearch-item-icon" style="background:rgba(251,146,60,0.1);color:var(--orange);">🧾</div>
+            <div class="usearch-item-icon" style="background:rgba(251,146,60,0.1);color:var(--orange);"></div>
             <div class="usearch-item-body">
                 <div class="usearch-item-title">${esc(item.invoice_number || '')} — ${esc(item.customer_name || '')}</div>
                 <div class="usearch-item-sub" style="color:${statusColor};">${esc(item.status || '')} · ${esc(item.date || '')}</div>
@@ -10451,7 +10451,7 @@ async function loadPayments() {
     function renderUSPostings(item, q) {
         const when = item.posted_at ? item.posted_at.slice(0, 10) : '';
         return `<div class="usearch-item" onclick="closeUnifiedSearch();showPage('postings')">
-            <div class="usearch-item-icon" style="background:rgba(212,175,55,0.1);color:var(--accent);">📢</div>
+            <div class="usearch-item-icon" style="background:rgba(212,175,55,0.1);color:var(--accent);"></div>
             <div class="usearch-item-body">
                 <div class="usearch-item-title">${esc(item.ref || '')} — ${esc(item.description || '').slice(0,50)}</div>
                 <div class="usearch-item-sub">${when}</div>
@@ -10908,7 +10908,7 @@ window.addEventListener('offline', () => {
   let b = document.getElementById('offline-banner');
   if (!b) { b = document.createElement('div'); b.id = 'offline-banner';
     b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#f59e0b;color:#000;text-align:center;padding:4px;font-size:0.7rem;font-weight:600;';
-    b.textContent = '⚡ Offline — showing cached data'; document.body.prepend(b); }
+    b.textContent = ' Offline — showing cached data'; document.body.prepend(b); }
 });
 window.addEventListener('online', () => { const b = document.getElementById('offline-banner'); if (b) b.remove(); });
 </script>
@@ -11008,7 +11008,7 @@ async function loadMcBacklog() {
     const priOrder = {'P0':0,'P1':1,'P2':2,'P3':3};
     const sortPri = (a,b) => (priOrder[a.priority]||9) - (priOrder[b.priority]||9);
     
-    document.getElementById('todo-items').innerHTML = todo.sort(sortPri).map(renderBacklogCard).join('') || '<div class="mc-empty">Nothing to do 🎉</div>';
+    document.getElementById('todo-items').innerHTML = todo.sort(sortPri).map(renderBacklogCard).join('') || '<div class="mc-empty">Nothing to do </div>';
     document.getElementById('progress-items').innerHTML = inProgress.sort(sortPri).map(renderBacklogCard).join('') || '<div class="mc-empty">Nothing active</div>';
     document.getElementById('done-items').innerHTML = done.sort((a,b) => (b.completed||'').localeCompare(a.completed||'')).map(renderBacklogCard).join('') || '<div class="mc-empty">Nothing completed yet</div>';
 }
@@ -11018,8 +11018,8 @@ function renderBacklogCard(item) {
     const statusActions = item.status === 'todo' 
         ? `<span style="font-size:0.6rem;color:var(--accent);cursor:pointer" onclick="event.stopPropagation();updateBacklog('${item.id}','in_progress')">▶ Start</span>`
         : item.status === 'in_progress'
-        ? `<span style="font-size:0.6rem;color:var(--green);cursor:pointer" onclick="event.stopPropagation();updateBacklog('${item.id}','done')">✓ Done</span>`
-        : `<span style="font-size:0.6rem;color:var(--green)">✅</span>`;
+        ? `<span style="font-size:0.6rem;color:var(--green);cursor:pointer" onclick="event.stopPropagation();updateBacklog('${item.id}','done')"> Done</span>`
+        : `<span style="font-size:0.6rem;color:var(--green)"></span>`;
     return `<div class="backlog-card">
         <div class="backlog-card-header">
             <div class="backlog-title">${item.title}</div>
@@ -11048,10 +11048,10 @@ async function loadMcErrors() {
     const r = await fetch('/api/mission-control/errors');
     const items = await r.json();
     const el = document.getElementById('error-list');
-    if (!items.length) { el.innerHTML = '<div class="mc-empty">No errors logged 🎉</div>'; return; }
+    if (!items.length) { el.innerHTML = '<div class="mc-empty">No errors logged </div>'; return; }
     el.innerHTML = items.map(e => {
         const sevClass = 'severity-' + (e.severity || 'minor');
-        const statusIcon = e.status === 'fixed' ? '✅' : e.status === 'investigating' ? '🔍' : '⚠️';
+        const statusIcon = e.status === 'fixed' ? '' : e.status === 'investigating' ? '' : '';
         return `<div class="error-card" style="border-left-color:${e.severity==='critical'?'var(--red)':e.severity==='major'?'var(--orange)':'var(--text-2)'}">
             <div class="error-header">
                 <div style="flex:1">
@@ -11083,7 +11083,7 @@ async function loadMcChangelog() {
             </div>`;
         }).join('');
         return `<div class="changelog-day">
-            <div class="changelog-date">📅 ${day.date}</div>
+            <div class="changelog-date"> ${day.date}</div>
             ${commits}
         </div>`;
     }).join('');
@@ -11146,15 +11146,15 @@ async function loadMcScheduler() {
     el.innerHTML = items.map(s => {
         const statusClass = s.enabled ? 'enabled' : 'disabled';
         const lastRun = s.last_run ? new Date(s.last_run).toLocaleString() : 'Never';
-        const resultIcon = s.last_result === 'success' ? '✅' : s.last_result === 'failed' ? '❌' : '—';
+        const resultIcon = s.last_result === 'success' ? '' : s.last_result === 'failed' ? '' : '—';
         return `<div class="schedule-card">
             <div class="schedule-status ${statusClass}"></div>
             <div class="schedule-info">
                 <div class="schedule-name">${s.name}</div>
                 <div class="schedule-desc">${s.description || ''}</div>
                 <div class="schedule-meta">
-                    <span>⏰ ${s.cron}</span>
-                    <span>🕐 Last: ${lastRun}</span>
+                    <span> ${s.cron}</span>
+                    <span> Last: ${lastRun}</span>
                     <span>${resultIcon}</span>
                 </div>
             </div>
@@ -11300,7 +11300,7 @@ async function loadJamPage() {
         if (_userRole.role !== 'logistics') {
             const alerts = [];
             if (s.sold_not_shipped > 0) alerts.push({cls:'jam-alert-warn', text:`${s.sold_not_shipped} sold but not shipped`});
-            if (s.shipped_not_paid > 0) alerts.push({cls:'jam-alert-danger', text:`🔴 ${s.shipped_not_paid} shipped but not paid`});
+            if (s.shipped_not_paid > 0) alerts.push({cls:'jam-alert-danger', text:` ${s.shipped_not_paid} shipped but not paid`});
             if (s.arrived_not_posted > 0) alerts.push({cls:'jam-alert-warn', text:`${s.arrived_not_posted} arrived but not posted`});
             $('#jam-alerts').innerHTML = alerts.map(a => `<div class="jam-alert ${a.cls}">${a.text}</div>`).join('');
         }
@@ -11342,7 +11342,7 @@ function switchJamTab(type) {
         uploadSub.textContent = 'Tap to take a photo of the warranty card — serial & date auto-extracted';
     } else if (type === 'keluar') {
         uploadZone.style.display = 'block';
-        uploadIcon.textContent = '📄';
+        uploadIcon.textContent = '';
         uploadTitle.textContent = 'Upload Shipping Label';
         uploadSub.textContent = 'Tap to attach a FedEx label PDF to a watch';
     } else {
@@ -11414,7 +11414,7 @@ function _jamCard(type, item) {
     } else if (type === 'masuk') {
         const parts = [];
         if (item.from) parts.push(`<span>From:</span> ${item.from}`);
-        if (item.wt) parts.push('🏷️ WT');
+        if (item.wt) parts.push(' WT');
         detailLine = parts.join('  •  ');
         
         pills = _jp(item.posted, 'Posted') + _jp(item.sold, 'Sold');
@@ -11440,7 +11440,7 @@ function _jamCard(type, item) {
         detailLine = parts.join('  •  ');
         
         pills = _jp(item.paid, 'Paid');
-        pills += `<button class="jam-pill" onclick="event.stopPropagation();jamUploadLabel(${item.id})" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);">📄 Attach Label</button>`;
+        pills += `<button class="jam-pill" onclick="event.stopPropagation();jamUploadLabel(${item.id})" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);"> Attach Label</button>`;
     }
     
     // Serial + card date line
@@ -11466,7 +11466,7 @@ function _jamCard(type, item) {
 
 function _jp(val, label) {
     return val 
-        ? `<span class="jam-pill jam-pill-yes">✅ ${label}</span>`
+        ? `<span class="jam-pill jam-pill-yes"> ${label}</span>`
         : `<span class="jam-pill jam-pill-no">○ ${label}</span>`;
 }
 
@@ -11498,7 +11498,7 @@ function _showJamWatchPicker(uploadType) {
         <div style="background:var(--bg-1);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:480px;width:100%;max-height:80vh;display:flex;flex-direction:column;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                 <div style="font-size:0.9rem;font-weight:700;color:var(--text-0);">${icon} ${title}</div>
-                <button onclick="document.getElementById('jam-picker-modal').remove()" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:1.2rem;">✕</button>
+                <button onclick="document.getElementById('jam-picker-modal').remove()" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:1.2rem;">X</button>
             </div>
             <input type="text" id="jam-picker-search" placeholder="Search by ref or description..." 
                 style="width:100%;padding:10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.8rem;margin-bottom:10px;outline:none;"
@@ -11546,7 +11546,7 @@ function jamUploadArrival(watchId) {
         if (!file) return;
         
         const card = document.querySelector(`.jam-card [onclick*="jamUploadArrival(${watchId})"]`);
-        if (card) card.textContent = '⏳ Processing...';
+        if (card) card.textContent = ' Processing...';
         
         const fd = new FormData();
         fd.append('file', file);
@@ -11556,10 +11556,10 @@ function jamUploadArrival(watchId) {
             const r = await fetch('/api/jam/upload-arrival', { method: 'POST', body: fd });
             const data = await r.json();
             if (data.ok) {
-                let msg = `✅ Saved to library`;
+                let msg = ` Saved to library`;
                 if (data.ocr?.serial) msg += `\nSerial: ${data.ocr.serial}`;
                 if (data.ocr?.card_date) msg += `\nCard: ${data.ocr.card_date}`;
-                if (data.ocr?.has_wt) msg += `\n🏷️ WT detected`;
+                if (data.ocr?.has_wt) msg += `\n WT detected`;
                 alert(msg);
                 loadJamFeed(_jamState.tab); // Refresh
             } else {
@@ -11613,7 +11613,7 @@ function renderJamActivity() {
     
     const actionLabels = {
         'upload_arrival': 'Uploaded arrival photo',
-        'upload_label': '📄 attached shipping label',
+        'upload_label': ' attached shipping label',
         'mark_arrived': 'Marked as arrived',
         'mark_shipped': 'Marked as shipped',
     };
@@ -11662,7 +11662,7 @@ function jamUploadLabel(watchId) {
         if (!file) return;
         
         const card = document.querySelector(`.jam-card [onclick*="jamUploadLabel(${watchId})"]`);
-        if (card) card.textContent = '⏳ Uploading...';
+        if (card) card.textContent = ' Uploading...';
         
         const fd = new FormData();
         fd.append('file', file);
@@ -11672,7 +11672,7 @@ function jamUploadLabel(watchId) {
             const r = await fetch('/api/jam/upload-label', { method: 'POST', body: fd });
             const data = await r.json();
             if (data.ok) {
-                let msg = `✅ Label attached to #${watchId}`;
+                let msg = ` Label attached to #${watchId}`;
                 if (data.marked_shipped) msg += '\nMarked as shipped';
                 alert(msg);
                 loadJamFeed(_jamState.tab); // Refresh
