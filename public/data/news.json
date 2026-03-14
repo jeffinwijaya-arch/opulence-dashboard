@@ -1,6 +1,16 @@
 {
   "articles": [
     {
+      "id": "2a6f8a9b7619",
+      "title": "The ABCs of Time \u2013 Why Are Some Watch Cases Filled with Oil?",
+      "link": "https://monochrome-watches.com/the-abcs-of-time-why-are-some-watch-cases-filled-with-oil/",
+      "desc": "Wristwatch manufacturers\u00a0focus on keeping cases air and watertight so the movements can operate trouble-free\u00a0in daily use. This started in earnest in 1926 with Rolex\u2019s robust Oyster case, but even del",
+      "date": "2026-03-14T15:00:22+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/ABCs-of-Time-Why-Are-Some-Watch-Cases-Filled-with-Oil-600x237.jpeg",
+      "relevance": 10
+    },
+    {
       "id": "4b3400cc9d10",
       "title": "Hands-On With The New RZE Resolute Type A \u2014 A Whole Lot Of Pilot\u2019s Watch For Your Money",
       "link": "https://www.fratellowatches.com/hands-on-rze-resolute-type-a/",
@@ -321,16 +331,6 @@
       "relevance": 0
     },
     {
-      "id": "4f80b10a0fbe",
-      "title": "Tudor Predictions 2026 \u2013 The New Models Tudor Might Launch at Watches and Wonders 2026",
-      "link": "https://monochrome-watches.com/tudor-predictions-2026-tudor-watches-and-wonders-2026-tudor-novelties-2026-tudor-new-models-2026/",
-      "desc": "As you might know, Tudor, the sister company of Rolex, was created in 1926 by Hans Wilsdorf (founder of Rolex) and is thus celebrating its 100th anniversary this year. And for that reason, we can expe",
-      "date": "2026-03-11T17:00:11+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/Tudor-Predictions-2026-Tudor-Watches-and-Wonders-2026-Tudor-Novelties-2026-Tudor-new-models-2026-2-600x237.jpg",
-      "relevance": 20
-    },
-    {
       "id": "1b8478450ad7",
       "title": "The Business of Watches Podcast: Greubel Forsey CEO Michel Nydegger",
       "link": "https://www.hodinkee.com/articles/greubel-forsey-ceo-michel-nydegger",
@@ -361,7 +361,7 @@
       "relevance": 0
     }
   ],
-  "fetched_at": "2026-03-14T13:00:03.975077+00:00",
+  "fetched_at": "2026-03-14T16:00:03.546359+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
