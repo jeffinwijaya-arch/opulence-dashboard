@@ -11392,28 +11392,62 @@ function renderJamFeed(type) {
     
     let html = '';
     if (type === 'keluar') {
-        // Group by date with headers
-        let lastDate = '';
         const today = new Date().toISOString().slice(0,10);
         const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
-        for (const item of items) {
-            const d = item.date || 'Unknown';
-            if (d !== lastDate) {
-                let dateLabel = d;
-                if (d === today) dateLabel = 'TODAY — ' + d;
-                else if (d === yesterday) dateLabel = 'YESTERDAY — ' + d;
-                else {
-                    try {
-                        const dt = new Date(d + 'T12:00:00');
-                        dateLabel = dt.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric', year:'numeric'});
-                    } catch(e) { dateLabel = d; }
-                }
-                html += `<div style="padding:12px 4px 6px;margin-top:${lastDate?'16px':'0'};border-bottom:2px solid var(--orange);display:flex;align-items:center;gap:8px;">
-                    <span style="font-size:0.78rem;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:0.5px;">${dateLabel}</span>
-                </div>`;
-                lastDate = d;
+        const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0,10);
+        
+        function _dateHeader(d, color) {
+            let dateLabel = d;
+            if (d === today) dateLabel = 'TODAY';
+            else if (d === yesterday) dateLabel = 'YESTERDAY';
+            else if (d === tomorrow) dateLabel = 'TOMORROW';
+            else if (d === 'Unscheduled') dateLabel = 'UNSCHEDULED';
+            else {
+                try {
+                    const dt = new Date(d + 'T12:00:00');
+                    dateLabel = dt.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+                } catch(e) { dateLabel = d; }
             }
-            html += _jamCard(type, item);
+            return `<div style="padding:10px 4px 6px;margin-top:12px;border-bottom:2px solid ${color};display:flex;align-items:center;gap:8px;">
+                <span style="font-size:0.78rem;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.5px;">${dateLabel}</span>
+            </div>`;
+        }
+        
+        // Split into pending vs shipped
+        const pending = items.filter(i => i.status === 'pending');
+        const shipped = items.filter(i => i.status === 'shipped');
+        
+        if (pending.length) {
+            html += `<div style="padding:8px 4px;margin-bottom:4px;">
+                <span style="font-size:0.85rem;font-weight:700;color:var(--orange);">TO SHIP</span>
+                <span style="font-size:0.7rem;color:var(--text-2);margin-left:8px;">${pending.length} pending</span>
+            </div>`;
+            let lastDate = '';
+            for (const item of pending) {
+                const d = item.date || 'Unscheduled';
+                if (d !== lastDate) {
+                    const clr = (d === today || d === 'Unscheduled') ? 'var(--red)' : 'var(--orange)';
+                    html += _dateHeader(d === 'Unscheduled' ? 'Unscheduled' : d, clr);
+                    lastDate = d;
+                }
+                html += _jamCard(type, item);
+            }
+        }
+        
+        if (shipped.length) {
+            html += `<div style="padding:8px 4px;margin-top:${pending.length?'24px':'0'};margin-bottom:4px;">
+                <span style="font-size:0.85rem;font-weight:700;color:var(--green);">SHIPPED</span>
+                <span style="font-size:0.7rem;color:var(--text-2);margin-left:8px;">${shipped.length} completed</span>
+            </div>`;
+            let lastDate = '';
+            for (const item of shipped) {
+                const d = item.date || 'Unknown';
+                if (d !== lastDate) {
+                    html += _dateHeader(d, 'var(--green)');
+                    lastDate = d;
+                }
+                html += _jamCard(type, item);
+            }
         }
     } else {
         html = items.map(item => _jamCard(type, item)).join('');
@@ -11471,14 +11505,24 @@ function _jamCard(type, item) {
         if (item.sold_price) parts.push(`<span>Price:</span> ${_jamFmt(item.sold_price)}`);
         detailLine = parts.join('  •  ');
         
+        const isPending = item.status === 'pending';
+        
         pills = _jp(item.paid, 'Paid');
         if (item.has_label && item.label_file) {
             pills += `<button class="jam-pill" onclick="event.stopPropagation();window.open('/api/jam/label/${item.label_file}','_blank')" style="cursor:pointer;border:1px solid var(--green-border);background:var(--green-dim);color:var(--green);">VIEW LABEL</button>`;
             pills += `<button class="jam-pill" onclick="event.stopPropagation();jamPrintLabel('${item.label_file}')" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);">PRINT</button>`;
         } else if (_userRole !== 'logistics') {
-            pills += `<button class="jam-pill" onclick="event.stopPropagation();jamUploadLabel(${item.id})" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);">Attach Label</button>`;
+            pills += `<button class="jam-pill" onclick="event.stopPropagation();jamAttachLabelWithDate(${item.id})" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);">Attach Label</button>`;
         } else {
             pills += `<span class="jam-pill jam-pill-no">No Label</span>`;
+        }
+        
+        // For pending items: schedule date picker + mark shipped button
+        if (isPending) {
+            pills += `<button class="jam-pill" onclick="event.stopPropagation();jamSetShipDate(${item.id})" style="cursor:pointer;border:1px solid var(--orange);background:var(--orange);color:#000;font-weight:600;">SCHEDULE</button>`;
+            if (item.has_label) {
+                pills += `<button class="jam-pill" onclick="event.stopPropagation();jamMarkShipped(${item.id})" style="cursor:pointer;border:1px solid var(--green);background:var(--green);color:#000;font-weight:600;">MARK SHIPPED</button>`;
+            }
         }
         
         // Shipping confirmation photos section
@@ -11519,7 +11563,6 @@ function _jamCard(type, item) {
         }
         
         photoSection += '</div>';
-        // Inject into card via extra field
         item._photoSection = photoSection;
     }
     
@@ -11731,6 +11774,105 @@ function _formatActivityTime(ts) {
         if (diffHr < 24) return `${diffHr}h ago`;
         return d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
     } catch(e) { return ts; }
+}
+
+function jamSetShipDate(watchId) {
+    const today = new Date().toISOString().slice(0,10);
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0,10);
+    
+    const modal = document.createElement('div');
+    modal.id = 'jam-schedule-modal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:16px;';
+    modal.innerHTML = `
+        <div style="background:var(--bg-1);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:360px;width:100%;">
+            <div style="font-size:0.9rem;font-weight:700;color:var(--text-0);margin-bottom:16px;">Schedule Ship Date</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                <button onclick="jamDoSchedule(${watchId},'${today}')" style="padding:12px;background:var(--red);color:#000;border:none;border-radius:var(--radius);font-weight:600;cursor:pointer;">TODAY</button>
+                <button onclick="jamDoSchedule(${watchId},'${tomorrow}')" style="padding:12px;background:var(--orange);color:#000;border:none;border-radius:var(--radius);font-weight:600;cursor:pointer;">TOMORROW</button>
+                <input type="date" id="jam-schedule-date" min="${today}" value="${tomorrow}" style="padding:12px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.85rem;">
+                <button onclick="jamDoSchedule(${watchId}, document.getElementById('jam-schedule-date').value)" style="padding:12px;background:var(--accent);color:#000;border:none;border-radius:var(--radius);font-weight:600;cursor:pointer;">SET DATE</button>
+            </div>
+            <button onclick="document.getElementById('jam-schedule-modal').remove()" style="margin-top:12px;width:100%;padding:8px;background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--text-2);cursor:pointer;">Cancel</button>
+        </div>`;
+    document.body.appendChild(modal);
+}
+
+async function jamDoSchedule(watchId, date) {
+    document.getElementById('jam-schedule-modal')?.remove();
+    try {
+        const r = await fetch('/api/jam/schedule-ship', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({watch_id: watchId, ship_by_date: date})
+        });
+        const data = await r.json();
+        if (data.ok) loadJamFeed(_jamState.tab);
+        else alert('Failed: ' + (data.error || 'unknown'));
+    } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function jamMarkShipped(watchId) {
+    if (!confirm('Mark this watch as shipped?')) return;
+    try {
+        const r = await fetch('/api/inventory/' + watchId + '/update', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({shipped: true})
+        });
+        const data = await r.json();
+        if (data.ok || data.success) loadJamFeed(_jamState.tab);
+        else alert('Failed: ' + (data.error || 'unknown'));
+    } catch(e) { alert('Error: ' + e.message); }
+}
+
+function jamAttachLabelWithDate(watchId) {
+    const now = new Date();
+    const hour = now.getHours();
+    const today = now.toISOString().slice(0,10);
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0,10);
+    const defaultDate = hour >= 18 ? tomorrow : today;
+    
+    const modal = document.createElement('div');
+    modal.id = 'jam-label-modal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:16px;';
+    modal.innerHTML = `
+        <div style="background:var(--bg-1);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:360px;width:100%;">
+            <div style="font-size:0.9rem;font-weight:700;color:var(--text-0);margin-bottom:16px;">Attach Label + Schedule</div>
+            <div style="margin-bottom:12px;">
+                <label style="font-size:0.75rem;color:var(--text-2);">Ship by date:</label>
+                <input type="date" id="jam-label-date" value="${defaultDate}" min="${today}" style="width:100%;padding:10px;margin-top:4px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.85rem;">
+            </div>
+            <button onclick="jamDoAttachLabel(${watchId})" style="width:100%;padding:12px;background:var(--accent);color:#000;border:none;border-radius:var(--radius);font-weight:600;cursor:pointer;">Select PDF</button>
+            <button onclick="document.getElementById('jam-label-modal').remove()" style="margin-top:8px;width:100%;padding:8px;background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--text-2);cursor:pointer;">Cancel</button>
+        </div>`;
+    document.body.appendChild(modal);
+}
+
+function jamDoAttachLabel(watchId) {
+    const shipDate = document.getElementById('jam-label-date')?.value || '';
+    document.getElementById('jam-label-modal')?.remove();
+    
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,application/pdf';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('watch_id', watchId);
+        if (shipDate) fd.append('ship_by_date', shipDate);
+        try {
+            const r = await fetch('/api/jam/upload-label', { method: 'POST', body: fd });
+            const data = await r.json();
+            if (data.ok) {
+                loadJamFeed(_jamState.tab);
+            } else {
+                alert('Upload failed: ' + (data.error || 'unknown'));
+            }
+        } catch(e) { alert('Upload error: ' + e.message); }
+    };
+    input.click();
 }
 
 function jamUploadShipPhoto(watchId, photoType) {
