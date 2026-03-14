@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard Test</title>
+<style>body{background:#111;color:#eee;font-family:sans-serif;padding:20px}pre{font-size:12px;background:#222;padding:10px;border-radius:8px;overflow-x:auto}</style>
+</head>
+<body>
+<h2>Dashboard API Test</h2>
+<div id="log"></div>
+<script>
+const log = document.getElementById('log');
+function l(msg) { log.innerHTML += '<p>' + msg + '</p>'; }
+
+(async () => {
+    l('Starting tests...');
+    
+    const endpoints = ['/api/deals', '/api/arbitrage', '/api/top_refs', '/api/sync_info', '/api/inventory', '/api/inventory/all', '/api/market_ticker'];
+    
+    for (const ep of endpoints) {
+        try {
+            const r = await fetch(ep, {credentials: 'same-origin'});
+            const text = await r.text();
+            const isJson = text.startsWith('[') || text.startsWith('{');
+            const len = isJson ? JSON.parse(text).length || Object.keys(JSON.parse(text)).length : 0;
+            l(ep + ' → <b style="color:' + (r.ok?'lime':'red') + '">' + r.status + '</b> ' + (isJson ? len + ' items' : text.substring(0,50)));
+        } catch(e) {
+            l(ep + ' → <b style="color:red">ERROR: ' + e.message + '</b>');
+        }
+    }
+    
+    l('<br>Done. If all green 200s above, the API is fine and the issue is in the main page JS.');
+})();
+</script>
+</body>
+</html>
