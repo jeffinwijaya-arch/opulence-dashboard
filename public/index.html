@@ -6294,7 +6294,7 @@ function renderInventoryTable(rows) {
     if (tbody) {
         tbody.innerHTML = rows.map(r => `<tr style="cursor:pointer;" ondblclick="editWatch(${r.row})">
             <td onclick="event.stopPropagation();"><input type="checkbox" class="im-row-check" data-row="${r.row}" onchange="updateBatchToolbar()"></td>
-            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(r.description||'').replace(/"/g,'&quot;')}">${r.description||''}</td>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(r.description||'').replace(/"/g,'&quot;')}">${r.has_photo?`<span onclick="event.stopPropagation();viewWatchPhotos('${(r.description||'').replace(/'/g,"\\'")}',${r.row})" style="cursor:pointer;margin-right:4px;" title="${r.photo_count} photo${r.photo_count>1?'s':''}">📷</span>`:''}<span onclick="lookupRef('${r.ref}')" style="cursor:pointer;">${r.description||''}</span></td>
             <td style="font-size:0.72rem;">${r.bought_from||'-'}</td>
             <td style="font-size:0.72rem;">${r.sold_to||'-'}</td>
             <td class="right" style="font-size:0.72rem;">${price(r.cost_price)}</td>
@@ -6343,7 +6343,7 @@ function renderInventoryTable(rows) {
                 <div class="inv-card" onclick="editWatch(${r.row})">
                     <div class="inv-card-header">
                         <div style="flex:1;">
-                            <div class="inv-card-ref">${r.description ? r.description.match(/\b\d{5,6}[A-Z]*\b/)?.[0] || '' : ''}</div>
+                            <div class="inv-card-ref">${r.has_photo?'📷 ':''}${r.description ? r.description.match(/\b\d{5,6}[A-Z]*\b/)?.[0] || '' : ''}</div>
                             <div class="inv-card-desc">${r.description||''}</div>
                         </div>
                         ${swipeContent ? '<div style="font-size:0.65rem;color:var(--text-2);flex-shrink:0;">← swipe</div>' : ''}
@@ -7105,58 +7105,65 @@ docStyles.textContent = `
 document.head.appendChild(docStyles);
 
 // ── Quick Photo Access from Inventory ──
-function viewWatchPhotos(description, row) {
-    // Navigate to Photos page and switch to Documentation tab
-    showPage('photos');
-    
-    // Small delay to ensure page loads, then switch to documentation
-    setTimeout(() => {
-        switchPhotosTab('documentation');
+async function viewWatchPhotos(description, row) {
+    // Show inline photo lightbox for this specific watch
+    try {
+        const r = await fetch(`/api/watches/${row}/photos`);
+        const d = await r.json();
+        const photos = d.photos || [];
         
-        // Extract ref from description for searching
-        const refMatch = description.match(/\b(\d{5,6}[A-Z]*)\b/);
-        const ref = refMatch ? refMatch[1] : '';
+        // Also check file-based photos
+        const r2 = await fetch(`/api/inventory/${row}/photos`);
+        const d2 = await r2.json();
+        const filePhotos = d2.photos || [];
         
-        // Show toast to indicate navigation
-        showToast(`Searching for ${ref || 'watch'} photos...`, 'info');
-        
-        // Auto-search for the ref if we found one
-        if (ref) {
-            setTimeout(() => {
-                const searchInput = document.getElementById('sku-search');
-                if (searchInput) {
-                    searchInput.value = ref;
-                    filterSkuBrowser();
-                    
-                    // Expand the matching SKU section automatically
-                    setTimeout(() => {
-                        const skuSection = document.querySelector(`[onclick="toggleSkuSection('${ref}')"]`);
-                        if (skuSection) {
-                            const toggleElement = skuSection.querySelector('.doc-sku-toggle');
-                            const watchesSection = document.getElementById(`doc-sku-${ref}`);
-                            if (watchesSection && watchesSection.style.display === 'none') {
-                                skuSection.click(); // This will toggle it open
-                            }
-                            
-                            // Scroll to the section
-                            skuSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            
-                            // Highlight briefly
-                            skuSection.style.background = 'var(--accent-glow)';
-                            setTimeout(() => {
-                                skuSection.style.background = '';
-                            }, 2000);
-                        }
-                    }, 500);
-                }
-            }, 300);
-        } else {
-            // If no ref found, just refresh the documentation report
-            setTimeout(() => {
-                refreshDocumentationReport();
-            }, 300);
+        // Merge (avoid duplicates by filename)
+        const seen = new Set();
+        const allPhotos = [];
+        for (const p of photos) {
+            const url = `/api/watch-photo/${p.id}`;
+            allPhotos.push({ url, type: p.photo_type, date: p.created_at });
+            seen.add(p.file_path);
         }
-    }, 200);
+        for (const p of filePhotos) {
+            if (!seen.has(p.filename)) {
+                allPhotos.push({ url: p.url, type: 'upload', date: '' });
+            }
+        }
+        
+        if (!allPhotos.length) {
+            if (typeof showToast === 'function') showToast('No photos yet for this watch', 'info');
+            return;
+        }
+        
+        // Create lightbox
+        const overlay = document.createElement('div');
+        overlay.id = 'photo-lightbox';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+        overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+        
+        const refMatch = (description||'').match(/\b(\d{5,6}[A-Z]*)\b/);
+        const ref = refMatch ? refMatch[1] : 'Watch';
+        
+        let idx = 0;
+        const renderPhoto = () => {
+            const p = allPhotos[idx];
+            overlay.innerHTML = `
+                <div style="position:absolute;top:12px;right:16px;color:white;font-size:1.5rem;cursor:pointer;z-index:10000;" onclick="this.parentElement.remove()">✕</div>
+                <div style="color:var(--text-2);font-size:0.75rem;margin-bottom:8px;">${ref} — ${p.type} ${allPhotos.length>1?`(${idx+1}/${allPhotos.length})`:''}</div>
+                <img src="${p.url}" style="max-width:90vw;max-height:80vh;border-radius:8px;object-fit:contain;" />
+                ${allPhotos.length>1?`<div style="margin-top:12px;display:flex;gap:12px;">
+                    <button onclick="event.stopPropagation();window._photoNav(-1)" style="background:var(--card);color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;">◀ Prev</button>
+                    <button onclick="event.stopPropagation();window._photoNav(1)" style="background:var(--card);color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;">Next ▶</button>
+                </div>`:''}
+            `;
+        };
+        window._photoNav = dir => { idx = (idx + dir + allPhotos.length) % allPhotos.length; renderPhoto(); };
+        renderPhoto();
+        document.body.appendChild(overlay);
+    } catch(e) {
+        if (typeof showToast === 'function') showToast('Error loading photos: ' + e.message, 'error');
+    }
 }
 
 // Enhanced view watch photos modal (for when we have the exact watch_id)
