@@ -2499,6 +2499,27 @@
                 .jam-load-more{width:100%;padding:12px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-1);font-size:0.75rem;font-weight:600;cursor:pointer;text-align:center;margin-top:8px;transition:all 0.2s;}
                 .jam-load-more:hover{background:var(--bg-3);border-color:var(--accent-border);}
 
+                /* Activity Log (Telegram-style) */
+                .jam-log-toggle{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);cursor:pointer;margin-bottom:12px;transition:all 0.2s;}
+                .jam-log-toggle:hover{border-color:var(--accent-border);}
+                .jam-log-toggle .jam-log-icon{font-size:1.1rem;}
+                .jam-log-toggle .jam-log-title{font-size:0.78rem;font-weight:700;color:var(--text-0);flex:1;}
+                .jam-log-toggle .jam-log-count{font-size:0.65rem;color:var(--text-2);font-family:var(--mono);}
+                .jam-log-toggle .jam-log-arrow{color:var(--text-2);transition:transform 0.2s;}
+                .jam-log-toggle.open .jam-log-arrow{transform:rotate(180deg);}
+
+                .jam-activity{display:none;margin-bottom:16px;}
+                .jam-activity.open{display:block;}
+                .jam-activity-list{display:flex;flex-direction:column;gap:0;border-left:2px solid var(--accent-border);margin-left:12px;padding-left:16px;}
+                .jam-activity-item{position:relative;padding:8px 0;}
+                .jam-activity-item::before{content:'';position:absolute;left:-21px;top:12px;width:10px;height:10px;border-radius:50%;background:var(--accent);border:2px solid var(--bg-1);}
+                .jam-activity-item.action-upload_arrival::before{background:var(--green);}
+                .jam-activity-item.action-upload_label::before{background:var(--orange);}
+                .jam-activity-user{font-size:0.72rem;font-weight:700;color:var(--accent);}
+                .jam-activity-text{font-size:0.73rem;color:var(--text-1);margin-top:2px;line-height:1.4;}
+                .jam-activity-text strong{color:var(--text-0);font-weight:600;}
+                .jam-activity-time{font-size:0.62rem;color:var(--text-2);font-family:var(--mono);margin-top:2px;}
+
                 .jam-money{color:var(--green);font-family:var(--mono);}
                 .jam-money.negative{color:var(--red);}
 
@@ -2545,6 +2566,20 @@
 
             <!-- Action Alerts -->
             <div class="jam-alerts" id="jam-alerts"></div>
+
+            <!-- Activity Log (admin only — Telegram-style feed of employee actions) -->
+            <div id="jam-log-section" style="display:none;">
+                <div class="jam-log-toggle" onclick="toggleJamLog()">
+                    <span class="jam-log-icon">💬</span>
+                    <span class="jam-log-title">Activity Log</span>
+                    <span class="jam-log-count" id="jam-log-count"></span>
+                    <span class="jam-log-arrow">▼</span>
+                </div>
+                <div class="jam-activity" id="jam-activity">
+                    <div class="jam-activity-list" id="jam-activity-list"></div>
+                    <button class="jam-load-more" id="jam-log-more" style="display:none;" onclick="loadJamActivity(true)">Load older</button>
+                </div>
+            </div>
 
             <!-- Tab bar -->
             <div class="jam-tabs">
@@ -11244,6 +11279,18 @@ async function loadJamPage() {
         }
     } catch(e) { console.error('Jam stats:', e); }
     
+    // Activity log — visible for admin/full only
+    const logSection = $('#jam-log-section');
+    if (_userRole.role === 'admin' || _userRole.role === 'full') {
+        logSection.style.display = 'block';
+        loadJamActivity().then(() => {
+            const ct = $('#jam-log-count');
+            if (ct && _jamLogState.total) ct.textContent = `${_jamLogState.total} actions`;
+        });
+    } else {
+        logSection.style.display = 'none';
+    }
+    
     // Activate correct tab
     switchJamTab(_jamState.tab);
 }
@@ -11414,6 +11461,86 @@ function jamUploadArrival(watchId) {
         }
     };
     input.click();
+}
+
+// ═══ JAM ACTIVITY LOG ═══
+let _jamLogState = { items: [], offset: 0, total: 0 };
+
+function toggleJamLog() {
+    const toggle = document.querySelector('.jam-log-toggle');
+    const panel = $('#jam-activity');
+    toggle.classList.toggle('open');
+    panel.classList.toggle('open');
+    if (panel.classList.contains('open') && !_jamLogState.items.length) {
+        loadJamActivity();
+    }
+}
+
+async function loadJamActivity(append = false) {
+    if (!append) _jamLogState.offset = 0;
+    try {
+        const r = await fetch(`/api/jam/activity?limit=30&offset=${_jamLogState.offset}`);
+        if (!r.ok) return;
+        const data = await r.json();
+        if (append) {
+            _jamLogState.items = _jamLogState.items.concat(data.items);
+        } else {
+            _jamLogState.items = data.items;
+        }
+        _jamLogState.total = data.total;
+        _jamLogState.offset += data.items.length;
+        renderJamActivity();
+    } catch(e) { console.error('Activity:', e); }
+}
+
+function renderJamActivity() {
+    const list = $('#jam-activity-list');
+    const items = _jamLogState.items;
+    
+    if (!items.length) {
+        list.innerHTML = '<div style="padding:12px;color:var(--text-2);font-size:0.73rem;">No activity yet</div>';
+        return;
+    }
+    
+    const actionLabels = {
+        'upload_arrival': '📸 uploaded arrival photo',
+        'upload_label': '📄 attached shipping label',
+        'mark_arrived': '📦 marked as arrived',
+        'mark_shipped': '✈️ marked as shipped',
+    };
+    
+    list.innerHTML = items.map(item => {
+        const actionText = actionLabels[item.action] || item.action;
+        const watchRef = item.watch_desc ? `<strong>${item.watch_desc.split(' ').slice(0,2).join(' ')}</strong>` : `#${item.watch_id}`;
+        const detail = item.detail ? `<br>${item.detail}` : '';
+        const time = _formatActivityTime(item.time);
+        
+        return `<div class="jam-activity-item action-${item.action}">
+            <div class="jam-activity-user">${item.user}</div>
+            <div class="jam-activity-text">${actionText} for ${watchRef}${detail}</div>
+            <div class="jam-activity-time">${time}</div>
+        </div>`;
+    }).join('');
+    
+    // Show/hide load more
+    const moreBtn = $('#jam-log-more');
+    if (moreBtn) moreBtn.style.display = _jamLogState.items.length < _jamLogState.total ? 'block' : 'none';
+}
+
+function _formatActivityTime(ts) {
+    if (!ts) return '';
+    try {
+        const d = new Date(ts + (ts.includes('Z') || ts.includes('+') ? '' : 'Z'));
+        const now = new Date();
+        const diffMs = now - d;
+        const diffMin = Math.floor(diffMs / 60000);
+        const diffHr = Math.floor(diffMs / 3600000);
+        
+        if (diffMin < 1) return 'just now';
+        if (diffMin < 60) return `${diffMin}m ago`;
+        if (diffHr < 24) return `${diffHr}h ago`;
+        return d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+    } catch(e) { return ts; }
 }
 
 function jamUploadLabel(watchId) {
