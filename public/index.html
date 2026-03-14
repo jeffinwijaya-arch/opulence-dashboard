@@ -2609,6 +2609,8 @@
 </div>
 
 <script>
+// ── Global fetch override: always send credentials for API calls ──
+(function(){const _f=window.fetch;window.fetch=function(url,opts){opts=opts||{};if(typeof url==='string'&&url.startsWith('/api'))opts.credentials='same-origin';return _f.call(this,url,opts);}})();
 // ── Theme Toggle ──
 function toggleTheme() {
     const html = document.documentElement;
