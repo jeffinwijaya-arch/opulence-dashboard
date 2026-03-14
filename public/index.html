@@ -2536,31 +2536,31 @@
             </style>
 
             <div class="page-head">
-                <h1>📋 Jam — Activity Feed</h1>
-                <p>Watch lifecycle tracking: Bought → Arrived → Sold → Shipped</p>
+                <h1>📋 Jam — Watch Lifecycle</h1>
+                <p>Purchased → Arrival → Ship → Sold</p>
             </div>
 
-            <!-- Stats -->
+            <!-- Stats — order: Purchased, Arrival, Ship, Sold -->
             <div class="jam-stats" id="jam-stats">
                 <div class="jam-stat" onclick="switchJamTab('dibeli')">
                     <div class="jam-stat-icon">🛒</div>
                     <div class="jam-stat-count" id="jam-ct-dibeli">—</div>
-                    <div class="jam-stat-label">Dibeli</div>
+                    <div class="jam-stat-label">Purchased</div>
                 </div>
                 <div class="jam-stat" onclick="switchJamTab('masuk')">
                     <div class="jam-stat-icon">📦</div>
                     <div class="jam-stat-count" id="jam-ct-masuk">—</div>
-                    <div class="jam-stat-label">Masuk</div>
-                </div>
-                <div class="jam-stat active" onclick="switchJamTab('dijual')">
-                    <div class="jam-stat-icon">💰</div>
-                    <div class="jam-stat-count" id="jam-ct-dijual">—</div>
-                    <div class="jam-stat-label">Dijual</div>
+                    <div class="jam-stat-label">Arrival</div>
                 </div>
                 <div class="jam-stat" onclick="switchJamTab('keluar')">
                     <div class="jam-stat-icon">✈️</div>
                     <div class="jam-stat-count" id="jam-ct-keluar">—</div>
-                    <div class="jam-stat-label">Keluar</div>
+                    <div class="jam-stat-label">Ship</div>
+                </div>
+                <div class="jam-stat active" onclick="switchJamTab('dijual')">
+                    <div class="jam-stat-icon">💰</div>
+                    <div class="jam-stat-count" id="jam-ct-dijual">—</div>
+                    <div class="jam-stat-label">Sold</div>
                 </div>
             </div>
 
@@ -2581,12 +2581,21 @@
                 </div>
             </div>
 
-            <!-- Tab bar -->
+            <!-- Tab bar — order: Purchased, Arrival, Ship, Sold -->
             <div class="jam-tabs">
-                <button class="jam-tab" data-jam="dibeli" onclick="switchJamTab('dibeli')">🛒 Dibeli</button>
-                <button class="jam-tab" data-jam="masuk" onclick="switchJamTab('masuk')">📦 Masuk</button>
-                <button class="jam-tab active" data-jam="dijual" onclick="switchJamTab('dijual')">💰 Dijual</button>
-                <button class="jam-tab" data-jam="keluar" onclick="switchJamTab('keluar')">✈️ Keluar</button>
+                <button class="jam-tab" data-jam="dibeli" onclick="switchJamTab('dibeli')">🛒 Purchased</button>
+                <button class="jam-tab" data-jam="masuk" onclick="switchJamTab('masuk')">📦 Arrival</button>
+                <button class="jam-tab" data-jam="keluar" onclick="switchJamTab('keluar')">✈️ Ship</button>
+                <button class="jam-tab active" data-jam="dijual" onclick="switchJamTab('dijual')">💰 Sold</button>
+            </div>
+
+            <!-- Upload zone — shown on Arrival and Ship tabs -->
+            <div id="jam-upload-zone" style="display:none;margin-bottom:14px;">
+                <div style="background:var(--bg-2);border:2px dashed var(--accent-border);border-radius:var(--radius-lg);padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onclick="jamUploadZoneClick()" id="jam-upload-box">
+                    <div style="font-size:2rem;margin-bottom:6px;" id="jam-upload-icon">📸</div>
+                    <div style="font-size:0.85rem;font-weight:700;color:var(--text-0);" id="jam-upload-title">Upload Arrival Photo</div>
+                    <div style="font-size:0.72rem;color:var(--text-2);margin-top:4px;" id="jam-upload-sub">Tap to take a photo of the warranty card</div>
+                </div>
             </div>
 
             <!-- Feed -->
@@ -11245,7 +11254,7 @@ async function loadJamPage() {
         if (!allowedTabs.includes(t.dataset.jam)) t.style.display = 'none';
     });
     $$('.jam-stat').forEach((s, i) => {
-        const types = ['dibeli','masuk','dijual','keluar'];
+        const types = ['dibeli','masuk','keluar','dijual'];
         if (!allowedTabs.includes(types[i])) s.style.display = 'none';
     });
     // Hide alerts for logistics (they don't need business alerts)
@@ -11299,9 +11308,29 @@ function switchJamTab(type) {
     _jamState.tab = type;
     $$('.jam-tab').forEach(t => t.classList.toggle('active', t.dataset.jam === type));
     $$('.jam-stat').forEach((s, i) => {
-        const types = ['dibeli','masuk','dijual','keluar'];
+        const types = ['dibeli','masuk','keluar','dijual'];
         s.classList.toggle('active', types[i] === type);
     });
+    
+    // Show/hide upload zone
+    const uploadZone = $('#jam-upload-zone');
+    const uploadIcon = $('#jam-upload-icon');
+    const uploadTitle = $('#jam-upload-title');
+    const uploadSub = $('#jam-upload-sub');
+    if (type === 'masuk') {
+        uploadZone.style.display = 'block';
+        uploadIcon.textContent = '📸';
+        uploadTitle.textContent = 'Upload Arrival Photo';
+        uploadSub.textContent = 'Tap to take a photo of the warranty card — serial & date auto-extracted';
+    } else if (type === 'keluar') {
+        uploadZone.style.display = 'block';
+        uploadIcon.textContent = '📄';
+        uploadTitle.textContent = 'Upload Shipping Label';
+        uploadSub.textContent = 'Tap to attach a FedEx label PDF to a watch';
+    } else {
+        uploadZone.style.display = 'none';
+    }
+    
     loadJamFeed(type);
 }
 
@@ -11425,6 +11454,68 @@ function _jp(val, label) {
 
 // ═══ JAM UPLOADS ═══
 let _jamUploadTarget = { type: '', watchId: null };
+
+function jamUploadZoneClick() {
+    const tab = _jamState.tab;
+    if (tab === 'masuk') {
+        // Show watch picker, then upload
+        _showJamWatchPicker('arrival');
+    } else if (tab === 'keluar') {
+        _showJamWatchPicker('label');
+    }
+}
+
+function _showJamWatchPicker(uploadType) {
+    // Build a modal with searchable watch list
+    const items = _jamState.feeds[_jamState.tab] || [];
+    
+    let modal = document.createElement('div');
+    modal.id = 'jam-picker-modal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:16px;';
+    
+    const title = uploadType === 'arrival' ? 'Select watch to upload arrival photo' : 'Select watch to attach label';
+    const icon = uploadType === 'arrival' ? '📸' : '📄';
+    
+    modal.innerHTML = `
+        <div style="background:var(--bg-1);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:480px;width:100%;max-height:80vh;display:flex;flex-direction:column;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <div style="font-size:0.9rem;font-weight:700;color:var(--text-0);">${icon} ${title}</div>
+                <button onclick="document.getElementById('jam-picker-modal').remove()" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:1.2rem;">✕</button>
+            </div>
+            <input type="text" id="jam-picker-search" placeholder="Search by ref or description..." 
+                style="width:100%;padding:10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.8rem;margin-bottom:10px;outline:none;"
+                oninput="filterJamPicker()">
+            <div id="jam-picker-list" style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:6px;">
+                ${items.map(i => `
+                    <div class="jam-picker-item" data-search="${(i.description||'').toLowerCase()}" 
+                         onclick="_selectJamWatch(${i.id}, '${uploadType}')"
+                         style="padding:10px 12px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all 0.15s;">
+                        <div style="font-size:0.8rem;font-weight:600;color:var(--text-0);">${i.description || '#'+i.id}</div>
+                        <div style="font-size:0.68rem;color:var(--text-2);">#${i.id}${i.serial ? ' • Serial: '+i.serial : ''}${i.to ? ' • To: '+(i.to||'').split('\\n')[0] : ''}</div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById('jam-picker-search').focus();
+}
+
+function filterJamPicker() {
+    const q = (document.getElementById('jam-picker-search')?.value || '').toLowerCase();
+    document.querySelectorAll('.jam-picker-item').forEach(el => {
+        el.style.display = el.dataset.search.includes(q) ? 'block' : 'none';
+    });
+}
+
+function _selectJamWatch(watchId, uploadType) {
+    document.getElementById('jam-picker-modal')?.remove();
+    if (uploadType === 'arrival') {
+        jamUploadArrival(watchId);
+    } else {
+        jamUploadLabel(watchId);
+    }
+}
 
 function jamUploadArrival(watchId) {
     _jamUploadTarget = { type: 'arrival', watchId };
