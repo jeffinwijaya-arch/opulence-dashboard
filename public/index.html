@@ -2609,6 +2609,8 @@
 </div>
 
 <script>
+// ── Force clear stale service workers + cache on version mismatch ──
+(function(){const V='v3';if(navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(regs=>{regs.forEach(r=>{r.unregister();});});caches.keys().then(ks=>ks.forEach(k=>{if(!k.includes(V))caches.delete(k);}));}})();
 // ── Global fetch override: always send credentials for API calls ──
 (function(){const _f=window.fetch;window.fetch=function(url,opts){opts=opts||{};if(typeof url==='string'&&url.startsWith('/api'))opts.credentials='same-origin';return _f.call(this,url,opts);}})();
 // ── Theme Toggle ──
