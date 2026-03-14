@@ -1,9 +1,6 @@
-const CACHE_NAME = 'mk-opulence-v1';
+const CACHE_NAME = 'mk-opulence-v3';
 const STATIC_ASSETS = ['/', '/index.html'];
-const API_CACHE = 'mk-opulence-api-v1';
-
-// Cache durations (ms)
-const API_MAX_AGE = 30 * 60 * 1000; // 30 min for API data
+const API_CACHE = 'mk-opulence-api-v3';
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -24,10 +21,10 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // API requests: network-first, fallback to cache
+  // API requests: network-first, cache fallback
   if (url.pathname.startsWith('/api/')) {
     e.respondWith(
-      fetch(e.request)
+      fetch(e.request, {credentials: 'same-origin'})
         .then(resp => {
           if (resp.ok) {
             const clone = resp.clone();
@@ -40,7 +37,23 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Static assets: cache-first, fallback to network
+  // HTML pages: ALWAYS network-first (never serve stale index.html)
+  if (e.request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('.html')) {
+    e.respondWith(
+      fetch(e.request)
+        .then(resp => {
+          if (resp.ok) {
+            const clone = resp.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+          }
+          return resp;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Other static assets: cache-first with background update
   e.respondWith(
     caches.match(e.request).then(cached => {
       const fetchPromise = fetch(e.request).then(resp => {
