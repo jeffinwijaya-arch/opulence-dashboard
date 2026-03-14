@@ -11417,14 +11417,19 @@ function renderJamFeed(type) {
         const pending = items.filter(i => i.status === 'pending');
         const shipped = items.filter(i => i.status !== 'pending');
         
-        if (pending.length) {
+        // Filter: logistics employees only see scheduled items
+        const isLogistics = _userRole === 'logistics';
+        const visiblePending = isLogistics ? pending.filter(i => i.date && i.date !== '') : pending;
+        
+        if (visiblePending.length) {
             html += `<div style="padding:8px 4px;margin-bottom:4px;">
                 <span style="font-size:0.85rem;font-weight:700;color:var(--orange);">TO SHIP</span>
-                <span style="font-size:0.7rem;color:var(--text-2);margin-left:8px;">${pending.length} pending</span>
+                <span style="font-size:0.7rem;color:var(--text-2);margin-left:8px;">${visiblePending.length} pending</span>
             </div>`;
             let lastDate = '';
-            for (const item of pending) {
+            for (const item of visiblePending) {
                 const d = item.date || 'Unscheduled';
+                if (isLogistics && (d === 'Unscheduled' || d === '')) continue;
                 if (d !== lastDate) {
                     const clr = (d === today || d === 'Unscheduled') ? 'var(--red)' : 'var(--orange)';
                     html += _dateHeader(d === 'Unscheduled' ? 'Unscheduled' : d, clr);
@@ -11529,23 +11534,38 @@ function _jamCard(type, item) {
         detailLine = parts.join('  •  ');
         
         const isPending = item.status === 'pending';
+        const isLocal = item.delivery_type === 'local';
         
         pills = _jp(item.paid, 'Paid');
+        
+        // Local delivery badge
+        if (isLocal) {
+            pills += `<span class="jam-pill" style="border:1px solid var(--accent);background:var(--accent-dim);color:var(--accent);">LOCAL DELIVERY</span>`;
+        }
+        
         if (item.has_label && item.label_file) {
             pills += `<button class="jam-pill" onclick="event.stopPropagation();window.open('/api/jam/label/${item.label_file}','_blank')" style="cursor:pointer;border:1px solid var(--green-border);background:var(--green-dim);color:var(--green);">VIEW LABEL</button>`;
             pills += `<button class="jam-pill" onclick="event.stopPropagation();jamPrintLabel('${item.label_file}')" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);">PRINT</button>`;
-        } else if (_userRole !== 'logistics') {
+        } else if (_userRole !== 'logistics' && !isLocal) {
             pills += `<button class="jam-pill" onclick="event.stopPropagation();jamAttachLabelWithDate(${item.id})" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);">Attach Label</button>`;
-        } else {
+            pills += `<button class="jam-pill" onclick="event.stopPropagation();jamSetLocalDelivery(${item.id})" style="cursor:pointer;border:1px solid var(--orange);background:var(--orange);color:#000;font-weight:600;">Local Delivery</button>`;
+        } else if (!item.has_label && !isLocal) {
             pills += `<span class="jam-pill jam-pill-no">No Label</span>`;
         }
         
-        // For pending items: schedule date picker + mark shipped button
+        // For pending items: schedule + easy ship button
         if (isPending) {
-            pills += `<button class="jam-pill" onclick="event.stopPropagation();jamSetShipDate(${item.id})" style="cursor:pointer;border:1px solid var(--orange);background:var(--orange);color:#000;font-weight:600;">SCHEDULE</button>`;
-            if (item.has_label) {
-                pills += `<button class="jam-pill" onclick="event.stopPropagation();jamMarkShipped(${item.id})" style="cursor:pointer;border:1px solid var(--green);background:var(--green);color:#000;font-weight:600;">MARK SHIPPED</button>`;
+            if (_userRole !== 'logistics') {
+                pills += `<button class="jam-pill" onclick="event.stopPropagation();jamSetShipDate(${item.id})" style="cursor:pointer;border:1px solid var(--orange);background:var(--orange);color:#000;font-weight:600;">SCHEDULE</button>`;
             }
+            pills += `<button class="jam-pill" onclick="event.stopPropagation();jamMarkShipped(${item.id})" style="cursor:pointer;border:1px solid var(--green);background:var(--green);color:#000;font-weight:600;">SHIP</button>`;
+        }
+        
+        // Show delivery address for local deliveries
+        if (isLocal && item.delivery_address) {
+            detailLine += `<div style="margin-top:4px;padding:6px 8px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);font-size:0.72rem;color:var(--text-0);">
+                <span style="color:var(--orange);font-weight:600;">DELIVER TO:</span> ${item.delivery_address}
+            </div>`;
         }
         
         // Shipping confirmation photos section
@@ -11844,6 +11864,50 @@ async function jamMarkShipped(watchId) {
         });
         const data = await r.json();
         if (data.ok || data.success) loadJamFeed(_jamState.tab);
+        else alert('Failed: ' + (data.error || 'unknown'));
+    } catch(e) { alert('Error: ' + e.message); }
+}
+
+function jamSetLocalDelivery(watchId) {
+    const today = new Date().toISOString().slice(0,10);
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0,10);
+    const hour = new Date().getHours();
+    const defaultDate = hour >= 18 ? tomorrow : today;
+    
+    const modal = document.createElement('div');
+    modal.id = 'jam-local-modal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:16px;';
+    modal.innerHTML = `
+        <div style="background:var(--bg-1);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:400px;width:100%;">
+            <div style="font-size:0.9rem;font-weight:700;color:var(--text-0);margin-bottom:16px;">Local Delivery</div>
+            <div style="margin-bottom:12px;">
+                <label style="font-size:0.75rem;color:var(--text-2);">Delivery address:</label>
+                <textarea id="jam-local-addr" rows="3" placeholder="Enter full delivery address..." style="width:100%;padding:10px;margin-top:4px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.85rem;resize:vertical;font-family:inherit;"></textarea>
+            </div>
+            <div style="margin-bottom:12px;">
+                <label style="font-size:0.75rem;color:var(--text-2);">Deliver by date:</label>
+                <input type="date" id="jam-local-date" value="${defaultDate}" min="${today}" style="width:100%;padding:10px;margin-top:4px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.85rem;">
+            </div>
+            <button onclick="jamDoLocalDelivery(${watchId})" style="width:100%;padding:12px;background:var(--orange);color:#000;border:none;border-radius:var(--radius);font-weight:600;cursor:pointer;">Set Local Delivery</button>
+            <button onclick="document.getElementById('jam-local-modal').remove()" style="margin-top:8px;width:100%;padding:8px;background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--text-2);cursor:pointer;">Cancel</button>
+        </div>`;
+    document.body.appendChild(modal);
+    setTimeout(() => document.getElementById('jam-local-addr')?.focus(), 100);
+}
+
+async function jamDoLocalDelivery(watchId) {
+    const address = document.getElementById('jam-local-addr')?.value?.trim();
+    const shipDate = document.getElementById('jam-local-date')?.value || '';
+    document.getElementById('jam-local-modal')?.remove();
+    if (!address) { alert('Address is required'); return; }
+    try {
+        const r = await fetch('/api/jam/set-local-delivery', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({watch_id: watchId, address: address, ship_by_date: shipDate})
+        });
+        const data = await r.json();
+        if (data.ok) loadJamFeed(_jamState.tab);
         else alert('Failed: ' + (data.error || 'unknown'));
     } catch(e) { alert('Error: ' + e.message); }
 }
