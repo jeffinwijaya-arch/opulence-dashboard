@@ -979,7 +979,7 @@
             <a data-page="mission-control" onclick="showPage('mission-control')">Mission Control</a>
             <a data-page="payments" onclick="showPage('payments')">Payments <span class="badge" id="payments-count">0</span></a>
             <a data-page="postings" onclick="showPage('postings')">My Postings</a>
-            <a data-page="jam" onclick="showPage('jam')">Jam</a>
+            <a data-page="jam" onclick="showPage('jam')">Operations</a>
             <a data-page="photos" onclick="showPage('photos')">Photos</a>
 
             <a data-page="aging" onclick="showPage('aging')">Aging</a>
@@ -1040,7 +1040,7 @@
             <a class="more-grid-item" onclick="mobileNav('aging')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>Aging</a>
             <a class="more-grid-item" onclick="mobileNav('briefing')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></span>Briefing</a>
             <a class="more-grid-item" onclick="mobileNav('mission-control')"><span class="mgi-icon">🎯</span>Mission Control</a>
-            <a class="more-grid-item" onclick="mobileNav('jam')"><span class="mgi-icon">📋</span>Jam</a>
+            <a class="more-grid-item" onclick="mobileNav('jam')"><span class="mgi-icon" style="font-size:0.9rem;">OP</span>Operations</a>
         </div>
     </div>
 
@@ -1588,7 +1588,7 @@
                         <div id="wm-photos-grid" style="display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px;"></div>
                         <div style="display:flex;gap:6px;align-items:center;">
                             <label class="btn" style="cursor:pointer;font-size:0.7rem;background:var(--bg-3);padding:6px 12px;">
-                                📷 Upload Photo
+                                Upload Photo
                                 <input type="file" id="wm-photo-input" accept="image/*,.heic,.heif" style="display:none;" onchange="uploadWatchPhoto(this)">
                             </label>
                             <span id="wm-photo-status" style="font-size:0.68rem;color:var(--text-2);"></span>
@@ -2536,29 +2536,29 @@
             </style>
 
             <div class="page-head">
-                <h1>📋 Jam — Watch Lifecycle</h1>
+                <h1>Operations — Watch Lifecycle</h1>
                 <p>Purchased → Arrival → Ship → Sold</p>
             </div>
 
             <!-- Stats — order: Purchased, Arrival, Ship, Sold -->
             <div class="jam-stats" id="jam-stats">
                 <div class="jam-stat" onclick="switchJamTab('dibeli')">
-                    <div class="jam-stat-icon">🛒</div>
+                    <div class="jam-stat-icon" style="font-size:0.9rem;font-weight:700;">BUY</div>
                     <div class="jam-stat-count" id="jam-ct-dibeli">—</div>
                     <div class="jam-stat-label">Purchased</div>
                 </div>
                 <div class="jam-stat" onclick="switchJamTab('masuk')">
-                    <div class="jam-stat-icon">📦</div>
+                    <div class="jam-stat-icon" style="font-size:0.9rem;font-weight:700;">ARR</div>
                     <div class="jam-stat-count" id="jam-ct-masuk">—</div>
                     <div class="jam-stat-label">Arrival</div>
                 </div>
                 <div class="jam-stat" onclick="switchJamTab('keluar')">
-                    <div class="jam-stat-icon">✈️</div>
+                    <div class="jam-stat-icon" style="font-size:0.9rem;font-weight:700;">SHIP</div>
                     <div class="jam-stat-count" id="jam-ct-keluar">—</div>
                     <div class="jam-stat-label">Ship</div>
                 </div>
                 <div class="jam-stat active" onclick="switchJamTab('dijual')">
-                    <div class="jam-stat-icon">💰</div>
+                    <div class="jam-stat-icon" style="font-size:0.9rem;font-weight:700;">SOLD</div>
                     <div class="jam-stat-count" id="jam-ct-dijual">—</div>
                     <div class="jam-stat-label">Sold</div>
                 </div>
@@ -2583,16 +2583,16 @@
 
             <!-- Tab bar — order: Purchased, Arrival, Ship, Sold -->
             <div class="jam-tabs">
-                <button class="jam-tab" data-jam="dibeli" onclick="switchJamTab('dibeli')">🛒 Purchased</button>
-                <button class="jam-tab" data-jam="masuk" onclick="switchJamTab('masuk')">📦 Arrival</button>
-                <button class="jam-tab" data-jam="keluar" onclick="switchJamTab('keluar')">✈️ Ship</button>
-                <button class="jam-tab active" data-jam="dijual" onclick="switchJamTab('dijual')">💰 Sold</button>
+                <button class="jam-tab" data-jam="dibeli" onclick="switchJamTab('dibeli')">Purchased</button>
+                <button class="jam-tab" data-jam="masuk" onclick="switchJamTab('masuk')">Arrival</button>
+                <button class="jam-tab" data-jam="keluar" onclick="switchJamTab('keluar')">Ship</button>
+                <button class="jam-tab active" data-jam="dijual" onclick="switchJamTab('dijual')">Sold</button>
             </div>
 
             <!-- Upload zone — shown on Arrival and Ship tabs -->
             <div id="jam-upload-zone" style="display:none;margin-bottom:14px;">
                 <div style="background:var(--bg-2);border:2px dashed var(--accent-border);border-radius:var(--radius-lg);padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onclick="jamUploadZoneClick()" id="jam-upload-box">
-                    <div style="font-size:2rem;margin-bottom:6px;" id="jam-upload-icon">📸</div>
+                    <div style="font-size:1rem;font-weight:700;margin-bottom:6px;color:var(--accent);" id="jam-upload-icon">UPLOAD</div>
                     <div style="font-size:0.85rem;font-weight:700;color:var(--text-0);" id="jam-upload-title">Upload Arrival Photo</div>
                     <div style="font-size:0.72rem;color:var(--text-2);margin-top:4px;" id="jam-upload-sub">Tap to take a photo of the warranty card</div>
                 </div>
@@ -6324,16 +6324,16 @@ function renderInventoryTable(rows) {
             else b += '<span class="inv-badge inv-badge-pending">In Transit</span>';
             if (r.posted==='Yes') b += '<span class="inv-badge inv-badge-posted">Posted</span>';
             if (r.sold==='Yes') b += '<span class="inv-badge inv-badge-sold">Sold</span>';
-            if (r.has_hero) b += '<span class="inv-badge" style="background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);">📷</span>';
+            if (r.has_hero) b += '<span class="inv-badge" style="background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);font-size:0.6rem;">PHOTO</span>';
             return b;
         };
         const swipeActionsHtml = r => {
             let html = '';
-            if (r.arrived!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--accent);color:var(--bg-0);" onclick="event.stopPropagation();quickAction(${r.row},'arrived')"><span class="isa-icon">📥</span>Arrive</div>`;
-            if (r.posted==='Yes'&&r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:#e9a445;color:var(--bg-0);" onclick="event.stopPropagation();repostWatch(${r.row})"><span class="isa-icon">🔄</span>Repost</div>`;
-            html += `<div class="inv-swipe-action" style="background:#06b6d4;color:var(--bg-0);" onclick="event.stopPropagation();viewWatchPhotos('${r.description}', ${r.row})"><span class="isa-icon">●</span>Photos</div>`;
-            if (r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--green);color:var(--bg-0);" onclick="event.stopPropagation();showSellModal(${r.row})"><span class="isa-icon">💵</span>Sell</div>`;
-            if (r.sold==='Yes'&&r.shipped!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--blue);color:var(--bg-0);" onclick="event.stopPropagation();showShipModal(${r.row})"><span class="isa-icon">📦</span>Ship</div>`;
+            if (r.arrived!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--accent);color:var(--bg-0);" onclick="event.stopPropagation();quickAction(${r.row},'arrived')"><span class="isa-icon" style="font-size:0.7rem;">+</span>Arrive</div>`;
+            if (r.posted==='Yes'&&r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:#e9a445;color:var(--bg-0);" onclick="event.stopPropagation();repostWatch(${r.row})"><span class="isa-icon" style="font-size:0.7rem;">↻</span>Repost</div>`;
+            html += `<div class="inv-swipe-action" style="background:#06b6d4;color:var(--bg-0);" onclick="event.stopPropagation();viewWatchPhotos('${r.description}', ${r.row})">Photos</div>`;
+            if (r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--green);color:var(--bg-0);" onclick="event.stopPropagation();showSellModal(${r.row})"><span class="isa-icon" style="font-size:0.7rem;">$</span>Sell</div>`;
+            if (r.sold==='Yes'&&r.shipped!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--blue);color:var(--bg-0);" onclick="event.stopPropagation();showShipModal(${r.row})">Ship</div>`;
             return html;
         };
         cardsEl.innerHTML = rows.map(r => {
@@ -10374,10 +10374,10 @@ async function loadPayments() {
 
         // Category config: icon, label, renderer
         const categories = [
-            { key: 'inventory',  icon: '📋', label: 'Inventory',  render: renderUSInventory  },
+            { key: 'inventory',  icon: 'INV', label: 'Inventory',  render: renderUSInventory  },
             { key: 'market',     icon: '💹', label: 'Market',     render: renderUSMarket     },
             { key: 'invoices',   icon: '🧾', label: 'Invoices',   render: renderUSInvoices   },
-            { key: 'labels',     icon: '📦', label: 'Labels',     render: renderUSLabels     },
+            { key: 'labels',     icon: 'LBL', label: 'Labels',     render: renderUSLabels     },
             { key: 'postings',   icon: '📢', label: 'Postings',   render: renderUSPostings   },
         ];
 
@@ -10404,7 +10404,7 @@ async function loadPayments() {
         const status = item.sold === 'Yes' ? 'Sold' : item.arrived === 'Yes' ? 'In Stock' : 'In Transit';
         const color = item.sold === 'Yes' ? 'var(--red)' : item.arrived === 'Yes' ? 'var(--green)' : 'var(--orange)';
         return `<div class="usearch-item" onclick="closeUnifiedSearch();showPage('inventory')">
-            <div class="usearch-item-icon" style="background:var(--accent-dim);color:var(--accent);">📋</div>
+            <div class="usearch-item-icon" style="background:var(--accent-dim);color:var(--accent);font-size:0.7rem;font-weight:700;">INV</div>
             <div class="usearch-item-body">
                 <div class="usearch-item-title">${esc(item.ref || '')} — ${esc(item.description || '').slice(0,60)}</div>
                 <div class="usearch-item-sub" style="color:${color};">${status}</div>
@@ -10439,7 +10439,7 @@ async function loadPayments() {
 
     function renderUSLabels(item, q) {
         return `<div class="usearch-item" onclick="closeUnifiedSearch();showPage('shipping')">
-            <div class="usearch-item-icon" style="background:var(--green-dim);color:var(--green);">📦</div>
+            <div class="usearch-item-icon" style="background:var(--green-dim);color:var(--green);font-size:0.7rem;font-weight:700;">LBL</div>
             <div class="usearch-item-body">
                 <div class="usearch-item-title">${esc(item.tracking)}</div>
                 <div class="usearch-item-sub">${esc(item.created || '')} · ${item.size_kb}KB</div>
@@ -11299,9 +11299,9 @@ async function loadJamPage() {
         // Action alerts (admin/full only)
         if (_userRole.role !== 'logistics') {
             const alerts = [];
-            if (s.sold_not_shipped > 0) alerts.push({cls:'jam-alert-warn', text:`⚠️ ${s.sold_not_shipped} sold but not shipped`});
+            if (s.sold_not_shipped > 0) alerts.push({cls:'jam-alert-warn', text:`${s.sold_not_shipped} sold but not shipped`});
             if (s.shipped_not_paid > 0) alerts.push({cls:'jam-alert-danger', text:`🔴 ${s.shipped_not_paid} shipped but not paid`});
-            if (s.arrived_not_posted > 0) alerts.push({cls:'jam-alert-warn', text:`📸 ${s.arrived_not_posted} arrived but not posted`});
+            if (s.arrived_not_posted > 0) alerts.push({cls:'jam-alert-warn', text:`${s.arrived_not_posted} arrived but not posted`});
             $('#jam-alerts').innerHTML = alerts.map(a => `<div class="jam-alert ${a.cls}">${a.text}</div>`).join('');
         }
     } catch(e) { console.error('Jam stats:', e); }
@@ -11337,7 +11337,7 @@ function switchJamTab(type) {
     const uploadSub = $('#jam-upload-sub');
     if (type === 'masuk') {
         uploadZone.style.display = 'block';
-        uploadIcon.textContent = '📸';
+        uploadIcon.textContent = 'UPLOAD';
         uploadTitle.textContent = 'Upload Arrival Photo';
         uploadSub.textContent = 'Tap to take a photo of the warranty card — serial & date auto-extracted';
     } else if (type === 'keluar') {
@@ -11419,7 +11419,7 @@ function _jamCard(type, item) {
         
         pills = _jp(item.posted, 'Posted') + _jp(item.sold, 'Sold');
         if (item.at_store) pills += '<span class="jam-pill jam-pill-warn">At Store</span>';
-        if (!item.serial) pills += `<button class="jam-pill jam-pill-warn" onclick="event.stopPropagation();jamUploadArrival(${item.id})" style="cursor:pointer;border:none;">📸 Upload Card</button>`;
+        if (!item.serial) pills += `<button class="jam-pill jam-pill-warn" onclick="event.stopPropagation();jamUploadArrival(${item.id})" style="cursor:pointer;border:none;">Upload Card</button>`;
     } else if (type === 'dijual') {
         const toName = (item.to || '').split('\n')[0]; // First line only (name)
         const parts = [];
@@ -11492,7 +11492,7 @@ function _showJamWatchPicker(uploadType) {
     modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:16px;';
     
     const title = uploadType === 'arrival' ? 'Select watch to upload arrival photo' : 'Select watch to attach label';
-    const icon = uploadType === 'arrival' ? '📸' : '📄';
+    const icon = uploadType === 'arrival' ? 'CAM' : 'DOC';
     
     modal.innerHTML = `
         <div style="background:var(--bg-1);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:480px;width:100%;max-height:80vh;display:flex;flex-direction:column;">
@@ -11612,10 +11612,10 @@ function renderJamActivity() {
     }
     
     const actionLabels = {
-        'upload_arrival': '📸 uploaded arrival photo',
+        'upload_arrival': 'Uploaded arrival photo',
         'upload_label': '📄 attached shipping label',
-        'mark_arrived': '📦 marked as arrived',
-        'mark_shipped': '✈️ marked as shipped',
+        'mark_arrived': 'Marked as arrived',
+        'mark_shipped': 'Marked as shipped',
     };
     
     list.innerHTML = items.map(item => {
@@ -11673,7 +11673,7 @@ function jamUploadLabel(watchId) {
             const data = await r.json();
             if (data.ok) {
                 let msg = `✅ Label attached to #${watchId}`;
-                if (data.marked_shipped) msg += '\n📦 Marked as shipped';
+                if (data.marked_shipped) msg += '\nMarked as shipped';
                 alert(msg);
                 loadJamFeed(_jamState.tab); // Refresh
             } else {
