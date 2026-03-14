@@ -11342,7 +11342,7 @@ function switchJamTab(type) {
         uploadSub.textContent = 'Tap to take a photo of the warranty card — serial & date auto-extracted';
     } else if (type === 'keluar') {
         // Only show upload zone for admin, not logistics employees
-        if (_userRole === 'logistics') {
+        if (_userRole.role === 'logistics') {
             uploadZone.style.display = 'none';
         } else {
             uploadZone.style.display = 'block';
@@ -11418,7 +11418,7 @@ function renderJamFeed(type) {
         const shipped = items.filter(i => i.status !== 'pending');
         
         // Filter: logistics employees only see scheduled items
-        const isLogistics = _userRole === 'logistics';
+        const isLogistics = _userRole.role === 'logistics';
         const visiblePending = isLogistics ? pending.filter(i => i.date && i.date !== '') : pending;
         
         if (visiblePending.length) {
@@ -11546,7 +11546,7 @@ function _jamCard(type, item) {
         if (item.has_label && item.label_file) {
             pills += `<button class="jam-pill" onclick="event.stopPropagation();window.open('/api/jam/label/${item.label_file}','_blank')" style="cursor:pointer;border:1px solid var(--green-border);background:var(--green-dim);color:var(--green);">VIEW LABEL</button>`;
             pills += `<button class="jam-pill" onclick="event.stopPropagation();jamPrintLabel('${item.label_file}')" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);">PRINT</button>`;
-        } else if (_userRole !== 'logistics' && !isLocal) {
+        } else if (_userRole.role !== 'logistics' && !isLocal) {
             pills += `<button class="jam-pill" onclick="event.stopPropagation();jamAttachLabelWithDate(${item.id})" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);">Attach Label</button>`;
             pills += `<button class="jam-pill" onclick="event.stopPropagation();jamSetLocalDelivery(${item.id})" style="cursor:pointer;border:1px solid var(--orange);background:var(--orange);color:#000;font-weight:600;">Local Delivery</button>`;
         } else if (!item.has_label && !isLocal) {
@@ -11555,7 +11555,7 @@ function _jamCard(type, item) {
         
         // For pending items: schedule + easy ship button
         if (isPending) {
-            if (_userRole !== 'logistics') {
+            if (_userRole.role !== 'logistics') {
                 pills += `<button class="jam-pill" onclick="event.stopPropagation();jamSetShipDate(${item.id})" style="cursor:pointer;border:1px solid var(--orange);background:var(--orange);color:#000;font-weight:600;">SCHEDULE</button>`;
             }
             pills += `<button class="jam-pill" onclick="event.stopPropagation();jamMarkShipped(${item.id})" style="cursor:pointer;border:1px solid var(--green);background:var(--green);color:#000;font-weight:600;">SHIP</button>`;
