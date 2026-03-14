@@ -11390,7 +11390,34 @@ function renderJamFeed(type) {
         return;
     }
     
-    let html = items.map(item => _jamCard(type, item)).join('');
+    let html = '';
+    if (type === 'keluar') {
+        // Group by date with headers
+        let lastDate = '';
+        const today = new Date().toISOString().slice(0,10);
+        const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+        for (const item of items) {
+            const d = item.date || 'Unknown';
+            if (d !== lastDate) {
+                let dateLabel = d;
+                if (d === today) dateLabel = 'TODAY — ' + d;
+                else if (d === yesterday) dateLabel = 'YESTERDAY — ' + d;
+                else {
+                    try {
+                        const dt = new Date(d + 'T12:00:00');
+                        dateLabel = dt.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric', year:'numeric'});
+                    } catch(e) { dateLabel = d; }
+                }
+                html += `<div style="padding:12px 4px 6px;margin-top:${lastDate?'16px':'0'};border-bottom:2px solid var(--orange);display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:0.78rem;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:0.5px;">${dateLabel}</span>
+                </div>`;
+                lastDate = d;
+            }
+            html += _jamCard(type, item);
+        }
+    } else {
+        html = items.map(item => _jamCard(type, item)).join('');
+    }
     
     if (items.length < total) {
         html += `<button class="jam-load-more" onclick="loadJamFeed('${type}', true)">Load more (${items.length} of ${total})</button>`;
@@ -11453,6 +11480,47 @@ function _jamCard(type, item) {
         } else {
             pills += `<span class="jam-pill jam-pill-no">No Label</span>`;
         }
+        
+        // Shipping confirmation photos section
+        const photos = item.ship_photos || [];
+        const hasLabelPhoto = photos.some(p => p.type === 'label_photo');
+        const hasWatchPhoto = photos.some(p => p.type === 'watch_photo');
+        const labelPhotos = photos.filter(p => p.type === 'label_photo');
+        const watchPhotos = photos.filter(p => p.type === 'watch_photo');
+        
+        let photoSection = '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">';
+        
+        // Label photo slot
+        if (hasLabelPhoto) {
+            const lp = labelPhotos[labelPhotos.length-1];
+            photoSection += `<div onclick="event.stopPropagation();window.open('/api/jam/ship-photo/${item.id}/${lp.filename}','_blank')" style="cursor:pointer;width:80px;height:80px;border-radius:8px;overflow:hidden;border:2px solid var(--green);position:relative;">
+                <img src="/api/jam/ship-photo/${item.id}/${lp.filename}" style="width:100%;height:100%;object-fit:cover;">
+                <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);color:var(--green);font-size:0.55rem;text-align:center;padding:2px;">LABEL</div>
+            </div>`;
+        } else {
+            photoSection += `<div onclick="event.stopPropagation();jamUploadShipPhoto(${item.id},'label_photo')" style="cursor:pointer;width:80px;height:80px;border-radius:8px;border:2px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border)'">
+                <span style="font-size:0.65rem;color:var(--text-2);font-weight:600;">LABEL</span>
+                <span style="font-size:0.55rem;color:var(--text-3);">+ Photo</span>
+            </div>`;
+        }
+        
+        // Watch photo slot
+        if (hasWatchPhoto) {
+            const wp = watchPhotos[watchPhotos.length-1];
+            photoSection += `<div onclick="event.stopPropagation();window.open('/api/jam/ship-photo/${item.id}/${wp.filename}','_blank')" style="cursor:pointer;width:80px;height:80px;border-radius:8px;overflow:hidden;border:2px solid var(--green);position:relative;">
+                <img src="/api/jam/ship-photo/${item.id}/${wp.filename}" style="width:100%;height:100%;object-fit:cover;">
+                <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);color:var(--green);font-size:0.55rem;text-align:center;padding:2px;">WATCH</div>
+            </div>`;
+        } else {
+            photoSection += `<div onclick="event.stopPropagation();jamUploadShipPhoto(${item.id},'watch_photo')" style="cursor:pointer;width:80px;height:80px;border-radius:8px;border:2px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border)'">
+                <span style="font-size:0.65rem;color:var(--text-2);font-weight:600;">WATCH</span>
+                <span style="font-size:0.55rem;color:var(--text-3);">+ Photo</span>
+            </div>`;
+        }
+        
+        photoSection += '</div>';
+        // Inject into card via extra field
+        item._photoSection = photoSection;
     }
     
     // Serial + card date line
@@ -11469,6 +11537,7 @@ function _jamCard(type, item) {
         </div>
         <div class="jam-card-detail">${detailLine}</div>
         ${serialLine}
+        ${item._photoSection || ''}
         <div class="jam-card-footer">
             <div class="jam-pills">${pills}</div>
             <div class="jam-card-date">${item.date || ''}</div>
@@ -11662,6 +11731,35 @@ function _formatActivityTime(ts) {
         if (diffHr < 24) return `${diffHr}h ago`;
         return d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
     } catch(e) { return ts; }
+}
+
+function jamUploadShipPhoto(watchId, photoType) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('watch_id', watchId);
+        fd.append('photo_type', photoType);
+        
+        try {
+            const r = await fetch('/api/jam/upload-ship-photo', { method: 'POST', body: fd });
+            const data = await r.json();
+            if (data.ok) {
+                loadJamFeed(_jamState.tab);
+            } else {
+                alert('Upload failed: ' + (data.error || 'unknown'));
+            }
+        } catch(e) {
+            alert('Upload error: ' + e.message);
+        }
+    };
+    input.click();
 }
 
 function jamPrintLabel(labelFile) {
