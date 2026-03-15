@@ -12916,16 +12916,16 @@ function _jamCard(type, item) {
             pills += `<span class="jam-pill" style="border:1px solid var(--accent);background:var(--accent-dim);color:var(--accent);">LOCAL DELIVERY</span>`;
         }
         
-        if (item.has_label && item.label_file) {
-            // VIEW LABEL as separate prominent button (rendered in card header area)
+        if (item.has_label && item.label_file && !item.package_id) {
+            // VIEW LABEL as separate prominent button — only for non-packaged items (packaged items show label at package level)
             item._labelButton = `<button onclick="event.stopPropagation();window.open('/api/jam/label/${item.label_file}','_blank')" style="cursor:pointer;padding:6px 14px;border:none;border-radius:var(--radius);background:var(--green);color:#000;font-weight:700;font-size:0.75rem;white-space:nowrap;">${_t('viewLabel')}</button>`;
             if (_userRole.role !== 'logistics') {
                 pills += `<button class="jam-pill" onclick="event.stopPropagation();jamPrintLabel('${item.label_file}')" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);">PRINT</button>`;
             }
-        } else if (_userRole.role !== 'logistics' && !isLocal) {
+        } else if (_userRole.role !== 'logistics' && !isLocal && !item.package_id) {
             pills += `<button class="jam-pill" onclick="event.stopPropagation();jamAttachLabelWithDate(${item.id})" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);">Attach Label</button>`;
             pills += `<button class="jam-pill" onclick="event.stopPropagation();jamSetLocalDelivery(${item.id})" style="cursor:pointer;border:1px solid var(--orange);background:var(--orange);color:#000;font-weight:600;">Local Delivery</button>`;
-        } else if (!item.has_label && !isLocal) {
+        } else if (!item.has_label && !isLocal && !item.package_id) {
             pills += `<span class="jam-pill jam-pill-no">No Label</span>`;
         }
         
