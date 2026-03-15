@@ -11357,8 +11357,13 @@ function switchJamTab(type) {
     if (type === 'masuk') {
         uploadZone.style.display = 'block';
         uploadIcon.textContent = 'UPLOAD';
-        uploadTitle.textContent = 'Upload Arrival Photo';
-        uploadSub.textContent = 'Tap to take a photo of the warranty card — serial & date auto-extracted';
+        if (_userRole.role === 'logistics') {
+            uploadTitle.textContent = 'Take Arrival Photo';
+            uploadSub.textContent = 'Tap to photograph the warranty card — system handles the rest';
+        } else {
+            uploadTitle.textContent = 'Upload Arrival Photo';
+            uploadSub.textContent = 'Tap to take a photo of the warranty card — serial & date auto-extracted';
+        }
     } else if (type === 'keluar') {
         // Only show upload zone for admin, not logistics employees
         if (_userRole.role === 'logistics') {
@@ -11662,11 +11667,58 @@ let _jamUploadTarget = { type: '', watchId: null };
 function jamUploadZoneClick() {
     const tab = _jamState.tab;
     if (tab === 'masuk') {
-        // Show watch picker, then upload
-        _showJamWatchPicker('arrival');
+        if (_userRole.role === 'logistics') {
+            // Employee: just open camera, no watch picker — system auto-matches
+            jamUploadArrivalDirect();
+        } else {
+            _showJamWatchPicker('arrival');
+        }
     } else if (tab === 'keluar') {
         _showJamWatchPicker('label');
     }
+}
+
+function jamUploadArrivalDirect() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const box = document.getElementById('jam-upload-box');
+        if (box) box.innerHTML = '<div style="padding:20px;color:var(--accent);font-weight:600;">Processing photo...</div>';
+        
+        const fd = new FormData();
+        fd.append('file', file);
+        // No watch_id — backend auto-matches
+        
+        try {
+            const r = await fetch('/api/jam/upload-arrival', { method: 'POST', body: fd });
+            const data = await r.json();
+            if (data.ok) {
+                let msg = 'Photo uploaded';
+                if (data.watch_id) {
+                    msg = 'Matched to watch #' + data.watch_id;
+                    if (data.ocr?.serial) msg += '\nSerial: ' + data.ocr.serial;
+                    if (data.ocr?.card_date) msg += '\nCard: ' + data.ocr.card_date;
+                } else {
+                    msg = 'Photo saved — admin will review the match';
+                }
+                alert(msg);
+                loadJamFeed(_jamState.tab);
+            } else {
+                alert('Upload failed: ' + (data.error || 'unknown'));
+            }
+        } catch(e) {
+            alert('Upload error: ' + e.message);
+        }
+        
+        // Restore upload zone
+        if (box) box.innerHTML = '<div style="font-size:1.5rem;margin-bottom:6px;" id="jam-upload-icon">UPLOAD</div><div style="font-size:0.8rem;font-weight:600;color:var(--text-0);" id="jam-upload-title">Upload Arrival Photo</div><div style="font-size:0.68rem;color:var(--text-2);margin-top:4px;" id="jam-upload-sub">Tap to take a photo of the warranty card</div>';
+    };
+    input.click();
 }
 
 function _showJamWatchPicker(uploadType) {
