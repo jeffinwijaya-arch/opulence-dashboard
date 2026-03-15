@@ -3630,18 +3630,22 @@ async function convertFileToJpeg(file) {
 
 // ── Inline redaction editor for posting photos ──
 let _postingRedactFile = null;
+let _postingRedactOrigFile = null; // Keep original for undo/skip
 let _postingRedactRow = null;
 let _postingRedactDesc = '';
 let _postingRedactRects = [];
 let _postingRedactDrawing = false;
 let _postingRedactStart = {x:0,y:0};
 let _postingRedactImg = null;
+let _postingRedactOrigImg = null; // Original image before auto-redact
 
 var _redactZoom = 1, _redactPanX = 0, _redactPanY = 0, _redactBaseW = 0, _redactBaseH = 0;
 var _redactPinchDist = 0, _redactPanning = false, _redactPanStart = null, _redactRotation = 0;
 
 function openPostingRedactEditor(file, row, desc) {
     _postingRedactFile = file;
+    _postingRedactOrigFile = file; // Save original for undo/skip
+    _postingRedactOrigImg = null;
     _postingRedactRow = row;
     _postingRedactDesc = desc;
     _postingRedactRects = [];
@@ -3695,6 +3699,7 @@ function openPostingRedactEditor(file, row, desc) {
             ctx.scale(dpr, dpr);
             ctx.drawImage(img, 0, 0, cssW, cssH);
             _postingRedactImg = img;
+            if (!_postingRedactOrigImg) _postingRedactOrigImg = img; // Save original
             _redactApplyTransform();
         };
         img.src = ev.target.result;
@@ -3944,10 +3949,25 @@ async function postingAutoRedact() {
         if (autoBtn) autoBtn.textContent = e.name === 'AbortError' ? 'Timed out' : 'Failed';
     }
 }
-function postingRedactUndo() { _postingRedactRects.pop(); postingRedactRender(); }
+function postingRedactUndo() {
+    if (_postingRedactRects.length > 0) {
+        _postingRedactRects.pop();
+        postingRedactRender();
+    } else if (_postingRedactOrigImg && _postingRedactImg !== _postingRedactOrigImg) {
+        // Undo auto-redact: restore original image
+        _postingRedactImg = _postingRedactOrigImg;
+        _postingRedactFile = _postingRedactOrigFile;
+        _postingRedactRects = [];
+        postingRedactRender();
+        const autoBtn = document.querySelector('#redact-toolbar a:nth-child(3)');
+        if (autoBtn) autoBtn.textContent = 'Auto';
+    }
+}
 function postingRedactClear() { _postingRedactRects = []; postingRedactRender(); }
 
 function postingRedactSkip() {
+    // Always use original (un-redacted) file when skipping
+    _postingRedactFile = _postingRedactOrigFile || _postingRedactFile;
     if (window._redactResizeHandler) window.removeEventListener('resize', window._redactResizeHandler);
     document.getElementById('posting-redact-modal')?.remove();
     document.body.style.overflow = '';
