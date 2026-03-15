@@ -7723,7 +7723,57 @@ const SHIP_PRESETS = {
     },
 };
 
+async function loadShippingPackages() {
+    try {
+        const r = await fetch('/api/shipping/packages');
+        if (!r.ok) return;
+        const packages = await r.json();
+        if (!packages.length) return;
+
+        // Find or create container
+        let container = document.getElementById('shipping-packages');
+        if (!container) {
+            const shipContent = document.querySelector('[data-page="shipping"]');
+            if (!shipContent) return;
+            container = document.createElement('div');
+            container.id = 'shipping-packages';
+            container.style.cssText = 'margin-bottom:20px;';
+            shipContent.insertBefore(container, shipContent.firstChild);
+        }
+
+        const pending = packages.filter(p => !p.shipped);
+        const shipped = packages.filter(p => p.shipped);
+
+        let html = `<div style="font-size:0.85rem;font-weight:700;margin-bottom:8px;color:var(--text-0);">Packages to Ship (${pending.length})</div>`;
+        
+        for (const pkg of pending) {
+            const watchList = pkg.watches.map(w => 
+                `<span style="font-family:var(--mono);font-size:0.72rem;background:var(--bg-3);padding:2px 6px;border-radius:4px;">${w.description?.split(' ').slice(0,3).join(' ') || w.id}</span>`
+            ).join(' ');
+            const labelBtn = pkg.has_label 
+                ? `<a href="/api/shipping/packages/${pkg.id}/label" target="_blank" style="font-size:0.65rem;color:var(--accent);cursor:pointer;text-decoration:none;border:1px solid var(--accent);padding:2px 8px;border-radius:4px;">View Label</a>`
+                : `<span style="font-size:0.65rem;color:var(--orange);">No label</span>`;
+            
+            html += `<div style="background:var(--bg-2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <div style="font-weight:600;font-size:0.8rem;color:var(--text-0);">${pkg.package_name}</div>
+                        <div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">${pkg.recipient || ''} · ${pkg.carrier || ''} · Ship by ${pkg.ship_by_date || '?'}</div>
+                        <div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap;">${watchList}</div>
+                    </div>
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        ${labelBtn}
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        container.innerHTML = html;
+    } catch(e) { console.error('loadShippingPackages error:', e); }
+}
+
 async function loadShippingPage() {
+    loadShippingPackages();
     loadRecentLabels();
     if (!shipConfigLoaded) {
         // Populate presets from hardcoded addresses
