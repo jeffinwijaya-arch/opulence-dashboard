@@ -11762,42 +11762,52 @@ function jamUploadZoneClick() {
 function jamUploadArrivalDirect() {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/*';
-    input.capture = 'environment';
+    input.accept = 'image/*,.heic,.heif';
+    input.multiple = true;
+    // No capture attribute — let iPhone show photo library + camera options
     input.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
         
         const box = document.getElementById('jam-upload-box');
-        if (box) box.innerHTML = `<div style="padding:20px;color:var(--accent);font-weight:600;">${_t('processing')}</div>`;
+        if (box) box.innerHTML = `<div style="padding:20px;color:var(--accent);font-weight:600;">${_t('processing')} (${files.length})</div>`;
         
-        const fd = new FormData();
-        fd.append('file', file);
-        // No watch_id — backend auto-matches
-        
-        try {
-            const r = await fetch('/api/jam/upload-arrival', { method: 'POST', body: fd });
-            const data = await r.json();
-            if (data.ok) {
-                let msg = _t('photoSaved');
-                if (data.watch_id) {
-                    msg = _t('matched') + ' #' + data.watch_id;
-                    if (data.ocr?.serial) msg += '\nSerial: ' + data.ocr.serial;
-                    if (data.ocr?.card_date) msg += '\nCard: ' + data.ocr.card_date;
-                } else {
-                    msg = _t('adminReview');
-                }
-                alert(msg);
-                loadJamFeed(_jamState.tab);
-            } else {
-                alert('Upload failed: ' + (data.error || 'unknown'));
+        const results = [];
+        for (const file of files) {
+            const fd = new FormData();
+            fd.append('file', file);
+            try {
+                const r = await fetch('/api/jam/upload-arrival', { method: 'POST', body: fd });
+                const data = await r.json();
+                results.push(data);
+            } catch(err) {
+                results.push({ok: false, error: err.message});
             }
-        } catch(e) {
-            alert('Upload error: ' + e.message);
         }
         
+        // Build summary
+        const matched = results.filter(r => r.ok && r.watch_id);
+        const unmatched = results.filter(r => r.ok && !r.watch_id);
+        const failed = results.filter(r => !r.ok);
+        let msg = '';
+        if (matched.length) {
+            msg += matched.map(r => {
+                let line = _t('matched') + ' #' + r.watch_id;
+                if (r.ocr?.serial) line += ' — Serial: ' + r.ocr.serial;
+                return line;
+            }).join('\n');
+        }
+        if (unmatched.length) {
+            msg += (msg ? '\n' : '') + unmatched.length + ' ' + _t('adminReview');
+        }
+        if (failed.length) {
+            msg += (msg ? '\n' : '') + failed.length + ' failed';
+        }
+        if (msg) alert(msg);
+        loadJamFeed(_jamState.tab);
+        
         // Restore upload zone
-        if (box) box.innerHTML = '<div style="font-size:1.5rem;margin-bottom:6px;" id="jam-upload-icon">UPLOAD</div><div style="font-size:0.8rem;font-weight:600;color:var(--text-0);" id="jam-upload-title">Upload Arrival Photo</div><div style="font-size:0.68rem;color:var(--text-2);margin-top:4px;" id="jam-upload-sub">Tap to take a photo of the warranty card</div>';
+        if (box) box.innerHTML = `<div style="font-size:1.5rem;margin-bottom:6px;" id="jam-upload-icon">UPLOAD</div><div style="font-size:0.8rem;font-weight:600;color:var(--text-0);" id="jam-upload-title">${_t('uploadArrival')}</div><div style="font-size:0.68rem;color:var(--text-2);margin-top:4px;" id="jam-upload-sub">${_t('uploadArrivalSub')}</div>`;
     };
     input.click();
 }
@@ -11858,8 +11868,8 @@ function jamUploadArrival(watchId) {
     _jamUploadTarget = { type: 'arrival', watchId };
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/*';
-    input.capture = 'environment'; // Back camera on mobile
+    input.accept = 'image/*,.heic,.heif';
+    input.multiple = true;
     input.onchange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -12117,8 +12127,7 @@ function jamDoAttachLabel(watchId) {
 function jamUploadShipPhoto(watchId, photoType) {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/*';
-    input.capture = 'environment';
+    input.accept = 'image/*,.heic,.heif';
     input.onchange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
