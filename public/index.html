@@ -1750,7 +1750,7 @@
                                 <div style="margin-bottom:10px;">
                                     <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Photo</label>
                                     <div id="epm-photo-preview" style="display:flex;gap:6px;align-items:center;margin-top:4px;min-height:50px;">
-                                        <img id="epm-photo-img" src="" style="display:none;width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--border);">
+                                        <img id="epm-photo-img" src="" style="display:none;width:100%;max-height:200px;object-fit:contain;border-radius:6px;border:1px solid var(--border);">
                                         <span id="epm-no-photo" style="font-size:0.68rem;color:var(--text-2);">No photo</span>
                                         <label style="font-size:0.65rem;color:var(--green);cursor:pointer;border:1px dashed var(--green);border-radius:var(--radius);padding:4px 10px;margin-left:auto;" for="epm-photo-upload">
                                             <span id="epm-photo-label">+ Add Photo</span>
@@ -1813,7 +1813,7 @@
                 <div style="background:var(--bg-2);border-radius:var(--radius);padding:20px;max-width:400px;width:90%;">
                     <h3 style="margin:0 0 10px;">Delete Posting?</h3>
                     <div id="pdm-photo-wrap" style="display:none;margin-bottom:10px;text-align:center;">
-                        <img id="pdm-photo" src="" style="max-width:100%;max-height:160px;border-radius:var(--radius);object-fit:cover;border:1px solid var(--border);">
+                        <img id="pdm-photo" src="" style="max-width:100%;max-height:240px;border-radius:var(--radius);object-fit:contain;border:1px solid var(--border);">
                     </div>
                     <div id="pdm-desc" style="font-size:0.75rem;color:var(--text-2);margin-bottom:10px;padding:8px;background:var(--bg-1);border-radius:var(--radius);"></div>
                     <div id="pdm-price" style="font-size:0.8rem;font-family:monospace;font-weight:600;color:var(--text-0);margin-bottom:10px;"></div>
@@ -10166,7 +10166,7 @@ async function loadPayments() {
         _postDirectPhotoFile = file;
         const zone = document.getElementById('pdm-photo-zone');
         const url = URL.createObjectURL(file);
-        zone.innerHTML = `<img src="${url}" style="max-height:120px;max-width:100%;border-radius:var(--radius);object-fit:contain;"><span style="font-size:0.65rem;color:var(--green);margin-top:4px;">${file.name}</span>`;
+        zone.innerHTML = `<img src="${url}" style="max-height:240px;max-width:100%;border-radius:var(--radius);object-fit:contain;"><span style="font-size:0.65rem;color:var(--green);margin-top:4px;">${file.name}</span>`;
     }
 
     async function submitPostDirect() {
