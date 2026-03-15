@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>MK Opulence — Market Intelligence</title>
     
     <!-- PWA Configuration -->
@@ -9780,7 +9783,7 @@ async function loadPayments() {
                 <td style="font-weight:600;white-space:nowrap;">${p.ref || '—'}</td>
                 <td style="max-width:240px;font-size:0.72rem;" title="${desc}">${shortDesc}</td>
                 <td class="right" style="font-size:0.72rem;font-family:monospace;font-weight:600;">${price}</td>
-                <td class="right" style="font-size:0.72rem;white-space:nowrap;">${postingTimeAgo(p.posted_at || p.posted_date)}</td>
+                <td class="right" style="font-size:0.72rem;white-space:nowrap;">${p.time_ago || posted}</td>
                 <td style="white-space:nowrap;">
                     ${p.status === 'draft'
                         ? `<button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;background:#e8f5e9;color:var(--green);border-color:var(--green);font-weight:600;"
@@ -9818,7 +9821,7 @@ async function loadPayments() {
                         <div class="posting-card-desc">${desc}</div>
                         <div class="posting-card-meta">
                             <span class="posting-card-price">${price}</span>
-                            <span class="posting-card-date">${postingTimeAgo(p.posted_at || p.posted_date)}</span>
+                            <span class="posting-card-date">${p.time_ago || posted}</span>
                         </div>
                         <div class="posting-card-actions">
                             ${isDraft
