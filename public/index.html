@@ -1743,8 +1743,8 @@
                         </table>
                         <div class="postings-mobile" id="postings-active-cards" style="display:none;"></div>
                         <!-- Edit Price Modal -->
-                        <div id="posting-price-edit-modal" style="display:none;position:fixed;inset:0;z-index:1002;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
-                            <div style="background:var(--bg-2);border-radius:var(--radius);padding:20px;max-width:340px;width:90%;">
+                        <div id="posting-price-edit-modal" style="display:none;position:fixed;inset:0;z-index:1002;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;overflow-y:auto;">
+                            <div style="background:var(--bg-2);border-radius:var(--radius);padding:20px;max-width:480px;width:90%;max-height:90vh;overflow-y:auto;">
                                 <h3 style="margin:0 0 10px;font-size:0.9rem;">Edit Posting</h3>
                                 <input type="hidden" id="epm-message-id">
                                 <div style="margin-bottom:10px;">
@@ -1765,6 +1765,10 @@
                                 <div style="margin-bottom:10px;">
                                     <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Caption</label>
                                     <textarea class="input" id="epm-caption" rows="3" style="width:100%;margin-top:4px;font-family:var(--mono);font-size:0.74rem;resize:vertical;"></textarea>
+                                </div>
+                                <div id="epm-price-intel" style="display:none;margin-bottom:10px;padding:10px;background:var(--bg-1);border:1px solid var(--border-strong);border-radius:var(--radius);font-size:0.72rem;">
+                                    <div style="color:var(--text-2);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Price Intelligence</div>
+                                    <div style="color:var(--text-2);">Loading...</div>
                                 </div>
                                 <div style="margin-bottom:14px;">
                                     <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Price ($)</label>
@@ -9888,6 +9892,98 @@ async function loadPayments() {
         setTimeout(() => document.getElementById('epm-caption').focus(), 100);
         // Load suggested photos from watch storage
         _epmLoadSuggested();
+        // Load price intelligence
+        _epmLoadPriceIntel(caption);
+    }
+
+    async function _epmLoadPriceIntel(caption) {
+        const intelEl = document.getElementById('epm-price-intel');
+        if (!intelEl) return;
+        intelEl.style.display = 'block';
+        intelEl.innerHTML = '<div style="color:var(--text-2);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Price Intelligence</div><div style="color:var(--text-2);">Loading...</div>';
+        try {
+            const cleanCaption = (caption || '').replace(/&apos;/g, "'");
+            // Extract ref, dial, bracelet from caption
+            const refM = cleanCaption.match(/\b(\d{5,6}[A-Z]{0,4})\b/);
+            const ref = refM ? refM[1] : '';
+            if (!ref) { intelEl.style.display = 'none'; return; }
+            // Extract dial keywords
+            const dialWords = ['Black','White','Green','Blue','Slate','Rhodium','Grey','Silver','Pink','Champagne','Tiffany','Azzurro','Wimbledon','Diamond','Roman','Stick','Pistachio','Chocolate','MOP','Meteorite','Polar'];
+            let dial = '';
+            for (const dw of dialWords) { if (cleanCaption.toLowerCase().includes(dw.toLowerCase())) { dial = dw; break; } }
+            const braceletWords = ['Jubilee','Oyster','Oysterflex','President'];
+            let bracelet = '';
+            for (const bw of braceletWords) { if (cleanCaption.toLowerCase().includes(bw.toLowerCase())) { bracelet = bw; break; } }
+            // Extract year from card date
+            let watchYear = '';
+            const ym = cleanCaption.match(/(\d{2})\/(\d{4})/);
+            if (ym) watchYear = ym[2];
+
+            let q = ref;
+            if (dial) q += ' ' + dial;
+            if (bracelet) q += ' ' + bracelet;
+            const yearParam = watchYear ? '&year=' + watchYear : '';
+            const r = await fetch('/api/smart_search?q=' + encodeURIComponent(q) + yearParam);
+            const d = await r.json();
+            if (!r.ok || d.error) throw new Error(d.error || 'Not found');
+
+            const ps = d.price_summary || {};
+            const count = ps.count || 0;
+            const low = ps.low || 0;
+            const b25 = ps.b25 || ps.median || 0;
+            const usLow = ps.us_low || 0;
+            const byYear = ps.by_year || {};
+            const prevYear = ps.prev_year || {};
+            const yearLabel = byYear.year || '';
+            const bnibData = (ps.by_condition || {})['BNIB'] || {};
+            const isBNIB = bnibData.count > 0;
+
+            const yearUsLow = byYear.us_low || 0;
+            const yearLow = byYear.low || 0;
+            const recBase = yearUsLow || yearLow || low;
+            const recommended = recBase > 0 ? recBase - 100 : 0;
+
+            const yrRow = (data, label, accent) => {
+                if (!data || !data.count) return '';
+                const us = data.us_low ? `<div><span style="color:var(--text-2);">US Low</span><br><span style="font-family:var(--mono);color:var(--text-0);font-weight:700;">${fmt(data.us_low)}</span></div>
+                    <div><span style="color:var(--text-2);">US B25</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(data.us_b25)}</span></div>` : '';
+                const hk = data.hk_low ? `<div><span style="color:var(--text-2);">HK Low</span><br><span style="font-family:var(--mono);color:var(--text-0);font-weight:700;">${fmt(data.hk_low)}</span></div>
+                    <div><span style="color:var(--text-2);">HK B25</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(data.hk_b25)}</span></div>` : '';
+                return `<div style="margin-top:6px;padding-top:6px;border-top:1px solid ${accent};">
+                    <div style="color:${accent};font-size:0.6rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">${label} (${data.count})</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">${us}${hk}</div>
+                </div>`;
+            };
+
+            let yearSection = '';
+            if (isBNIB) {
+                yearSection = yrRow(byYear, yearLabel + ' BNIB', 'var(--accent)');
+                yearSection += yrRow(prevYear, (prevYear.year || '') + ' (prev year)', 'var(--text-2)');
+            } else {
+                const yearRange = ps.year_range || {};
+                yearSection = yrRow(yearRange, (yearRange.years || '') + ' range', 'var(--accent)');
+                yearSection += yrRow(byYear, yearLabel + ' only', 'var(--text-2)');
+            }
+
+            intelEl.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <span style="color:var(--text-2);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;">Price Intelligence — ${ref} ${dial} ${bracelet} (${count} listings)</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:4px;">
+                    <div><span style="color:var(--text-2);">Lowest</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(low)}</span></div>
+                    <div><span style="color:var(--text-2);">US Low</span><br><span style="font-family:var(--mono);color:var(--text-0);">${usLow ? fmt(usLow) : '—'}</span></div>
+                    <div><span style="color:var(--text-2);">B25 Avg</span><br><span style="font-family:var(--mono);color:var(--text-0);">${fmt(b25)}</span></div>
+                </div>
+                ${yearSection}
+                <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+                    <span style="color:var(--text-2);">Recommended:</span>
+                    <span style="font-family:var(--mono);font-weight:700;font-size:0.85rem;color:var(--green);cursor:pointer;" onclick="document.getElementById('epm-new-price').value='${recommended}'">${recommended > 0 ? fmt(recommended) : '—'}</span>
+                    <span style="color:var(--text-2);font-size:0.6rem;margin-left:4px;">(${yearLabel ? yearLabel+' ' : ''}US low - $100, click to use)</span>
+                </div>
+            `;
+        } catch(e) {
+            intelEl.innerHTML = `<div style="color:var(--text-2);font-size:0.65rem;">Price data unavailable: ${e.message}</div>`;
+        }
     }
 
     async function _epmLoadSuggested() {
