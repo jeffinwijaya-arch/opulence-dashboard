@@ -10379,12 +10379,13 @@ async function loadPayments() {
     async function repostAllPostings() {
         const count = _postingsData.length;
         if (!count) { alert('No active postings to sync.'); return; }
-        if (!confirm(`Sync ${count} postings to WhatsApp?\n\nNew watches get posted, sold watches get deleted. Already-posted watches are skipped.\n\nAdd ?force=true to force re-send all.`)) return;
+        if (!confirm(`Sync ${count} postings to WhatsApp?\n\nNew watches get posted, sold watches get deleted. Already-posted watches are skipped.`)) return;
         const btn = document.getElementById('postings-repost-all-btn');
         const statusEl = document.getElementById('postings-status-msg');
         btn.disabled = true;
-        btn.textContent = `Syncing ${count}...`;
+        btn.textContent = `Syncing...`;
         statusEl.textContent = 'Syncing postings to WhatsApp — this may take a minute...';
+        statusEl.style.color = 'var(--text-2)';
         try {
             const r = await fetch('/api/my-postings/repost-all', {
                 method: 'POST',
@@ -10392,18 +10393,62 @@ async function loadPayments() {
             });
             const d = await r.json();
             if (!d.ok) throw new Error(d.error || 'Sync failed');
-            const parts = [];
-            if (d.posted) parts.push(`${d.posted} posted`);
-            if (d.deleted) parts.push(`${d.deleted} deleted`);
-            if (d.edited) parts.push(`${d.edited} edited`);
-            if (d.skipped) parts.push(`${d.skipped} skipped`);
-            if (d.errors) parts.push(`${d.errors} errors`);
-            statusEl.textContent = parts.length ? parts.join(', ') : 'All up to date';
+
+            // Build summary
+            const summary = [];
+            if (d.posted) summary.push(`✅ ${d.posted} posted`);
+            if (d.deleted) summary.push(`🗑️ ${d.deleted} deleted`);
+            if (d.skipped) summary.push(`⏭️ ${d.skipped} already synced`);
+            if (d.no_photo) summary.push(`📷 ${d.no_photo} skipped (no photo)`);
+            if (d.errors) summary.push(`❌ ${d.errors} errors`);
+
+            // Build detail log
+            const details = d.details || {};
+            let logLines = [];
+            (details.deleted || []).forEach(x => logLines.push(`🗑️ Deleted: ${x.ref} (${x.reason})`));
+            (details.posted || []).forEach(x => logLines.push(`✅ Posted: ${x.ref}`));
+            (details.no_photo || []).forEach(x => logLines.push(`📷 No photo: ${x.ref}`));
+            (details.errors || []).forEach(x => logLines.push(`❌ Error: ${x.ref || '#'+x.id} — ${x.error || 'unknown'}`));
+            (details.skipped || []).forEach(x => logLines.push(`⏭️ Skipped: ${x.ref}`));
+
+            const hasAction = d.posted || d.deleted || d.errors || d.no_photo;
+            const statusColor = d.errors ? 'var(--red, #ff6b6b)' : 'var(--green, #4caf50)';
+            statusEl.style.color = statusColor;
+            statusEl.textContent = summary.join(' · ') || 'All up to date ✅';
+
+            // Show detail modal
+            const logHtml = logLines.length
+                ? logLines.map(l => `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px;">${l}</div>`).join('')
+                : '<div style="padding:12px;color:var(--text-2);">Nothing to do — all postings already synced.</div>';
+
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div style="background:var(--bg-2, #1a1a2e);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:24px;max-width:500px;width:90%;max-height:70vh;overflow:auto;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                        <h3 style="margin:0;font-size:16px;">WhatsApp Sync Results</h3>
+                        <button onclick="this.closest('div[style*=fixed]').remove()" style="background:none;border:none;color:var(--text-2);font-size:20px;cursor:pointer;">✕</button>
+                    </div>
+                    <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+                        ${d.posted ? `<div style="background:rgba(76,175,80,0.15);color:#4caf50;padding:6px 12px;border-radius:6px;font-size:13px;font-weight:600;">${d.posted} Posted</div>` : ''}
+                        ${d.deleted ? `<div style="background:rgba(244,67,54,0.15);color:#f44336;padding:6px 12px;border-radius:6px;font-size:13px;font-weight:600;">${d.deleted} Deleted</div>` : ''}
+                        ${d.skipped ? `<div style="background:rgba(255,255,255,0.08);color:var(--text-2);padding:6px 12px;border-radius:6px;font-size:13px;font-weight:600;">${d.skipped} Skipped</div>` : ''}
+                        ${d.no_photo ? `<div style="background:rgba(255,152,0,0.15);color:#ff9800;padding:6px 12px;border-radius:6px;font-size:13px;font-weight:600;">${d.no_photo} No Photo</div>` : ''}
+                        ${d.errors ? `<div style="background:rgba(244,67,54,0.15);color:#f44336;padding:6px 12px;border-radius:6px;font-size:13px;font-weight:600;">${d.errors} Errors</div>` : ''}
+                    </div>
+                    <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:8px 12px;max-height:300px;overflow-y:auto;">
+                        ${logHtml}
+                    </div>
+                </div>`;
+            modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+            document.body.appendChild(modal);
+
             btn.textContent = 'Sync All';
             btn.disabled = false;
             loadPostingsPage();
         } catch (e) {
-            statusEl.textContent = 'Error: ' + e.message;
+            statusEl.style.color = 'var(--red, #ff6b6b)';
+            statusEl.textContent = '❌ Sync failed: ' + e.message;
             btn.textContent = 'Sync All';
             btn.disabled = false;
         }
