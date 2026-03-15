@@ -11332,6 +11332,10 @@ function toggleJamLang() {
     switchJamTab(_jamState.tab);
 }
 
+function _localDate(offset=0) {
+    const d = new Date(Date.now() + offset * 86400000);
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
 const _jamState = { tab: 'dijual', feeds: {}, offsets: {}, totals: {}, stats: null };
 
 function _jamFmt(n) {
@@ -11482,9 +11486,9 @@ function renderJamFeed(type) {
     
     let html = '';
     if (type === 'keluar') {
-        const today = new Date().toISOString().slice(0,10);
-        const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
-        const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0,10);
+        const today = _localDate(0);
+        const yesterday = _localDate(-1);
+        const tomorrow = _localDate(1);
         
         function _dateHeader(d, color) {
             let dateLabel = d;
@@ -11545,8 +11549,8 @@ function renderJamFeed(type) {
             }
         }
     } else if (type === 'masuk') {
-        const today = new Date().toISOString().slice(0,10);
-        const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+        const today = _localDate(0);
+        const yesterday = _localDate(-1);
         let lastDate = '';
         for (const item of items) {
             const d = item.date || 'Unknown';
@@ -11967,8 +11971,8 @@ function _formatActivityTime(ts) {
 }
 
 function jamSetShipDate(watchId) {
-    const today = new Date().toISOString().slice(0,10);
-    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0,10);
+    const today = _localDate(0);
+    const tomorrow = _localDate(1);
     
     const modal = document.createElement('div');
     modal.id = 'jam-schedule-modal';
@@ -12016,8 +12020,8 @@ async function jamMarkShipped(watchId) {
 }
 
 function jamSetLocalDelivery(watchId) {
-    const today = new Date().toISOString().slice(0,10);
-    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0,10);
+    const today = _localDate(0);
+    const tomorrow = _localDate(1);
     const hour = new Date().getHours();
     const defaultDate = hour >= 18 ? tomorrow : today;
     
@@ -12062,8 +12066,8 @@ async function jamDoLocalDelivery(watchId) {
 function jamAttachLabelWithDate(watchId) {
     const now = new Date();
     const hour = now.getHours();
-    const today = now.toISOString().slice(0,10);
-    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0,10);
+    const today = _localDate(0);
+    const tomorrow = _localDate(1);
     const defaultDate = hour >= 18 ? tomorrow : today;
     
     const modal = document.createElement('div');
