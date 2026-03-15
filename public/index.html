@@ -1520,7 +1520,7 @@
                 <button class="btn" onclick="batchArrived()" style="font-size:0.7rem;padding:4px 10px;background:var(--accent);color:var(--bg-1);">Mark Arrived</button>
                 <button class="btn" onclick="batchPost()" style="font-size:0.7rem;padding:4px 10px;background:#f0c040;color:var(--bg-1);">Mark Posted</button>
                 <button class="btn" onclick="batchInvoice()" style="font-size:0.7rem;padding:4px 10px;background:var(--green);color:var(--bg-1);">Batch Invoice</button>
-                <button class="btn" onclick="batchOCR()" style="font-size:0.7rem;padding:4px 10px;background:#9b59b6;color:var(--bg-1);">OCR Extract</button>
+                <button class="btn" onclick="batchOCR()" style="font-size:0.7rem;padding:4px 10px;background:#9b59b6;color:var(--bg-1);">Vision Extract</button>
                 <button class="btn" onclick="clearBatchSelection()" style="font-size:0.7rem;padding:4px 10px;opacity:0.6;">Clear</button>
             </div>
             <div id="im-completed-toggle" style="display:none;text-align:center;padding:8px 0;border-bottom:1px solid var(--border);"></div>
@@ -6374,7 +6374,7 @@ function renderInventoryTable(rows) {
         if (r.sold==='Yes'&&r.shipped!=='Yes') html += `<a onclick="showShipModal(${r.row})" style="cursor:pointer;color:var(--accent);margin-right:6px;padding:4px 8px;border:1px solid var(--accent);border-radius:4px;font-size:0.7rem;">Ship</a>`;
         if (r.sold==='Yes'&&r.paid_after_sold!=='Yes') html += `<a onclick="quickAction(${r.row},'paid')" style="cursor:pointer;color:var(--green);margin-right:6px;padding:4px 8px;border:1px solid var(--green);border-radius:4px;font-size:0.7rem;">Paid</a>`;
         html += `<a onclick="editWatch(${r.row})" style="cursor:pointer;color:var(--text-2);margin-right:6px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:0.7rem;">Edit</a>`;
-        html += `<a onclick="processOCR(${r.row})" style="cursor:pointer;color:#9b59b6;margin-right:6px;padding:4px 8px;border:1px solid #9b59b6;border-radius:4px;font-size:0.7rem;">OCR</a>`;
+        html += `<a onclick="processOCR(${r.row})" style="cursor:pointer;color:#9b59b6;margin-right:6px;padding:4px 8px;border:1px solid #9b59b6;border-radius:4px;font-size:0.7rem;">Vision</a>`;
         html += `<a onclick="viewWatchPhotos('${r.description}', ${r.row})" style="cursor:pointer;color:#06b6d4;margin-right:6px;padding:4px 8px;border:1px solid #06b6d4;border-radius:4px;font-size:0.7rem;">Photos</a>`;
         html += `<a onclick="documentSingleWatch(${r.row})" style="cursor:pointer;color:#2563eb;padding:4px 8px;border:1px solid #2563eb;border-radius:4px;font-size:0.7rem;">Doc</a>`;
         return html;
@@ -6408,7 +6408,7 @@ function renderInventoryTable(rows) {
                 ${r.sold==='Yes'&&r.shipped!=='Yes'?`<a onclick="showShipModal(${r.row})" style="cursor:pointer;color:var(--accent);margin-right:4px;">Ship</a>`:''}
                 ${r.sold==='Yes'&&r.paid_after_sold!=='Yes'?`<a onclick="quickAction(${r.row},'paid')" style="cursor:pointer;color:var(--green);margin-right:4px;">Paid</a>`:''}
                 <a onclick="editWatch(${r.row})" style="cursor:pointer;color:var(--text-2);margin-right:4px;">Edit</a>
-                <a onclick="processOCR(${r.row})" style="cursor:pointer;color:#9b59b6;margin-right:4px;">OCR</a>
+                <a onclick="processOCR(${r.row})" style="cursor:pointer;color:#9b59b6;margin-right:4px;">Vision</a>
                 <a onclick="viewWatchPhotos('${r.description}', ${r.row})" style="cursor:pointer;color:#06b6d4;margin-right:4px;">Photos</a>
                 <a onclick="documentSingleWatch(${r.row})" style="cursor:pointer;color:#2563eb;">Doc</a>
             </td>
@@ -6633,7 +6633,7 @@ async function processOCR(row) {
     if (!watch) return;
     const desc = watch.description || `Row ${row}`;
     
-    if (!confirm(`Extract text from photos for "${desc}" using OCR?`)) return;
+    if (!confirm(`Extract text from photos for "${desc}" using Apple Vision?`)) return;
     
     try {
         showToast(`Processing photos for row ${row}...`, 'info');
@@ -6648,7 +6648,7 @@ async function processOCR(row) {
         const d = await r.json();
         
         if (d.success) {
-            let message = `OCR complete for row ${row}`;
+            let message = `Vision complete for row ${row}`;
             
             // Show extracted data
             const extracted = d.extracted_data || {};
@@ -6669,10 +6669,10 @@ async function processOCR(row) {
             
             alert(message);
         } else {
-            showToast('OCR Error: ' + (d.error || 'Failed to extract text'), 'error');
+            showToast('Vision Error: ' + (d.error || 'Failed to extract text'), 'error');
         }
     } catch(e) {
-        showToast('OCR Error: ' + e.message, 'error');
+        showToast('Vision Error: ' + e.message, 'error');
     }
 }
 async function batchOCR() {
@@ -6681,12 +6681,12 @@ async function batchOCR() {
         return;
     }
     
-    if (!confirm(`Process OCR for ${batchSelected.size} watches? This may take several minutes.`)) return;
+    if (!confirm(`Process Vision for ${batchSelected.size} watches? This may take several minutes.`)) return;
     
     const updateSheet = confirm('Update Bot Sheet with extracted data?');
     
     try {
-        showToast(`Processing OCR for ${batchSelected.size} watches...`, 'info');
+        showToast(`Processing Vision for ${batchSelected.size} watches...`, 'info');
         const r = await fetch('/api/ocr-batch', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -6698,7 +6698,7 @@ async function batchOCR() {
         const d = await r.json();
         
         if (d.success) {
-            let summary = `OCR batch complete:\n• ${d.processed} watches processed\n• ${d.updated} Bot Sheet updates`;
+            let summary = `Vision batch complete:\n• ${d.processed} watches processed\n• ${d.updated} Bot Sheet updates`;
             
             // Show some sample extracted data
             const results = d.results || [];
@@ -6717,7 +6717,7 @@ async function batchOCR() {
                 });
             }
             
-            showToast(`OCR batch complete: ${d.processed}/${d.total_rows} processed`, 'success');
+            showToast(`Vision batch complete: ${d.processed}/${d.total_rows} processed`, 'success');
             alert(summary);
             
             if (d.updated > 0) {
@@ -6726,10 +6726,10 @@ async function batchOCR() {
             
             clearBatchSelection();
         } else {
-            showToast('Batch OCR Error: ' + (d.error || 'Unknown error'), 'error');
+            showToast('Batch Vision Error: ' + (d.error || 'Unknown error'), 'error');
         }
     } catch(e) {
-        showToast('Batch OCR Error: ' + e.message, 'error');
+        showToast('Batch Vision Error: ' + e.message, 'error');
     }
 }
 
@@ -9279,7 +9279,7 @@ async function loadPayments() {
         const btn = $('#btn-auto-redact');
         btn.textContent = 'Detecting...';
         btn.disabled = true;
-        statusEl.textContent = ' Running OCR detection...';
+        statusEl.textContent = ' Running Vision detection...';
         statusEl.style.display = 'inline';
         statusEl.style.color = 'var(--accent)';
         
