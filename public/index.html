@@ -10992,7 +10992,57 @@ async function loadPayments() {
             </tr>`;
         }).join('');
 
-                // Mobile cards now rendered by renderActivePostings with date grouping — no duplicate render here
+        // Mobile cards with date grouping
+        const cardsEl = document.getElementById('postings-active-cards');
+        if (cardsEl) {
+            const today = new Date().toISOString().slice(0,10);
+            const yd = new Date(Date.now()-86400000).toISOString().slice(0,10);
+            let lastDate = '';
+            let html = '';
+            postings.forEach(p => {
+                const rawDate = p.posted_raw || (p.posted_at||'').slice(0,10) || '';
+                if (rawDate !== lastDate) {
+                    lastDate = rawDate;
+                    let label = rawDate;
+                    if (rawDate === today) label = 'Today';
+                    else if (rawDate === yd) label = 'Yesterday';
+                    else { try { label = new Date(rawDate+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}); } catch(e){} }
+                    html += `<div style="padding:10px 4px 6px;margin-top:12px;border-bottom:2px solid var(--accent);display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:0.78rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;">${label}</span>
+                    </div>`;
+                }
+                const desc = (p.description || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                const price = p.price ? '$' + Number(p.price).toLocaleString() : '—';
+                const mid = p.message_id || '';
+                const priceRaw = p.price || '';
+                const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\').replace(/\n/g,' ').replace(/\r/g,'');
+                const safePhoto = (p.photo || '').replace(/'/g,'&apos;');
+                const imgTag = p.photo ? `<img src="/api/posting-photo/${p.photo}" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">` : '';
+                const isDraft = p.status === 'draft';
+                const statusBadge = isDraft ? '<span style="background:var(--yellow,#ffd600);color:#000;font-size:0.6rem;padding:1px 6px;border-radius:4px;font-weight:600;">DRAFT</span> ' : '';
+                const perf = _postingPerformanceData[String(mid)] || {};
+                const daysText = perf.days_listed != null ? ' \u00b7 '+perf.days_listed+'d listed' : '';
+                html += `<div class="posting-card" style="${isDraft ? 'border-color:var(--yellow,#ffd600);' : ''}">
+                    ${imgTag}
+                    <div class="posting-card-body">
+                        <div class="posting-card-ref">${statusBadge}${p.ref || '\u2014'}</div>
+                        <div class="posting-card-desc">${desc}</div>
+                        <div class="posting-card-meta">
+                            <span class="posting-card-price">${price}</span>
+                            <span class="posting-card-date">${p.time_ago || rawDate}${daysText}</span>
+                        </div>
+                        <div class="posting-card-actions">
+                            ${isDraft
+                                ? `<button class="btn" style="background:#e8f5e9;color:var(--green);border-color:var(--green);font-weight:600;" onclick="sendPostingToTelegram(${p.id})">Send to TG</button>`
+                                : `<button class="btn" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);" onclick="repostSinglePosting(${p.id},'${safeDesc}',this)">Repost</button>`}
+                            <button class="btn" onclick="openPriceEditModal('${mid}','${priceRaw}','${safeDesc}','${safePhoto}','${p.row||""}')">Edit</button>
+                            <button class="btn" style="background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);" onclick="openPostingDeleteModal('${mid}','${safeDesc}','${safePhoto}','${priceRaw}','${p.id||""}')">Delete</button>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            cardsEl.innerHTML = html;
+        }
     };
 
     // Override loadPostingsPage to also load performance data
