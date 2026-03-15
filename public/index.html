@@ -977,7 +977,6 @@
             <a data-page="shipping" onclick="showPage('shipping')">Shipping</a>
             <a data-page="inventory" onclick="showPage('inventory')">Inventory</a>
             <a data-page="mission-control" onclick="showPage('mission-control')">Mission Control</a>
-            <a data-page="terminal" onclick="showPage('terminal')">Terminal</a>
             <a data-page="payments" onclick="showPage('payments')">Payments <span class="badge" id="payments-count">0</span></a>
             <a data-page="postings" onclick="showPage('postings')">My Postings</a>
             <a data-page="jam" onclick="showPage('jam')">Operations</a>
@@ -2313,26 +2312,7 @@
         </div>
 
         <!-- ═══ MISSION CONTROL ═══ -->
-        <div class="page" id="page-terminal" style="display:none;">
-            <div class="page-head">
-                <h1>Terminal</h1>
-                <p>Live system logs — see what Mochie is doing</p>
-            </div>
-            <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
-                <button class="btn" id="term-btn-all" onclick="termFilter('all')" style="background:var(--accent);color:var(--bg-1);font-weight:600;font-size:0.72rem;padding:4px 12px;">All</button>
-                <button class="btn" id="term-btn-dashboard" onclick="termFilter('dashboard')" style="font-size:0.72rem;padding:4px 12px;">Dashboard</button>
-                <button class="btn" id="term-btn-gateway" onclick="termFilter('gateway')" style="font-size:0.72rem;padding:4px 12px;">Gateway</button>
-                <button class="btn" id="term-btn-audit" onclick="termFilter('audit')" style="font-size:0.72rem;padding:4px 12px;">Audit Log</button>
-                <label style="display:flex;align-items:center;gap:4px;font-size:0.72rem;color:var(--text-2);margin-left:auto;">
-                    <input type="checkbox" id="term-auto-scroll" checked /> Auto-scroll
-                </label>
-            </div>
-            <div id="terminal-output" style="background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:12px;font-family:'JetBrains Mono',var(--mono);font-size:0.7rem;line-height:1.6;color:#c9d1d9;height:calc(100vh - 220px);overflow-y:auto;white-space:pre-wrap;word-break:break-all;">
-                Connecting...
-            </div>
-        </div>
-
-        <div class="page" id="page-mission-control">
+                <div class="page" id="page-mission-control">
             <style>
                 .mc-header{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
                 .mc-logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#F59E0B,#E08830);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:0 4px 16px rgba(245,158,11,0.25);}
@@ -2454,6 +2434,7 @@
                 <div class="mc-tab-btn" onclick="switchMcTab('health')">Health</div>
                 <div class="mc-tab-btn" onclick="switchMcTab('scheduler')">Scheduler</div>
                 <div class="mc-tab-btn" onclick="switchMcTab('journal')">Journal</div>
+                <div class="mc-tab-btn" onclick="switchMcTab('terminal')">Terminal</div>
             </div>
 
             <!-- Backlog Section (Kanban) -->
@@ -2516,6 +2497,22 @@
                     <button class="mc-btn" onclick="showNewJournalModal()">+ Add Entry</button>
                 </div>
                 <div class="journal-list" id="journal-list"></div>
+            </div>
+
+            <!-- Terminal Section -->
+            <div class="mc-section" id="mc-terminal">
+                <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+                    <button class="btn" id="term-btn-all" onclick="termFilter('all')" style="background:var(--accent);color:var(--bg-1);font-weight:600;font-size:0.72rem;padding:4px 12px;">All</button>
+                    <button class="btn" id="term-btn-dashboard" onclick="termFilter('dashboard')" style="font-size:0.72rem;padding:4px 12px;">Dashboard</button>
+                    <button class="btn" id="term-btn-gateway" onclick="termFilter('gateway')" style="font-size:0.72rem;padding:4px 12px;">Gateway</button>
+                    <button class="btn" id="term-btn-audit" onclick="termFilter('audit')" style="font-size:0.72rem;padding:4px 12px;">Audit Log</button>
+                    <label style="display:flex;align-items:center;gap:4px;font-size:0.72rem;color:var(--text-2);margin-left:auto;">
+                        <input type="checkbox" id="term-auto-scroll" checked /> Auto-scroll
+                    </label>
+                </div>
+                <div id="terminal-output" style="background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:12px;font-family:'JetBrains Mono',var(--mono);font-size:0.7rem;line-height:1.6;color:#c9d1d9;height:calc(100vh - 300px);overflow-y:auto;white-space:pre-wrap;word-break:break-all;">
+                    Connecting...
+                </div>
             </div>
 
             <!-- Modals -->
@@ -2739,7 +2736,7 @@ let browseOffset = 0;
 const BROWSE_PAGE = 80;
 let currentDealsRegion = 'all';
 
-const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals & Arbitrage',browse:'Market',invoices:'Invoices',shipping:'Shipping',inventory:'Inventory',payments:'Payments',photos:'Photos','mission-control':'Mission Control',terminal:'Terminal'};
+const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals & Arbitrage',browse:'Market',invoices:'Invoices',shipping:'Shipping',inventory:'Inventory',payments:'Payments',photos:'Photos','mission-control':'Mission Control'};
 
 function toggleMobileMore() {
     const m = document.getElementById('mobile-more-menu');
@@ -2781,7 +2778,6 @@ function showPage(name, pushState=true) {
     if (name === 'portfolio') { if (DATA.portfolio) renderPortfolio(); else loadPortfolio(); }
     if (name === 'invoices') loadInvoicePage();
     if (name === 'shipping') loadShippingPage();
-    if (name === 'terminal') startTerminal();
     if (name === 'inventory') loadInventoryPage();
     if (name === 'payments') loadPayments();
     if (name === 'photos') { loadPhotoLibrary(); loadDocumentationPage(); }
@@ -12269,6 +12265,8 @@ let mcCurrentTab = 'backlog';
 
 function switchMcTab(tab, evt) {
     mcCurrentTab = tab;
+    // Stop terminal polling when switching away
+    if (tab !== 'terminal' && _termInterval) { clearInterval(_termInterval); _termInterval = null; }
     document.querySelectorAll('.mc-tab-btn').forEach(b => {
         b.classList.toggle('active', b.textContent.trim().toLowerCase() === tab.toLowerCase());
     });
@@ -12291,6 +12289,7 @@ async function loadMcTab(tab) {
             case 'health': await loadMcHealth(); break;
             case 'scheduler': await loadMcScheduler(); break;
             case 'journal': await loadMcJournal(); break;
+            case 'terminal': startTerminal(); break;
         }
     } catch(e) { console.error('MC tab load error:', e); }
 }
