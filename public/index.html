@@ -1705,6 +1705,7 @@
             <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
                 <button class="btn" onclick="loadPostingsPage()" style="opacity:0.8;">&#8635; Refresh</button>
                 <button class="btn" onclick="syncPostings()" id="postings-sync-btn" style="opacity:0.8;">&#8635; Reload Log</button>
+                <button class="btn" onclick="repostAllPostings()" id="postings-repost-all-btn" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);font-weight:600;">🔄 Repost All</button>
                 <span id="postings-status-msg" style="font-size:0.72rem;color:var(--text-2);margin-left:4px;"></span>
             </div>
 
@@ -2685,6 +2686,11 @@ function mobileNav(page) {
     showPage(page);
 }
 function showPage(name, pushState=true) {
+    // Role-based page restriction (frontend enforcement)
+    if (window.__USER_ROLE && window.__USER_ROLE.allowedPages && !window.__USER_ROLE.allowedPages.includes(name)) {
+        console.warn('Access denied:', name);
+        return;
+    }
     // Cross-fade: exit current page
     const currentPage = document.querySelector('.page.active');
     if (currentPage && currentPage.id !== `page-${name}`) {
@@ -9682,10 +9688,12 @@ async function loadPayments() {
                 <td class="right" style="font-size:0.72rem;font-family:monospace;font-weight:600;">${price}</td>
                 <td class="right" style="font-size:0.72rem;white-space:nowrap;">${posted}</td>
                 <td style="white-space:nowrap;">
+                    <button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);"
+                        onclick="repostSinglePosting(${p.id},'${safeDesc}',this)">Repost</button>
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;"
                         onclick="openPriceEditModal('${mid}','${priceRaw}','${safeDesc}','${safePhoto}','${p.row||""}')">Edit</button>
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);"
-                        onclick="openPostingDeleteModal('${mid}','${safeDesc}','${safePhoto}','${priceRaw}')">Delete</button>
+                        onclick="openPostingDeleteModal('${mid}','${safeDesc}','${safePhoto}','${priceRaw}','${p.id||""}')">Delete</button>
                 </td>
             </tr>`;
         }).join('');
@@ -9714,9 +9722,11 @@ async function loadPayments() {
                             <span class="posting-card-date">${posted}</span>
                         </div>
                         <div class="posting-card-actions">
+                            <button class="btn" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);"
+                                onclick="repostSinglePosting(${p.id},'${safeDesc}',this)">Repost</button>
                             <button class="btn" onclick="openPriceEditModal('${mid}','${priceRaw}','${safeDesc}','${safePhoto}','${p.row||""}')">Edit</button>
                             <button class="btn" style="background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);"
-                                onclick="openPostingDeleteModal('${mid}','${safeDesc}','${safePhoto}','${priceRaw}')">Delete</button>
+                                onclick="openPostingDeleteModal('${mid}','${safeDesc}','${safePhoto}','${priceRaw}','${p.id||""}')">Delete</button>
                         </div>
                     </div>
                 </div>`;
@@ -9761,8 +9771,9 @@ async function loadPayments() {
         }
     }
 
-    function openPostingDeleteModal(messageId, desc, photo, price) {
-        document.getElementById('pdm-message-id').value = messageId;
+    function openPostingDeleteModal(messageId, desc, photo, price, postingId) {
+        document.getElementById('pdm-message-id').value = messageId || '';
+        document.getElementById('pdm-message-id').dataset.postingId = postingId || '';
         document.getElementById('pdm-desc').textContent = desc;
         document.getElementById('pdm-status').style.display = 'none';
         document.getElementById('pdm-confirm').disabled = false;
@@ -9797,7 +9808,7 @@ async function loadPayments() {
             const r = await fetch('/api/my-postings/delete', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({message_id: messageId})
+                body: JSON.stringify({message_id: messageId || undefined, posting_id: document.getElementById('pdm-message-id').dataset.postingId || undefined})
             });
             const d = await r.json();
             if (!d.ok) throw new Error(d.error || 'Delete failed');
@@ -10126,6 +10137,55 @@ async function loadPayments() {
         _origShowPage(page);
         if (page === 'postings') loadPostingsPage();
     };
+    async function repostSinglePosting(postingId, desc, btn) {
+        if (!confirm(`Repost "${desc.slice(0,60)}..." to Telegram?`)) return;
+        const origText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '⏳';
+        try {
+            const r = await fetch('/api/my-postings/repost', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({posting_id: postingId})
+            });
+            const d = await r.json();
+            if (!d.ok) throw new Error(d.error || 'Repost failed');
+            btn.textContent = '✅';
+            setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 2000);
+        } catch (e) {
+            alert('Repost failed: ' + e.message);
+            btn.textContent = origText;
+            btn.disabled = false;
+        }
+    }
+
+    async function repostAllPostings() {
+        const count = _postingsData.length;
+        if (!count) { alert('No active postings to repost.'); return; }
+        if (!confirm(`Repost ALL ${count} active postings to Telegram?\n\nThis will delete and re-send every posting (~${count} seconds).`)) return;
+        const btn = document.getElementById('postings-repost-all-btn');
+        const statusEl = document.getElementById('postings-status-msg');
+        btn.disabled = true;
+        btn.textContent = `⏳ Reposting ${count}...`;
+        statusEl.textContent = 'Reposting all — this may take a minute...';
+        try {
+            const r = await fetch('/api/my-postings/repost-all', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            });
+            const d = await r.json();
+            if (!d.ok) throw new Error(d.error || 'Repost all failed');
+            statusEl.textContent = `✅ Reposted ${d.reposted}/${d.total} postings`;
+            btn.textContent = '🔄 Repost All';
+            btn.disabled = false;
+            loadPostingsPage();
+        } catch (e) {
+            statusEl.textContent = '❌ Error: ' + e.message;
+            btn.textContent = '🔄 Repost All';
+            btn.disabled = false;
+        }
+    }
+
     // Auto-load if postings page was opened via URL param
     if (new URLSearchParams(window.location.search).get('p') === 'postings') loadPostingsPage();
 
@@ -10705,10 +10765,12 @@ async function loadPayments() {
                 <td class="right">${daysHtml}</td>
                 <td class="right">${changesHtml}</td>
                 <td style="white-space:nowrap;">
+                    <button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);"
+                        onclick="repostSinglePosting(${p.id},'${safeDesc}',this)">Repost</button>
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;"
                         onclick="openPriceEditModal('${mid}','${priceRaw}','${safeDesc}','${safePhoto}','${p.row||""}')">Edit</button>
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);"
-                        onclick="openPostingDeleteModal('${mid}','${safeDesc}','${safePhoto}','${priceRaw}')">Delete</button>
+                        onclick="openPostingDeleteModal('${mid}','${safeDesc}','${safePhoto}','${priceRaw}','${p.id||""}')">Delete</button>
                 </td>
             </tr>`;
         }).join('');
@@ -10737,9 +10799,11 @@ async function loadPayments() {
                             <span class="posting-card-date">${posted}${daysText}</span>
                         </div>
                         <div class="posting-card-actions">
+                            <button class="btn" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);"
+                                onclick="repostSinglePosting(${p.id},'${safeDesc}',this)">Repost</button>
                             <button class="btn" onclick="openPriceEditModal('${mid}','${priceRaw}','${safeDesc}','${safePhoto}','${p.row||""}')">Edit</button>
                             <button class="btn" style="background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);"
-                                onclick="openPostingDeleteModal('${mid}','${safeDesc}','${safePhoto}','${priceRaw}')">Delete</button>
+                                onclick="openPostingDeleteModal('${mid}','${safeDesc}','${safePhoto}','${priceRaw}','${p.id||""}')">Delete</button>
                         </div>
                     </div>
                 </div>`;
