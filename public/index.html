@@ -11179,7 +11179,7 @@ async function loadPayments() {
 
 <!-- PWA Service Worker Registration -->
 <script>
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && false) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then(registration => {
@@ -11192,7 +11192,8 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 <script>
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+// SW disabled — was causing stale cache issues
+if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(regs=>regs.forEach(r=>r.unregister()));
 window.addEventListener('offline', () => {
   let b = document.getElementById('offline-banner');
   if (!b) { b = document.createElement('div'); b.id = 'offline-banner';
