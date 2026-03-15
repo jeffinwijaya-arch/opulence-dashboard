@@ -1697,6 +1697,10 @@
                 <div class="tab active" id="postings-tab-active" onclick="switchPostingsTab('active',this)">Active Postings</div>
                 <div class="tab" id="postings-tab-ready" onclick="switchPostingsTab('ready',this)">Ready to Post</div>
             </div>
+            <!-- Search -->
+            <div style="margin-bottom:10px;">
+                <input type="text" id="postings-search" placeholder="Search postings (ref, dial, description...)" oninput="filterPostings()" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg-1);color:var(--text-0);font-size:0.85rem;box-sizing:border-box;">
+            </div>
             <!-- Controls row -->
             <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
                 <button class="btn" onclick="loadPostingsPage()" style="opacity:0.8;">&#8635; Refresh</button>
@@ -9612,6 +9616,28 @@ async function loadPayments() {
         document.getElementById('postings-panel-active').style.display = tab === 'active' ? '' : 'none';
         document.getElementById('postings-panel-ready').style.display = tab === 'ready' ? '' : 'none';
         if (tab === 'ready' && _postingsReadyData.length === 0) loadReadyToPost();
+    }
+
+    function filterPostings() {
+        const q = (document.getElementById('postings-search')?.value || '').toLowerCase().trim();
+        if (!q) {
+            if (_postingsCurrentTab === 'active') renderActivePostings(_postingsData);
+            else renderReadyToPost(_postingsReadyData);
+            return;
+        }
+        if (_postingsCurrentTab === 'active') {
+            const filtered = (_postingsData || []).filter(p => {
+                const text = ((p.ref||'') + ' ' + (p.description||'') + ' ' + (p.caption||'')).toLowerCase();
+                return text.includes(q);
+            });
+            renderActivePostings(filtered);
+        } else {
+            const filtered = (_postingsReadyData || []).filter(p => {
+                const text = ((p.ref||'') + ' ' + (p.description||'')).toLowerCase();
+                return text.includes(q);
+            });
+            renderReadyToPost(filtered);
+        }
     }
 
     async function loadPostingsPage() {
