@@ -1746,13 +1746,15 @@
                                 <input type="hidden" id="epm-message-id">
                                 <div style="margin-bottom:10px;">
                                     <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Photo</label>
-                                    <div id="epm-photo-preview" style="display:flex;gap:6px;align-items:center;margin-top:4px;min-height:50px;">
-                                        <img id="epm-photo-img" src="" style="display:none;width:100%;max-height:200px;object-fit:contain;border-radius:6px;border:1px solid var(--border);">
+                                    <div id="epm-photo-preview" style="margin-top:4px;text-align:center;min-height:50px;">
+                                        <img id="epm-photo-img" src="" style="display:none;max-width:100%;max-height:280px;object-fit:contain;border-radius:8px;border:1px solid var(--border);">
                                         <span id="epm-no-photo" style="font-size:0.68rem;color:var(--text-2);">No photo</span>
-                                        <label style="font-size:0.65rem;color:var(--green);cursor:pointer;border:1px dashed var(--green);border-radius:var(--radius);padding:4px 10px;margin-left:auto;" for="epm-photo-upload">
-                                            <span id="epm-photo-label">+ Add Photo</span>
-                                        </label>
-                                        <input type="file" id="epm-photo-upload" accept="image/*,.heic,.heif" style="display:none" onchange="handleEditPostingPhoto(this)">
+                                        <div style="margin-top:6px;">
+                                            <label style="font-size:0.65rem;color:var(--green);cursor:pointer;border:1px dashed var(--green);border-radius:var(--radius);padding:4px 10px;" for="epm-photo-upload">
+                                                <span id="epm-photo-label">+ Add Photo</span>
+                                            </label>
+                                            <input type="file" id="epm-photo-upload" accept="image/*,.heic,.heif" style="display:none" onchange="handleEditPostingPhoto(this)">
+                                        </div>
                                     </div>
                                     <div id="epm-suggested-photos" style="display:none;margin-top:6px;">
                                         <label style="font-size:0.62rem;color:var(--text-2);text-transform:uppercase;">Suggested</label>
