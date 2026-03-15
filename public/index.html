@@ -255,8 +255,8 @@
         .tag-gold { background:var(--accent-dim); color:var(--accent); border:1px solid var(--accent-border); box-shadow:0 0 6px rgba(212,175,55,0.1); }
 
         /* ── PAGES ── */
-        .page { display:none; opacity:0; }
-        .page.active { display:block; animation:pageIn 0.35s ease-out forwards; }
+        .page { display:none; }
+        .page.active { display:block; opacity:1; }
         .page.page-exit { display:block; animation:pageOut 0.15s ease-in forwards; position:absolute; width:100%; }
         .page-head { margin-bottom:16px; }
         .page-head h1 { font-size:1.3rem; font-weight:700; letter-spacing:-0.3px; }
@@ -884,10 +884,7 @@
             }
         }
 
-        /* ── SMOOTHER PAGE TRANSITIONS ── */
-        .page.active {
-            animation: pageIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
+        /* ── PAGE TRANSITIONS (removed animation to fix position:fixed modals) ── */
 
         /* ── CARD HOVER LIFT (desktop only) ── */
         @media(min-width:901px) {
