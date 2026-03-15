@@ -983,6 +983,7 @@
             <a data-page="photos" onclick="showPage('photos')">Photos</a>
 
             <a data-page="aging" onclick="showPage('aging')">Aging</a>
+            <a data-page="ad-crm" onclick="showPage('ad-crm')">AD CRM</a>
             <a data-page="briefing" onclick="showPage('briefing')">Briefing</a>
         </nav>
         <div class="theme-toggle" onclick="toggleTheme()" id="themeToggle" title="Toggle light/dark mode"></div>
@@ -1041,6 +1042,7 @@
             <a class="more-grid-item" onclick="mobileNav('briefing')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></span>Briefing</a>
             <a class="more-grid-item" onclick="mobileNav('mission-control')"><span class="mgi-icon"></span>Mission Control</a>
             <a class="more-grid-item" onclick="mobileNav('jam')"><span class="mgi-icon" style="font-size:0.9rem;">OP</span>Operations</a>
+            <a class="more-grid-item" onclick="mobileNav('ad-crm')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span>AD CRM</a>
         </div>
     </div>
 
@@ -2182,6 +2184,36 @@
             <div id="aging-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;"></div>
         </div>
 
+        <!-- ═══ AD CRM ═══ -->
+        <div class="page" id="page-ad-crm">
+            <div class="page-head" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                <div>
+                    <h1>AD CRM</h1>
+                    <p>Rolex Authorized Dealer follow-up tracker</p>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <select id="crm-region-filter" class="input" style="font-size:0.75rem;" onchange="filterCrmStores()">
+                        <option value="">All Regions</option>
+                    </select>
+                    <select id="crm-status-filter" class="input" style="font-size:0.75rem;" onchange="filterCrmStores()">
+                        <option value="">All Status</option>
+                        <option value="overdue">Overdue (15+ days)</option>
+                        <option value="ok">Up to Date</option>
+                        <option value="never">Never Visited</option>
+                    </select>
+                    <button class="btn" onclick="refreshCrmFromSheet()" style="font-size:0.7rem;">Sync Sheet</button>
+                </div>
+            </div>
+            <!-- Stats cards -->
+            <div id="crm-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;"></div>
+            <!-- Store list -->
+            <div id="crm-store-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+            <!-- Store detail modal -->
+            <div id="crm-detail-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);padding:20px;overflow-y:auto;" onclick="if(event.target===this)this.style.display='none'">
+                <div style="max-width:600px;margin:40px auto;background:var(--bg-2);border-radius:12px;padding:24px;" id="crm-detail-content"></div>
+            </div>
+        </div>
+
         <!-- ═══ BRIEFING ═══ -->
         <div class="page" id="page-briefing">
             <div class="page-head" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;">
@@ -2727,6 +2759,7 @@ function showPage(name, pushState=true) {
     if (name === 'aging') loadAgingHeatmap();
     if (name === 'mission-control') loadMissionControl();
     if (name === 'jam') loadJamPage();
+    if (name === 'ad-crm') loadAdCrm();
     if (pushState) {
         const params = new URLSearchParams(window.location.search);
         params.set('p', name);
@@ -12576,6 +12609,435 @@ function jamUploadLabel(watchId) {
 if (_userRole.allowedPages) {
     showPage(_userRole.allowedPages[0] || 'jam');
 }
+
+    // ═══════════════════════════════════════════════════
+    // ═══ AD CRM ═══
+    // ═══════════════════════════════════════════════════
+    let _crmStores = [];
+    
+    async function loadAdCrm() {
+        try {
+            const [statsRes, storesRes] = await Promise.all([
+                fetch('/api/ad-crm/stats'), fetch('/api/ad-crm/stores')
+            ]);
+            const stats = await statsRes.json();
+            _crmStores = await storesRes.json();
+            
+            // Render stats cards
+            const overdue = _crmStores.filter(s => s.is_overdue).length;
+            const never = _crmStores.filter(s => !s.last_visit).length;
+            const ok = _crmStores.length - overdue - never;
+            
+            $('#crm-stats').innerHTML = `
+                <div class="stat-card" style="background:var(--bg-2);border-radius:10px;padding:14px;text-align:center;">
+                    <div style="font-size:1.8rem;font-weight:700;">${_crmStores.length}</div>
+                    <div style="font-size:0.7rem;color:var(--text-2);">Total Stores</div>
+                </div>
+                <div class="stat-card" style="background:var(--bg-2);border-radius:10px;padding:14px;text-align:center;">
+                    <div style="font-size:1.8rem;font-weight:700;color:#ef4444;">${overdue}</div>
+                    <div style="font-size:0.7rem;color:var(--text-2);">Overdue (15+ days)</div>
+                </div>
+                <div class="stat-card" style="background:var(--bg-2);border-radius:10px;padding:14px;text-align:center;">
+                    <div style="font-size:1.8rem;font-weight:700;color:#f59e0b;">${never}</div>
+                    <div style="font-size:0.7rem;color:var(--text-2);">Never Visited</div>
+                </div>
+                <div class="stat-card" style="background:var(--bg-2);border-radius:10px;padding:14px;text-align:center;">
+                    <div style="font-size:1.8rem;font-weight:700;color:#22c55e;">${ok}</div>
+                    <div style="font-size:0.7rem;color:var(--text-2);">Up to Date</div>
+                </div>
+                <div class="stat-card" style="background:var(--bg-2);border-radius:10px;padding:14px;text-align:center;">
+                    <div style="font-size:1.8rem;font-weight:700;">${stats.total_contacts || 0}</div>
+                    <div style="font-size:0.7rem;color:var(--text-2);">Contacts</div>
+                </div>
+                <div class="stat-card" style="background:var(--bg-2);border-radius:10px;padding:14px;text-align:center;">
+                    <div style="font-size:1.8rem;font-weight:700;">${stats.total_visits || 0}</div>
+                    <div style="font-size:0.7rem;color:var(--text-2);">Total Visits</div>
+                </div>
+            `;
+            
+            // Populate region filter
+            const regions = [...new Set(_crmStores.map(s => s.region).filter(Boolean))].sort();
+            const rf = $('#crm-region-filter');
+            rf.innerHTML = '<option value="">All Regions</option>' + 
+                regions.map(r => `<option value="${r}">${r} (${_crmStores.filter(s=>s.region===r).length})</option>`).join('');
+            
+            filterCrmStores();
+        } catch(e) {
+            console.error('AD CRM load error:', e);
+            $('#crm-store-list').innerHTML = `<div style="color:#ef4444;padding:20px;">Error loading CRM: ${e.message}</div>`;
+        }
+    }
+    
+    function filterCrmStores() {
+        const region = $('#crm-region-filter').value;
+        const status = $('#crm-status-filter').value;
+        
+        let filtered = _crmStores;
+        if (region) filtered = filtered.filter(s => s.region === region);
+        if (status === 'overdue') filtered = filtered.filter(s => s.is_overdue && s.last_visit);
+        else if (status === 'ok') filtered = filtered.filter(s => !s.is_overdue && s.last_visit);
+        else if (status === 'never') filtered = filtered.filter(s => !s.last_visit);
+        
+        renderCrmStores(filtered);
+    }
+    
+    function renderCrmStores(stores) {
+        const container = $('#crm-store-list');
+        if (!stores.length) {
+            container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-2);">No stores match filters</div>';
+            return;
+        }
+        
+        // Group by region
+        const grouped = {};
+        stores.forEach(s => {
+            const r = s.region || 'Unknown';
+            if (!grouped[r]) grouped[r] = [];
+            grouped[r].push(s);
+        });
+        
+        let html = '';
+        for (const [region, regionStores] of Object.entries(grouped).sort((a,b) => a[0].localeCompare(b[0]))) {
+            html += `<div style="margin-top:12px;">
+                <div style="font-size:0.75rem;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;padding:4px 0;border-bottom:1px solid var(--border);margin-bottom:8px;">
+                    ${region} (${regionStores.length})
+                </div>`;
+            
+            for (const s of regionStores) {
+                const days = s.days_since != null ? s.days_since : null;
+                const lastVisit = s.last_visit || 'Never';
+                let statusColor = '#22c55e'; // green = ok
+                let statusText = days != null ? `${days}d ago` : 'Never';
+                let statusBg = 'rgba(34,197,94,0.1)';
+                
+                if (!s.last_visit) {
+                    statusColor = '#f59e0b'; statusBg = 'rgba(245,158,11,0.1)'; statusText = 'Never';
+                } else if (days >= 30) {
+                    statusColor = '#ef4444'; statusBg = 'rgba(239,68,68,0.1)';
+                } else if (days >= 15) {
+                    statusColor = '#f59e0b'; statusBg = 'rgba(245,158,11,0.1)';
+                }
+                
+                const contacts = (s.contacts || []).map(c => {
+                    let badge = '';
+                    if (c.phone_type && c.phone_type !== 'iMessage') {
+                        badge = `<span style="font-size:0.6rem;background:var(--accent-dim);color:var(--accent);padding:1px 5px;border-radius:4px;margin-left:4px;">${c.phone_type}</span>`;
+                    }
+                    return `<span style="font-size:0.72rem;color:var(--text-2);">${c.sales_name}${c.phone ? ' · ' + c.phone : ''}${badge}</span>`;
+                }).join('<br>');
+                
+                const inactive = s.is_active_ad === 0 ? ' <span style="font-size:0.6rem;color:#ef4444;background:rgba(239,68,68,0.1);padding:1px 5px;border-radius:4px;">Closed</span>' : '';
+                
+                html += `
+                <div onclick="showCrmDetail(${s.id})" style="background:var(--bg-2);border-radius:10px;padding:12px 14px;cursor:pointer;transition:all 0.15s;border-left:3px solid ${statusColor};" 
+                     onmouseover="this.style.background='var(--bg-3)'" onmouseout="this.style.background='var(--bg-2)'">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-weight:600;font-size:0.82rem;">${s.name}${inactive}</div>
+                            <div style="margin-top:4px;">${contacts || '<span style="font-size:0.72rem;color:var(--text-2);">No contacts</span>'}</div>
+                        </div>
+                        <div style="text-align:right;flex-shrink:0;">
+                            <div style="font-size:0.75rem;font-weight:600;color:${statusColor};background:${statusBg};padding:2px 8px;border-radius:6px;">${statusText}</div>
+                            <div style="font-size:0.65rem;color:var(--text-2);margin-top:2px;">${s.visit_count || 0} visits</div>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            html += '</div>';
+        }
+        container.innerHTML = html;
+    }
+    
+    async function showCrmDetail(storeId) {
+        const modal = $('#crm-detail-modal');
+        const content = $('#crm-detail-content');
+        content.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-2);">Loading...</div>';
+        modal.style.display = 'block';
+        
+        try {
+            const res = await fetch(`/api/ad-crm/store/${storeId}`);
+            const data = await res.json();
+            const s = data.store;
+            const contacts = data.contacts || [];
+            const visits = data.visits || [];
+            
+            let contactsHtml = contacts.map(c => {
+                let phoneBadge = c.phone_type && c.phone_type !== 'iMessage' 
+                    ? `<span style="font-size:0.65rem;background:var(--accent-dim);color:var(--accent);padding:1px 5px;border-radius:4px;">${c.phone_type}${c.phone_email ? ' · ' + c.phone_email : ''}</span>` 
+                    : '<span style="font-size:0.65rem;color:#22c55e;">iMessage</span>';
+                let specials = '';
+                if (c.special_dates) {
+                    try {
+                        const sd = JSON.parse(c.special_dates);
+                        specials = Object.entries(sd).map(([k,v]) => `<div style="font-size:0.65rem;color:var(--accent);">* ${k.replace(/_/g,' ')}: ${v}</div>`).join('');
+                    } catch(e) {}
+                }
+                return `<div style="background:var(--bg-1);border-radius:8px;padding:10px;margin-bottom:6px;">
+                    <div style="font-weight:600;font-size:0.8rem;">${c.sales_name} ${phoneBadge}</div>
+                    ${c.phone ? `<div style="font-size:0.72rem;color:var(--text-2);">Phone: ${c.phone}</div>` : ''}
+                    ${c.customer_name ? `<div style="font-size:0.72rem;color:var(--text-2);">As: ${c.customer_name}</div>` : ''}
+                    ${c.customer_email ? `<div style="font-size:0.72rem;color:var(--text-2);">Email: ${c.customer_email}</div>` : ''}
+                    ${c.customer_address ? `<div style="font-size:0.72rem;color:var(--text-2);">Addr: ${c.customer_address}</div>` : ''}
+                    ${specials}
+                </div>`;
+            }).join('');
+            
+            let visitsHtml = visits.map(v => 
+                `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:0.72rem;border-bottom:1px solid var(--border);">
+                    <span>${v.visit_date}</span>
+                    <span style="color:var(--text-2);">${v.visit_type}</span>
+                </div>`
+            ).join('') || '<div style="font-size:0.72rem;color:var(--text-2);">No visits recorded</div>';
+            
+            content.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                    <h2 style="margin:0;font-size:1.1rem;">${s.name}</h2>
+                    <span style="font-size:0.7rem;color:var(--text-2);">${s.region || ''}</span>
+                </div>
+                
+                <div style="margin-bottom:16px;">
+                    <h3 style="font-size:0.8rem;color:var(--text-2);margin-bottom:8px;">CONTACTS</h3>
+                    ${contactsHtml || '<div style="font-size:0.72rem;color:var(--text-2);">No contacts</div>'}
+                </div>
+                
+                <div style="margin-bottom:16px;">
+                    <h3 style="font-size:0.8rem;color:var(--text-2);margin-bottom:8px;">VISIT HISTORY</h3>
+                    ${visitsHtml}
+                </div>
+                
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button class="btn" onclick="logCrmVisit(${s.id},'outreach')" style="font-size:0.72rem;">Log Outreach</button>
+                    <button class="btn" onclick="logCrmVisit(${s.id},'visit')" style="font-size:0.72rem;">Log Visit</button>
+                    <button class="btn" onclick="logCrmVisit(${s.id},'call')" style="font-size:0.72rem;">Log Call</button>
+                    <button class="btn" onclick="logCrmVisit(${s.id},'google_review')" style="font-size:0.72rem;">Google Review</button>
+                </div>
+            `;
+        } catch(e) {
+            content.innerHTML = `<div style="color:#ef4444;">Error: ${e.message}</div>`;
+        }
+    }
+    
+    async function logCrmVisit(storeId, type) {
+        try {
+            const res = await fetch('/api/ad-crm/visit', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({store_id: storeId, type})
+            });
+            const data = await res.json();
+            if (data.ok) {
+                $('#crm-detail-modal').style.display = 'none';
+                loadAdCrm();
+            } else {
+                alert(data.error || 'Failed');
+            }
+        } catch(e) { alert(e.message); }
+    }
+    
+    async function refreshCrmFromSheet() {
+        if (!confirm('Re-import all data from Google Sheet? This will reset visit history.')) return;
+        try {
+            const res = await fetch('/api/ad-crm/refresh', {method: 'POST'});
+            const data = await res.json();
+            if (data.ok) {
+                alert(`Imported ${data.stores} stores, ${data.contacts} contacts`);
+                loadAdCrm();
+            } else {
+                alert(data.error || 'Failed');
+            }
+        } catch(e) { alert(e.message); }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ═══ AD CRM ═══
+    // ═══════════════════════════════════════════════════════════════
+    let _crmStores = [];
+    
+    async function loadAdCrm() {
+        const [statsRes, storesRes] = await Promise.all([
+            fetch('/api/ad-crm/stats').then(r=>r.json()),
+            fetch('/api/ad-crm/stores').then(r=>r.json())
+        ]);
+        _crmStores = storesRes;
+        
+        // Stats cards
+        const overdue = statsRes.overdue_count || 0;
+        const total = statsRes.total_stores || 0;
+        const active = statsRes.active_stores || 0;
+        const contacts = statsRes.total_contacts || 0;
+        const upToDate = active - overdue;
+        
+        document.getElementById('crm-stats').innerHTML = `
+            <div style="background:var(--bg-2);border-radius:10px;padding:16px;text-align:center;">
+                <div style="font-size:1.8rem;font-weight:700;color:var(--accent);">${total}</div>
+                <div style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;">Stores</div>
+            </div>
+            <div style="background:var(--bg-2);border-radius:10px;padding:16px;text-align:center;">
+                <div style="font-size:1.8rem;font-weight:700;color:var(--red);">${overdue}</div>
+                <div style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;">Overdue</div>
+            </div>
+            <div style="background:var(--bg-2);border-radius:10px;padding:16px;text-align:center;">
+                <div style="font-size:1.8rem;font-weight:700;color:var(--green);">${upToDate > 0 ? upToDate : 0}</div>
+                <div style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;">Up to Date</div>
+            </div>
+            <div style="background:var(--bg-2);border-radius:10px;padding:16px;text-align:center;">
+                <div style="font-size:1.8rem;font-weight:700;color:var(--text-1);">${contacts}</div>
+                <div style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;">Contacts</div>
+            </div>
+        `;
+        
+        // Populate region filter
+        const regions = [...new Set(_crmStores.map(s=>s.region).filter(Boolean))].sort();
+        const regionSel = document.getElementById('crm-region-filter');
+        regionSel.innerHTML = '<option value="">All Regions</option>' + 
+            regions.map(r=>`<option value="${r}">${r} (${_crmStores.filter(s=>s.region===r).length})</option>`).join('');
+        
+        filterCrmStores();
+    }
+    
+    function filterCrmStores() {
+        const region = document.getElementById('crm-region-filter').value;
+        const status = document.getElementById('crm-status-filter').value;
+        let stores = _crmStores;
+        
+        if (region) stores = stores.filter(s=>s.region === region);
+        if (status === 'overdue') stores = stores.filter(s=>s.is_overdue && s.last_visit);
+        else if (status === 'ok') stores = stores.filter(s=>!s.is_overdue && s.last_visit);
+        else if (status === 'never') stores = stores.filter(s=>!s.last_visit);
+        
+        const container = document.getElementById('crm-store-list');
+        if (!stores.length) {
+            container.innerHTML = '<div style="text-align:center;color:var(--text-2);padding:40px;">No stores match filters</div>';
+            return;
+        }
+        
+        container.innerHTML = stores.map(s => {
+            const days = s.days_since != null ? s.days_since : null;
+            const daysText = days != null ? `${days}d ago` : 'Never';
+            const isOverdue = s.is_overdue;
+            const neverVisited = !s.last_visit;
+            const statusColor = neverVisited ? 'var(--text-2)' : isOverdue ? 'var(--red)' : 'var(--green)';
+            const statusDot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${statusColor};margin-right:6px;"></span>`;
+            const inactive = s.is_active_ad ? '' : ' <span style="color:var(--red);font-size:0.65rem;">(CLOSED)</span>';
+            
+            const contactsHtml = (s.contacts || []).map(c => {
+                const phoneIcon = _phoneTypeIcon(c.phone_type);
+                const phone = c.phone ? `<span style="color:var(--text-2);font-size:0.7rem;">${phoneIcon} ${_formatPhone(c.phone)}</span>` : '';
+                return `<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+                    <span style="font-size:0.75rem;font-weight:600;">${c.sales_name}</span>
+                    ${phone}
+                    ${c.phone_type && c.phone_type !== 'iMessage' ? `<span style="font-size:0.6rem;background:var(--accent-dim);color:var(--accent);padding:1px 6px;border-radius:4px;">${c.phone_type}</span>` : ''}
+                </div>`;
+            }).join('');
+            
+            return `<div style="background:var(--bg-2);border-radius:10px;padding:14px 16px;cursor:pointer;border-left:3px solid ${statusColor};" onclick="showCrmStore(${s.id})">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <div style="font-weight:600;font-size:0.85rem;">${statusDot}${s.name}${inactive}</div>
+                        <div style="font-size:0.65rem;color:var(--text-2);margin-top:2px;">${s.region || ''}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:0.8rem;font-weight:700;color:${statusColor};">${daysText}</div>
+                        <div style="font-size:0.6rem;color:var(--text-2);">${s.visit_count || 0} visits</div>
+                    </div>
+                </div>
+                ${contactsHtml}
+            </div>`;
+        }).join('');
+    }
+    
+    function _phoneTypeIcon(type) {
+        const icons = {
+            'iMessage': '💬', 'Google Voice': '📞', 'Talkatone': '📱', 
+            'Hushed': '🤫', 'Nextline': '📲', 'TextMe': '✉️',
+            'TextFree': '📝', 'TextNow': '📝', 'TalkU': '📱', 
+            '2Number': '2️⃣', 'Burner': '🔥'
+        };
+        return icons[type] || '📞';
+    }
+    
+    function _formatPhone(p) {
+        if (!p || p.length !== 10) return p || '';
+        return `(${p.slice(0,3)}) ${p.slice(3,6)}-${p.slice(6)}`;
+    }
+    
+    async function showCrmStore(storeId) {
+        const res = await fetch(`/api/ad-crm/store/${storeId}`);
+        const data = await res.json();
+        if (data.error) { alert(data.error); return; }
+        
+        const s = data.store;
+        const contacts = data.contacts || [];
+        const visits = data.visits || [];
+        
+        let html = `<h2 style="margin:0 0 4px;">${s.name}</h2>
+            <div style="color:var(--text-2);font-size:0.75rem;margin-bottom:16px;">${s.region || ''} ${s.is_active_ad ? '' : '— <span style="color:var(--red);">No Longer AD</span>'}</div>`;
+        
+        // Contacts
+        html += '<h3 style="font-size:0.8rem;color:var(--accent);margin:16px 0 8px;">Contacts</h3>';
+        for (const c of contacts) {
+            html += `<div style="background:var(--bg-1);border-radius:8px;padding:12px;margin-bottom:8px;">
+                <div style="font-weight:600;">${c.sales_name} ${c.phone_type && c.phone_type !== 'iMessage' ? `<span style="font-size:0.65rem;background:var(--accent-dim);color:var(--accent);padding:2px 8px;border-radius:4px;">${c.phone_type}</span>` : ''}</div>
+                ${c.phone ? `<div style="font-size:0.75rem;color:var(--text-2);">Phone: ${_formatPhone(c.phone)}</div>` : ''}
+                ${c.customer_name ? `<div style="font-size:0.75rem;color:var(--text-2);">As: ${c.customer_name}</div>` : ''}
+                ${c.customer_email ? `<div style="font-size:0.75rem;color:var(--text-2);">Email: ${c.customer_email}</div>` : ''}
+                ${c.customer_address ? `<div style="font-size:0.75rem;color:var(--text-2);">Addr: ${c.customer_address}</div>` : ''}
+                ${c.special_dates ? `<div style="font-size:0.75rem;color:var(--accent);">Dates: ${c.special_dates}</div>` : ''}
+                ${c.notes ? `<div style="font-size:0.7rem;color:var(--text-2);margin-top:4px;word-break:break-all;">${c.notes}</div>` : ''}
+            </div>`;
+        }
+        
+        // Visit history
+        html += '<h3 style="font-size:0.8rem;color:var(--accent);margin:16px 0 8px;">Visit History</h3>';
+        if (visits.length) {
+            for (const v of visits) {
+                html += `<div style="font-size:0.75rem;padding:6px 0;border-bottom:1px solid var(--border);">
+                    <span style="font-weight:600;">${v.visit_date}</span> — ${v.visit_type}
+                    ${v.notes ? `<span style="color:var(--text-2);"> — ${v.notes}</span>` : ''}
+                </div>`;
+            }
+        } else {
+            html += '<div style="color:var(--text-2);font-size:0.75rem;">No visits recorded</div>';
+        }
+        
+        // Log visit button
+        html += `<div style="margin-top:20px;display:flex;gap:8px;">
+            <button class="btn" onclick="logCrmVisit(${s.id},'outreach')">Log Outreach</button>
+            <button class="btn" onclick="logCrmVisit(${s.id},'visit')">Log Visit</button>
+            <button class="btn" onclick="logCrmVisit(${s.id},'google_review')">Google Review</button>
+        </div>`;
+        
+        document.getElementById('crm-detail-content').innerHTML = html;
+        document.getElementById('crm-detail-modal').style.display = 'block';
+    }
+    
+    async function logCrmVisit(storeId, type) {
+        const notes = prompt('Notes (optional):');
+        const res = await fetch('/api/ad-crm/visit', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({store_id: storeId, type, notes: notes || undefined})
+        });
+        const data = await res.json();
+        if (data.ok) {
+            document.getElementById('crm-detail-modal').style.display = 'none';
+            loadAdCrm();
+        } else {
+            alert(data.error || 'Failed');
+        }
+    }
+    
+    async function refreshCrmFromSheet() {
+        if (!confirm('Re-import all data from Google Sheet? This will reset visit history.')) return;
+        const res = await fetch('/api/ad-crm/refresh', {method:'POST'});
+        const data = await res.json();
+        if (data.ok) {
+            alert(`Imported ${data.stores} stores, ${data.contacts} contacts`);
+            loadAdCrm();
+        } else {
+            alert(data.error || 'Failed');
+        }
+    }
 
 </script>
 
