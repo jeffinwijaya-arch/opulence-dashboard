@@ -6249,7 +6249,7 @@ function updateInventorySummary() {
     el('im-unsold').textContent = d.filter(r => r.sold !== 'Yes').length;
     el('im-transit').textContent = d.filter(r => r.sold === 'Yes' && r.shipped !== 'Yes').length;
     el('im-unposted').textContent = d.filter(r => r.sold !== 'Yes' && r.posted !== 'Yes' && r.arrived === 'Yes').length;
-    const totalCost = d.reduce((s,r) => s + p(r.cost_price), 0);
+    const totalCost = d.filter(r=>r.sold!=='Yes').reduce((s,r) => s + p(r.cost_price), 0);
     const totalRevenue = d.filter(r=>r.sold==='Yes').reduce((s,r) => s + p(r.sold_price), 0);
     const totalProfit = d.filter(r=>r.sold==='Yes').reduce((s,r) => s + (p(r.sold_price) - p(r.cost_price)), 0);
     el('im-capital').textContent = fmt(totalCost);
