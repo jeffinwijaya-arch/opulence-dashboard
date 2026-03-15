@@ -2535,9 +2535,12 @@
                 }
             </style>
 
-            <div class="page-head">
-                <h1>Operations — Watch Lifecycle</h1>
-                <p>Purchased → Arrival → Ship → Sold</p>
+            <div class="page-head" style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <h1>Operations — Watch Lifecycle</h1>
+                    <p>Purchased → Arrival → Ship → Sold</p>
+                </div>
+                <button id="jam-lang-toggle" onclick="toggleJamLang()" style="display:none;padding:6px 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-2);color:var(--text-0);font-weight:700;font-size:0.75rem;cursor:pointer;letter-spacing:1px;">ID</button>
             </div>
 
             <!-- Stats — order: Purchased, Arrival, Ship, Sold -->
@@ -11277,6 +11280,58 @@ async function submitNewJournal() {
 // _userRole, loadUserRole, applyRoleRestrictions moved to main block to avoid cross-block ReferenceError
 
 // ═══ JAM (Activity Feed) ═══
+const _jamLang = {
+    en: {
+        arrival: 'Arrival', ship: 'Ship', purchased: 'Purchased', sold: 'Sold',
+        toShip: 'TO SHIP', shipped: 'SHIPPED', pending: 'pending', completed: 'completed',
+        today: 'TODAY', yesterday: 'YESTERDAY', tomorrow: 'TOMORROW', unscheduled: 'UNSCHEDULED',
+        uploadArrival: 'Take Arrival Photo', uploadArrivalSub: 'Tap to photograph the warranty card — system handles the rest',
+        viewLabel: 'VIEW LABEL', print: 'PRINT', noLabel: 'No Label',
+        schedule: 'SCHEDULE', markShipped: 'SHIP', localDelivery: 'Local Delivery',
+        deliverTo: 'DELIVER TO:', serialLabel: 'Serial:', cardLabel: 'Card:',
+        fromLabel: 'From:', toLabel: 'To:', priceLabel: 'Price:',
+        labelPhoto: 'LABEL', watchPhoto: 'WATCH', addPhoto: '+ Photo',
+        processing: 'Processing photo...', photoSaved: 'Photo uploaded',
+        matched: 'Matched to watch', adminReview: 'Photo saved — admin will review the match',
+        bothUploaded: 'Both photos uploaded — marked as shipped!',
+        attachLabel: 'Attach Label', noItems: 'No items', loading: 'Loading...',
+        langToggle: 'ID', operations: 'Operations',
+    },
+    id: {
+        arrival: 'Kedatangan', ship: 'Kirim', purchased: 'Dibeli', sold: 'Dijual',
+        toShip: 'AKAN DIKIRIM', shipped: 'SUDAH DIKIRIM', pending: 'menunggu', completed: 'selesai',
+        today: 'HARI INI', yesterday: 'KEMARIN', tomorrow: 'BESOK', unscheduled: 'BELUM DIJADWALKAN',
+        uploadArrival: 'Foto Kedatangan', uploadArrivalSub: 'Ketuk untuk foto kartu garansi — sistem yang mengurus sisanya',
+        viewLabel: 'LIHAT LABEL', print: 'CETAK', noLabel: 'Tidak Ada Label',
+        schedule: 'JADWALKAN', markShipped: 'KIRIM', localDelivery: 'Antar Langsung',
+        deliverTo: 'ANTAR KE:', serialLabel: 'Serial:', cardLabel: 'Kartu:',
+        fromLabel: 'Dari:', toLabel: 'Ke:', priceLabel: 'Harga:',
+        labelPhoto: 'LABEL', watchPhoto: 'JAM', addPhoto: '+ Foto',
+        processing: 'Memproses foto...', photoSaved: 'Foto diunggah',
+        matched: 'Cocok dengan jam', adminReview: 'Foto disimpan — admin akan meninjau',
+        bothUploaded: 'Kedua foto diunggah — ditandai sudah dikirim!',
+        attachLabel: 'Lampirkan Label', noItems: 'Tidak ada item', loading: 'Memuat...',
+        langToggle: 'EN', operations: 'Operasi',
+    }
+};
+let _jamCurLang = localStorage.getItem('jam_lang') || 'en';
+function _t(key) { return (_jamLang[_jamCurLang] || _jamLang.en)[key] || _jamLang.en[key] || key; }
+function toggleJamLang() {
+    _jamCurLang = _jamCurLang === 'en' ? 'id' : 'en';
+    localStorage.setItem('jam_lang', _jamCurLang);
+    // Update toggle button text
+    const btn = document.getElementById('jam-lang-toggle');
+    if (btn) btn.textContent = _t('langToggle');
+    // Update tab labels
+    const tabMap = {masuk: 'arrival', keluar: 'ship', dibeli: 'purchased', dijual: 'sold'};
+    $$('.jam-tab').forEach(t => { if (tabMap[t.dataset.jam]) t.textContent = _t(tabMap[t.dataset.jam]); });
+    // Update stat labels
+    const statLabels = ['purchased','arrival','ship','sold'];
+    $$('.jam-stat-label').forEach((l, i) => { l.textContent = _t(statLabels[i]); });
+    // Re-render current feed + upload zone
+    switchJamTab(_jamState.tab);
+}
+
 const _jamState = { tab: 'dijual', feeds: {}, offsets: {}, totals: {}, stats: null };
 
 function _jamFmt(n) {
@@ -11297,6 +11352,17 @@ async function loadJamPage() {
     // Hide alerts for logistics (they don't need business alerts)
     if (_userRole.role === 'logistics') {
         $('#jam-alerts').style.display = 'none';
+        // Show language toggle for logistics
+        const langBtn = document.getElementById('jam-lang-toggle');
+        if (langBtn) {
+            langBtn.style.display = 'block';
+            langBtn.textContent = _t('langToggle');
+        }
+        // Apply saved language to tabs/labels
+        const tabMap = {masuk: 'arrival', keluar: 'ship', dibeli: 'purchased', dijual: 'sold'};
+        $$('.jam-tab').forEach(t => { if (tabMap[t.dataset.jam]) t.textContent = _t(tabMap[t.dataset.jam]); });
+        const statLabels = ['purchased','arrival','ship','sold'];
+        $$('.jam-stat-label').forEach((l, i) => { l.textContent = _t(statLabels[i]); });
     }
     
     // Set default tab based on role
@@ -11358,8 +11424,8 @@ function switchJamTab(type) {
         uploadZone.style.display = 'block';
         uploadIcon.textContent = 'UPLOAD';
         if (_userRole.role === 'logistics') {
-            uploadTitle.textContent = 'Take Arrival Photo';
-            uploadSub.textContent = 'Tap to photograph the warranty card — system handles the rest';
+            uploadTitle.textContent = _t('uploadArrival');
+            uploadSub.textContent = _t('uploadArrivalSub');
         } else {
             uploadTitle.textContent = 'Upload Arrival Photo';
             uploadSub.textContent = 'Tap to take a photo of the warranty card — serial & date auto-extracted';
@@ -11422,10 +11488,10 @@ function renderJamFeed(type) {
         
         function _dateHeader(d, color) {
             let dateLabel = d;
-            if (d === today) dateLabel = 'TODAY';
-            else if (d === yesterday) dateLabel = 'YESTERDAY';
-            else if (d === tomorrow) dateLabel = 'TOMORROW';
-            else if (d === 'Unscheduled') dateLabel = 'UNSCHEDULED';
+            if (d === today) dateLabel = _t('today');
+            else if (d === yesterday) dateLabel = _t('yesterday');
+            else if (d === tomorrow) dateLabel = _t('tomorrow');
+            else if (d === 'Unscheduled') dateLabel = _t('unscheduled');
             else {
                 try {
                     const dt = new Date(d + 'T12:00:00');
@@ -11447,8 +11513,8 @@ function renderJamFeed(type) {
         
         if (visiblePending.length) {
             html += `<div style="padding:8px 4px;margin-bottom:4px;">
-                <span style="font-size:0.85rem;font-weight:700;color:var(--orange);">TO SHIP</span>
-                <span style="font-size:0.7rem;color:var(--text-2);margin-left:8px;">${visiblePending.length} pending</span>
+                <span style="font-size:0.85rem;font-weight:700;color:var(--orange);">${_t('toShip')}</span>
+                <span style="font-size:0.7rem;color:var(--text-2);margin-left:8px;">${visiblePending.length} ${_t('pending')}</span>
             </div>`;
             let lastDate = '';
             for (const item of visiblePending) {
@@ -11465,8 +11531,8 @@ function renderJamFeed(type) {
         
         if (shipped.length) {
             html += `<div style="padding:8px 4px;margin-top:${pending.length?'24px':'0'};margin-bottom:4px;">
-                <span style="font-size:0.85rem;font-weight:700;color:var(--green);">SHIPPED</span>
-                <span style="font-size:0.7rem;color:var(--text-2);margin-left:8px;">${shipped.length} completed</span>
+                <span style="font-size:0.85rem;font-weight:700;color:var(--green);">${_t('shipped')}</span>
+                <span style="font-size:0.7rem;color:var(--text-2);margin-left:8px;">${shipped.length} ${_t('completed')}</span>
             </div>`;
             let lastDate = '';
             for (const item of shipped) {
@@ -11486,8 +11552,8 @@ function renderJamFeed(type) {
             const d = item.date || 'Unknown';
             if (d !== lastDate) {
                 let dateLabel = d;
-                if (d === today) dateLabel = 'TODAY';
-                else if (d === yesterday) dateLabel = 'YESTERDAY';
+                if (d === today) dateLabel = _t('today');
+                else if (d === yesterday) dateLabel = _t('yesterday');
                 else {
                     try {
                         const dt = new Date(d + 'T12:00:00');
@@ -11572,7 +11638,7 @@ function _jamCard(type, item) {
         
         if (item.has_label && item.label_file) {
             // VIEW LABEL as separate prominent button (rendered in card header area)
-            item._labelButton = `<button onclick="event.stopPropagation();window.open('/api/jam/label/${item.label_file}','_blank')" style="cursor:pointer;padding:6px 14px;border:none;border-radius:var(--radius);background:var(--green);color:#000;font-weight:700;font-size:0.75rem;white-space:nowrap;">VIEW LABEL</button>`;
+            item._labelButton = `<button onclick="event.stopPropagation();window.open('/api/jam/label/${item.label_file}','_blank')" style="cursor:pointer;padding:6px 14px;border:none;border-radius:var(--radius);background:var(--green);color:#000;font-weight:700;font-size:0.75rem;white-space:nowrap;">${_t('viewLabel')}</button>`;
             if (_userRole.role !== 'logistics') {
                 pills += `<button class="jam-pill" onclick="event.stopPropagation();jamPrintLabel('${item.label_file}')" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);">PRINT</button>`;
             }
@@ -11617,8 +11683,8 @@ function _jamCard(type, item) {
             </div>`;
         } else {
             photoSection += `<div onclick="event.stopPropagation();jamUploadShipPhoto(${item.id},'label_photo')" style="cursor:pointer;width:80px;height:80px;border-radius:8px;border:2px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border)'">
-                <span style="font-size:0.65rem;color:var(--text-2);font-weight:600;">LABEL</span>
-                <span style="font-size:0.55rem;color:var(--text-3);">+ Photo</span>
+                <span style="font-size:0.65rem;color:var(--text-2);font-weight:600;">${_t('labelPhoto')}</span>
+                <span style="font-size:0.55rem;color:var(--text-3);">${_t('addPhoto')}</span>
             </div>`;
         }
         
@@ -11631,8 +11697,8 @@ function _jamCard(type, item) {
             </div>`;
         } else {
             photoSection += `<div onclick="event.stopPropagation();jamUploadShipPhoto(${item.id},'watch_photo')" style="cursor:pointer;width:80px;height:80px;border-radius:8px;border:2px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border)'">
-                <span style="font-size:0.65rem;color:var(--text-2);font-weight:600;">WATCH</span>
-                <span style="font-size:0.55rem;color:var(--text-3);">+ Photo</span>
+                <span style="font-size:0.65rem;color:var(--text-2);font-weight:600;">${_t('watchPhoto')}</span>
+                <span style="font-size:0.55rem;color:var(--text-3);">${_t('addPhoto')}</span>
             </div>`;
         }
         
@@ -11698,7 +11764,7 @@ function jamUploadArrivalDirect() {
         if (!file) return;
         
         const box = document.getElementById('jam-upload-box');
-        if (box) box.innerHTML = '<div style="padding:20px;color:var(--accent);font-weight:600;">Processing photo...</div>';
+        if (box) box.innerHTML = `<div style="padding:20px;color:var(--accent);font-weight:600;">${_t('processing')}</div>`;
         
         const fd = new FormData();
         fd.append('file', file);
@@ -11708,13 +11774,13 @@ function jamUploadArrivalDirect() {
             const r = await fetch('/api/jam/upload-arrival', { method: 'POST', body: fd });
             const data = await r.json();
             if (data.ok) {
-                let msg = 'Photo uploaded';
+                let msg = _t('photoSaved');
                 if (data.watch_id) {
-                    msg = 'Matched to watch #' + data.watch_id;
+                    msg = _t('matched') + ' #' + data.watch_id;
                     if (data.ocr?.serial) msg += '\nSerial: ' + data.ocr.serial;
                     if (data.ocr?.card_date) msg += '\nCard: ' + data.ocr.card_date;
                 } else {
-                    msg = 'Photo saved — admin will review the match';
+                    msg = _t('adminReview');
                 }
                 alert(msg);
                 loadJamFeed(_jamState.tab);
@@ -12061,7 +12127,7 @@ function jamUploadShipPhoto(watchId, photoType) {
             const r = await fetch('/api/jam/upload-ship-photo', { method: 'POST', body: fd });
             const data = await r.json();
             if (data.ok) {
-                if (data.auto_shipped) alert('Both photos uploaded — marked as shipped!');
+                if (data.auto_shipped) alert(_t('bothUploaded'));
                 loadJamFeed(_jamState.tab);
             } else {
                 alert('Upload failed: ' + (data.error || 'unknown'));
