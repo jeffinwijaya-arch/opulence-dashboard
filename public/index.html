@@ -6010,25 +6010,50 @@ async function loadUserRole() {
 
 function applyRoleRestrictions() {
     if (!_userRole.allowedPages) return;
+    const ap = _userRole.allowedPages;
     // Hide ALL nav items not in allowedPages
-    $$('.nav a[data-page], .mobile-nav a[data-page], .more-grid-item').forEach(el => {
+    $$('.nav a[data-page], .more-grid-item').forEach(el => {
         const page = el.dataset?.page || el.getAttribute('onclick')?.match(/mobileNav\('([^']+)'\)/)?.[1];
-        if (page && !_userRole.allowedPages.includes(page)) {
+        if (page && !ap.includes(page)) {
             el.style.display = 'none';
         }
     });
+    // Rebuild mobile bottom nav for restricted roles
+    const mn = document.getElementById('mobile-nav');
+    if (mn) {
+        const icons = {
+            inventory: '<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
+            postings: '<svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>',
+            jam: '<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+            photos: '<svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>'
+        };
+        const labels = {inventory:'Stock',postings:'Postings',jam:'Operations',photos:'Photos'};
+        mn.innerHTML = '';
+        ap.forEach((p, i) => {
+            const a = document.createElement('a');
+            a.setAttribute('data-page', p);
+            a.onclick = () => showPage(p);
+            a.innerHTML = '<span class="mn-icon">' + (icons[p]||'') + '</span>' + (labels[p]||p);
+            if (i === 0) a.classList.add('active');
+            mn.appendChild(a);
+        });
+    }
     // Hide ticker, search, header elements for restricted users
-    if (_userRole.role === 'logistics') {
+    if (_userRole.role === 'logistics' || _userRole.role === 'media') {
         const ticker = document.querySelector('.ticker');
         if (ticker) ticker.style.display = 'none';
         const searchInput = document.querySelector('.header input[type="text"]');
         if (searchInput) searchInput.style.display = 'none';
-        // Hide the logo/brand area search
         $$('.header > *').forEach(el => {
             if (el.querySelector && el.querySelector('input')) el.style.display = 'none';
         });
     }
-    const defaultPage = _userRole.allowedPages[0] || 'jam';
+    // Hide mobile more menu for roles with <=4 pages (all fit in bottom nav)
+    if (ap.length <= 5) {
+        const mm = document.getElementById('mobile-more-menu');
+        if (mm) mm.style.display = 'none';
+    }
+    const defaultPage = ap[0] || 'jam';
     showPage(defaultPage);
 }
 

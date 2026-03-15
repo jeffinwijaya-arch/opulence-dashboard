@@ -1,6 +1,36 @@
 {
   "articles": [
     {
+      "id": "04ea150b02ff",
+      "title": "Buying Guide \u2013 Small but Mighty II \u2013 Six Mechanical Chronographs Under 40mm",
+      "link": "https://monochrome-watches.com/buying-guide-compact-chronographs-longines-audemars-piguet-lebois-and-co-atelier-nossedh-zenith-raymond-weil-specs-prices-review/",
+      "desc": "Just last week, we looked at six very versatile watches of 36mm and under, and this week we\u2019re sort of revisiting the topic. However, instead of looking at more time-only or time-and-date watches, we ",
+      "date": "2026-03-15T10:35:54+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2025/06/Zenith-Chronomaster-Original-Blue-Dial-El-Primero-review-7-600x237.jpg",
+      "relevance": 10
+    },
+    {
+      "id": "b3a473e6e29b",
+      "title": "Three Weeks With The Modern Certina DS-2",
+      "link": "https://www.fratellowatches.com/three-weeks-with-the-modern-certina-ds-2/",
+      "desc": "There\u2019s something reassuring about a watch that knows exactly what it is. Not aspirational haute horlogerie, not a fashion-forward experiment, not a speculative limited edition chasing headlines \u2014 jus",
+      "date": "2026-03-15T10:00:45+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "d39f4d7b4fed",
+      "title": "Sunday Morning Showdown: Vacheron Constantin Historiques 222 Vs. Overseas Self-Winding",
+      "link": "https://www.fratellowatches.com/sunday-morning-showdown-vacheron-constantin-historiques-222-vs-overseas-self-winding/",
+      "desc": "It\u2019s Sunday morning, so it\u2019s time to sit down with a cup of coffee for another Sunday Morning Showdown. This week, Mike and Jorg go head-to-head with two gold Vacheron Constantin watches. Jorg\u2019s pick ",
+      "date": "2026-03-15T06:00:48+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
       "id": "2a6f8a9b7619",
       "title": "The ABCs of Time \u2013 Why Are Some Watch Cases Filled with Oil?",
       "link": "https://monochrome-watches.com/the-abcs-of-time-why-are-some-watch-cases-filled-with-oil/",
@@ -221,16 +251,6 @@
       "relevance": 0
     },
     {
-      "id": "244ad5162e18",
-      "title": "Breitling Introduces The Stylish Reverse-Panda Superocean Heritage B01 Chronograph 42",
-      "link": "https://www.fratellowatches.com/breitling-introduces-the-stylish-superocean-heritage-b01-chronograph-42/",
-      "desc": "One of my all-time favorite chronographs is the Breitling Top Time ref. 810. It\u2019s a stunning classic hailing from a long line of legendary reverse-panda chronographs that Breitling produced in the \u201950",
-      "date": "2026-03-12T13:00:06+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 10
-    },
-    {
       "id": "d14e7cce4644",
       "title": "Essays: Could The Most Radical Innovation In Watchmaking For 2026 Be A Paintbrush?",
       "link": "https://www.hodinkee.com/articles/could-the-most-radical-innovation-in-watchmaking-for-2026-be-a-paintbrush",
@@ -271,32 +291,12 @@
       "relevance": 0
     },
     {
-      "id": "e4c284d804bc",
-      "title": "In-Depth \u2013 Girard-Perregaux\u2019s Superbly Technical New Minute Repeater Flying Bridges (Incl. Video)",
-      "link": "https://monochrome-watches.com/girard-perregaux-minute-repeater-flying-bridges-video-review/",
-      "desc": "Few timepieces showcase the technical sophistication of traditional watchmaking as clearly as minute repeaters. The new Girard-Perregaux Minute Repeater Flying Bridges introduces this complication wit",
-      "date": "2026-03-12T09:01:32+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/2026-Girard-Perregaux-Minute-Repeater-Flying-Bridges-review-video-automatic-micro-rotor-minute-repaeter-tourbillon-1-600x237.jpg",
-      "relevance": 10
-    },
-    {
       "id": "4286d62446cb",
       "title": "Introducing the Girard-Perregaux Minute Repeater Flying Bridges",
       "link": "https://revolutionwatch.com/introducing-the-girard-perregaux-minute-repeater-flying-bridges/",
       "desc": "The post Introducing the Girard-Perregaux Minute Repeater Flying Bridges appeared first on Revolution Watch.",
       "date": "2026-03-12T09:00:53+00:00",
       "source": "REVOLUTION",
-      "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "68d0441a810d",
-      "title": "Girard-Perregaux\u2019s Latest Masterpiece: The Minute Repeater Flying Bridges",
-      "link": "https://www.fratellowatches.com/girard-perregauxs-latest-masterpiece-the-minute-repeater-flying-bridges/",
-      "desc": "Girard-Perregaux isn\u2019t waiting around for us to visit the upcoming April festivities in Geneva to release new watches. Instead, the legendary brand is getting a jump on the competition with an incredi",
-      "date": "2026-03-12T09:00:22+00:00",
-      "source": "FRATELLO",
       "image": "",
       "relevance": 0
     },
@@ -361,7 +361,7 @@
       "relevance": 0
     }
   ],
-  "fetched_at": "2026-03-15T04:33:12.730887+00:00",
+  "fetched_at": "2026-03-15T13:00:02.898509+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
