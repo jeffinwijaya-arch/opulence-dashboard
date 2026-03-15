@@ -2984,13 +2984,19 @@ async function loadActionItems() {
 
         // Collect by priority group
         const unposted = [], needsShip = [], awaitPay = [], inTransit = [];
-        // Fetch draft postings to exclude from unposted
+        // Fetch draft/active postings to exclude from unposted
         let draftWatchIds = new Set();
         try {
-            const pr = await fetch('/api/postings/active');
+            const pr = await fetch('/api/telegram/postings');
             if (pr.ok) {
-                const postings = await pr.json();
-                (postings || []).forEach(p => { if (p.status === 'draft' || p.status === 'active') draftWatchIds.add(p.watch_id); });
+                const pdata = await pr.json();
+                const postings = pdata.postings || pdata || [];
+                (Array.isArray(postings) ? postings : []).forEach(p => {
+                    if (p.status === 'draft' || p.status === 'active') {
+                        draftWatchIds.add(p.watch_id);
+                        draftWatchIds.add(p.row);
+                    }
+                });
             }
         } catch(e) {}
 
