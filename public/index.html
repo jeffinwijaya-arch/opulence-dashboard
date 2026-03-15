@@ -2987,14 +2987,14 @@ async function loadActionItems() {
         // Fetch draft/active postings to exclude from unposted
         let draftWatchIds = new Set();
         try {
-            const pr = await fetch('/api/telegram/postings');
+            const pr = await fetch('/api/my-postings');
             if (pr.ok) {
                 const pdata = await pr.json();
                 const postings = pdata.postings || pdata || [];
                 (Array.isArray(postings) ? postings : []).forEach(p => {
                     if (p.status === 'draft' || p.status === 'active') {
-                        draftWatchIds.add(p.watch_id);
-                        draftWatchIds.add(p.row);
+                        if (p.watch_id) draftWatchIds.add(p.watch_id);
+                        if (p.row) draftWatchIds.add(p.row);
                     }
                 });
             }
