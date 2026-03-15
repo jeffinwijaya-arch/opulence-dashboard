@@ -9801,7 +9801,23 @@ async function loadPayments() {
         // Mobile card view
         const cardsEl = document.getElementById('postings-active-cards');
         if (cardsEl) {
-            cardsEl.innerHTML = postings.map(p => {
+            // Group by date with headers (like Operations)
+            const today = new Date().toISOString().slice(0,10);
+            const yd = new Date(Date.now()-86400000).toISOString().slice(0,10);
+            let lastDate = '';
+            let html = '';
+            postings.forEach(p => {
+                const rawDate = p.posted_raw || (p.posted_at||'').slice(0,10) || '';
+                if (rawDate !== lastDate) {
+                    lastDate = rawDate;
+                    let label = rawDate;
+                    if (rawDate === today) label = 'Today';
+                    else if (rawDate === yd) label = 'Yesterday';
+                    else { try { label = new Date(rawDate+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}); } catch(e){} }
+                    html += `<div style="padding:10px 4px 6px;margin-top:12px;border-bottom:2px solid var(--accent);display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:0.78rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;">${label}</span>
+                    </div>`;
+                }
                 const desc = (p.description || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
                 const posted = (p.posted_at || p.posted_date || '').slice(0, 10);
                 const price = p.price ? '$' + Number(p.price).toLocaleString() : '—';
@@ -9814,7 +9830,7 @@ async function loadPayments() {
                     : '';
                 const isDraft = p.status === 'draft';
                 const statusBadge = isDraft ? '<span style="background:var(--yellow,#ffd600);color:#000;font-size:0.6rem;padding:1px 6px;border-radius:4px;font-weight:600;">DRAFT</span> ' : '';
-                return `<div class="posting-card" style="${isDraft ? 'border-color:var(--yellow,#ffd600);' : ''}">
+                html += `<div class="posting-card" style="${isDraft ? 'border-color:var(--yellow,#ffd600);' : ''}">
                     ${imgTag}
                     <div class="posting-card-body">
                         <div class="posting-card-ref">${statusBadge}${p.ref || '—'}</div>
@@ -9835,7 +9851,8 @@ async function loadPayments() {
                         </div>
                     </div>
                 </div>`;
-            }).join('');
+            });
+            cardsEl.innerHTML = html;
         }
     }
 
