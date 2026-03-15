@@ -5997,20 +5997,16 @@ function applyRoleRestrictions() {
 }
 
 // ── INIT ──
-(async function _init() {
-    await loadUserRole(); // MUST complete before rendering
-    if (_userRole.allowedPages) {
-        // Restricted user — only load what they need
-        showPage(_userRole.allowedPages[0] || 'jam');
-    } else {
-        // Full access — load everything
-        loadData();
-        setTimeout(renderTicker, 3000);
-        loadNews();
-        fxLoadRates();
-        fxCalc();
-    }
-})();
+// Role is loaded synchronously from server inject (window.__USER_ROLE)
+// For restricted users, defer page load until all scripts are ready
+if (!_userRole.allowedPages) {
+    // Full access — load everything now
+    loadData();
+    setTimeout(renderTicker, 3000);
+    loadNews();
+    fxLoadRates();
+    fxCalc();
+}
 // These only run for full-access users
 if (!_userRole.allowedPages) {
     setInterval(()=>{ fxLoadRates(); }, 3600000);
@@ -12055,6 +12051,11 @@ function jamUploadLabel(watchId) {
         }
     };
     input.click();
+}
+
+// Deferred init for restricted users (loadJamPage now exists)
+if (_userRole.allowedPages) {
+    showPage(_userRole.allowedPages[0] || 'jam');
 }
 
 </script>
