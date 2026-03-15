@@ -6059,8 +6059,11 @@ function applyRoleRestrictions() {
 
 // ── INIT ──
 // Role is loaded synchronously from server inject (window.__USER_ROLE)
-// For restricted users, defer page load until all scripts are ready
-if (!_userRole.allowedPages) {
+if (_userRole.allowedPages) {
+    // Restricted user — apply role restrictions then load data
+    applyRoleRestrictions();
+    loadData();
+} else {
     // Full access — load everything now
     loadData();
     setTimeout(renderTicker, 3000);
