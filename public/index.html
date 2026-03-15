@@ -12781,6 +12781,8 @@ function renderJamFeed(type) {
                 <span style="font-size:0.85rem;font-weight:700;color:var(--orange);">${_t('toShip')}</span>
                 <span style="font-size:0.7rem;color:var(--text-2);margin-left:8px;">${visiblePending.length} ${_t('pending')}</span>
             </div>`;
+            // Group by package
+            const renderedPkgs = new Set();
             let lastDate = '';
             for (const item of visiblePending) {
                 const d = item.date || 'Unscheduled';
@@ -12790,7 +12792,20 @@ function renderJamFeed(type) {
                     html += _dateHeader(d === 'Unscheduled' ? 'Unscheduled' : d, clr);
                     lastDate = d;
                 }
-                html += _jamCard(type, item);
+                // If item has a package, render package group
+                if (item.package_id && !renderedPkgs.has(item.package_id)) {
+                    renderedPkgs.add(item.package_id);
+                    const pkgItems = visiblePending.filter(i => i.package_id === item.package_id);
+                    html += `<div style="border:2px solid var(--accent);border-radius:10px;padding:2px;margin:8px 0;">
+                        <div style="background:var(--accent-dim);padding:6px 12px;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:space-between;">
+                            <span style="font-size:0.75rem;font-weight:700;color:var(--accent);">${item.package_name || 'Package'} (${pkgItems.length} watches)</span>
+                            ${item.has_label ? `<button onclick="event.stopPropagation();window.open('/api/jam/label/${item.label_file}','_blank')" style="cursor:pointer;padding:4px 10px;border:none;border-radius:6px;background:var(--green);color:#000;font-weight:700;font-size:0.7rem;">VIEW LABEL</button>` : ''}
+                        </div>`;
+                    for (const pi of pkgItems) html += _jamCard(type, pi);
+                    html += `</div>`;
+                } else if (!item.package_id) {
+                    html += _jamCard(type, item);
+                }
             }
         }
         
