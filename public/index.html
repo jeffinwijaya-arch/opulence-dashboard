@@ -3171,9 +3171,13 @@ function openShippingModal(item) {
                 <span style="font-weight:600;color:var(--green);">Local Delivery</span>
                 <div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">Hand delivery or local drop-off</div>
             </button>
+            <button class="btn" onclick="showShipForm('attach-label', ${item.row})" style="width:100%;padding:12px;text-align:left;border:1px solid var(--border-strong);font-size:0.78rem;">
+                <span style="font-weight:600;color:var(--blue);">Attach Label</span>
+                <div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">Attach a label PDF for Eddy to ship (does NOT mark as shipped)</div>
+            </button>
             <button class="btn" onclick="showShipForm('external', ${item.row})" style="width:100%;padding:12px;text-align:left;border:1px solid var(--border-strong);font-size:0.78rem;">
-                <span style="font-weight:600;color:var(--blue);">External Label / Buyer's Label</span>
-                <div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">Attach a label PDF or enter tracking from buyer</div>
+                <span style="font-weight:600;color:var(--orange);">Mark Shipped (External Label)</span>
+                <div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">Already shipped — attach label + mark as shipped</div>
             </button>
         </div>
 
@@ -3203,6 +3207,28 @@ function showShipForm(type, row) {
             <div style="display:flex;gap:8px;justify-content:flex-end;">
                 <button class="btn" onclick="showShipForm('back', ${row})" style="font-size:0.75rem;padding:6px 14px;">Back</button>
                 <button class="btn" id="ship-submit-btn" onclick="submitShipping(${row}, 'local')" style="font-size:0.75rem;padding:6px 14px;background:var(--green);color:#000;border:none;font-weight:600;">Mark Shipped</button>
+            </div>`;
+        return;
+    }
+
+    if (type === 'attach-label') {
+        form.innerHTML = `
+            <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Label PDF</label>
+            <div id="ship-label-preview" style="min-height:60px;background:var(--bg-2);border:2px dashed var(--border-strong);border-radius:var(--radius);padding:14px;margin-top:4px;margin-bottom:10px;text-align:center;cursor:pointer;" onclick="document.getElementById('ship-label-upload').click()"
+                ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='var(--bg-hover)';"
+                ondragleave="this.style.borderColor='var(--border-strong)';this.style.background='var(--bg-2)';"
+                ondrop="event.preventDefault();this.style.borderColor='var(--border-strong)';this.style.background='var(--bg-2)';const f=event.dataTransfer.files;if(f.length){const dt=new DataTransfer();dt.items.add(f[0]);document.getElementById('ship-label-upload').files=dt.files;handleLabelUpload(document.getElementById('ship-label-upload'));}">
+                <div style="color:var(--text-2);font-size:0.72rem;">Drag & drop label PDF here or click to browse</div>
+            </div>
+            <input type="file" id="ship-label-upload" accept=".pdf,image/*" style="display:none" onchange="handleLabelUpload(this)" />
+            <div id="ship-tracking-section" style="margin-bottom:10px;">
+                <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Tracking Number (optional)</label>
+                <input id="ship-tracking" type="text" placeholder="Auto-filled from PDF" style="width:100%;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);color:var(--text-0);padding:8px;font-family:var(--mono);font-size:0.78rem;margin-top:4px;" />
+                <div id="ship-tracking-status" style="font-size:0.65rem;color:var(--text-2);margin-top:2px;"></div>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+                <button class="btn" onclick="showShipForm('back', ${row})" style="font-size:0.75rem;padding:6px 14px;">Back</button>
+                <button class="btn" id="ship-submit-btn" onclick="submitAttachLabel(${row})" style="font-size:0.75rem;padding:6px 14px;background:var(--blue);color:#fff;border:none;font-weight:600;">Attach Label</button>
             </div>`;
         return;
     }
@@ -3263,6 +3289,37 @@ async function handleLabelUpload(input) {
         } catch(e) {
             if (statusEl) statusEl.innerHTML = '<span style="color:var(--red);">Extraction failed — enter manually</span>';
         }
+    }
+}
+
+async function submitAttachLabel(row) {
+    const btn = document.getElementById('ship-submit-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Attaching...'; }
+    try {
+        const fileInput = document.getElementById('ship-label-upload');
+        const tracking = document.getElementById('ship-tracking')?.value || '';
+        if (!fileInput?.files?.length) { alert('Please upload a label PDF'); if (btn) { btn.disabled = false; btn.textContent = 'Attach Label'; } return; }
+        const fd = new FormData();
+        fd.append('label', fileInput.files[0]);
+        fd.append('row', row);
+        fd.append('tracking', tracking);
+        fd.append('attach_only', 'true');
+        const r = await fetch('/api/watch-photos/upload-label', { method: 'POST', body: fd });
+        const result = await r.json();
+        if (result.ok) {
+            document.getElementById('shipping-modal')?.remove();
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;top:20px;right:20px;background:var(--blue);color:#fff;padding:12px 20px;border-radius:8px;font-weight:600;font-size:0.85rem;z-index:99999;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
+            toast.textContent = 'Label attached. Eddy will see it in Ship tab.';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        } else {
+            alert('Failed: ' + (result.error || 'Unknown error'));
+            if (btn) { btn.disabled = false; btn.textContent = 'Attach Label'; }
+        }
+    } catch(e) {
+        alert('Error: ' + e.message);
+        if (btn) { btn.disabled = false; btn.textContent = 'Attach Label'; }
     }
 }
 
