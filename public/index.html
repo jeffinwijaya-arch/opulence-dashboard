@@ -1489,7 +1489,7 @@
         <div class="page" id="page-inventory">
             <div class="page-head">
                 <h1>Inventory</h1>
-                <p>Bot Sheet — Add, edit, and manage watches. Actions auto-post to Telegram.</p>
+                <p>Bot Sheet — Add, edit, and manage watches. Actions auto-sync to Telegram groups.</p>
             </div>
             <!-- Summary -->
             <div class="metrics" id="inv-mgmt-summary" style="margin-bottom:12px;">
@@ -1690,7 +1690,7 @@
         <div class="page" id="page-postings">
             <div class="page-head">
                 <h1>My Postings</h1>
-                <p>Manage watches posted in the My Postings Telegram group</p>
+                <p>Manage watches posted in the My Postings WhatsApp group</p>
             </div>
             <!-- Tabs -->
             <div class="tabs" style="margin-bottom:12px;">
@@ -1706,7 +1706,7 @@
                 <button class="btn" onclick="loadPostingsPage()" style="opacity:0.8;">&#8635; Refresh</button>
                 <button class="btn" onclick="location.reload(true)" style="opacity:0.6;font-size:0.65rem;">Hard Reload</button>
                 <button class="btn" onclick="syncPostings()" id="postings-sync-btn" style="opacity:0.8;">&#8635; Reload Log</button>
-                <button class="btn" onclick="repostAllPostings()" id="postings-repost-all-btn" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);font-weight:600;">Repost All</button>
+                <button class="btn" onclick="repostAllPostings()" id="postings-repost-all-btn" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);font-weight:600;">Sync All</button>
                 <span id="postings-status-msg" style="font-size:0.72rem;color:var(--text-2);margin-left:4px;"></span>
             </div>
 
@@ -4114,7 +4114,7 @@ async function submitPosting(row) {
 }
 
 async function sendPostingToTelegram(postingId) {
-    if (!confirm('Send this posting to Telegram?')) return;
+    if (!confirm('Send to WhatsApp?')) return;
     try {
         const r = await fetch(`/api/postings/${postingId}/send-telegram`, {
             method: 'POST',
@@ -7431,7 +7431,7 @@ async function submitSale() {
     if (!soldTo || !soldPrice) { status.style.display='block'; status.style.color='var(--red)'; status.textContent='Buyer and price required'; return; }
     const btn = document.getElementById('sm-submit');
     btn.disabled = true; btn.textContent = 'Saving...';
-    status.style.display = 'block'; status.style.color = 'var(--text-1)'; status.textContent = 'Recording sale + posting to Telegram...';
+    status.style.display = 'block'; status.style.color = 'var(--text-1)'; status.textContent = 'Recording sale......';
     try {
         const r = await fetch(`/api/inventory/${row}/sold`, {
             method:'POST', headers:{'Content-Type':'application/json'},
@@ -7439,7 +7439,7 @@ async function submitSale() {
         });
         const d = await r.json();
         if (d.ok) {
-            let msg = ' Sold! Posted to Telegram.';
+            let msg = ' Sold!.';
             if (d.invoice) msg += ` Invoice ${d.invoice.invoice_number} created & sent!`;
             else if (d.invoice_error) msg += `  Invoice failed: ${d.invoice_error}`;
             status.style.color='var(--green)'; status.textContent=msg; setTimeout(()=>{closeSellModal();loadInventoryPage();},1500); }
@@ -7467,14 +7467,14 @@ async function submitShip() {
     const status = document.getElementById('shm-status');
     const btn = document.getElementById('shm-submit');
     btn.disabled = true; btn.textContent = 'Saving...';
-    status.style.display = 'block'; status.style.color = 'var(--text-1)'; status.textContent = 'Marking shipped + posting to Telegram...';
+    status.style.display = 'block'; status.style.color = 'var(--text-1)'; status.textContent = 'Marking shipped......';
     try {
         const r = await fetch(`/api/inventory/${row}/shipped`, {
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({tracking: tracking})
         });
         const d = await r.json();
-        if (d.ok) { status.style.color='var(--green)'; status.textContent='Shipped! Posted to Telegram.'; setTimeout(()=>{closeShipModal();loadInventoryPage();},800); }
+        if (d.ok) { status.style.color='var(--green)'; status.textContent='Shipped!.'; setTimeout(()=>{closeShipModal();loadInventoryPage();},800); }
         else { status.style.color='var(--red)'; status.textContent='Error: '+(d.error||'Unknown'); }
     } catch(e) { status.style.color='var(--red)'; status.textContent='Error: '+e.message; }
     btn.disabled = false; btn.textContent = 'Ship';
@@ -9790,7 +9790,7 @@ async function loadPayments() {
                 <td style="white-space:nowrap;">
                     ${p.status === 'draft'
                         ? `<button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;background:#e8f5e9;color:var(--green);border-color:var(--green);font-weight:600;"
-                            onclick="sendPostingToTelegram(${p.id})">Send to TG</button>`
+                            onclick="sendPostingToTelegram(${p.id})">Send to WA</button>`
                         : `<button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);"
                             onclick="repostSinglePosting(${p.id},'${safeDesc}',this)">Repost</button>`}
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;"
@@ -9845,7 +9845,7 @@ async function loadPayments() {
                         <div class="posting-card-actions">
                             ${isDraft
                                 ? `<button class="btn" style="background:#e8f5e9;color:var(--green);border-color:var(--green);font-weight:600;"
-                                    onclick="sendPostingToTelegram(${p.id})">Send to TG</button>`
+                                    onclick="sendPostingToTelegram(${p.id})">Send to WA</button>`
                                 : `<button class="btn" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);"
                                     onclick="repostSinglePosting(${p.id},'${safeDesc}',this)">Repost</button>`}
                             <button class="btn" onclick="openPriceEditModal('${mid}','${priceRaw}','${safeDesc}','${safePhoto}','${p.row||""}')">Edit</button>
@@ -9942,7 +9942,7 @@ async function loadPayments() {
                 status.textContent = ' Deleted from Telegram and log.';
             } else {
                 status.style.cssText = 'display:block;background:rgba(255,152,0,0.1);color:#ff9800;padding:8px;border-radius:var(--radius);font-size:0.72rem;margin-top:8px;';
-                status.textContent = ' Removed from log but Telegram message NOT deleted. ' + (d.warning || 'Bot may need admin rights in the group.');
+                status.textContent = ' Removed from log but WhatsApp message may not be deleted. ' + (d.warning || 'Bot may need admin rights in the group.');
             }
             setTimeout(() => {
                 closePostingDeleteModal();
@@ -10219,7 +10219,7 @@ async function loadPayments() {
             const d = await r.json();
             if (!d.ok) throw new Error(d.error || 'Update failed');
             statusEl.style.cssText = 'display:block;background:rgba(0,230,118,0.1);color:var(--green);padding:8px;border-radius:var(--radius);font-size:0.72rem;margin-top:8px;';
-            statusEl.textContent = d.tg_updated ? ' Updated posting + Telegram' : ' Updated posting';
+            statusEl.textContent = d.tg_updated ? ' Updated posting + WhatsApp' : ' Updated posting';
             setTimeout(() => { closePriceEditModal(); loadPostingsPage(); }, 1000);
         } catch (e) {
             statusEl.style.cssText = 'display:block;background:rgba(255,23,68,0.1);color:var(--red);padding:8px;border-radius:var(--radius);font-size:0.72rem;margin-top:8px;';
@@ -10355,7 +10355,7 @@ async function loadPayments() {
         if (page === 'postings') loadPostingsPage();
     };
     async function repostSinglePosting(postingId, desc, btn) {
-        if (!confirm(`Repost "${desc.slice(0,60)}..." to Telegram?`)) return;
+        if (!confirm(`Repost to WhatsApp?`)) return;
         const origText = btn.textContent;
         btn.disabled = true;
         btn.textContent = '...';
@@ -10378,27 +10378,33 @@ async function loadPayments() {
 
     async function repostAllPostings() {
         const count = _postingsData.length;
-        if (!count) { alert('No active postings to repost.'); return; }
-        if (!confirm(`Repost ALL ${count} active postings to Telegram?\n\nThis will delete and re-send every posting (~${count} seconds).`)) return;
+        if (!count) { alert('No active postings to sync.'); return; }
+        if (!confirm(`Sync ${count} postings to WhatsApp?\n\nNew watches get posted, sold watches get deleted. Already-posted watches are skipped.\n\nAdd ?force=true to force re-send all.`)) return;
         const btn = document.getElementById('postings-repost-all-btn');
         const statusEl = document.getElementById('postings-status-msg');
         btn.disabled = true;
-        btn.textContent = `Reposting ${count}...`;
-        statusEl.textContent = 'Reposting all — this may take a minute...';
+        btn.textContent = `Syncing ${count}...`;
+        statusEl.textContent = 'Syncing postings to WhatsApp — this may take a minute...';
         try {
             const r = await fetch('/api/my-postings/repost-all', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'}
             });
             const d = await r.json();
-            if (!d.ok) throw new Error(d.error || 'Repost all failed');
-            statusEl.textContent = `Reposted ${d.reposted}/${d.total} postings`;
-            btn.textContent = 'Repost All';
+            if (!d.ok) throw new Error(d.error || 'Sync failed');
+            const parts = [];
+            if (d.posted) parts.push(`${d.posted} posted`);
+            if (d.deleted) parts.push(`${d.deleted} deleted`);
+            if (d.edited) parts.push(`${d.edited} edited`);
+            if (d.skipped) parts.push(`${d.skipped} skipped`);
+            if (d.errors) parts.push(`${d.errors} errors`);
+            statusEl.textContent = parts.length ? parts.join(', ') : 'All up to date';
+            btn.textContent = 'Sync All';
             btn.disabled = false;
             loadPostingsPage();
         } catch (e) {
             statusEl.textContent = 'Error: ' + e.message;
-            btn.textContent = 'Repost All';
+            btn.textContent = 'Sync All';
             btn.disabled = false;
         }
     }
@@ -11033,7 +11039,7 @@ async function loadPayments() {
                         </div>
                         <div class="posting-card-actions">
                             ${isDraft
-                                ? `<button class="btn" style="background:#e8f5e9;color:var(--green);border-color:var(--green);font-weight:600;" onclick="sendPostingToTelegram(${p.id})">Send to TG</button>`
+                                ? `<button class="btn" style="background:#e8f5e9;color:var(--green);border-color:var(--green);font-weight:600;" onclick="sendPostingToTelegram(${p.id})">Send to WA</button>`
                                 : `<button class="btn" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);" onclick="repostSinglePosting(${p.id},'${safeDesc}',this)">Repost</button>`}
                             <button class="btn" onclick="openPriceEditModal('${mid}','${priceRaw}','${safeDesc}','${safePhoto}','${p.row||""}')">Edit</button>
                             <button class="btn" style="background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);" onclick="openPostingDeleteModal('${mid}','${safeDesc}','${safePhoto}','${priceRaw}','${p.id||""}')">Delete</button>
