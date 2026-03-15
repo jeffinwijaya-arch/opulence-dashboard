@@ -9840,7 +9840,7 @@ async function loadPayments() {
                         <div class="posting-card-desc">${desc}</div>
                         <div class="posting-card-meta">
                             <span class="posting-card-price">${price}</span>
-                            <span class="posting-card-date">${p.time_ago || posted}</span>
+                            <span class="posting-card-date">${p.time_ago || posted}${((_postingPerformanceData||{})[String(mid)]||{}).days_listed != null ? ' · '+(_postingPerformanceData[String(mid)]).days_listed+'d listed' : ''}</span>
                         </div>
                         <div class="posting-card-actions">
                             ${isDraft
@@ -10992,40 +10992,7 @@ async function loadPayments() {
             </tr>`;
         }).join('');
 
-        // Mobile card view (simplified — just call original for cards)
-        const cardsEl = document.getElementById('postings-active-cards');
-        if (cardsEl) {
-            cardsEl.innerHTML = postings.map(p => {
-                const desc = (p.description || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-                const posted = (p.posted_at || p.posted_date || '').slice(0, 10);
-                const price = p.price ? '$' + Number(p.price).toLocaleString() : '—';
-                const mid = p.message_id || '';
-                const priceRaw = p.price || '';
-                const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\').replace(/\n/g,' ').replace(/\r/g,'');
-                const safePhoto = (p.photo || '').replace(/'/g,'&apos;');
-                const imgTag = p.photo ? `<img src="/api/posting-photo/${p.photo}" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">` : '';
-                const perf = _postingPerformanceData[String(mid)] || {};
-                const daysText = perf.days_listed != null ? ` · ${perf.days_listed}d listed` : '';
-                return `<div class="posting-card">
-                    ${imgTag}
-                    <div class="posting-card-body">
-                        <div class="posting-card-ref">${p.ref || '—'}</div>
-                        <div class="posting-card-desc">${desc}</div>
-                        <div class="posting-card-meta">
-                            <span class="posting-card-price">${price}</span>
-                            <span class="posting-card-date">${posted}${daysText}</span>
-                        </div>
-                        <div class="posting-card-actions">
-                            <button class="btn" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);"
-                                onclick="repostSinglePosting(${p.id},'${safeDesc}',this)">Repost</button>
-                            <button class="btn" onclick="openPriceEditModal('${mid}','${priceRaw}','${safeDesc}','${safePhoto}','${p.row||""}')">Edit</button>
-                            <button class="btn" style="background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);"
-                                onclick="openPostingDeleteModal('${mid}','${safeDesc}','${safePhoto}','${priceRaw}','${p.id||""}')">Delete</button>
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
-        }
+                // Mobile cards now rendered by renderActivePostings with date grouping — no duplicate render here
     };
 
     // Override loadPostingsPage to also load performance data
