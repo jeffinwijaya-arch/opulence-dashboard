@@ -977,6 +977,7 @@
             <a data-page="shipping" onclick="showPage('shipping')">Shipping</a>
             <a data-page="inventory" onclick="showPage('inventory')">Inventory</a>
             <a data-page="mission-control" onclick="showPage('mission-control')">Mission Control</a>
+            <a data-page="terminal" onclick="showPage('terminal')">Terminal</a>
             <a data-page="payments" onclick="showPage('payments')">Payments <span class="badge" id="payments-count">0</span></a>
             <a data-page="postings" onclick="showPage('postings')">My Postings</a>
             <a data-page="jam" onclick="showPage('jam')">Operations</a>
@@ -2312,7 +2313,26 @@
         </div>
 
         <!-- ═══ MISSION CONTROL ═══ -->
-        <div class="page" id="page-mission-control">
+        <div class="page" id="page-terminal" style="display:none;">
+            <div class="page-head">
+                <h1>Terminal</h1>
+                <p>Live system logs — see what Mochie is doing</p>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+                <button class="btn" id="term-btn-all" onclick="termFilter('all')" style="background:var(--accent);color:var(--bg-1);font-weight:600;font-size:0.72rem;padding:4px 12px;">All</button>
+                <button class="btn" id="term-btn-dashboard" onclick="termFilter('dashboard')" style="font-size:0.72rem;padding:4px 12px;">Dashboard</button>
+                <button class="btn" id="term-btn-gateway" onclick="termFilter('gateway')" style="font-size:0.72rem;padding:4px 12px;">Gateway</button>
+                <button class="btn" id="term-btn-audit" onclick="termFilter('audit')" style="font-size:0.72rem;padding:4px 12px;">Audit Log</button>
+                <label style="display:flex;align-items:center;gap:4px;font-size:0.72rem;color:var(--text-2);margin-left:auto;">
+                    <input type="checkbox" id="term-auto-scroll" checked /> Auto-scroll
+                </label>
+            </div>
+            <div id="terminal-output" style="background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:12px;font-family:'JetBrains Mono',var(--mono);font-size:0.7rem;line-height:1.6;color:#c9d1d9;height:calc(100vh - 220px);overflow-y:auto;white-space:pre-wrap;word-break:break-all;">
+                Connecting...
+            </div>
+        </div>
+
+        <div class="page" id="page-mission-control"
             <style>
                 .mc-header{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
                 .mc-logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#F59E0B,#E08830);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:0 4px 16px rgba(245,158,11,0.25);}
@@ -2719,7 +2739,7 @@ let browseOffset = 0;
 const BROWSE_PAGE = 80;
 let currentDealsRegion = 'all';
 
-const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals & Arbitrage',browse:'Market',invoices:'Invoices',shipping:'Shipping',inventory:'Inventory',payments:'Payments',photos:'Photos','mission-control':'Mission Control'};
+const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals & Arbitrage',browse:'Market',invoices:'Invoices',shipping:'Shipping',inventory:'Inventory',payments:'Payments',photos:'Photos','mission-control':'Mission Control',terminal:'Terminal'};
 
 function toggleMobileMore() {
     const m = document.getElementById('mobile-more-menu');
@@ -2761,6 +2781,7 @@ function showPage(name, pushState=true) {
     if (name === 'portfolio') { if (DATA.portfolio) renderPortfolio(); else loadPortfolio(); }
     if (name === 'invoices') loadInvoicePage();
     if (name === 'shipping') loadShippingPage();
+    if (name === 'terminal') startTerminal();
     if (name === 'inventory') loadInventoryPage();
     if (name === 'payments') loadPayments();
     if (name === 'photos') { loadPhotoLibrary(); loadDocumentationPage(); }
@@ -13430,6 +13451,64 @@ function jamUploadShipPhoto(watchId, photoType) {
     };
     input.click();
 }
+
+// ── TERMINAL ──
+let _termInterval = null;
+let _termFilter = 'all';
+let _termLastId = 0;
+
+function startTerminal() {
+    if (_termInterval) return;
+    loadTerminalLogs();
+    _termInterval = setInterval(loadTerminalLogs, 3000);
+}
+
+function termFilter(f) {
+    _termFilter = f;
+    _termLastId = 0;
+    document.getElementById('terminal-output').innerHTML = '';
+    document.querySelectorAll('[id^="term-btn-"]').forEach(b => {
+        b.style.background = b.id === 'term-btn-' + f ? 'var(--accent)' : '';
+        b.style.color = b.id === 'term-btn-' + f ? 'var(--bg-1)' : '';
+    });
+    loadTerminalLogs();
+}
+
+async function loadTerminalLogs() {
+    try {
+        const r = await fetch('/api/terminal/logs?filter=' + _termFilter + '&after=' + _termLastId);
+        if (!r.ok) return;
+        const data = await r.json();
+        const el = document.getElementById('terminal-output');
+        if (!el) return;
+        
+        if (data.lines && data.lines.length) {
+            const colored = data.lines.map(l => {
+                let line = l.text || l;
+                if (typeof line === 'object') line = JSON.stringify(line);
+                // Color coding
+                if (/error|fail|exception/i.test(line)) return '<span style="color:#f85149;">' + _escHtml(line) + '</span>';
+                if (/warn|warning/i.test(line)) return '<span style="color:#d29922;">' + _escHtml(line) + '</span>';
+                if (/success|✅|ok|completed/i.test(line)) return '<span style="color:#3fb950;">' + _escHtml(line) + '</span>';
+                if (/INFO/i.test(line)) return '<span style="color:#58a6ff;">' + _escHtml(line) + '</span>';
+                return _escHtml(line);
+            }).join('\n');
+            
+            if (_termLastId === 0) el.innerHTML = colored;
+            else el.innerHTML += '\n' + colored;
+            
+            _termLastId = data.last_id || _termLastId;
+            
+            if (document.getElementById('term-auto-scroll')?.checked) {
+                el.scrollTop = el.scrollHeight;
+            }
+        } else if (_termLastId === 0) {
+            el.innerHTML = '<span style="color:#8b949e;">No logs yet. System is running.</span>';
+        }
+    } catch(e) { console.error('Terminal:', e); }
+}
+
+function _escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function jamPrintLabel(labelFile) {
     const printWin = window.open(`/api/jam/label/${labelFile}`, '_blank');
