@@ -6435,11 +6435,15 @@ function renderInventoryTable(rows) {
             if (r.sold==='Yes'&&r.shipped!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--blue);color:var(--bg-0);" onclick="event.stopPropagation();showShipModal(${r.row})">Ship</div>`;
             return html;
         };
-        cardsEl.innerHTML = rows.map(r => {
+        let cardHtml = '';
+        let renderErr = null;
+        for (let ri = 0; ri < rows.length; ri++) {
+            try {
+            const r = rows[ri];
             const diff = pnlCalc(r);
             const pnlStr = diff !== null ? `<span style="color:${diff>=0?'var(--green)':'var(--red)'};">${diff>=0?'+':''}$${Math.round(Math.abs(diff)).toLocaleString()}</span>` : '';
             const swipeContent = swipeActionsHtml(r);
-            return `<div class="inv-card-swipe-wrap">
+            cardHtml += `<div class="inv-card-swipe-wrap">
                 <div class="inv-card" onclick="editWatch(${r.row})">
                     <div class="inv-card-header">
                         <div style="flex:1;">
@@ -6462,7 +6466,13 @@ function renderInventoryTable(rows) {
                 </div>
                 ${swipeContent ? `<div class="inv-card-swipe-actions">${swipeContent}</div>` : ''}
             </div>`;
-        }).join('');
+            } catch(e) { renderErr = {idx: ri, id: rows[ri]?.id, desc: rows[ri]?.description, err: e.message}; }
+        }
+        if (renderErr) {
+            console.error('INV CARD RENDER ERROR:', JSON.stringify(renderErr));
+            cardHtml = `<div style="color:red;padding:10px;font-size:0.8rem;">Render error at #${renderErr.id} (${renderErr.desc}): ${renderErr.err}. ${ri} cards rendered before error.</div>` + cardHtml;
+        }
+        cardsEl.innerHTML = cardHtml;
         // Init swipe interactions after render
         setTimeout(initSwipeActions, 50);
     }
