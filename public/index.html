@@ -2191,7 +2191,7 @@
                     <h1>AD CRM</h1>
                     <p>Rolex Authorized Dealer follow-up tracker</p>
                 </div>
-                <div style="display:flex;gap:8px;">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
                     <select id="crm-region-filter" class="input" style="font-size:0.75rem;" onchange="filterCrmStores()">
                         <option value="">All Regions</option>
                     </select>
@@ -2201,13 +2201,22 @@
                         <option value="ok">Up to Date</option>
                         <option value="never">Never Visited</option>
                     </select>
-                    <button class="btn" onclick="refreshCrmFromSheet()" style="font-size:0.7rem;">Sync Sheet</button>
+                    <button class="btn" onclick="showAddStoreForm()" style="font-size:0.7rem;">+ Add Store</button>
                 </div>
             </div>
             <!-- Stats cards -->
             <div id="crm-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;"></div>
             <!-- Store list -->
             <div id="crm-store-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+            <!-- Deactivated stores -->
+            <div id="crm-inactive-section" style="margin-top:30px;display:none;">
+                <div onclick="document.getElementById('crm-inactive-list').style.display=document.getElementById('crm-inactive-list').style.display==='none'?'block':'none'; this.querySelector('span').textContent=document.getElementById('crm-inactive-list').style.display==='none'?'▸':'▾'" style="cursor:pointer;padding:10px 0;border-top:1px solid var(--border);display:flex;align-items:center;gap:6px;">
+                    <span style="font-size:0.75rem;">▸</span>
+                    <div style="font-size:0.75rem;font-weight:600;color:var(--text-2);text-transform:uppercase;">Deactivated Stores</div>
+                    <span id="crm-inactive-count" style="font-size:0.65rem;color:var(--text-2);background:var(--bg-2);padding:1px 6px;border-radius:4px;"></span>
+                </div>
+                <div id="crm-inactive-list" style="display:none;"></div>
+            </div>
             <!-- Store detail modal -->
             <div id="crm-detail-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);padding:20px;overflow-y:auto;" onclick="if(event.target===this)this.style.display='none'">
                 <div style="max-width:600px;margin:40px auto;background:var(--bg-2);border-radius:12px;padding:24px;" id="crm-detail-content"></div>
@@ -3407,6 +3416,7 @@ function openPostingModal(item, photoCount) {
                 <label style="font-size:0.68rem;color:var(--green);cursor:pointer;border:1px dashed var(--green);border-radius:var(--radius);padding:4px 10px;" for="posting-upload-extra">+ Add more photos</label>
                 <input type="file" id="posting-upload-extra" accept="image/*,.heic,.heif" multiple style="display:none" onchange="handlePostingUpload(${item.row}, '${item.description?.replace(/'/g,"\\'")||''}')"/>
             </div>
+            <div id="posting-library-suggestions" style="margin-top:8px;"></div>
         </div>`
         : `<div style="margin-bottom:10px;">
             <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Photos</label>
@@ -3600,19 +3610,18 @@ async function loadPostingPhotoPreviews(row) {
             `<div style="position:relative;display:inline-block;">
                 <img src="/api/watch-photos/${row}/images/${p.filename}" style="width:140px;height:140px;object-fit:cover;border-radius:6px;border:1px solid var(--border);" />
                 <button onclick="deletePostingPhoto(${row},'${p.filename}')" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;border:none;font-size:0.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">x</button>
+                <button onclick="redactPostingPhoto(${row},'${p.filename}','')" style="position:absolute;bottom:4px;left:4px;font-size:0.55rem;padding:2px 6px;background:rgba(0,0,0,0.7);color:#fff;border:none;border-radius:4px;cursor:pointer;">Redact</button>
             </div>`
         ).join('');
     } catch(e) { console.error(e); }
 }
 
-async function useLibraryPhoto(photoId, url, row, desc) {
-    // Fetch the library image, then open redact editor
+async function redactPostingPhoto(row, filename, desc) {
     try {
-        const r = await fetch(url);
+        const r = await fetch(`/api/watch-photos/${row}/images/${filename}`);
         const blob = await r.blob();
-        const file = new File([blob], `library_${photoId}.jpg`, { type: 'image/jpeg' });
+        const file = new File([blob], filename, { type: 'image/jpeg' });
         openPostingRedactEditor(file, row, desc);
-        // Wait for redact modal to close
         await new Promise(resolve => {
             const check = setInterval(() => {
                 if (!document.getElementById('posting-redact-modal')) {
@@ -3621,6 +3630,22 @@ async function useLibraryPhoto(photoId, url, row, desc) {
                 }
             }, 200);
         });
+        await new Promise(r => setTimeout(r, 500));
+        await loadPostingPhotoPreviews(row);
+    } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function useLibraryPhoto(photoId, url, row, desc) {
+    // Fetch the library image and upload directly (no redact editor)
+    try {
+        const r = await fetch(url);
+        const blob = await r.blob();
+        const file = new File([blob], `library_${photoId}.jpg`, { type: 'image/jpeg' });
+        const fd = new FormData();
+        fd.append('photo', file);
+        fd.append('row', row);
+        fd.append('description', desc);
+        await fetch('/api/watch-photos/upload', { method: 'POST', body: fd });
         await new Promise(r => setTimeout(r, 500));
         await loadPostingPhotoPreviews(row);
     } catch(e) { alert('Error loading library photo: ' + e.message); }
@@ -4070,28 +4095,24 @@ async function uploadPostingPhotos(row, desc, files) {
 
     const existingImgs = preview.querySelectorAll('img');
     let html = Array.from(existingImgs).map(img => img.outerHTML).join('');
-    html += '<div style="color:var(--accent);font-size:0.68rem;padding:4px;">Processing...</div>';
+    html += '<div style="color:var(--accent);font-size:0.68rem;padding:4px;">Uploading...</div>';
     preview.innerHTML = html;
 
     for (const rawFile of files) {
         // Convert HEIC if needed
         const file = await convertFileToJpeg(rawFile);
-        // Open redaction editor for each photo
-        openPostingRedactEditor(file, row, desc);
-        // Wait for user to finish (modal will be closed by skip/save)
-        await new Promise(resolve => {
-            const check = setInterval(() => {
-                if (!document.getElementById('posting-redact-modal')) {
-                    clearInterval(check);
-                    resolve();
-                }
-            }, 200);
-        });
+        // Upload directly without redaction editor
+        const fd = new FormData();
+        fd.append('photo', file);
+        fd.append('row', row);
+        fd.append('description', desc);
+        try {
+            await fetch('/api/watch-photos/upload', { method: 'POST', body: fd });
+        } catch(e) { console.error('Upload failed:', e); }
     }
-    // Refresh previews after all uploads — clear Processing...
+    // Refresh previews after all uploads
     const preview2 = document.getElementById('posting-photo-preview');
     if (preview2) preview2.innerHTML = '<div style="color:var(--text-2);font-size:0.68rem;padding:4px;">Refreshing...</div>';
-    // Wait briefly for server to index
     await new Promise(r => setTimeout(r, 500));
     await loadPostingPhotoPreviews(row);
     // If still showing refreshing, clear it
@@ -4117,6 +4138,11 @@ async function submitPosting(row) {
     const price = document.getElementById('posting-price')?.value || '';
     if (!caption) return alert('Caption is required');
     if (!price) return alert('Asking price is required');
+
+    // Require at least one photo
+    const preview = document.getElementById('posting-photo-preview');
+    const hasPhotos = preview && preview.querySelectorAll('img').length > 0;
+    if (!hasPhotos) return alert('At least one photo is required before saving a posting.');
 
     const btn = document.getElementById('posting-submit-btn');
     if (btn) { btn.textContent = 'Saving...'; btn.disabled = true; }
@@ -11316,6 +11342,673 @@ async function loadPayments() {
     });
 
 
+    // ═══ AD CRM ═══
+    // ═══════════════════════════════════════════════════════════════
+    let _crmStores = [];
+    let _crmOpenRegions = new Set();
+    
+    async function loadAdCrm() {
+        try {
+            const [statsRes, storesRes] = await Promise.all([
+                fetch('/api/ad-crm/stats').then(r=>{if(!r.ok)throw new Error(r.status);return r.json();}),
+                fetch('/api/ad-crm/stores').then(r=>{if(!r.ok)throw new Error(r.status);return r.json();})
+            ]);
+            _crmStores = Array.isArray(storesRes) ? storesRes : [];
+            
+            const active = _crmStores.filter(s=>s.is_active_ad!==0);
+            const total = active.length;
+            const overdue = active.filter(s=>s.is_overdue && s.last_visit).length;
+            const never = active.filter(s=>!s.last_visit).length;
+            const ok = total - overdue - never;
+            const inactive = _crmStores.filter(s=>s.is_active_ad===0).length;
+            
+            document.getElementById('crm-stats').innerHTML = [
+                {n:total, l:'Stores', c:'var(--accent)'},
+                {n:overdue, l:'Overdue', c:'var(--red)'},
+                {n:never, l:'Never Visited', c:'#f59e0b'},
+                {n:ok, l:'Up to Date', c:'var(--green)'},
+            ].map(s=>`<div style="background:var(--bg-2);border-radius:10px;padding:14px;text-align:center;">
+                <div style="font-size:1.6rem;font-weight:700;color:${s.c};">${s.n}</div>
+                <div style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">${s.l}</div>
+            </div>`).join('');
+            
+            const regions = [...new Set(_crmStores.map(s=>s.region).filter(Boolean))].sort();
+            document.getElementById('crm-region-filter').innerHTML = '<option value="">All Regions</option>' + 
+                regions.map(r=>`<option value="${r}">${r} (${_crmStores.filter(s=>s.region===r).length})</option>`).join('');
+            
+            filterCrmStores();
+        } catch(e) {
+            console.error('CRM error:', e);
+            document.getElementById('crm-store-list').innerHTML = `<div style="color:var(--red);padding:20px;text-align:center;">Failed to load: ${e.message}</div>`;
+        }
+    }
+    
+    function filterCrmStores() {
+        const region = document.getElementById('crm-region-filter').value;
+        const status = document.getElementById('crm-status-filter').value;
+        let stores = _crmStores;
+        if (region) stores = stores.filter(s=>s.region === region);
+        // Always hide deactivated from main list (they appear in bottom section)
+        stores = stores.filter(s=>s.is_active_ad!==0);
+        if (status === 'overdue') stores = stores.filter(s=>s.is_overdue && s.last_visit);
+        else if (status === 'ok') stores = stores.filter(s=>!s.is_overdue && s.last_visit);
+        else if (status === 'never') stores = stores.filter(s=>!s.last_visit);
+        
+        // Group by region
+        const grouped = {};
+        stores.forEach(s => { const r = s.region||'Other'; (grouped[r]=grouped[r]||[]).push(s); });
+        
+        // Sort regions: most overdue first
+        const regionOrder = Object.entries(grouped).sort((a,b) => {
+            const aOver = a[1].filter(s=>s.is_overdue).length;
+            const bOver = b[1].filter(s=>s.is_overdue).length;
+            return bOver - aOver || a[0].localeCompare(b[0]);
+        });
+        
+        const container = document.getElementById('crm-store-list');
+        if (!stores.length) { container.innerHTML = '<div style="text-align:center;color:var(--text-2);padding:40px;">No stores match</div>'; return; }
+        
+        // If single region selected, auto-open it
+        if (region) _crmOpenRegions.add(region);
+        
+        container.innerHTML = regionOrder.map(([regionName, regionStores]) => {
+            const overdueCount = regionStores.filter(s=>s.is_overdue).length;
+            const neverCount = regionStores.filter(s=>!s.last_visit).length;
+            const isOpen = _crmOpenRegions.has(regionName);
+            const rid = regionName.replace(/[^a-zA-Z0-9]/g,'_');
+            
+            // Region health bar
+            const pctOk = regionStores.length ? Math.round(((regionStores.length - overdueCount - neverCount) / regionStores.length) * 100) : 0;
+            const barColor = pctOk >= 80 ? 'var(--green)' : pctOk >= 40 ? '#f59e0b' : 'var(--red)';
+            
+            // Badges
+            let badges = '';
+            if (overdueCount) badges += `<span style="font-size:0.6rem;background:rgba(239,68,68,0.15);color:var(--red);padding:2px 6px;border-radius:4px;margin-left:6px;">${overdueCount} overdue</span>`;
+            if (neverCount) badges += `<span style="font-size:0.6rem;background:rgba(245,158,11,0.15);color:#f59e0b;padding:2px 6px;border-radius:4px;margin-left:4px;">${neverCount} new</span>`;
+            
+            // Store rows (only if open)
+            let storeRows = '';
+            if (isOpen) {
+                storeRows = `<div id="crm-region-${rid}" style="padding:0 0 8px;">` +
+                    regionStores.map(s => {
+                        const days = s.days_since != null ? s.days_since : null;
+                        let statusColor = 'var(--green)', statusBg = 'rgba(34,197,94,0.08)';
+                        let daysText = days != null ? `${days}d` : '—';
+                        if (!s.last_visit) { statusColor = '#f59e0b'; statusBg = 'rgba(245,158,11,0.08)'; daysText = 'NEW'; }
+                        else if (days >= 30) { statusColor = 'var(--red)'; statusBg = 'rgba(239,68,68,0.08)'; }
+                        else if (days >= 15) { statusColor = '#f59e0b'; statusBg = 'rgba(245,158,11,0.08)'; }
+                        
+                        const mainContact = (s.contacts||[])[0];
+                        const contactInfo = mainContact ? 
+                            `<span style="color:var(--text-2);">${mainContact.sales_name}${mainContact.phone_type && mainContact.phone_type !== 'iMessage' ? ` <span style="font-size:0.55rem;background:var(--accent-dim);color:var(--accent);padding:0 4px;border-radius:3px;">${mainContact.phone_type}</span>` : ''}</span>` : '';
+                        const extraContacts = (s.contacts||[]).length > 1 ? ` <span style="color:var(--text-2);">+${s.contacts.length-1}</span>` : '';
+                        const inactive = s.is_active_ad === 0 ? ' <span style="color:var(--red);font-size:0.55rem;">CLOSED</span>' : '';
+                        
+                        return `<div onclick="showCrmStore(${s.id})" style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.1s;" onmouseover="this.style.background='var(--bg-3)'" onmouseout="this.style.background='transparent'">
+                            <div style="width:36px;text-align:center;flex-shrink:0;">
+                                <div style="font-size:0.7rem;font-weight:700;color:${statusColor};background:${statusBg};padding:3px 0;border-radius:4px;">${daysText}</div>
+                            </div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:0.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}${inactive}</div>
+                                <div style="font-size:0.68rem;margin-top:1px;">${contactInfo}${extraContacts}</div>
+                            </div>
+                            <svg style="width:14px;height:14px;color:var(--text-2);flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </div>`;
+                    }).join('') + '</div>';
+            }
+            
+            return `<div style="background:var(--bg-2);border-radius:10px;overflow:hidden;margin-bottom:8px;">
+                <div onclick="toggleCrmRegion('${regionName}')" style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;user-select:none;" onmouseover="this.style.background='var(--bg-3)'" onmouseout="this.style.background='transparent'">
+                    <svg style="width:12px;height:12px;color:var(--text-2);transition:transform 0.2s;transform:rotate(${isOpen?'90':'0'}deg);flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:0.8rem;font-weight:600;">${regionName} <span style="color:var(--text-2);font-weight:400;">(${regionStores.length})</span>${badges}</div>
+                        <div style="height:3px;background:var(--border);border-radius:2px;margin-top:5px;overflow:hidden;">
+                            <div style="height:100%;width:${pctOk}%;background:${barColor};border-radius:2px;transition:width 0.3s;"></div>
+                        </div>
+                    </div>
+                </div>
+                ${storeRows}
+            </div>`;
+        }).join('');
+        
+        // Populate deactivated stores section at bottom
+        const inactiveStores = _crmStores.filter(s => s.is_active_ad === 0);
+        const inactiveSection = document.getElementById('crm-inactive-section');
+        const inactiveList = document.getElementById('crm-inactive-list');
+        const inactiveCount = document.getElementById('crm-inactive-count');
+        if (inactiveStores.length && status !== 'inactive') {
+            inactiveSection.style.display = 'block';
+            inactiveCount.textContent = inactiveStores.length;
+            inactiveList.innerHTML = inactiveStores.map(s => {
+                const mainContact = (s.contacts||[])[0];
+                return `<div onclick="showCrmStore(${s.id})" style="display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer;border-bottom:1px solid var(--border);opacity:0.6;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:0.75rem;">${s.name} <span style="font-size:0.6rem;color:var(--text-2);">${s.region||''}</span></div>
+                        ${mainContact ? `<div style="font-size:0.65rem;color:var(--text-2);">${mainContact.sales_name}</div>` : ''}
+                    </div>
+                    <button onclick="event.stopPropagation();toggleCrmStoreActive(${s.id},1)" style="font-size:0.6rem;padding:2px 8px;border:1px solid var(--green);border-radius:4px;background:none;color:var(--green);cursor:pointer;">Reactivate</button>
+                </div>`;
+            }).join('');
+        } else {
+            inactiveSection.style.display = 'none';
+        }
+    }
+    
+    function toggleCrmRegion(region) {
+        if (_crmOpenRegions.has(region)) _crmOpenRegions.delete(region);
+        else _crmOpenRegions.add(region);
+        filterCrmStores();
+    }
+    
+    async function showCrmStore(storeId) {
+        const modal = document.getElementById('crm-detail-modal');
+        const content = document.getElementById('crm-detail-content');
+        content.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-2);">Loading...</div>';
+        modal.style.display = 'block';
+        
+        try {
+            const data = await fetch(`/api/ad-crm/store/${storeId}`).then(r=>r.json());
+            if (data.error) { content.innerHTML = `<div style="color:var(--red);">${data.error}</div>`; return; }
+            const s = data.store;
+            const contacts = data.contacts || [];
+            const visits = data.visits || [];
+            
+            let html = `<div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                <div>
+                    <h2 style="margin:0;font-size:1rem;">${s.name}</h2>
+                    <div style="font-size:0.7rem;color:var(--text-2);margin-top:2px;">${s.region || ''}${s.is_active_ad===0 ? ' — <span style="color:var(--red);">Deactivated</span>' : ''}</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <button onclick="toggleCrmStoreActive(${s.id},${s.is_active_ad===0?1:0})" style="font-size:0.6rem;padding:3px 8px;border:1px solid ${s.is_active_ad===0?'var(--green)':'var(--red)'};border-radius:4px;background:none;color:${s.is_active_ad===0?'var(--green)':'var(--red)'};cursor:pointer;">
+                        ${s.is_active_ad===0 ? 'Reactivate' : 'Deactivate'}
+                    </button>
+                    <div onclick="document.getElementById('crm-detail-modal').style.display='none'" style="cursor:pointer;color:var(--text-2);font-size:1.2rem;padding:0 4px;">&times;</div>
+                </div>
+            </div>`;
+            
+            // Contacts (editable)
+            html += '<div style="margin-top:16px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-size:0.7rem;font-weight:600;color:var(--text-2);text-transform:uppercase;">Contacts</div><button class="btn" onclick="addCrmContact(${s.id})" style="font-size:0.6rem;padding:2px 8px;">+ Add</button></div>';
+            if (contacts.length) {
+                html += contacts.map(c => {
+                    const phoneBadge = c.phone_type && c.phone_type !== 'iMessage' 
+                        ? `<span style="font-size:0.6rem;background:var(--accent-dim);color:var(--accent);padding:1px 6px;border-radius:4px;">${c.phone_type}${c.phone_email ? ' · '+c.phone_email : ''}</span>`
+                        : '<span style="font-size:0.6rem;color:var(--green);">iMessage</span>';
+                    let specials = '';
+                    try { if(c.special_dates) { const sd=JSON.parse(c.special_dates); specials=Object.entries(sd).map(([k,v])=>`<div style="font-size:0.65rem;color:var(--accent);">* ${k.replace(/_/g,' ')}: ${v}</div>`).join(''); }} catch(e){}
+                    return `<div style="background:var(--bg-1);border-radius:8px;padding:10px;margin-bottom:6px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-weight:600;font-size:0.78rem;">${c.sales_name}</span>
+                            <div style="display:flex;gap:6px;align-items:center;">
+                                ${phoneBadge}
+                                <button onclick="editCrmContact(${c.id},${s.id})" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.65rem;padding:0;">Edit</button>
+                            </div>
+                        </div>
+                        ${c.phone ? `<div style="font-size:0.7rem;color:var(--text-2);margin-top:3px;">Tel: ${c.phone}</div>` : '<div style="font-size:0.7rem;color:var(--red);margin-top:3px;">No phone number</div>'}
+                        ${c.customer_name ? `<div style="font-size:0.7rem;color:var(--text-2);">As: ${c.customer_name}</div>` : ''}
+                        ${c.customer_email ? `<div style="font-size:0.7rem;color:var(--text-2);">Email: ${c.customer_email}</div>` : ''}
+                        ${c.customer_address ? `<div style="font-size:0.7rem;color:var(--text-2);">Addr: ${c.customer_address}</div>` : ''}
+                        ${specials}
+                    </div>`;
+                }).join('');
+            } else html += '<div style="font-size:0.7rem;color:var(--text-2);">No contacts</div>';
+            html += '</div>';
+            
+            // Visits — clean timeline
+            html += '<div style="margin-top:14px;"><div style="font-size:0.7rem;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:6px;">Recent Activity</div>';
+            if (visits.length) {
+                html += '<div style="max-height:300px;overflow-y:auto;">';
+                html += visits.map(v => {
+                    const isInbound = v.visit_type === 'inbound_imessage';
+                    const isOutbound = v.visit_type === 'outbound_imessage' || v.visit_type === 'followup_imessage';
+                    const isVisit = v.visit_type === 'visit';
+                    const isCall = v.visit_type === 'call';
+                    const isReview = v.visit_type === 'google_review';
+                    
+                    let icon = '📌', color = 'var(--text-2)', label = v.visit_type;
+                    if (isInbound) { icon = '←'; color = 'var(--green)'; label = ''; }
+                    else if (isOutbound) { icon = '→'; color = 'var(--accent)'; label = ''; }
+                    else if (isVisit) { icon = '🏪'; label = 'Visit'; }
+                    else if (isCall) { icon = '📞'; label = 'Call'; }
+                    else if (isReview) { icon = '⭐'; label = 'Google Review'; }
+                    else if (v.visit_type === 'outreach') { icon = '📤'; label = 'Outreach'; }
+                    
+                    // Extract just the message text from notes
+                    let noteText = v.notes || '';
+                    if (isInbound || isOutbound) {
+                        const match = noteText.match(/(?:To|From) .+?: (.+)/);
+                        if (match) noteText = match[1];
+                    }
+                    
+                    const dateStr = v.visit_date || '';
+                    
+                    if (isInbound || isOutbound) {
+                        return `<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);align-items:flex-start;">
+                            <div style="color:${color};font-weight:700;font-size:0.8rem;min-width:16px;text-align:center;margin-top:1px;">${icon}</div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:0.7rem;color:var(--text-0);word-break:break-word;">${noteText.length > 120 ? noteText.substring(0,120)+'...' : noteText}</div>
+                                <div style="font-size:0.6rem;color:var(--text-2);margin-top:1px;">${dateStr}</div>
+                            </div>
+                        </div>`;
+                    }
+                    
+                    return `<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);align-items:flex-start;">
+                        <div style="font-size:0.75rem;min-width:16px;text-align:center;margin-top:1px;">${icon}</div>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-size:0.7rem;color:var(--text-0);font-weight:600;">${label}</div>
+                            ${noteText ? `<div style="font-size:0.68rem;color:var(--text-2);word-break:break-word;">${noteText}</div>` : ''}
+                            <div style="font-size:0.6rem;color:var(--text-2);margin-top:1px;">${dateStr}</div>
+                        </div>
+                    </div>`;
+                }).join('');
+                html += '</div>';
+            } else html += '<div style="font-size:0.7rem;color:var(--text-2);">No activity yet</div>';
+            html += '</div>';
+            
+            // Follow-up buttons per contact
+            if (contacts.length) {
+                html += '<div style="margin-top:14px;"><div style="font-size:0.7rem;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:6px;">Quick Follow-Up</div>';
+                html += contacts.filter(c=>c.phone).map(c => {
+                    const isIMsg = !c.phone_type || c.phone_type === 'iMessage';
+                    return `<button class="btn" onclick="showFollowUpModal(${s.id},'${(c.sales_name||'').replace(/'/g,"\\'")}','${(c.phone||'').replace(/'/g,"\\'")}','${(c.phone_type||'iMessage').replace(/'/g,"\\'")}')" style="font-size:0.7rem;margin:0 4px 6px 0;">
+                        ${isIMsg ? '💬' : '📋'} ${c.sales_name}${c.phone_type && c.phone_type !== 'iMessage' ? ' ('+c.phone_type+')' : ''}
+                    </button>`;
+                }).join('');
+                html += '</div>';
+            }
+            
+            // Notes section
+            html += `<div style="margin-top:14px;">
+                <div style="font-size:0.7rem;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:6px;">Notes</div>
+                <textarea id="crm-store-notes" class="input" style="width:100%;font-size:0.75rem;min-height:80px;line-height:1.5;resize:vertical;background:var(--bg-1);border:1px solid var(--border);border-radius:8px;padding:8px;"
+                    placeholder="Add notes about this store (preferences, tips, SA details...)"
+                    onblur="saveCrmStoreNotes(${s.id})">${s.notes||''}</textarea>
+                <div id="crm-notes-status" style="font-size:0.6rem;color:var(--text-2);margin-top:2px;"></div>
+            </div>`;
+
+            // iMessage log
+            const imsgContacts = contacts.filter(c => c.phone && (!c.phone_type || c.phone_type === 'iMessage'));
+            if (imsgContacts.length) {
+                html += '<div style="margin-top:14px;"><div style="font-size:0.7rem;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:6px;">iMessage History</div>';
+                html += '<div id="crm-imsg-log" style="max-height:200px;overflow-y:auto;background:var(--bg-1);border-radius:8px;padding:8px;font-size:0.7rem;color:var(--text-2);">Loading...</div></div>';
+                setTimeout(() => loadCrmImsgLog(imsgContacts.map(c=>c.phone)), 100);
+            }
+
+            // Log actions
+            html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+                <button class="btn" onclick="logCrmVisit(${s.id},'outreach')" style="font-size:0.65rem;opacity:0.8;">Log Outreach</button>
+                <button class="btn" onclick="logCrmVisit(${s.id},'visit')" style="font-size:0.65rem;opacity:0.8;">Log Visit</button>
+                <button class="btn" onclick="logCrmVisit(${s.id},'call')" style="font-size:0.65rem;opacity:0.8;">Log Call</button>
+                <button class="btn" onclick="logCrmVisit(${s.id},'google_review')" style="font-size:0.65rem;opacity:0.8;">Log Google Review</button>
+            </div>`;
+            
+            content.innerHTML = html;
+        } catch(e) { content.innerHTML = `<div style="color:var(--red);">Error: ${e.message}</div>`; }
+    }
+    
+    async function editCrmContact(contactId, storeId) {
+        // Fetch current contact data
+        const store = _crmStores.find(s => s.id === storeId);
+        const contact = store?.contacts?.find(c => c.id === contactId);
+        if (!contact) return;
+        
+        const modal = document.getElementById('crm-detail-content');
+        const phoneTypes = ['iMessage','Google Voice','Talkatone','Hushed','Nextline','TextMe','TextFree','Talku','2number','Burner','SMS'];
+        
+        modal.innerHTML = `<div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <span style="font-size:0.9rem;font-weight:600;">Edit Contact</span>
+                <div onclick="showCrmStore(${storeId})" style="cursor:pointer;color:var(--text-2);font-size:0.8rem;">← Back</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <div><label style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">SA Name</label>
+                    <input id="ec-name" class="input" value="${contact.sales_name||''}" style="width:100%;font-size:0.8rem;padding:6px 8px;"/></div>
+                <div><label style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Phone</label>
+                    <input id="ec-phone" class="input" value="${contact.phone||''}" style="width:100%;font-size:0.8rem;padding:6px 8px;" placeholder="e.g. 7184774000"/></div>
+                <div><label style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Phone Type</label>
+                    <select id="ec-phone-type" class="input" style="width:100%;font-size:0.8rem;padding:6px 8px;">
+                        ${phoneTypes.map(t => `<option value="${t}" ${contact.phone_type===t?'selected':''}>${t}</option>`).join('')}
+                    </select></div>
+                <div><label style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Phone Email (for Google Voice etc.)</label>
+                    <input id="ec-phone-email" class="input" value="${contact.phone_email||''}" style="width:100%;font-size:0.8rem;padding:6px 8px;" placeholder="email@gmail.com"/></div>
+                <div><label style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Customer Name (your alias)</label>
+                    <input id="ec-cust-name" class="input" value="${contact.customer_name||''}" style="width:100%;font-size:0.8rem;padding:6px 8px;"/></div>
+                <div><label style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Customer Email</label>
+                    <input id="ec-cust-email" class="input" value="${contact.customer_email||''}" style="width:100%;font-size:0.8rem;padding:6px 8px;"/></div>
+                <div><label style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Customer Address</label>
+                    <input id="ec-cust-addr" class="input" value="${contact.customer_address||''}" style="width:100%;font-size:0.8rem;padding:6px 8px;"/></div>
+                <div><label style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Special Dates (JSON)</label>
+                    <input id="ec-specials" class="input" value='${(contact.special_dates||'').replace(/'/g,"&#39;")}' style="width:100%;font-size:0.8rem;padding:6px 8px;" placeholder='{"birthday": "March 15"}'/></div>
+                <div><label style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Notes</label>
+                    <textarea id="ec-notes" class="input" style="width:100%;font-size:0.8rem;padding:6px 8px;min-height:60px;resize:vertical;">${contact.notes||''}</textarea></div>
+                <div style="display:flex;gap:8px;margin-top:6px;">
+                    <button class="btn" onclick="saveCrmContact(${contactId},${storeId})" style="flex:1;background:var(--green);color:var(--bg-1);padding:8px;font-weight:600;">Save</button>
+                    <button class="btn" onclick="showCrmStore(${storeId})" style="flex:1;padding:8px;opacity:0.7;">Cancel</button>
+                    <button class="btn" onclick="if(confirm('Delete this contact?'))deleteCrmContact(${contactId},${storeId})" style="padding:8px;background:var(--red);color:#fff;font-size:0.7rem;">Delete</button>
+                </div>
+            </div>
+        </div>`;
+    }
+    
+    async function saveCrmContact(contactId, storeId) {
+        const data = {
+            contact_id: contactId,
+            sales_name: document.getElementById('ec-name').value,
+            phone: document.getElementById('ec-phone').value,
+            phone_type: document.getElementById('ec-phone-type').value,
+            phone_email: document.getElementById('ec-phone-email').value,
+            customer_name: document.getElementById('ec-cust-name').value,
+            customer_email: document.getElementById('ec-cust-email').value,
+            customer_address: document.getElementById('ec-cust-addr').value,
+            special_dates: document.getElementById('ec-specials').value,
+            notes: document.getElementById('ec-notes').value,
+        };
+        try {
+            const r = await fetch('/api/ad-crm/update-contact', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+            const d = await r.json();
+            if (d.ok) { await loadAdCrm(); showCrmStore(storeId); }
+            else alert(d.error || 'Failed');
+        } catch(e) { alert(e.message); }
+    }
+    
+    async function deleteCrmContact(contactId, storeId) {
+        try {
+            const r = await fetch('/api/ad-crm/delete-contact', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contact_id: contactId})});
+            const d = await r.json();
+            if (d.ok) { await loadAdCrm(); showCrmStore(storeId); }
+            else alert(d.error || 'Failed');
+        } catch(e) { alert(e.message); }
+    }
+    
+    async function toggleCrmStoreActive(storeId, newValue) {
+        const action = newValue === 0 ? 'deactivate' : 'reactivate';
+        if (!confirm(`${action.charAt(0).toUpperCase()+action.slice(1)} this store? ${newValue===0 ? 'It will be hidden from the main list.' : ''}`)) return;
+        try {
+            const r = await fetch('/api/ad-crm/toggle-active', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({store_id: storeId, is_active: newValue})});
+            const d = await r.json();
+            if (d.ok) { await loadAdCrm(); showCrmStore(storeId); }
+            else alert(d.error || 'Failed');
+        } catch(e) { alert(e.message); }
+    }
+    
+    async function addCrmContact(storeId) {
+        const modal = document.getElementById('crm-detail-content');
+        const phoneTypes = ['iMessage','Google Voice','Talkatone','Hushed','Nextline','TextMe','TextFree','Talku','2number','Burner','SMS'];
+        
+        modal.innerHTML = `<div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <span style="font-size:0.9rem;font-weight:600;">Add Contact</span>
+                <div onclick="showCrmStore(${storeId})" style="cursor:pointer;color:var(--text-2);font-size:0.8rem;">← Back</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <div><label style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">SA Name *</label>
+                    <input id="ec-name" class="input" style="width:100%;font-size:0.8rem;padding:6px 8px;" placeholder="First name"/></div>
+                <div><label style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Phone</label>
+                    <input id="ec-phone" class="input" style="width:100%;font-size:0.8rem;padding:6px 8px;" placeholder="e.g. 7184774000"/></div>
+                <div><label style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Phone Type</label>
+                    <select id="ec-phone-type" class="input" style="width:100%;font-size:0.8rem;padding:6px 8px;">
+                        ${phoneTypes.map(t => `<option value="${t}">${t}</option>`).join('')}
+                    </select></div>
+                <div><label style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Customer Name (your alias)</label>
+                    <input id="ec-cust-name" class="input" style="width:100%;font-size:0.8rem;padding:6px 8px;"/></div>
+                <div style="display:flex;gap:8px;margin-top:6px;">
+                    <button class="btn" onclick="saveNewCrmContact(${storeId})" style="flex:1;background:var(--green);color:var(--bg-1);padding:8px;font-weight:600;">Save</button>
+                    <button class="btn" onclick="showCrmStore(${storeId})" style="flex:1;padding:8px;opacity:0.7;">Cancel</button>
+                </div>
+            </div>
+        </div>`;
+    }
+    
+    async function saveNewCrmContact(storeId) {
+        const name = document.getElementById('ec-name').value.trim();
+        if (!name) { alert('SA Name required'); return; }
+        const data = {
+            store_id: storeId,
+            sales_name: name,
+            phone: document.getElementById('ec-phone').value,
+            phone_type: document.getElementById('ec-phone-type').value,
+            customer_name: document.getElementById('ec-cust-name').value,
+        };
+        try {
+            const r = await fetch('/api/ad-crm/add-contact', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+            const d = await r.json();
+            if (d.ok) { await loadAdCrm(); showCrmStore(storeId); }
+            else alert(d.error || 'Failed');
+        } catch(e) { alert(e.message); }
+    }
+    
+    async function saveCrmStoreNotes(storeId) {
+        const notes = document.getElementById('crm-store-notes').value;
+        const statusEl = document.getElementById('crm-notes-status');
+        try {
+            const data = await fetch('/api/ad-crm/store-notes', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({store_id: storeId, notes})
+            }).then(r=>r.json());
+            if (data.ok) { statusEl.innerHTML = '<span style="color:var(--green);">Saved</span>'; setTimeout(()=>statusEl.innerHTML='',2000); }
+            else statusEl.innerHTML = `<span style="color:var(--red);">${data.error}</span>`;
+        } catch(e) { statusEl.innerHTML = `<span style="color:var(--red);">${e.message}</span>`; }
+    }
+    
+    async function loadCrmImsgLog(phones) {
+        const el = document.getElementById('crm-imsg-log');
+        if (!el) return;
+        try {
+            const data = await fetch('/api/ad-crm/imsg-history', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({phones})
+            }).then(r=>r.json());
+            if (data.error) { el.innerHTML = `<span style="color:var(--red);">${data.error}</span>`; return; }
+            if (!data.messages || !data.messages.length) { el.innerHTML = 'No iMessage history found'; return; }
+            el.innerHTML = data.messages.map(m => {
+                const dir = m.is_from_me ? '→' : '←';
+                const color = m.is_from_me ? 'var(--accent)' : 'var(--green)';
+                return `<div style="padding:3px 0;border-bottom:1px solid var(--border);">
+                    <span style="color:${color};font-weight:600;">${dir}</span>
+                    <span style="color:var(--text-2);font-size:0.65rem;">${m.date}</span>
+                    <span>${m.text||'[attachment]'}</span>
+                </div>`;
+            }).join('');
+        } catch(e) { el.innerHTML = `<span style="color:var(--red);">${e.message}</span>`; }
+    }
+    
+    async function logCrmVisit(storeId, type) {
+        const notes = prompt('Notes (optional):');
+        try {
+            const data = await fetch('/api/ad-crm/visit', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({store_id:storeId, type, notes:notes||undefined})}).then(r=>r.json());
+            if (data.ok) { document.getElementById('crm-detail-modal').style.display='none'; loadAdCrm(); }
+            else alert(data.error||'Failed');
+        } catch(e) { alert(e.message); }
+    }
+    
+    // 12 monthly follow-up templates — {NAME} gets replaced with SA's first name
+    const CRM_TEMPLATES = [
+        /* Jan */ "Happy New Year {NAME}! Hope you had a wonderful holiday season. Just wanted to reach out and let you know I'm still very much interested in picking up some timepieces. Looking forward to working with you this year!",
+        /* Feb */ "Hi {NAME}, hope you're doing well! Just checking in to let you know I'm still actively looking for timepieces. Really appreciate you keeping me in mind. Let me know if anything comes up!",
+        /* Mar */ "Hey {NAME}! Hope things are going great. Just wanted to touch base and let you know I'm still very interested in picking up timepieces. Thank you for continuing to help me, I truly appreciate it.",
+        /* Apr */ "Hi {NAME}, hope you're having a great spring! Just a quick note to say I'm still looking for timepieces and thinking of you. Thanks so much for all your help, it really means a lot.",
+        /* May */ "Hey {NAME}! Hope all is well. Wanted to drop a quick line to say thank you for everything and that I'm still very much in the market for timepieces. Appreciate you always keeping me on your radar!",
+        /* Jun */ "Hi {NAME}, hope summer is treating you well! Just reaching out to stay in touch. I'm still very interested in picking up timepieces and grateful for your continued support. Let me know if anything exciting comes through!",
+        /* Jul */ "Hey {NAME}! Hope you're enjoying the summer. Just wanted to check in and let you know I'm still actively looking for timepieces. Thank you for always thinking of me, I really appreciate the relationship.",
+        /* Aug */ "Hi {NAME}, hope you're doing great! Just a friendly check-in to let you know I'm still very much interested in timepieces. Thanks for being so great to work with, looking forward to hearing from you!",
+        /* Sep */ "Hey {NAME}! Hope you had a wonderful summer. As we head into fall, just wanted to reach out and let you know I'm still actively looking for timepieces. Really appreciate everything you do for me!",
+        /* Oct */ "Hi {NAME}, hope things are going well! Just checking in as always. Still very interested in picking up timepieces and appreciative of your help. Thanks for keeping me top of mind, it means a lot.",
+        /* Nov */ "Hey {NAME}! Hope you're gearing up for a great holiday season. Just wanted to touch base. I'm still very much interested in timepieces. Thank you for all your continued support and help!",
+        /* Dec */ "Hi {NAME}, wishing you a wonderful holiday season! Just wanted to reach out and say thank you for everything this year. I'm still very interested in timepieces and looking forward to continuing to work together in the new year!"
+    ];
+    
+    function getCrmTemplate(salesName) {
+        const month = new Date().getMonth(); // 0-11
+        const firstName = (salesName || '').split(/[\s\/]/)[0].trim();
+        return CRM_TEMPLATES[month].replace(/\{NAME\}/g, firstName);
+    }
+    
+    function showFollowUpModal(storeId, salesName, phone, phoneType) {
+        const modal = document.getElementById('crm-detail-modal');
+        const content = document.getElementById('crm-detail-content');
+        const template = getCrmTemplate(salesName);
+        const month = new Date().toLocaleString('default', {month:'long'});
+        const canSend = phoneType === 'iMessage' && phone;
+        
+        content.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <h2 style="margin:0;font-size:1rem;">Follow Up — ${salesName}</h2>
+                <div onclick="document.getElementById('crm-detail-modal').style.display='none'" style="cursor:pointer;color:var(--text-2);font-size:1.2rem;">&times;</div>
+            </div>
+            <div style="font-size:0.7rem;color:var(--text-2);margin-bottom:12px;">
+                ${phone ? `Phone: ${phone}` : 'No phone'} · ${phoneType || 'Unknown'} · ${month} template
+            </div>
+            <textarea id="crm-followup-msg" class="input" style="width:100%;font-size:0.8rem;min-height:140px;line-height:1.5;resize:vertical;">${template}</textarea>
+            <div style="display:flex;gap:8px;margin-top:12px;align-items:center;">
+                ${canSend ? `<button class="btn" onclick="sendCrmFollowUp(${storeId},'${phone.replace(/'/g,"\\'")}')" style="font-size:0.72rem;background:var(--green);color:#fff;">Send via iMessage</button>` : ''}
+                <button class="btn" onclick="copyCrmFollowUp()" style="font-size:0.72rem;">Copy to Clipboard</button>
+                ${!canSend ? `<span style="font-size:0.65rem;color:var(--text-2);">${phoneType ? phoneType + ' — copy and send manually' : 'No phone on file'}</span>` : ''}
+            </div>
+            <div id="crm-followup-status" style="margin-top:8px;font-size:0.7rem;"></div>
+        `;
+        modal.style.display = 'block';
+    }
+    
+    async function sendCrmFollowUp(storeId, phone) {
+        const msg = document.getElementById('crm-followup-msg').value.trim();
+        if (!msg) { alert('Message is empty'); return; }
+        
+        const statusEl = document.getElementById('crm-followup-status');
+        statusEl.innerHTML = '<span style="color:var(--accent);">Sending via iMessage...</span>';
+        
+        try {
+            const data = await fetch('/api/ad-crm/send-followup', {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({store_id: storeId, phone, message: msg})
+            }).then(r=>r.json());
+            
+            if (data.ok) {
+                statusEl.innerHTML = '<span style="color:var(--green);">Sent!</span>';
+                setTimeout(() => { document.getElementById('crm-detail-modal').style.display='none'; loadAdCrm(); }, 1500);
+            } else {
+                statusEl.innerHTML = `<span style="color:var(--red);">Failed: ${data.error}</span>`;
+            }
+        } catch(e) {
+            statusEl.innerHTML = `<span style="color:var(--red);">Error: ${e.message}</span>`;
+        }
+    }
+    
+    function copyCrmFollowUp() {
+        const msg = document.getElementById('crm-followup-msg').value;
+        navigator.clipboard.writeText(msg).then(() => {
+            document.getElementById('crm-followup-status').innerHTML = '<span style="color:var(--green);">Copied to clipboard!</span>';
+        }).catch(() => {
+            // Fallback
+            const ta = document.createElement('textarea'); ta.value = msg; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+            document.getElementById('crm-followup-status').innerHTML = '<span style="color:var(--green);">Copied!</span>';
+        });
+    }
+    
+    function showAddStoreForm() {
+        const modal = document.getElementById('crm-detail-modal');
+        const content = document.getElementById('crm-detail-content');
+        const regions = [...new Set(_crmStores.map(s=>s.region).filter(Boolean))].sort();
+        const regionOpts = regions.map(r=>`<option value="${r}">${r}</option>`).join('');
+        
+        content.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h2 style="margin:0;font-size:1rem;">Add New Store</h2>
+                <div onclick="document.getElementById('crm-detail-modal').style.display='none'" style="cursor:pointer;color:var(--text-2);font-size:1.2rem;">&times;</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <div>
+                    <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Store Name *</label>
+                    <input id="crm-add-store" class="input" style="width:100%;font-size:0.8rem;" placeholder="e.g. Bucherer NYC">
+                </div>
+                <div>
+                    <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Region</label>
+                    <select id="crm-add-region" class="input" style="width:100%;font-size:0.8rem;">
+                        <option value="Other">Select Region...</option>${regionOpts}
+                    </select>
+                </div>
+                <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px;">
+                    <div style="font-size:0.7rem;font-weight:600;color:var(--text-2);margin-bottom:8px;">SALES ASSOCIATE (optional)</div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    <div>
+                        <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Sales Name</label>
+                        <input id="crm-add-sales" class="input" style="width:100%;font-size:0.8rem;" placeholder="e.g. Hannah">
+                    </div>
+                    <div>
+                        <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Phone</label>
+                        <input id="crm-add-phone" class="input" style="width:100%;font-size:0.8rem;" placeholder="e.g. 7247991003">
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Phone Type</label>
+                    <select id="crm-add-phonetype" class="input" style="width:100%;font-size:0.8rem;">
+                        <option>iMessage</option><option>Google Voice</option><option>Talkatone</option>
+                        <option>Hushed</option><option>Nextline</option><option>TextMe</option>
+                        <option>TextFree</option><option>TextNow</option><option>TalkU</option>
+                        <option>2Number</option><option>Burner</option>
+                    </select>
+                </div>
+                <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px;">
+                    <div style="font-size:0.7rem;font-weight:600;color:var(--text-2);margin-bottom:8px;">CUSTOMER IDENTITY (optional)</div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    <div>
+                        <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Customer Name</label>
+                        <input id="crm-add-custname" class="input" style="width:100%;font-size:0.8rem;" placeholder="Name used at store">
+                    </div>
+                    <div>
+                        <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Customer Email</label>
+                        <input id="crm-add-custemail" class="input" style="width:100%;font-size:0.8rem;" placeholder="email@example.com">
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Customer Address</label>
+                    <input id="crm-add-custaddr" class="input" style="width:100%;font-size:0.8rem;" placeholder="Full address">
+                </div>
+                <div>
+                    <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Notes / Details</label>
+                    <textarea id="crm-add-notes" class="input" style="width:100%;font-size:0.8rem;min-height:60px;" placeholder="Dad's birthday, special dates, etc."></textarea>
+                </div>
+                <button class="btn" onclick="submitAddStore()" style="margin-top:8px;">Add Store</button>
+            </div>
+        `;
+        modal.style.display = 'block';
+        setTimeout(()=>document.getElementById('crm-add-store').focus(), 100);
+    }
+    
+    async function submitAddStore() {
+        const store_name = document.getElementById('crm-add-store').value.trim();
+        if (!store_name) { alert('Store name is required'); return; }
+        
+        const body = {
+            store_name,
+            region: document.getElementById('crm-add-region').value,
+            sales_name: document.getElementById('crm-add-sales').value.trim(),
+            phone: document.getElementById('crm-add-phone').value.trim(),
+            phone_type: document.getElementById('crm-add-phonetype').value,
+            customer_name: document.getElementById('crm-add-custname').value.trim(),
+            customer_email: document.getElementById('crm-add-custemail').value.trim(),
+            customer_address: document.getElementById('crm-add-custaddr').value.trim(),
+            notes: document.getElementById('crm-add-notes').value.trim(),
+        };
+        
+        try {
+            const data = await fetch('/api/ad-crm/add-store', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}).then(r=>r.json());
+            if (data.ok) {
+                document.getElementById('crm-detail-modal').style.display = 'none';
+                loadAdCrm();
+            } else { alert(data.error || 'Failed'); }
+        } catch(e) { alert(e.message); }
+    }
+    
+    async function refreshCrmFromSheet() {
+        if (!confirm('Re-import from Google Sheet? This resets visit history.')) return;
+        try {
+            const data = await fetch('/api/ad-crm/refresh',{method:'POST'}).then(r=>r.json());
+            if (data.ok) { alert(`Imported ${data.stores} stores, ${data.contacts} contacts`); loadAdCrm(); }
+            else alert(data.error||'Failed');
+        } catch(e) { alert(e.message); }
+    }
+
 </script>
 
 <!-- PWA Service Worker Registration -->
@@ -12610,435 +13303,7 @@ if (_userRole.allowedPages) {
     showPage(_userRole.allowedPages[0] || 'jam');
 }
 
-    // ═══════════════════════════════════════════════════
-    // ═══ AD CRM ═══
-    // ═══════════════════════════════════════════════════
-    let _crmStores = [];
-    
-    async function loadAdCrm() {
-        try {
-            const [statsRes, storesRes] = await Promise.all([
-                fetch('/api/ad-crm/stats'), fetch('/api/ad-crm/stores')
-            ]);
-            const stats = await statsRes.json();
-            _crmStores = await storesRes.json();
-            
-            // Render stats cards
-            const overdue = _crmStores.filter(s => s.is_overdue).length;
-            const never = _crmStores.filter(s => !s.last_visit).length;
-            const ok = _crmStores.length - overdue - never;
-            
-            $('#crm-stats').innerHTML = `
-                <div class="stat-card" style="background:var(--bg-2);border-radius:10px;padding:14px;text-align:center;">
-                    <div style="font-size:1.8rem;font-weight:700;">${_crmStores.length}</div>
-                    <div style="font-size:0.7rem;color:var(--text-2);">Total Stores</div>
-                </div>
-                <div class="stat-card" style="background:var(--bg-2);border-radius:10px;padding:14px;text-align:center;">
-                    <div style="font-size:1.8rem;font-weight:700;color:#ef4444;">${overdue}</div>
-                    <div style="font-size:0.7rem;color:var(--text-2);">Overdue (15+ days)</div>
-                </div>
-                <div class="stat-card" style="background:var(--bg-2);border-radius:10px;padding:14px;text-align:center;">
-                    <div style="font-size:1.8rem;font-weight:700;color:#f59e0b;">${never}</div>
-                    <div style="font-size:0.7rem;color:var(--text-2);">Never Visited</div>
-                </div>
-                <div class="stat-card" style="background:var(--bg-2);border-radius:10px;padding:14px;text-align:center;">
-                    <div style="font-size:1.8rem;font-weight:700;color:#22c55e;">${ok}</div>
-                    <div style="font-size:0.7rem;color:var(--text-2);">Up to Date</div>
-                </div>
-                <div class="stat-card" style="background:var(--bg-2);border-radius:10px;padding:14px;text-align:center;">
-                    <div style="font-size:1.8rem;font-weight:700;">${stats.total_contacts || 0}</div>
-                    <div style="font-size:0.7rem;color:var(--text-2);">Contacts</div>
-                </div>
-                <div class="stat-card" style="background:var(--bg-2);border-radius:10px;padding:14px;text-align:center;">
-                    <div style="font-size:1.8rem;font-weight:700;">${stats.total_visits || 0}</div>
-                    <div style="font-size:0.7rem;color:var(--text-2);">Total Visits</div>
-                </div>
-            `;
-            
-            // Populate region filter
-            const regions = [...new Set(_crmStores.map(s => s.region).filter(Boolean))].sort();
-            const rf = $('#crm-region-filter');
-            rf.innerHTML = '<option value="">All Regions</option>' + 
-                regions.map(r => `<option value="${r}">${r} (${_crmStores.filter(s=>s.region===r).length})</option>`).join('');
-            
-            filterCrmStores();
-        } catch(e) {
-            console.error('AD CRM load error:', e);
-            $('#crm-store-list').innerHTML = `<div style="color:#ef4444;padding:20px;">Error loading CRM: ${e.message}</div>`;
-        }
-    }
-    
-    function filterCrmStores() {
-        const region = $('#crm-region-filter').value;
-        const status = $('#crm-status-filter').value;
-        
-        let filtered = _crmStores;
-        if (region) filtered = filtered.filter(s => s.region === region);
-        if (status === 'overdue') filtered = filtered.filter(s => s.is_overdue && s.last_visit);
-        else if (status === 'ok') filtered = filtered.filter(s => !s.is_overdue && s.last_visit);
-        else if (status === 'never') filtered = filtered.filter(s => !s.last_visit);
-        
-        renderCrmStores(filtered);
-    }
-    
-    function renderCrmStores(stores) {
-        const container = $('#crm-store-list');
-        if (!stores.length) {
-            container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-2);">No stores match filters</div>';
-            return;
-        }
-        
-        // Group by region
-        const grouped = {};
-        stores.forEach(s => {
-            const r = s.region || 'Unknown';
-            if (!grouped[r]) grouped[r] = [];
-            grouped[r].push(s);
-        });
-        
-        let html = '';
-        for (const [region, regionStores] of Object.entries(grouped).sort((a,b) => a[0].localeCompare(b[0]))) {
-            html += `<div style="margin-top:12px;">
-                <div style="font-size:0.75rem;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;padding:4px 0;border-bottom:1px solid var(--border);margin-bottom:8px;">
-                    ${region} (${regionStores.length})
-                </div>`;
-            
-            for (const s of regionStores) {
-                const days = s.days_since != null ? s.days_since : null;
-                const lastVisit = s.last_visit || 'Never';
-                let statusColor = '#22c55e'; // green = ok
-                let statusText = days != null ? `${days}d ago` : 'Never';
-                let statusBg = 'rgba(34,197,94,0.1)';
-                
-                if (!s.last_visit) {
-                    statusColor = '#f59e0b'; statusBg = 'rgba(245,158,11,0.1)'; statusText = 'Never';
-                } else if (days >= 30) {
-                    statusColor = '#ef4444'; statusBg = 'rgba(239,68,68,0.1)';
-                } else if (days >= 15) {
-                    statusColor = '#f59e0b'; statusBg = 'rgba(245,158,11,0.1)';
-                }
-                
-                const contacts = (s.contacts || []).map(c => {
-                    let badge = '';
-                    if (c.phone_type && c.phone_type !== 'iMessage') {
-                        badge = `<span style="font-size:0.6rem;background:var(--accent-dim);color:var(--accent);padding:1px 5px;border-radius:4px;margin-left:4px;">${c.phone_type}</span>`;
-                    }
-                    return `<span style="font-size:0.72rem;color:var(--text-2);">${c.sales_name}${c.phone ? ' · ' + c.phone : ''}${badge}</span>`;
-                }).join('<br>');
-                
-                const inactive = s.is_active_ad === 0 ? ' <span style="font-size:0.6rem;color:#ef4444;background:rgba(239,68,68,0.1);padding:1px 5px;border-radius:4px;">Closed</span>' : '';
-                
-                html += `
-                <div onclick="showCrmDetail(${s.id})" style="background:var(--bg-2);border-radius:10px;padding:12px 14px;cursor:pointer;transition:all 0.15s;border-left:3px solid ${statusColor};" 
-                     onmouseover="this.style.background='var(--bg-3)'" onmouseout="this.style.background='var(--bg-2)'">
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-                        <div style="flex:1;min-width:0;">
-                            <div style="font-weight:600;font-size:0.82rem;">${s.name}${inactive}</div>
-                            <div style="margin-top:4px;">${contacts || '<span style="font-size:0.72rem;color:var(--text-2);">No contacts</span>'}</div>
-                        </div>
-                        <div style="text-align:right;flex-shrink:0;">
-                            <div style="font-size:0.75rem;font-weight:600;color:${statusColor};background:${statusBg};padding:2px 8px;border-radius:6px;">${statusText}</div>
-                            <div style="font-size:0.65rem;color:var(--text-2);margin-top:2px;">${s.visit_count || 0} visits</div>
-                        </div>
-                    </div>
-                </div>`;
-            }
-            html += '</div>';
-        }
-        container.innerHTML = html;
-    }
-    
-    async function showCrmDetail(storeId) {
-        const modal = $('#crm-detail-modal');
-        const content = $('#crm-detail-content');
-        content.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-2);">Loading...</div>';
-        modal.style.display = 'block';
-        
-        try {
-            const res = await fetch(`/api/ad-crm/store/${storeId}`);
-            const data = await res.json();
-            const s = data.store;
-            const contacts = data.contacts || [];
-            const visits = data.visits || [];
-            
-            let contactsHtml = contacts.map(c => {
-                let phoneBadge = c.phone_type && c.phone_type !== 'iMessage' 
-                    ? `<span style="font-size:0.65rem;background:var(--accent-dim);color:var(--accent);padding:1px 5px;border-radius:4px;">${c.phone_type}${c.phone_email ? ' · ' + c.phone_email : ''}</span>` 
-                    : '<span style="font-size:0.65rem;color:#22c55e;">iMessage</span>';
-                let specials = '';
-                if (c.special_dates) {
-                    try {
-                        const sd = JSON.parse(c.special_dates);
-                        specials = Object.entries(sd).map(([k,v]) => `<div style="font-size:0.65rem;color:var(--accent);">* ${k.replace(/_/g,' ')}: ${v}</div>`).join('');
-                    } catch(e) {}
-                }
-                return `<div style="background:var(--bg-1);border-radius:8px;padding:10px;margin-bottom:6px;">
-                    <div style="font-weight:600;font-size:0.8rem;">${c.sales_name} ${phoneBadge}</div>
-                    ${c.phone ? `<div style="font-size:0.72rem;color:var(--text-2);">Phone: ${c.phone}</div>` : ''}
-                    ${c.customer_name ? `<div style="font-size:0.72rem;color:var(--text-2);">As: ${c.customer_name}</div>` : ''}
-                    ${c.customer_email ? `<div style="font-size:0.72rem;color:var(--text-2);">Email: ${c.customer_email}</div>` : ''}
-                    ${c.customer_address ? `<div style="font-size:0.72rem;color:var(--text-2);">Addr: ${c.customer_address}</div>` : ''}
-                    ${specials}
-                </div>`;
-            }).join('');
-            
-            let visitsHtml = visits.map(v => 
-                `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:0.72rem;border-bottom:1px solid var(--border);">
-                    <span>${v.visit_date}</span>
-                    <span style="color:var(--text-2);">${v.visit_type}</span>
-                </div>`
-            ).join('') || '<div style="font-size:0.72rem;color:var(--text-2);">No visits recorded</div>';
-            
-            content.innerHTML = `
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                    <h2 style="margin:0;font-size:1.1rem;">${s.name}</h2>
-                    <span style="font-size:0.7rem;color:var(--text-2);">${s.region || ''}</span>
-                </div>
-                
-                <div style="margin-bottom:16px;">
-                    <h3 style="font-size:0.8rem;color:var(--text-2);margin-bottom:8px;">CONTACTS</h3>
-                    ${contactsHtml || '<div style="font-size:0.72rem;color:var(--text-2);">No contacts</div>'}
-                </div>
-                
-                <div style="margin-bottom:16px;">
-                    <h3 style="font-size:0.8rem;color:var(--text-2);margin-bottom:8px;">VISIT HISTORY</h3>
-                    ${visitsHtml}
-                </div>
-                
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    <button class="btn" onclick="logCrmVisit(${s.id},'outreach')" style="font-size:0.72rem;">Log Outreach</button>
-                    <button class="btn" onclick="logCrmVisit(${s.id},'visit')" style="font-size:0.72rem;">Log Visit</button>
-                    <button class="btn" onclick="logCrmVisit(${s.id},'call')" style="font-size:0.72rem;">Log Call</button>
-                    <button class="btn" onclick="logCrmVisit(${s.id},'google_review')" style="font-size:0.72rem;">Google Review</button>
-                </div>
-            `;
-        } catch(e) {
-            content.innerHTML = `<div style="color:#ef4444;">Error: ${e.message}</div>`;
-        }
-    }
-    
-    async function logCrmVisit(storeId, type) {
-        try {
-            const res = await fetch('/api/ad-crm/visit', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({store_id: storeId, type})
-            });
-            const data = await res.json();
-            if (data.ok) {
-                $('#crm-detail-modal').style.display = 'none';
-                loadAdCrm();
-            } else {
-                alert(data.error || 'Failed');
-            }
-        } catch(e) { alert(e.message); }
-    }
-    
-    async function refreshCrmFromSheet() {
-        if (!confirm('Re-import all data from Google Sheet? This will reset visit history.')) return;
-        try {
-            const res = await fetch('/api/ad-crm/refresh', {method: 'POST'});
-            const data = await res.json();
-            if (data.ok) {
-                alert(`Imported ${data.stores} stores, ${data.contacts} contacts`);
-                loadAdCrm();
-            } else {
-                alert(data.error || 'Failed');
-            }
-        } catch(e) { alert(e.message); }
-    }
-
     // ═══════════════════════════════════════════════════════════════
-    // ═══ AD CRM ═══
-    // ═══════════════════════════════════════════════════════════════
-    let _crmStores = [];
-    
-    async function loadAdCrm() {
-        const [statsRes, storesRes] = await Promise.all([
-            fetch('/api/ad-crm/stats').then(r=>r.json()),
-            fetch('/api/ad-crm/stores').then(r=>r.json())
-        ]);
-        _crmStores = storesRes;
-        
-        // Stats cards
-        const overdue = statsRes.overdue_count || 0;
-        const total = statsRes.total_stores || 0;
-        const active = statsRes.active_stores || 0;
-        const contacts = statsRes.total_contacts || 0;
-        const upToDate = active - overdue;
-        
-        document.getElementById('crm-stats').innerHTML = `
-            <div style="background:var(--bg-2);border-radius:10px;padding:16px;text-align:center;">
-                <div style="font-size:1.8rem;font-weight:700;color:var(--accent);">${total}</div>
-                <div style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;">Stores</div>
-            </div>
-            <div style="background:var(--bg-2);border-radius:10px;padding:16px;text-align:center;">
-                <div style="font-size:1.8rem;font-weight:700;color:var(--red);">${overdue}</div>
-                <div style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;">Overdue</div>
-            </div>
-            <div style="background:var(--bg-2);border-radius:10px;padding:16px;text-align:center;">
-                <div style="font-size:1.8rem;font-weight:700;color:var(--green);">${upToDate > 0 ? upToDate : 0}</div>
-                <div style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;">Up to Date</div>
-            </div>
-            <div style="background:var(--bg-2);border-radius:10px;padding:16px;text-align:center;">
-                <div style="font-size:1.8rem;font-weight:700;color:var(--text-1);">${contacts}</div>
-                <div style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;">Contacts</div>
-            </div>
-        `;
-        
-        // Populate region filter
-        const regions = [...new Set(_crmStores.map(s=>s.region).filter(Boolean))].sort();
-        const regionSel = document.getElementById('crm-region-filter');
-        regionSel.innerHTML = '<option value="">All Regions</option>' + 
-            regions.map(r=>`<option value="${r}">${r} (${_crmStores.filter(s=>s.region===r).length})</option>`).join('');
-        
-        filterCrmStores();
-    }
-    
-    function filterCrmStores() {
-        const region = document.getElementById('crm-region-filter').value;
-        const status = document.getElementById('crm-status-filter').value;
-        let stores = _crmStores;
-        
-        if (region) stores = stores.filter(s=>s.region === region);
-        if (status === 'overdue') stores = stores.filter(s=>s.is_overdue && s.last_visit);
-        else if (status === 'ok') stores = stores.filter(s=>!s.is_overdue && s.last_visit);
-        else if (status === 'never') stores = stores.filter(s=>!s.last_visit);
-        
-        const container = document.getElementById('crm-store-list');
-        if (!stores.length) {
-            container.innerHTML = '<div style="text-align:center;color:var(--text-2);padding:40px;">No stores match filters</div>';
-            return;
-        }
-        
-        container.innerHTML = stores.map(s => {
-            const days = s.days_since != null ? s.days_since : null;
-            const daysText = days != null ? `${days}d ago` : 'Never';
-            const isOverdue = s.is_overdue;
-            const neverVisited = !s.last_visit;
-            const statusColor = neverVisited ? 'var(--text-2)' : isOverdue ? 'var(--red)' : 'var(--green)';
-            const statusDot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${statusColor};margin-right:6px;"></span>`;
-            const inactive = s.is_active_ad ? '' : ' <span style="color:var(--red);font-size:0.65rem;">(CLOSED)</span>';
-            
-            const contactsHtml = (s.contacts || []).map(c => {
-                const phoneIcon = _phoneTypeIcon(c.phone_type);
-                const phone = c.phone ? `<span style="color:var(--text-2);font-size:0.7rem;">${phoneIcon} ${_formatPhone(c.phone)}</span>` : '';
-                return `<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
-                    <span style="font-size:0.75rem;font-weight:600;">${c.sales_name}</span>
-                    ${phone}
-                    ${c.phone_type && c.phone_type !== 'iMessage' ? `<span style="font-size:0.6rem;background:var(--accent-dim);color:var(--accent);padding:1px 6px;border-radius:4px;">${c.phone_type}</span>` : ''}
-                </div>`;
-            }).join('');
-            
-            return `<div style="background:var(--bg-2);border-radius:10px;padding:14px 16px;cursor:pointer;border-left:3px solid ${statusColor};" onclick="showCrmStore(${s.id})">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <div>
-                        <div style="font-weight:600;font-size:0.85rem;">${statusDot}${s.name}${inactive}</div>
-                        <div style="font-size:0.65rem;color:var(--text-2);margin-top:2px;">${s.region || ''}</div>
-                    </div>
-                    <div style="text-align:right;">
-                        <div style="font-size:0.8rem;font-weight:700;color:${statusColor};">${daysText}</div>
-                        <div style="font-size:0.6rem;color:var(--text-2);">${s.visit_count || 0} visits</div>
-                    </div>
-                </div>
-                ${contactsHtml}
-            </div>`;
-        }).join('');
-    }
-    
-    function _phoneTypeIcon(type) {
-        const icons = {
-            'iMessage': '💬', 'Google Voice': '📞', 'Talkatone': '📱', 
-            'Hushed': '🤫', 'Nextline': '📲', 'TextMe': '✉️',
-            'TextFree': '📝', 'TextNow': '📝', 'TalkU': '📱', 
-            '2Number': '2️⃣', 'Burner': '🔥'
-        };
-        return icons[type] || '📞';
-    }
-    
-    function _formatPhone(p) {
-        if (!p || p.length !== 10) return p || '';
-        return `(${p.slice(0,3)}) ${p.slice(3,6)}-${p.slice(6)}`;
-    }
-    
-    async function showCrmStore(storeId) {
-        const res = await fetch(`/api/ad-crm/store/${storeId}`);
-        const data = await res.json();
-        if (data.error) { alert(data.error); return; }
-        
-        const s = data.store;
-        const contacts = data.contacts || [];
-        const visits = data.visits || [];
-        
-        let html = `<h2 style="margin:0 0 4px;">${s.name}</h2>
-            <div style="color:var(--text-2);font-size:0.75rem;margin-bottom:16px;">${s.region || ''} ${s.is_active_ad ? '' : '— <span style="color:var(--red);">No Longer AD</span>'}</div>`;
-        
-        // Contacts
-        html += '<h3 style="font-size:0.8rem;color:var(--accent);margin:16px 0 8px;">Contacts</h3>';
-        for (const c of contacts) {
-            html += `<div style="background:var(--bg-1);border-radius:8px;padding:12px;margin-bottom:8px;">
-                <div style="font-weight:600;">${c.sales_name} ${c.phone_type && c.phone_type !== 'iMessage' ? `<span style="font-size:0.65rem;background:var(--accent-dim);color:var(--accent);padding:2px 8px;border-radius:4px;">${c.phone_type}</span>` : ''}</div>
-                ${c.phone ? `<div style="font-size:0.75rem;color:var(--text-2);">Phone: ${_formatPhone(c.phone)}</div>` : ''}
-                ${c.customer_name ? `<div style="font-size:0.75rem;color:var(--text-2);">As: ${c.customer_name}</div>` : ''}
-                ${c.customer_email ? `<div style="font-size:0.75rem;color:var(--text-2);">Email: ${c.customer_email}</div>` : ''}
-                ${c.customer_address ? `<div style="font-size:0.75rem;color:var(--text-2);">Addr: ${c.customer_address}</div>` : ''}
-                ${c.special_dates ? `<div style="font-size:0.75rem;color:var(--accent);">Dates: ${c.special_dates}</div>` : ''}
-                ${c.notes ? `<div style="font-size:0.7rem;color:var(--text-2);margin-top:4px;word-break:break-all;">${c.notes}</div>` : ''}
-            </div>`;
-        }
-        
-        // Visit history
-        html += '<h3 style="font-size:0.8rem;color:var(--accent);margin:16px 0 8px;">Visit History</h3>';
-        if (visits.length) {
-            for (const v of visits) {
-                html += `<div style="font-size:0.75rem;padding:6px 0;border-bottom:1px solid var(--border);">
-                    <span style="font-weight:600;">${v.visit_date}</span> — ${v.visit_type}
-                    ${v.notes ? `<span style="color:var(--text-2);"> — ${v.notes}</span>` : ''}
-                </div>`;
-            }
-        } else {
-            html += '<div style="color:var(--text-2);font-size:0.75rem;">No visits recorded</div>';
-        }
-        
-        // Log visit button
-        html += `<div style="margin-top:20px;display:flex;gap:8px;">
-            <button class="btn" onclick="logCrmVisit(${s.id},'outreach')">Log Outreach</button>
-            <button class="btn" onclick="logCrmVisit(${s.id},'visit')">Log Visit</button>
-            <button class="btn" onclick="logCrmVisit(${s.id},'google_review')">Google Review</button>
-        </div>`;
-        
-        document.getElementById('crm-detail-content').innerHTML = html;
-        document.getElementById('crm-detail-modal').style.display = 'block';
-    }
-    
-    async function logCrmVisit(storeId, type) {
-        const notes = prompt('Notes (optional):');
-        const res = await fetch('/api/ad-crm/visit', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({store_id: storeId, type, notes: notes || undefined})
-        });
-        const data = await res.json();
-        if (data.ok) {
-            document.getElementById('crm-detail-modal').style.display = 'none';
-            loadAdCrm();
-        } else {
-            alert(data.error || 'Failed');
-        }
-    }
-    
-    async function refreshCrmFromSheet() {
-        if (!confirm('Re-import all data from Google Sheet? This will reset visit history.')) return;
-        const res = await fetch('/api/ad-crm/refresh', {method:'POST'});
-        const data = await res.json();
-        if (data.ok) {
-            alert(`Imported ${data.stores} stores, ${data.contacts} contacts`);
-            loadAdCrm();
-        } else {
-            alert(data.error || 'Failed');
-        }
-    }
-
 </script>
 
 </body>
