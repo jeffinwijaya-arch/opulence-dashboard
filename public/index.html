@@ -6076,6 +6076,9 @@ if (_userRole.allowedPages) {
     // Restricted user — apply role restrictions then load data
     applyRoleRestrictions();
     loadData();
+    // Explicitly load pages that restricted users need
+    if (_userRole.allowedPages.includes('inventory')) setTimeout(loadInventoryPage, 500);
+    if (_userRole.allowedPages.includes('postings')) setTimeout(loadPostingsPage, 800);
 } else {
     // Full access — load everything now
     loadData();
