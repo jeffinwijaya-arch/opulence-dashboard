@@ -3169,7 +3169,7 @@ function openShippingModal(item) {
             </button>
             <button class="btn" onclick="showShipForm('local', ${item.row})" style="width:100%;padding:12px;text-align:left;border:1px solid var(--border-strong);font-size:0.78rem;">
                 <span style="font-weight:600;color:var(--green);">Local Delivery</span>
-                <div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">Hand delivery or local drop-off</div>
+                <div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">Hand delivery or local drop-off (does NOT mark as shipped)</div>
             </button>
             <button class="btn" onclick="showShipForm('attach-label', ${item.row})" style="width:100%;padding:12px;text-align:left;border:1px solid var(--border-strong);font-size:0.78rem;">
                 <span style="font-weight:600;color:var(--blue);">Attach Label</span>
@@ -3206,7 +3206,7 @@ function showShipForm(type, row) {
             <input id="ship-local-addr" type="text" placeholder="e.g. 47th St booth 64, hand delivery to Asher" style="width:100%;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);color:var(--text-0);padding:8px;font-family:var(--mono);font-size:0.78rem;margin-top:4px;margin-bottom:12px;" />
             <div style="display:flex;gap:8px;justify-content:flex-end;">
                 <button class="btn" onclick="showShipForm('back', ${row})" style="font-size:0.75rem;padding:6px 14px;">Back</button>
-                <button class="btn" id="ship-submit-btn" onclick="submitShipping(${row}, 'local')" style="font-size:0.75rem;padding:6px 14px;background:var(--green);color:#000;border:none;font-weight:600;">Mark Shipped</button>
+                <button class="btn" id="ship-submit-btn" onclick="submitLocalDelivery(${row})" style="font-size:0.75rem;padding:6px 14px;background:var(--green);color:#000;border:none;font-weight:600;">Schedule Delivery</button>
             </div>`;
         return;
     }
@@ -3289,6 +3289,35 @@ async function handleLabelUpload(input) {
         } catch(e) {
             if (statusEl) statusEl.innerHTML = '<span style="color:var(--red);">Extraction failed — enter manually</span>';
         }
+    }
+}
+
+async function submitLocalDelivery(row) {
+    const btn = document.getElementById('ship-submit-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+    try {
+        const addr = document.getElementById('ship-local-addr')?.value || 'Local delivery';
+        const r = await fetch('/api/shipping/schedule-local', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ row, address: addr })
+        });
+        const result = await r.json();
+        if (result.ok) {
+            document.getElementById('shipping-modal')?.remove();
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;top:20px;right:20px;background:var(--green);color:#000;padding:12px 20px;border-radius:8px;font-weight:600;font-size:0.85rem;z-index:99999;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
+            toast.textContent = 'Local delivery scheduled. Eddy will see it in Ship tab.';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+            loadActionItems();
+        } else {
+            alert('Failed: ' + (result.error || 'Unknown error'));
+            if (btn) { btn.disabled = false; btn.textContent = 'Schedule Delivery'; }
+        }
+    } catch(e) {
+        alert('Error: ' + e.message);
+        if (btn) { btn.disabled = false; btn.textContent = 'Schedule Delivery'; }
     }
 }
 
