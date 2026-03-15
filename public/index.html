@@ -11560,7 +11560,10 @@ function _jamCard(type, item) {
         const isPending = item.status === 'pending';
         const isLocal = item.delivery_type === 'local';
         
-        pills = _jp(item.paid, 'Paid');
+        // Hide Paid from logistics
+        if (_userRole.role !== 'logistics') {
+            pills = _jp(item.paid, 'Paid');
+        }
         
         // Local delivery badge
         if (isLocal) {
@@ -11568,8 +11571,11 @@ function _jamCard(type, item) {
         }
         
         if (item.has_label && item.label_file) {
-            pills += `<button class="jam-pill" onclick="event.stopPropagation();window.open('/api/jam/label/${item.label_file}','_blank')" style="cursor:pointer;border:1px solid var(--green-border);background:var(--green-dim);color:var(--green);">VIEW LABEL</button>`;
-            pills += `<button class="jam-pill" onclick="event.stopPropagation();jamPrintLabel('${item.label_file}')" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);">PRINT</button>`;
+            // VIEW LABEL as separate prominent button (rendered in card header area)
+            item._labelButton = `<button onclick="event.stopPropagation();window.open('/api/jam/label/${item.label_file}','_blank')" style="cursor:pointer;padding:6px 14px;border:none;border-radius:var(--radius);background:var(--green);color:#000;font-weight:700;font-size:0.75rem;white-space:nowrap;">VIEW LABEL</button>`;
+            if (_userRole.role !== 'logistics') {
+                pills += `<button class="jam-pill" onclick="event.stopPropagation();jamPrintLabel('${item.label_file}')" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);">PRINT</button>`;
+            }
         } else if (_userRole.role !== 'logistics' && !isLocal) {
             pills += `<button class="jam-pill" onclick="event.stopPropagation();jamAttachLabelWithDate(${item.id})" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);">Attach Label</button>`;
             pills += `<button class="jam-pill" onclick="event.stopPropagation();jamSetLocalDelivery(${item.id})" style="cursor:pointer;border:1px solid var(--orange);background:var(--orange);color:#000;font-weight:600;">Local Delivery</button>`;
@@ -11644,7 +11650,10 @@ function _jamCard(type, item) {
     return `<div class="jam-card type-${type}">
         <div class="jam-card-head">
             <div class="jam-card-title">${ref} <span style="font-weight:400;color:var(--text-1);font-size:0.78rem;">${restDesc}</span></div>
-            <div class="jam-card-id">#${item.id}</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                ${item._labelButton || ''}
+                <div class="jam-card-id">#${item.id}</div>
+            </div>
         </div>
         <div class="jam-card-detail">${detailLine}</div>
         ${serialLine}
