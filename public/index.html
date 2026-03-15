@@ -11334,7 +11334,8 @@ function toggleJamLang() {
 
 function _localDate(offset=0) {
     const d = new Date(Date.now() + offset * 86400000);
-    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    const parts = d.toLocaleDateString('en-CA', {timeZone:'America/New_York'}).split('-');
+    return parts.join('-');
 }
 const _jamState = { tab: 'dijual', feeds: {}, offsets: {}, totals: {}, stats: null };
 
