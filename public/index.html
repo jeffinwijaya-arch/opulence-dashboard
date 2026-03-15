@@ -1705,7 +1705,7 @@
             <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
                 <button class="btn" onclick="loadPostingsPage()" style="opacity:0.8;">&#8635; Refresh</button>
                 <button class="btn" onclick="syncPostings()" id="postings-sync-btn" style="opacity:0.8;">&#8635; Reload Log</button>
-                <button class="btn" onclick="repostAllPostings()" id="postings-repost-all-btn" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);font-weight:600;">🔄 Repost All</button>
+                <button class="btn" onclick="repostAllPostings()" id="postings-repost-all-btn" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);font-weight:600;">Repost All</button>
                 <span id="postings-status-msg" style="font-size:0.72rem;color:var(--text-2);margin-left:4px;"></span>
             </div>
 
@@ -10141,7 +10141,7 @@ async function loadPayments() {
         if (!confirm(`Repost "${desc.slice(0,60)}..." to Telegram?`)) return;
         const origText = btn.textContent;
         btn.disabled = true;
-        btn.textContent = '⏳';
+        btn.textContent = '...';
         try {
             const r = await fetch('/api/my-postings/repost', {
                 method: 'POST',
@@ -10150,7 +10150,7 @@ async function loadPayments() {
             });
             const d = await r.json();
             if (!d.ok) throw new Error(d.error || 'Repost failed');
-            btn.textContent = '✅';
+            btn.textContent = 'Done';
             setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 2000);
         } catch (e) {
             alert('Repost failed: ' + e.message);
@@ -10166,7 +10166,7 @@ async function loadPayments() {
         const btn = document.getElementById('postings-repost-all-btn');
         const statusEl = document.getElementById('postings-status-msg');
         btn.disabled = true;
-        btn.textContent = `⏳ Reposting ${count}...`;
+        btn.textContent = `Reposting ${count}...`;
         statusEl.textContent = 'Reposting all — this may take a minute...';
         try {
             const r = await fetch('/api/my-postings/repost-all', {
@@ -10175,13 +10175,13 @@ async function loadPayments() {
             });
             const d = await r.json();
             if (!d.ok) throw new Error(d.error || 'Repost all failed');
-            statusEl.textContent = `✅ Reposted ${d.reposted}/${d.total} postings`;
-            btn.textContent = '🔄 Repost All';
+            statusEl.textContent = `Reposted ${d.reposted}/${d.total} postings`;
+            btn.textContent = 'Repost All';
             btn.disabled = false;
             loadPostingsPage();
         } catch (e) {
-            statusEl.textContent = '❌ Error: ' + e.message;
-            btn.textContent = '🔄 Repost All';
+            statusEl.textContent = 'Error: ' + e.message;
+            btn.textContent = 'Repost All';
             btn.disabled = false;
         }
     }
