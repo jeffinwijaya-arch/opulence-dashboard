@@ -11577,12 +11577,13 @@ function _jamCard(type, item) {
             pills += `<span class="jam-pill jam-pill-no">No Label</span>`;
         }
         
-        // For pending items: schedule + easy ship button
+        // For pending items: schedule (admin only) + force-ship (admin only)
         if (isPending) {
             if (_userRole.role !== 'logistics') {
                 pills += `<button class="jam-pill" onclick="event.stopPropagation();jamSetShipDate(${item.id})" style="cursor:pointer;border:1px solid var(--orange);background:var(--orange);color:#000;font-weight:600;">SCHEDULE</button>`;
+                pills += `<button class="jam-pill" onclick="event.stopPropagation();jamMarkShipped(${item.id})" style="cursor:pointer;border:1px solid var(--green);background:var(--green);color:#000;font-weight:600;">SHIP</button>`;
             }
-            pills += `<button class="jam-pill" onclick="event.stopPropagation();jamMarkShipped(${item.id})" style="cursor:pointer;border:1px solid var(--green);background:var(--green);color:#000;font-weight:600;">SHIP</button>`;
+            // Employee: both photos uploaded = auto-shipped by backend, no manual button
         }
         
         // Show delivery address for local deliveries
@@ -12051,6 +12052,7 @@ function jamUploadShipPhoto(watchId, photoType) {
             const r = await fetch('/api/jam/upload-ship-photo', { method: 'POST', body: fd });
             const data = await r.json();
             if (data.ok) {
+                if (data.auto_shipped) alert('Both photos uploaded — marked as shipped!');
                 loadJamFeed(_jamState.tab);
             } else {
                 alert('Upload failed: ' + (data.error || 'unknown'));
