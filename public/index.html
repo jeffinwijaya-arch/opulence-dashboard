@@ -3403,7 +3403,7 @@ function openPostingModal(item, photoCount) {
         </div>
         <div style="display:flex;gap:8px;justify-content:flex-end;">
             <button class="btn" onclick="document.getElementById('posting-modal').remove()" style="font-size:0.75rem;padding:6px 14px;">Cancel</button>
-            <button class="btn" id="posting-submit-btn" onclick="submitPosting(${item.row})" style="font-size:0.75rem;padding:6px 14px;background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);font-weight:600;">Post</button>
+            <button class="btn" id="posting-submit-btn" onclick="submitPosting(${item.row})" style="font-size:0.75rem;padding:6px 14px;background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);font-weight:600;">Save Draft</button>
         </div>
     </div>`;
     document.body.appendChild(overlay);
@@ -4082,35 +4082,48 @@ async function submitPosting(row) {
     if (!price) return alert('Asking price is required');
 
     const btn = document.getElementById('posting-submit-btn');
-    if (btn) { btn.textContent = 'Posting...'; btn.disabled = true; }
+    if (btn) { btn.textContent = 'Saving...'; btn.disabled = true; }
 
     try {
         const fullCaption = caption + '\n$' + price.replace(/[^0-9]/g,'').replace(/(\d)(?=(\d{3})+$)/g,'$1,') + ' + label';
 
-        // Always check if photos exist (user may have just uploaded)
-        let hasPhotos = false;
-        try {
-            const pr = await fetch('/api/watch-photos/' + row);
-            if (pr.ok) { const pd = await pr.json(); hasPhotos = pd.photos?.length > 0; }
-        } catch(e) {}
-
-        const r = await fetch('/api/telegram/post-to-my-postings', {
+        // Step 1: Create draft in DB (no Telegram yet)
+        const r = await fetch('/api/postings/create-draft', {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ row, caption: fullCaption, price, use_photos: hasPhotos })
+            body: JSON.stringify({ watch_id: row, caption: fullCaption, price })
         });
         const result = await r.json();
-        if (result.ok || result.success) {
+        if (result.ok) {
             document.getElementById('posting-modal')?.remove();
             loadReadyToPost();
+            loadPostingsPage(); // Refresh active postings to show draft
             loadActionItems();
         } else {
-            alert('Post failed: ' + (result.error || 'Unknown error'));
-            if (btn) { btn.textContent = 'Post'; btn.disabled = false; }
+            alert('Save failed: ' + (result.error || 'Unknown error'));
+            if (btn) { btn.textContent = 'Save Draft'; btn.disabled = false; }
         }
     } catch(e) {
-        alert('Post failed: ' + e.message);
-        if (btn) { btn.textContent = 'Post'; btn.disabled = false; }
+        alert('Save failed: ' + e.message);
+        if (btn) { btn.textContent = 'Save Draft'; btn.disabled = false; }
+    }
+}
+
+async function sendPostingToTelegram(postingId) {
+    if (!confirm('Send this posting to Telegram?')) return;
+    try {
+        const r = await fetch(`/api/postings/${postingId}/send-telegram`, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'}
+        });
+        const result = await r.json();
+        if (result.ok) {
+            loadPostingsPage();
+        } else {
+            alert('Send failed: ' + (result.error || 'Unknown error'));
+        }
+    } catch(e) {
+        alert('Send failed: ' + e.message);
     }
 }
 
@@ -9739,8 +9752,11 @@ async function loadPayments() {
                 <td class="right" style="font-size:0.72rem;font-family:monospace;font-weight:600;">${price}</td>
                 <td class="right" style="font-size:0.72rem;white-space:nowrap;">${posted}</td>
                 <td style="white-space:nowrap;">
-                    <button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);"
-                        onclick="repostSinglePosting(${p.id},'${safeDesc}',this)">Repost</button>
+                    ${p.status === 'draft'
+                        ? `<button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;background:#e8f5e9;color:var(--green);border-color:var(--green);font-weight:600;"
+                            onclick="sendPostingToTelegram(${p.id})">Send to TG</button>`
+                        : `<button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);"
+                            onclick="repostSinglePosting(${p.id},'${safeDesc}',this)">Repost</button>`}
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;"
                         onclick="openPriceEditModal('${mid}','${priceRaw}','${safeDesc}','${safePhoto}','${p.row||""}')">Edit</button>
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);"
@@ -9763,18 +9779,23 @@ async function loadPayments() {
                 const imgTag = p.photo
                     ? `<img src="/api/posting-photo/${p.photo}" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">`
                     : '';
-                return `<div class="posting-card">
+                const isDraft = p.status === 'draft';
+                const statusBadge = isDraft ? '<span style="background:var(--yellow,#ffd600);color:#000;font-size:0.6rem;padding:1px 6px;border-radius:4px;font-weight:600;">DRAFT</span> ' : '';
+                return `<div class="posting-card" style="${isDraft ? 'border-color:var(--yellow,#ffd600);' : ''}">
                     ${imgTag}
                     <div class="posting-card-body">
-                        <div class="posting-card-ref">${p.ref || '—'}</div>
+                        <div class="posting-card-ref">${statusBadge}${p.ref || '—'}</div>
                         <div class="posting-card-desc">${desc}</div>
                         <div class="posting-card-meta">
                             <span class="posting-card-price">${price}</span>
                             <span class="posting-card-date">${posted}</span>
                         </div>
                         <div class="posting-card-actions">
-                            <button class="btn" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);"
-                                onclick="repostSinglePosting(${p.id},'${safeDesc}',this)">Repost</button>
+                            ${isDraft
+                                ? `<button class="btn" style="background:#e8f5e9;color:var(--green);border-color:var(--green);font-weight:600;"
+                                    onclick="sendPostingToTelegram(${p.id})">Send to TG</button>`
+                                : `<button class="btn" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);"
+                                    onclick="repostSinglePosting(${p.id},'${safeDesc}',this)">Repost</button>`}
                             <button class="btn" onclick="openPriceEditModal('${mid}','${priceRaw}','${safeDesc}','${safePhoto}','${p.row||""}')">Edit</button>
                             <button class="btn" style="background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);"
                                 onclick="openPostingDeleteModal('${mid}','${safeDesc}','${safePhoto}','${priceRaw}','${p.id||""}')">Delete</button>
