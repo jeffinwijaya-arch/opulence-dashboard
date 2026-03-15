@@ -9723,6 +9723,23 @@ async function loadPayments() {
         }
     }
 
+    function postingTimeAgo(dateStr) {
+        if (!dateStr) return '—';
+        const d = new Date(dateStr);
+        if (isNaN(d)) return dateStr.slice(0,10);
+        const now = new Date();
+        const diffMs = now - d;
+        const mins = Math.floor(diffMs / 60000);
+        const hrs = Math.floor(diffMs / 3600000);
+        const days = Math.floor(diffMs / 86400000);
+        if (mins < 1) return 'Just now';
+        if (mins < 60) return mins + 'm ago';
+        if (hrs < 24) return hrs + 'h ago';
+        if (days === 1) return 'Yesterday';
+        if (days < 7) return days + 'd ago';
+        return d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+    }
+
     async function loadPostingsPage() {
         setPostingsStatus('Loading...');
         try {
@@ -9763,7 +9780,7 @@ async function loadPayments() {
                 <td style="font-weight:600;white-space:nowrap;">${p.ref || '—'}</td>
                 <td style="max-width:240px;font-size:0.72rem;" title="${desc}">${shortDesc}</td>
                 <td class="right" style="font-size:0.72rem;font-family:monospace;font-weight:600;">${price}</td>
-                <td class="right" style="font-size:0.72rem;white-space:nowrap;">${posted}</td>
+                <td class="right" style="font-size:0.72rem;white-space:nowrap;">${postingTimeAgo(p.posted_at || p.posted_date)}</td>
                 <td style="white-space:nowrap;">
                     ${p.status === 'draft'
                         ? `<button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;background:#e8f5e9;color:var(--green);border-color:var(--green);font-weight:600;"
@@ -9801,7 +9818,7 @@ async function loadPayments() {
                         <div class="posting-card-desc">${desc}</div>
                         <div class="posting-card-meta">
                             <span class="posting-card-price">${price}</span>
-                            <span class="posting-card-date">${posted}</span>
+                            <span class="posting-card-date">${postingTimeAgo(p.posted_at || p.posted_date)}</span>
                         </div>
                         <div class="posting-card-actions">
                             ${isDraft
