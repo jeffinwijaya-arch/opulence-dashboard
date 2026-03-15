@@ -1704,6 +1704,7 @@
             <!-- Controls row -->
             <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
                 <button class="btn" onclick="loadPostingsPage()" style="opacity:0.8;">&#8635; Refresh</button>
+                <button class="btn" onclick="location.reload(true)" style="opacity:0.6;font-size:0.65rem;">Hard Reload</button>
                 <button class="btn" onclick="syncPostings()" id="postings-sync-btn" style="opacity:0.8;">&#8635; Reload Log</button>
                 <button class="btn" onclick="repostAllPostings()" id="postings-repost-all-btn" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);font-weight:600;">Repost All</button>
                 <span id="postings-status-msg" style="font-size:0.72rem;color:var(--text-2);margin-left:4px;"></span>
@@ -6236,6 +6237,8 @@ async function loadInventoryPage() {
         if (!d.ok) { tbody.innerHTML = `<tr><td colspan="11" style="color:var(--red);">${d.error}</td></tr>`; return; }
         invMgmtData = d.rows || [];
         invMgmtLoaded = true;
+        // Auto-reload if server HTML has changed
+        if (d._v && window.__V && d._v !== window.__V) { location.reload(true); return; }
         updateInventorySummary();
         filterInventory();
     } catch(e) {
