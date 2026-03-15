@@ -2984,8 +2984,18 @@ async function loadActionItems() {
 
         // Collect by priority group
         const unposted = [], needsShip = [], awaitPay = [], inTransit = [];
+        // Fetch draft postings to exclude from unposted
+        let draftWatchIds = new Set();
+        try {
+            const pr = await fetch('/api/postings/active');
+            if (pr.ok) {
+                const postings = await pr.json();
+                (postings || []).forEach(p => { if (p.status === 'draft' || p.status === 'active') draftWatchIds.add(p.watch_id); });
+            }
+        } catch(e) {}
+
         items.forEach(i => {
-            if (!i.posted && !i.sold && !i.at_store) unposted.push(i);  // All unposted except store watches
+            if (!i.posted && !i.sold && !i.at_store && !draftWatchIds.has(i.id)) unposted.push(i);  // Unposted, no draft, not at store
             else if (i.sold && !i.shipped) needsShip.push(i);
             else if (i.shipped && !i.paid) awaitPay.push(i);
         });
@@ -4157,10 +4167,16 @@ async function submitPosting(row) {
             body: JSON.stringify({ watch_id: row, caption: fullCaption, price })
         });
         const result = await r.json();
-        if (result.ok) {
+        if (result.ok || result.posting_id) {
             document.getElementById('posting-modal')?.remove();
+            // Show success toast
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;top:20px;right:20px;background:var(--green);color:#000;padding:12px 20px;border-radius:8px;font-weight:600;font-size:0.85rem;z-index:99999;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
+            toast.textContent = 'Saved to My Postings draft. Hit Sync to send to WhatsApp.';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
             loadReadyToPost();
-            loadPostingsPage(); // Refresh active postings to show draft
+            loadPostingsPage();
             loadActionItems();
         } else {
             alert('Save failed: ' + (result.error || 'Unknown error'));
