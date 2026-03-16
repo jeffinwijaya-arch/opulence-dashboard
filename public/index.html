@@ -3199,7 +3199,7 @@ function openShippingModal(item) {
                 <span style="font-weight:600;color:var(--blue);">Attach Label</span>
                 <div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">Attach a label PDF for Eddy to ship (does NOT mark as shipped)</div>
             </button>
-            <button class="btn" onclick="showShipForm('external', ${item.row})" style="width:100%;padding:12px;text-align:left;border:1px solid var(--border-strong);font-size:0.78rem;">
+            <button class="btn" onclick="showShipForm('foreign', ${item.row})" style="width:100%;padding:12px;text-align:left;border:1px solid var(--border-strong);font-size:0.78rem;">
                 <span style="font-weight:600;color:var(--orange);">Mark Shipped (External Label)</span>
                 <div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">Already shipped — attach label + mark as shipped</div>
             </button>
@@ -3257,7 +3257,7 @@ function showShipForm(type, row) {
         return;
     }
 
-    if (type === 'external') {
+    if (type === 'foreign') {
         form.innerHTML = `
             <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Label PDF</label>
             <div id="ship-label-preview" style="min-height:60px;background:var(--bg-2);border:2px dashed var(--border-strong);border-radius:var(--radius);padding:14px;margin-top:4px;margin-bottom:10px;text-align:center;cursor:pointer;transition:border-color 0.2s,background 0.2s;" onclick="document.getElementById('ship-label-upload').click()"
@@ -3274,7 +3274,7 @@ function showShipForm(type, row) {
             </div>
             <div style="display:flex;gap:8px;justify-content:flex-end;">
                 <button class="btn" onclick="showShipForm('back', ${row})" style="font-size:0.75rem;padding:6px 14px;">Back</button>
-                <button class="btn" id="ship-submit-btn" onclick="submitShipping(${row}, 'external')" style="font-size:0.75rem;padding:6px 14px;background:var(--blue);color:#fff;border:none;font-weight:600;">Mark Shipped</button>
+                <button class="btn" id="ship-submit-btn" onclick="submitShipping(${row}, 'foreign')" style="font-size:0.75rem;padding:6px 14px;background:var(--blue);color:#fff;border:none;font-weight:600;">Mark Shipped</button>
             </div>`;
         return;
     }
@@ -3387,7 +3387,7 @@ async function submitShipping(row, type) {
         if (type === 'local') {
             const addr = document.getElementById('ship-local-addr')?.value || '';
             tracking = 'Local: ' + (addr || 'hand delivery');
-        } else if (type === 'external') {
+        } else if (type === 'foreign') {
             tracking = document.getElementById('ship-tracking')?.value || '';
             if (!tracking) { alert('Tracking number is required'); if (btn) { btn.disabled = false; btn.textContent = 'Mark Shipped'; } return; }
             const fileInput = document.getElementById('ship-label-upload');
@@ -13103,7 +13103,7 @@ function renderJamFeed(type) {
         
         // Filter: logistics employees only see scheduled items
         const isLogistics = _userRole.role === 'logistics';
-        const visiblePending = isLogistics ? pending.filter(i => (i.date && i.date !== '') && i.ship_from !== 'external') : pending;
+        const visiblePending = isLogistics ? pending.filter(i => (i.date && i.date !== '') && i.ship_from !== 'foreign') : pending;
         
         if (visiblePending.length) {
             html += `<div style="padding:8px 4px;margin-bottom:4px;">
@@ -13251,8 +13251,8 @@ function _jamCard(type, item) {
             pills += `<span class="jam-pill" style="border:1px solid var(--accent);background:var(--accent-dim);color:var(--accent);">LOCAL DELIVERY</span>`;
         }
         // External shipment badge (hidden from logistics, visible to admin)
-        if (item.ship_from === 'external' && _userRole.role !== 'logistics') {
-            pills += `<span class="jam-pill" style="border:1px solid var(--orange);background:var(--orange);color:#000;font-weight:600;">EXTERNAL</span>`;
+        if (item.ship_from === 'foreign' && _userRole.role !== 'logistics') {
+            pills += `<span class="jam-pill" style="border:1px solid var(--orange);background:var(--orange);color:#000;font-weight:600;">FOREIGN</span>`;
         }
         
         if (item.has_label && item.label_file && !item.package_id) {
