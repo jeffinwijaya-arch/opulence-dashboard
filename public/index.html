@@ -13103,7 +13103,15 @@ function renderJamFeed(type) {
         
         // Filter: logistics employees only see scheduled items
         const isLogistics = _userRole.role === 'logistics';
-        const visiblePending = isLogistics ? pending.filter(i => i.ship_from !== 'foreign' && i.date && i.date !== '') : pending;
+        const myUserId = _userRole.userId || null;
+        const visiblePending = isLogistics ? pending.filter(i => {
+            if (i.ship_from === 'foreign') return false;
+            if (!i.date || i.date === '') return false;
+            // Logistics users only see their own assigned packages
+            if (myUserId && i.assigned_shipper && i.assigned_shipper !== myUserId) return false;
+            if (myUserId && !i.assigned_shipper) return false; // unassigned = don't show
+            return true;
+        }) : pending;
         
         if (visiblePending.length) {
             html += `<div style="padding:16px;margin-bottom:12px;background:var(--bg-2);border:2px solid var(--orange);border-radius:var(--radius-lg);text-align:center;">
@@ -13146,7 +13154,12 @@ function renderJamFeed(type) {
         if (shipped.length) {
             // Logistics: only show last 2 days of shipped history
             const twoDaysAgo = _localDate(-2);
-            const visibleShipped = isLogistics ? shipped.filter(i => (i.date || '') >= twoDaysAgo) : shipped;
+            const visibleShipped = isLogistics ? shipped.filter(i => {
+                if ((i.date || '') < twoDaysAgo) return false;
+                if (myUserId && i.assigned_shipper && i.assigned_shipper !== myUserId) return false;
+                if (myUserId && !i.assigned_shipper) return false;
+                return true;
+            }) : shipped;
             html += `<div style="padding:8px 4px;margin-top:${pending.length?'24px':'0'};margin-bottom:4px;">
                 <span style="font-size:0.85rem;font-weight:700;color:var(--green);">${_t('shipped')}</span>
                 <span style="font-size:0.7rem;color:var(--text-2);margin-left:8px;">${visibleShipped.length} ${_t('completed')}</span>
