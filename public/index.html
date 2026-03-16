@@ -6313,6 +6313,33 @@ function applyRoleRestrictions() {
             if (el.querySelector && el.querySelector('input')) el.style.display = 'none';
         });
     }
+    // Bigger fonts for Eddy (logistics) — easier to read
+    if (_userRole.role === 'logistics') {
+        const style = document.createElement('style');
+        style.textContent = `
+            body { font-size: 1.15rem !important; }
+            .jam-stat-count { font-size: 2.2rem !important; }
+            .jam-stat-label { font-size: 0.85rem !important; }
+            .jam-alert { font-size: 0.92rem !important; }
+            .ship-card, .ship-card * { font-size: 0.95rem !important; }
+            .ship-card .ship-ref { font-size: 1.15rem !important; }
+            .ship-card .ship-buyer { font-size: 1rem !important; }
+            .btn { font-size: 0.88rem !important; padding: 10px 16px !important; }
+            .tbl td, .tbl th { font-size: 0.88rem !important; padding: 10px 8px !important; }
+            .page-head h1 { font-size: 1.6rem !important; }
+            .page-head p { font-size: 0.9rem !important; }
+            .input, select, textarea { font-size: 1rem !important; }
+            label { font-size: 0.85rem !important; }
+            .inv-card-ref { font-size: 1.1rem !important; }
+            .inv-card-desc { font-size: 0.9rem !important; }
+            .inv-card-price-val { font-size: 0.95rem !important; }
+            .inv-card-price-label { font-size: 0.78rem !important; }
+            .inv-badge { font-size: 0.75rem !important; }
+            .mobile-nav a { font-size: 0.78rem !important; }
+            .jam-tab-btn { font-size: 0.82rem !important; padding: 10px 14px !important; }
+        `;
+        document.head.appendChild(style);
+    }
     // Hide mobile more menu for roles with <=4 pages (all fit in bottom nav)
     if (ap.length <= 5) {
         const mm = document.getElementById('mobile-more-menu');
