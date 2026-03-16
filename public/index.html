@@ -8531,7 +8531,10 @@ async function loadInternalInvoices(append) {
         }
         
         const html = _invData.map(inv => {
-            const customer = (inv.customer_name||'').split('\\n')[0];
+            const customerFull = inv.customer_name||'';
+            const customerLines = customerFull.split(/\\n|\n/);
+            const customer = customerLines[0] || '—';
+            const company = customerLines[1] || '';
             const actions = [
                 `<a onclick="editInvModal(${inv.id})" style="cursor:pointer;font-size:0.72rem;">Edit</a>`,
                 `<a href="/api/internal-invoices/${inv.id}/pdf" target="_blank" style="cursor:pointer;font-size:0.72rem;color:var(--accent);">PDF</a>`,
@@ -8546,7 +8549,7 @@ async function loadInternalInvoices(append) {
                         ${statusBadge(inv.status)}
                         <span style="font-size:0.68rem;color:var(--text-3);margin-left:auto;">${fmtD(inv.created_at)}</span>
                     </div>
-                    <div style="font-weight:600;font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${customer||'—'}</div>
+                    <div style="font-weight:600;font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${customer}${company ? '<span style="font-weight:400;color:var(--text-2);font-size:0.75rem;margin-left:6px;">' + company + '</span>' : ''}</div>
                     <div style="margin-top:4px;">${actions}</div>
                 </div>
                 <div style="font-family:var(--mono);font-weight:700;font-size:1rem;white-space:nowrap;">${fmtA(inv.total)}</div>
