@@ -1558,8 +1558,23 @@
                 </div>
                 <input type="hidden" id="wm-row">
                 <div style="display:grid;gap:8px;">
+                    <div style="position:relative;">
+                        <label style="font-size:0.68rem;color:var(--text-2);">Reference Number</label>
+                        <input class="input" id="wm-ref" style="width:100%;margin-top:3px;" placeholder="Type ref (e.g. 126334)" oninput="refAutofill(this.value)" autocomplete="off">
+                        <div id="ref-autofill-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg-2);border:1px solid var(--border);border-radius:8px;max-height:280px;overflow-y:auto;z-index:100;margin-top:2px;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>
+                        <div id="ref-autofill-info" style="display:none;margin-top:6px;padding:10px;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;">
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                                <span id="raf-brand" style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--accent);font-weight:600;"></span>
+                                <span id="raf-model" style="font-size:0.82rem;font-weight:600;color:var(--text-0);"></span>
+                                <span id="raf-size" style="font-size:0.7rem;color:var(--text-2);"></span>
+                                <span id="raf-retail" style="font-size:0.7rem;color:var(--green);margin-left:auto;"></span>
+                            </div>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;" id="raf-dials"></div>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;" id="raf-bracelets"></div>
+                        </div>
+                    </div>
                     <div><label style="font-size:0.68rem;color:var(--text-2);">Description (e.g. 126300 Jubilee Black 02/2026)</label>
-                        <input class="input" id="wm-desc" style="width:100%;margin-top:3px;" placeholder="Ref Bracelet Dial MM/YYYY"></div>
+                        <input class="input" id="wm-desc" style="width:100%;margin-top:3px;" placeholder="Auto-filled from ref + selections above"></div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                         <div><label style="font-size:0.68rem;color:var(--text-2);">Bought From</label>
                             <input class="input" id="wm-from" style="width:100%;margin-top:3px;"></div>
@@ -6604,7 +6619,8 @@ function renderInventoryTable(rows) {
         html += `<a onclick="editWatch(${r.row})" style="cursor:pointer;color:var(--text-2);margin-right:6px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:0.7rem;">Edit</a>`;
         html += `<a onclick="processOCR(${r.row})" style="cursor:pointer;color:#9b59b6;margin-right:6px;padding:4px 8px;border:1px solid #9b59b6;border-radius:4px;font-size:0.7rem;">Vision</a>`;
         html += `<a onclick="viewWatchPhotos('${r.description}', ${r.row})" style="cursor:pointer;color:#06b6d4;margin-right:6px;padding:4px 8px;border:1px solid #06b6d4;border-radius:4px;font-size:0.7rem;">Photos</a>`;
-        html += `<a onclick="documentSingleWatch(${r.row})" style="cursor:pointer;color:#2563eb;padding:4px 8px;border:1px solid #2563eb;border-radius:4px;font-size:0.7rem;">Doc</a>`;
+        html += `<a onclick="documentSingleWatch(${r.row})" style="cursor:pointer;color:#2563eb;padding:4px 8px;border:1px solid #2563eb;border-radius:4px;font-size:0.7rem;margin-right:6px;">Doc</a>`;
+        html += `<a onclick="shareWatchCard(${r.row},'${(r.description||'').replace(/'/g,"\\'")}')" style="cursor:pointer;color:#a855f7;padding:4px 8px;border:1px solid #a855f7;border-radius:4px;font-size:0.7rem;">Share</a>`;
         return html;
     };
     
@@ -6658,6 +6674,7 @@ function renderInventoryTable(rows) {
             let html = '';
             if (r.arrived!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--accent);color:var(--bg-0);" onclick="event.stopPropagation();quickAction(${r.row},'arrived')"><span class="isa-icon">Arrive</div>`;
             if (r.posted==='Yes'&&r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:#e9a445;color:var(--bg-0);" onclick="event.stopPropagation();repostWatch(${r.row})"><span class="isa-icon">Repost</div>`;
+            html += `<div class="inv-swipe-action" style="background:#a855f7;color:var(--bg-0);" onclick="event.stopPropagation();shareWatchCard(${r.row},'${(r.description||'').replace(/'/g,"\\'")}')">Share</div>`;
             html += `<div class="inv-swipe-action" style="background:#06b6d4;color:var(--bg-0);" onclick="event.stopPropagation();viewWatchPhotos('${r.description}', ${r.row})">Photos</div>`;
             if (r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--green);color:var(--bg-0);" onclick="event.stopPropagation();showSellModal(${r.row})"><span class="isa-icon">Sell</div>`;
             if (r.sold==='Yes'&&r.shipped!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--blue);color:var(--bg-0);" onclick="event.stopPropagation();showShipModal(${r.row})">Ship</div>`;
@@ -7718,11 +7735,154 @@ async function deleteWatch() {
     } catch(e) { status.style.color='var(--red)'; status.textContent='Error: '+e.message; }
 }
 
+// ─── Ref Autofill ────────────────────────────────────────────────
+let _rafTimer = null;
+let _rafSelected = null;
+
+function refAutofill(q) {
+    clearTimeout(_rafTimer);
+    const dd = document.getElementById('ref-autofill-dropdown');
+    if (!q || q.length < 3) { dd.style.display = 'none'; return; }
+    _rafTimer = setTimeout(async () => {
+        try {
+            const r = await fetch('/api/ref/autofill?q=' + encodeURIComponent(q));
+            const data = await r.json();
+            if (!data.results || !data.results.length) { dd.style.display = 'none'; return; }
+            dd.innerHTML = data.results.map(item => `
+                <div onclick="selectRef(${JSON.stringify(item).replace(/"/g,'&quot;')})" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.15s;" onmouseover="this.style.background='var(--bg-3)'" onmouseout="this.style.background=''">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-weight:700;color:var(--text-0);font-size:0.85rem;font-family:var(--mono);">${item.ref}</span>
+                        <span style="font-size:0.7rem;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;">${item.brand||''}</span>
+                        <span style="font-size:0.75rem;color:var(--text-1);">${item.model||''}</span>
+                        ${item.case_size ? `<span style="font-size:0.65rem;color:var(--text-3);">${item.case_size}mm</span>` : ''}
+                        ${item.retail ? `<span style="font-size:0.65rem;color:var(--green);margin-left:auto;">Retail $${Number(item.retail).toLocaleString()}</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+            dd.style.display = 'block';
+        } catch(e) { dd.style.display = 'none'; }
+    }, 200);
+}
+
+function selectRef(item) {
+    _rafSelected = item;
+    document.getElementById('wm-ref').value = item.ref;
+    document.getElementById('ref-autofill-dropdown').style.display = 'none';
+    
+    // Show info panel
+    const info = document.getElementById('ref-autofill-info');
+    info.style.display = 'block';
+    document.getElementById('raf-brand').textContent = item.brand || '';
+    document.getElementById('raf-model').textContent = item.model || '';
+    document.getElementById('raf-size').textContent = item.case_size ? item.case_size + 'mm' : '';
+    document.getElementById('raf-retail').textContent = item.retail ? 'Retail $' + Number(item.retail).toLocaleString() : '';
+    
+    // Render dial chips
+    const dialsEl = document.getElementById('raf-dials');
+    dialsEl.innerHTML = (item.dials||[]).map(d => 
+        `<span onclick="pickDial(this,'${d.replace(/'/g,"\\'")}')" style="padding:3px 8px;font-size:0.65rem;background:var(--bg-2);border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--text-1);transition:all 0.15s;">${d}</span>`
+    ).join('');
+    
+    // Render bracelet chips
+    const braceEl = document.getElementById('raf-bracelets');
+    braceEl.innerHTML = (item.bracelets||[]).map(b => 
+        `<span onclick="pickBracelet(this,'${b.replace(/'/g,"\\'")}')" style="padding:3px 8px;font-size:0.65rem;background:var(--bg-2);border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--text-1);transition:all 0.15s;">${b}</span>`
+    ).join('');
+    
+    // Auto-build description
+    buildDescFromRef();
+}
+
+let _selectedDial = '', _selectedBracelet = '';
+
+function pickDial(el, dial) {
+    _selectedDial = dial;
+    el.parentElement.querySelectorAll('span').forEach(s => { s.style.background='var(--bg-2)'; s.style.borderColor='var(--border)'; s.style.color='var(--text-1)'; });
+    el.style.background = 'var(--accent)'; el.style.borderColor = 'var(--accent)'; el.style.color = 'var(--bg-1)';
+    buildDescFromRef();
+}
+
+function pickBracelet(el, brace) {
+    _selectedBracelet = brace;
+    el.parentElement.querySelectorAll('span').forEach(s => { s.style.background='var(--bg-2)'; s.style.borderColor='var(--border)'; s.style.color='var(--text-1)'; });
+    el.style.background = 'var(--accent)'; el.style.borderColor = 'var(--accent)'; el.style.color = 'var(--bg-1)';
+    buildDescFromRef();
+}
+
+function buildDescFromRef() {
+    if (!_rafSelected) return;
+    const ref = _rafSelected.ref;
+    const brace = _selectedBracelet || _rafSelected.default_bracelet || '';
+    const dial = _selectedDial || '';
+    const cardDate = document.getElementById('wm-card-date')?.value || '';
+    let desc = ref;
+    if (brace) desc += ' ' + brace;
+    if (dial) desc += ' ' + dial;
+    if (cardDate) desc += ' ' + cardDate;
+    document.getElementById('wm-desc').value = desc;
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', e => {
+    const dd = document.getElementById('ref-autofill-dropdown');
+    if (dd && !e.target.closest('#wm-ref') && !e.target.closest('#ref-autofill-dropdown')) {
+        dd.style.display = 'none';
+    }
+});
+
+// ─── Shareable Watch Card ────────────────────────────────────────
+async function shareWatchCard(watchId, desc) {
+    // Try native share first, fallback to opening card in new tab
+    const cardUrl = `/api/watch/${watchId}/card`;
+    
+    if (navigator.share) {
+        try {
+            // Try to get PNG for native share
+            const pngResp = await fetch(`/api/watch/${watchId}/card.png`);
+            if (pngResp.ok) {
+                const blob = await pngResp.blob();
+                const file = new File([blob], `${desc.replace(/[^a-zA-Z0-9]/g,'_')}.png`, {type: 'image/png'});
+                await navigator.share({ title: desc, files: [file] });
+                return;
+            }
+        } catch(e) { /* fallback */ }
+        try {
+            await navigator.share({ title: desc, url: window.location.origin + cardUrl });
+            return;
+        } catch(e) { /* fallback */ }
+    }
+    
+    // Fallback: open card in new tab + copy link
+    window.open(cardUrl, '_blank');
+    try {
+        await navigator.clipboard.writeText(window.location.origin + cardUrl);
+        showToast('Card link copied to clipboard');
+    } catch(e) {}
+}
+
+function showToast(msg) {
+    let t = document.getElementById('share-toast');
+    if (!t) {
+        t = document.createElement('div');
+        t.id = 'share-toast';
+        t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--bg-2);color:var(--text-0);border:1px solid var(--accent);padding:10px 20px;border-radius:8px;font-size:0.78rem;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,0.3);transition:opacity 0.3s;';
+        document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.opacity = '1';
+    t.style.display = 'block';
+    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.style.display = 'none', 300); }, 2500);
+}
+
+// ─── Modal Functions ─────────────────────────────────────────────
 function showAddWatchModal() {
     document.getElementById('watch-modal-title').textContent = 'Add Watch';
     document.getElementById('wm-row').value = '';
     document.getElementById('wm-delete').style.display = 'none';
     document.getElementById('wm-photos-section').style.display = 'none';
+    document.getElementById('wm-ref').value = '';
+    document.getElementById('ref-autofill-info').style.display = 'none';
+    _rafSelected = null; _selectedDial = ''; _selectedBracelet = '';
     ['wm-desc','wm-from','wm-cost','wm-to','wm-sold-price','wm-sale-price','wm-serial','wm-card-date'].forEach(id => {
         const el = document.getElementById(id); if(el) el.value = '';
     });
