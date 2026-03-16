@@ -13053,7 +13053,13 @@ async function loadJamFeed(type, append = false) {
         const r = await fetch(`/api/jam/feed?type=${type}&limit=50&offset=${offset}`);
         if (!r.ok) throw new Error('feed failed');
         const data = await r.json();
-        _jamState.feeds[type] = append ? (_jamState.feeds[type] || []).concat(data.items) : data.items;
+        if (append) {
+            const existing = _jamState.feeds[type] || [];
+            const existingIds = new Set(existing.map(i => i.id));
+            _jamState.feeds[type] = existing.concat(data.items.filter(i => !existingIds.has(i.id)));
+        } else {
+            _jamState.feeds[type] = data.items;
+        }
         _jamState.totals[type] = data.total;
         _jamState.offsets[type] = offset + data.items.length;
         
