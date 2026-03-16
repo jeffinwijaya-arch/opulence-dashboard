@@ -7121,53 +7121,93 @@ function renderDocumentationReport(data) {
     });
     document.getElementById('doc-total-photos').textContent = totalPhotos;
     
-    // Calculate coverage percentage (documented vs total inventory)
-    const coverage = data.total_watches > 0 ? '100%' : '0%';
+    const coverage = (data.coverage_pct || 0) + '%';
     document.getElementById('doc-coverage').textContent = coverage;
     
-    // Update last updated time
     document.getElementById('doc-last-updated').textContent = 
         `Updated ${new Date().toLocaleTimeString()}`;
     
-    // Render SKU browser
     const browser = document.getElementById('sku-browser');
-    if (!data.skus || data.skus.length === 0) {
-        browser.innerHTML = `
-            <div style="text-align:center;padding:40px;color:var(--text-2);">
-                <div style="margin-bottom:16px;font-size:1.1rem;">No watches documented yet</div>
-                <div style="margin-bottom:24px;font-size:0.9rem;color:var(--text-3);">Start documenting your inventory to create organized photo archives</div>
-                <button class="btn" onclick="documentAllInventory()" style="background:var(--accent);color:var(--bg-1);padding:12px 24px;font-weight:600;">
-                    Start Documentation
-                </button>
+    
+    // Show missing docs summary first
+    const missing = data.missing_docs || [];
+    let missingHtml = '';
+    if (missing.length > 0) {
+        const noHero = missing.filter(w => !w.has_hero);
+        const noSerial = missing.filter(w => !w.has_serial);
+        const noCard = missing.filter(w => !w.has_card_date);
+        missingHtml = `<div style="background:var(--red-dim);border:1px solid var(--red);border-radius:8px;padding:14px;margin-bottom:16px;">
+            <div style="font-weight:700;font-size:0.82rem;color:var(--red);margin-bottom:8px;">Missing Documentation (${missing.length} watches)</div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:0.72rem;color:var(--text-1);margin-bottom:10px;">
+                <span>No Hero Photo: <strong style="color:var(--red);">${noHero.length}</strong></span>
+                <span>No Serial: <strong style="color:var(--red);">${noSerial.length}</strong></span>
+                <span>No Card Date: <strong style="color:var(--red);">${noCard.length}</strong></span>
             </div>
-        `;
+            <div style="display:flex;flex-direction:column;gap:4px;">
+                ${missing.slice(0, 20).map(w => {
+                    const badges = [];
+                    if (!w.has_hero) badges.push('<span style="background:var(--red);color:#000;padding:1px 5px;border-radius:3px;font-size:0.6rem;font-weight:600;">NO HERO</span>');
+                    if (!w.has_serial) badges.push('<span style="background:#f59e0b;color:#000;padding:1px 5px;border-radius:3px;font-size:0.6rem;font-weight:600;">NO SERIAL</span>');
+                    if (!w.has_card_date) badges.push('<span style="background:#f59e0b;color:#000;padding:1px 5px;border-radius:3px;font-size:0.6rem;font-weight:600;">NO DATE</span>');
+                    return `<div style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:0.68rem;">
+                        <span style="color:var(--text-2);">#${w.id}</span>
+                        <span style="color:var(--text-0);flex:1;">${w.description}</span>
+                        <span style="display:flex;gap:3px;">${badges.join('')}</span>
+                    </div>`;
+                }).join('')}
+                ${missing.length > 20 ? `<div style="font-size:0.65rem;color:var(--text-2);margin-top:4px;">...and ${missing.length - 20} more</div>` : ''}
+            </div>
+        </div>`;
+    }
+
+    if (!data.skus || data.skus.length === 0) {
+        browser.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-2);">No watches in inventory.</div>`;
         return;
     }
     
     const skuHtml = data.skus.map(sku => {
         const watchesHtml = sku.watches.map(watch => {
+            const scoreColor = watch.score === watch.max_score ? 'var(--green)' : watch.score >= 2 ? 'var(--orange)' : 'var(--red)';
+            const heroBadge = watch.has_hero
+                ? '<span style="color:var(--green);font-size:0.6rem;font-weight:700;">HERO</span>'
+                : '<span style="color:var(--red);font-size:0.6rem;font-weight:700;">NO HERO</span>';
+            const serialBadge = watch.has_serial
+                ? `<span style="color:var(--text-1);font-size:0.65rem;font-family:var(--mono);">${watch.serial}</span>`
+                : '<span style="color:var(--red);font-size:0.6rem;font-weight:700;">NO SERIAL</span>';
+            const cardBadge = watch.has_card_date
+                ? `<span style="color:var(--text-2);font-size:0.62rem;">${watch.card_date}</span>`
+                : '<span style="color:#f59e0b;font-size:0.6rem;font-weight:700;">NO DATE</span>';
+            const soldBadge = watch.sold ? '<span style="background:var(--green);color:#000;padding:1px 5px;border-radius:3px;font-size:0.58rem;font-weight:600;">SOLD</span>' : '';
+            
             return `
-                <div class="doc-watch-item">
-                    <div class="doc-watch-serial">${watch.serial}</div>
-                    <div class="doc-watch-desc">${watch.description}</div>
-                    <div class="doc-watch-meta">
-                        <span class="doc-watch-row">Row ${watch.row}</span>
-                        <span class="doc-watch-photos">${watch.photo_count} photos</span>
-                        <button class="btn" onclick="viewSpecificWatchPhotos('${sku.sku}_${watch.serial}')" 
-                                style="font-size:0.65rem;padding:2px 6px;">View</button>
+                <div class="doc-watch-item" style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--border);">
+                    <div style="width:28px;height:28px;border-radius:50%;background:${scoreColor};display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:#000;flex-shrink:0;">${watch.score}/${watch.max_score}</div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <span style="font-size:0.72rem;font-weight:600;color:var(--text-0);">#${watch.id}</span>
+                            <span style="font-size:0.7rem;color:var(--text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${watch.description}</span>
+                            ${soldBadge}
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:center;margin-top:2px;">
+                            ${heroBadge} ${serialBadge} ${cardBadge}
+                            <span style="color:var(--text-2);font-size:0.6rem;">${watch.photo_count} photos</span>
+                        </div>
                     </div>
                 </div>
             `;
         }).join('');
         
+        const skuComplete = sku.watches.filter(w => w.score === w.max_score).length;
+        const skuColor = skuComplete === sku.total_count ? 'var(--green)' : 'var(--orange)';
+        
         return `
             <div class="doc-sku-section">
-                <div class="doc-sku-header" onclick="toggleSkuSection('${sku.sku}')">
-                    <div class="doc-sku-title">
-                        <span class="doc-sku-ref">${sku.sku}</span>
-                        <span class="doc-sku-name">${sku.display_name}</span>
+                <div class="doc-sku-header" onclick="toggleSkuSection('${sku.sku}')" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:10px;background:var(--bg-2);border-radius:6px;margin-bottom:2px;">
+                    <div style="flex:1;">
+                        <span class="doc-sku-ref" style="font-weight:700;font-size:0.8rem;color:var(--text-0);">${sku.sku}</span>
+                        <span class="doc-sku-name" style="font-size:0.7rem;color:var(--text-2);margin-left:8px;">${sku.display_name !== sku.sku ? sku.display_name : ''}</span>
                     </div>
-                    <div class="doc-sku-count">${sku.total_count} watches</div>
+                    <span style="font-size:0.65rem;color:${skuColor};font-weight:600;">${skuComplete}/${sku.total_count} complete</span>
                     <div class="doc-sku-toggle">▼</div>
                 </div>
                 <div class="doc-sku-watches" id="doc-sku-${sku.sku}">
@@ -7177,7 +7217,7 @@ function renderDocumentationReport(data) {
         `;
     }).join('');
     
-    browser.innerHTML = skuHtml;
+    browser.innerHTML = missingHtml + skuHtml;
 }
 
 function toggleSkuSection(sku) {
