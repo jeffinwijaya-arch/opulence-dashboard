@@ -1792,7 +1792,7 @@
                                 </div>
                                 <div style="margin-bottom:14px;">
                                     <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Price ($)</label>
-                                    <input class="input" id="epm-new-price" type="number" placeholder="e.g. 15500" style="width:100%;margin-top:4px;" />
+                                    <input class="input" id="epm-new-price" type="number" placeholder="e.g. 15500" style="width:100%;margin-top:4px;" oninput="(function(){const c=document.getElementById('epm-caption');const p=document.getElementById('epm-new-price').value;if(c&&p){c.value=c.value.replace(/\n?\$?[\d,]+\s*\+\s*label\s*$/,'').trim()+'\n$'+Number(p).toLocaleString()+' + label';}})();" />
                                 </div>
                                 <div style="display:flex;gap:8px;justify-content:flex-end;">
                                     <button class="btn" onclick="closePriceEditModal()" style="opacity:0.6;">Cancel</button>
@@ -10620,7 +10620,9 @@ async function loadPayments() {
                     img.src = `/api/watch-photos/${row}/images/${fn}`;
                 }
                 img.style.cssText = 'width:50px;height:50px;object-fit:cover;border-radius:4px;cursor:pointer;border:2px solid transparent;';
-                img.title = 'Click to use this photo';
+                img.alt = '';
+                img.loading = 'eager';
+                img.onerror = () => img.remove();
                 img.onclick = () => _epmSelectSuggested(img.src, fn, row);
                 list.appendChild(img);
             });
