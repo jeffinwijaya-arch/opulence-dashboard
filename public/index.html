@@ -2534,11 +2534,11 @@
         <div class="page" id="page-jam">
             <style>
                 .jam-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
-                .jam-stat{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;text-align:center;cursor:pointer;transition:all 0.2s;}
-                .jam-stat:hover{border-color:var(--accent-border);}
+                .jam-stat{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;text-align:center;cursor:pointer;transition:all 0.2s;}
+                .jam-stat:hover{border-color:var(--accent-border);transform:translateY(-1px);}
                 .jam-stat.active{border-color:var(--accent);background:var(--accent-dim);}
-                .jam-stat-count{font-size:1.5rem;font-weight:300;font-family:var(--mono);color:var(--text-0);line-height:1.2;}
-                .jam-stat-label{font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-2);margin-top:4px;}
+                .jam-stat-count{font-size:1.6rem;font-weight:300;font-family:var(--mono);color:var(--text-0);line-height:1.2;}
+                .jam-stat-label{font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-2);margin-top:6px;}
                 .jam-stat-icon{font-size:1.1rem;margin-bottom:4px;}
 
                 .jam-alerts{margin-bottom:14px;display:flex;flex-wrap:wrap;gap:8px;}
@@ -2553,25 +2553,25 @@
                 .jam-tab .jam-tab-count{font-size:0.62rem;opacity:0.7;margin-left:4px;}
 
                 .jam-feed{display:flex;flex-direction:column;gap:10px;}
-                .jam-card{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;border-left:4px solid var(--accent);transition:all 0.2s;}
+                .jam-card{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;border-left:4px solid var(--accent);transition:all 0.2s;margin-bottom:8px;}
                 .jam-card:hover{border-color:var(--border-strong);background:var(--bg-3);}
                 .jam-card.type-dibeli{border-left-color:var(--accent);}
                 .jam-card.type-masuk{border-left-color:var(--green);}
                 .jam-card.type-dijual{border-left-color:var(--blue);}
                 .jam-card.type-keluar{border-left-color:var(--orange);}
 
-                .jam-card-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;}
-                .jam-card-title{font-size:0.85rem;font-weight:700;color:var(--text-0);line-height:1.3;}
-                .jam-card-id{font-size:0.65rem;color:var(--text-2);font-family:var(--mono);opacity:0.6;}
-                .jam-card-detail{font-size:0.73rem;color:var(--text-1);margin-bottom:4px;line-height:1.5;}
+                .jam-card-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;}
+                .jam-card-title{font-size:0.9rem;font-weight:700;color:var(--text-0);line-height:1.3;}
+                .jam-card-id{font-size:0.7rem;color:var(--text-2);font-family:var(--mono);opacity:0.6;}
+                .jam-card-detail{font-size:0.78rem;color:var(--text-1);margin-bottom:6px;line-height:1.5;}
                 .jam-card-detail span{color:var(--text-2);}
-                .jam-card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px;}
-                .jam-pills{display:flex;gap:4px;flex-wrap:wrap;}
-                .jam-pill{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.65rem;font-weight:600;font-family:var(--mono);}
+                .jam-card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:8px;}
+                .jam-pills{display:flex;gap:6px;flex-wrap:wrap;}
+                .jam-pill{display:inline-flex;align-items:center;padding:6px 12px;border-radius:6px;font-size:0.72rem;font-weight:600;font-family:var(--mono);min-height:32px;cursor:default;}
                 .jam-pill-yes{background:var(--green-dim);color:var(--green);}
                 .jam-pill-no{background:rgba(255,255,255,0.04);color:var(--text-2);}
                 .jam-pill-warn{background:rgba(251,146,60,0.1);color:var(--orange);}
-                .jam-card-date{font-size:0.68rem;color:var(--text-2);font-family:var(--mono);white-space:nowrap;}
+                .jam-card-date{font-size:0.72rem;color:var(--text-2);font-family:var(--mono);white-space:nowrap;}
 
                 .jam-load-more{width:100%;padding:12px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-1);font-size:0.75rem;font-weight:600;cursor:pointer;text-align:center;margin-top:8px;transition:all 0.2s;}
                 .jam-load-more:hover{background:var(--bg-3);border-color:var(--accent-border);}
@@ -8136,6 +8136,7 @@ async function loadShippingPackages() {
                     <div>
                         <div style="font-weight:600;font-size:0.8rem;color:var(--text-0);">${pkg.package_name}</div>
                         <div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">${pkg.recipient || ''} · ${pkg.carrier || ''} · Ship by ${pkg.ship_by_date || '?'}</div>
+                        ${pkg.notes ? `<div style="font-size:1rem;color:var(--text-0);margin-top:6px;line-height:1.5;"><strong style="color:var(--orange);font-size:1.05rem;">Instructions:</strong> <span style="font-weight:600;">${pkg.notes.replace(/</g,'&lt;')}</span></div>` : ''}
                         <div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap;">${watchList}</div>
                     </div>
                     <div style="display:flex;gap:6px;align-items:center;">
@@ -9117,9 +9118,11 @@ function showWatchDetail(row) {
         </div>
         ${detailRows}
         ${marketGrid}
+        <div id="wd-invoice-section" style="margin-top:12px;display:none;"></div>
         <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn" onclick="lookupRef('${item.ref}');closeWatchDetail();" style="font-size:0.72rem;">Market Lookup</button>
             <button class="btn" onclick="showPage('inventory');closeWatchDetail();" style="font-size:0.72rem;">Full Inventory</button>
+            ${item.sold_to ? `<button class="btn" id="wd-inv-btn" onclick="viewWatchInvoice(${item.row})" style="font-size:0.72rem;background:var(--green);color:var(--bg-1);">Invoice</button>` : ''}
         </div>
     </div>`;
 
@@ -9129,6 +9132,24 @@ function showWatchDetail(row) {
 function closeWatchDetail() {
     const overlay = document.getElementById('watch-detail-overlay');
     if (overlay) overlay.remove();
+}
+
+async function viewWatchInvoice(row) {
+    const item = inventoryItems && inventoryItems.find(i => i.row === row);
+    if (!item) return;
+    try {
+        const r = await fetch(`/api/watches/${item.row}/invoices`);
+        const d = await r.json();
+        if (!d.ok || !d.invoices || !d.invoices.length) {
+            alert('No invoice found for this watch');
+            return;
+        }
+        // Open the PDF in a new tab
+        const inv = d.invoices[0];
+        window.open(`/api/watches/${item.row}/invoice-pdf`, '_blank');
+    } catch(e) {
+        alert('Error loading invoice: ' + e.message);
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -13082,7 +13103,7 @@ function renderJamFeed(type) {
         
         // Filter: logistics employees only see scheduled items
         const isLogistics = _userRole.role === 'logistics';
-        const visiblePending = isLogistics ? pending.filter(i => i.date && i.date !== '') : pending;
+        const visiblePending = isLogistics ? pending.filter(i => (i.date && i.date !== '') && i.ship_from !== 'external') : pending;
         
         if (visiblePending.length) {
             html += `<div style="padding:8px 4px;margin-bottom:4px;">
@@ -13105,13 +13126,15 @@ function renderJamFeed(type) {
                     renderedPkgs.add(item.package_id);
                     const pkgItems = visiblePending.filter(i => i.package_id === item.package_id);
                     const pkgLabelBtn = item.has_label && item.label_file
-                        ? '<button onclick="event.stopPropagation();window.open(\'/api/jam/label/' + item.label_file + '\',\'_blank\')" style="cursor:pointer;padding:4px 10px;border:none;border-radius:6px;background:var(--green);color:#000;font-weight:700;font-size:0.7rem;">VIEW LABEL</button>'
+                        ? '<button onclick="event.stopPropagation();window.open(\'/api/jam/label/' + item.label_file + '\',\'_blank\')" style="cursor:pointer;padding:8px 14px;border:none;border-radius:8px;background:var(--green);color:#000;font-weight:700;font-size:0.78rem;min-height:36px;">VIEW LABEL</button>'
                         : '';
+                    const pkgNotes = item.package_notes || '';
                     html += '<div style="border:2px solid var(--accent);border-radius:10px;padding:2px;margin:8px 0;">'
                         + '<div style="background:var(--accent-dim);padding:6px 12px;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:space-between;">'
                         + '<span style="font-size:0.75rem;font-weight:700;color:var(--accent);">' + (item.package_name || 'Package') + ' (' + pkgItems.length + ' watches)</span>'
                         + pkgLabelBtn
-                        + '</div>';
+                        + '</div>'
+                        + (pkgNotes ? '<div style="padding:10px 14px;font-size:1rem;color:var(--text-0);background:var(--bg-1);border-bottom:1px solid var(--border);line-height:1.5;"><strong style="color:var(--orange);font-size:1.05rem;">Instructions:</strong> <span style="font-weight:600;">' + pkgNotes.replace(/</g,'&lt;') + '</span></div>' : '');
                     for (const pi of pkgItems) html += _jamCard(type, pi);
                     html += '</div>';
                 } else if (!item.package_id) {
@@ -13226,10 +13249,14 @@ function _jamCard(type, item) {
         if (isLocal) {
             pills += `<span class="jam-pill" style="border:1px solid var(--accent);background:var(--accent-dim);color:var(--accent);">LOCAL DELIVERY</span>`;
         }
+        // External shipment badge (hidden from logistics, visible to admin)
+        if (item.ship_from === 'external' && _userRole.role !== 'logistics') {
+            pills += `<span class="jam-pill" style="border:1px solid var(--orange);background:var(--orange);color:#000;font-weight:600;">EXTERNAL</span>`;
+        }
         
         if (item.has_label && item.label_file && !item.package_id) {
             // VIEW LABEL as separate prominent button — only for non-packaged items (packaged items show label at package level)
-            item._labelButton = `<button onclick="event.stopPropagation();window.open('/api/jam/label/${item.label_file}','_blank')" style="cursor:pointer;padding:6px 14px;border:none;border-radius:var(--radius);background:var(--green);color:#000;font-weight:700;font-size:0.75rem;white-space:nowrap;">${_t('viewLabel')}</button>`;
+            item._labelButton = `<button onclick="event.stopPropagation();window.open('/api/jam/label/${item.label_file}','_blank')" style="cursor:pointer;padding:8px 16px;border:none;border-radius:8px;background:var(--green);color:#000;font-weight:700;font-size:0.8rem;white-space:nowrap;min-height:36px;">${_t('viewLabel')}</button>`;
             if (_userRole.role !== 'logistics') {
                 pills += `<button class="jam-pill" onclick="event.stopPropagation();jamPrintLabel('${item.label_file}')" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);">PRINT</button>`;
             }
@@ -13247,6 +13274,9 @@ function _jamCard(type, item) {
                 pills += `<button class="jam-pill" onclick="event.stopPropagation();jamMarkShipped(${item.id})" style="cursor:pointer;border:1px solid var(--green);background:var(--green);color:#000;font-weight:600;">SHIP</button>`;
             }
             // Employee: both photos uploaded = auto-shipped by backend, no manual button
+        } else if (!isPending) {
+            // Shipped items: allow undo to move back to pending (all roles)
+            pills += `<button class="jam-pill" onclick="event.stopPropagation();jamUndoShipped(${item.id})" style="cursor:pointer;border:1px solid var(--red);background:transparent;color:var(--red);font-weight:600;">UNDO SHIP</button>`;
         }
         
         // Show delivery address for local deliveries
@@ -13256,43 +13286,46 @@ function _jamCard(type, item) {
             </div>`;
         }
         
-        // Shipping confirmation photos section
+        // Shipping confirmation photos section (only editable when pending/not shipped)
         const photos = item.ship_photos || [];
         const hasLabelPhoto = photos.some(p => p.type === 'label_photo');
         const hasWatchPhoto = photos.some(p => p.type === 'watch_photo');
         const labelPhotos = photos.filter(p => p.type === 'label_photo');
         const watchPhotos = photos.filter(p => p.type === 'watch_photo');
+        const canEditPhotos = isPending;
+        const boxPhotos = photos.filter(p => p.type === 'box_photo');
+        const receiptPhotos = photos.filter(p => p.type === 'receipt_photo');
+        const hasBoxPhoto = boxPhotos.length > 0;
+        const hasReceiptPhoto = receiptPhotos.length > 0;
+        
+        const _shipSlot = (has, list, type, label) => {
+            if (has) {
+                const p = list[list.length-1];
+                return `<div style="position:relative;width:90px;height:90px;">
+                    <div onclick="event.stopPropagation();window.open('/api/jam/ship-photo/${item.id}/${p.filename}','_blank')" style="cursor:pointer;width:90px;height:90px;border-radius:10px;overflow:hidden;border:2px solid var(--green);">
+                        <img src="/api/jam/ship-photo/${item.id}/${p.filename}" style="width:100%;height:100%;object-fit:cover;">
+                        <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);color:var(--green);font-size:0.55rem;text-align:center;padding:2px;">${label}</div>
+                    </div>
+                    ${canEditPhotos ? `<button onclick="event.stopPropagation();jamUploadShipPhoto(${item.id},'${type}')" style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:none;background:var(--orange);color:#000;font-size:0.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;z-index:1;" title="Replace photo">&#8635;</button>` : ''}
+                </div>`;
+            } else if (canEditPhotos) {
+                return `<div onclick="event.stopPropagation();jamUploadShipPhoto(${item.id},'${type}')" style="cursor:pointer;width:90px;height:90px;border-radius:10px;border:2px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <span style="font-size:0.65rem;color:var(--text-2);font-weight:600;">${label}</span>
+                    <span style="font-size:0.55rem;color:var(--text-3);">tap to add</span>
+                </div>`;
+            }
+            return '';
+        };
         
         let photoSection = '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">';
-        
-        // Label photo slot
-        if (hasLabelPhoto) {
-            const lp = labelPhotos[labelPhotos.length-1];
-            photoSection += `<div onclick="event.stopPropagation();window.open('/api/jam/ship-photo/${item.id}/${lp.filename}','_blank')" style="cursor:pointer;width:80px;height:80px;border-radius:8px;overflow:hidden;border:2px solid var(--green);position:relative;">
-                <img src="/api/jam/ship-photo/${item.id}/${lp.filename}" style="width:100%;height:100%;object-fit:cover;">
-                <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);color:var(--green);font-size:0.55rem;text-align:center;padding:2px;">LABEL</div>
-            </div>`;
+        photoSection += _shipSlot(hasWatchPhoto, watchPhotos, 'watch_photo', 'WATCH');
+        if (isLocal) {
+            photoSection += _shipSlot(hasReceiptPhoto, receiptPhotos, 'receipt_photo', 'RECIPIENT');
         } else {
-            photoSection += `<div onclick="event.stopPropagation();jamUploadShipPhoto(${item.id},'label_photo')" style="cursor:pointer;width:80px;height:80px;border-radius:8px;border:2px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border)'">
-                <span style="font-size:0.65rem;color:var(--text-2);font-weight:600;">${_t('labelPhoto')}</span>
-                <span style="font-size:0.55rem;color:var(--text-3);">${_t('addPhoto')}</span>
-            </div>`;
+            photoSection += _shipSlot(hasLabelPhoto, labelPhotos, 'label_photo', 'LABEL');
+            photoSection += _shipSlot(hasBoxPhoto, boxPhotos, 'box_photo', 'BOX');
+            photoSection += _shipSlot(hasReceiptPhoto, receiptPhotos, 'receipt_photo', 'RECEIPT');
         }
-        
-        // Watch photo slot
-        if (hasWatchPhoto) {
-            const wp = watchPhotos[watchPhotos.length-1];
-            photoSection += `<div onclick="event.stopPropagation();window.open('/api/jam/ship-photo/${item.id}/${wp.filename}','_blank')" style="cursor:pointer;width:80px;height:80px;border-radius:8px;overflow:hidden;border:2px solid var(--green);position:relative;">
-                <img src="/api/jam/ship-photo/${item.id}/${wp.filename}" style="width:100%;height:100%;object-fit:cover;">
-                <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);color:var(--green);font-size:0.55rem;text-align:center;padding:2px;">WATCH</div>
-            </div>`;
-        } else {
-            photoSection += `<div onclick="event.stopPropagation();jamUploadShipPhoto(${item.id},'watch_photo')" style="cursor:pointer;width:80px;height:80px;border-radius:8px;border:2px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border)'">
-                <span style="font-size:0.65rem;color:var(--text-2);font-weight:600;">${_t('watchPhoto')}</span>
-                <span style="font-size:0.55rem;color:var(--text-3);">${_t('addPhoto')}</span>
-            </div>`;
-        }
-        
         photoSection += '</div>';
         item._photoSection = photoSection;
     }
@@ -13599,6 +13632,25 @@ async function jamDoSchedule(watchId, date) {
         const data = await r.json();
         if (data.ok) loadJamFeed(_jamState.tab);
         else alert('Failed: ' + (data.error || 'unknown'));
+    } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function jamUndoShipped(watchId) {
+    if (!confirm('Undo shipment and move back to pending?')) return;
+    try {
+        const r = await fetch('/api/inventory/' + watchId + '/update', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({shipped: 'No'})
+        });
+        if (!r.ok) { alert('Server error: ' + r.status); return; }
+        const data = await r.json();
+        if (data.ok || data.success) {
+            alert('Shipment undone — moved back to pending');
+            loadJamFeed(_jamState.tab);
+        } else {
+            alert('Failed: ' + (data.error || JSON.stringify(data)));
+        }
     } catch(e) { alert('Error: ' + e.message); }
 }
 
