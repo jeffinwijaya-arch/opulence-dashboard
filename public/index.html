@@ -6442,10 +6442,10 @@ updateDevotion();
 setInterval(updateDevotion,60000);
 
 // ── INVENTORY MANAGEMENT ──
-let invMgmtData = [];
-let invMgmtLoaded = false;
-let invSortCol = 'description';
-let invSortAsc = true;
+var invMgmtData = [];
+var invMgmtLoaded = false;
+var invSortCol = 'description';
+var invSortAsc = true;
 
 async function loadInventoryPage() {
     const tbody = document.getElementById('im-tbody');
