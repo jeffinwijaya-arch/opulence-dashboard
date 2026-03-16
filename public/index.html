@@ -10222,7 +10222,6 @@ async function loadPayments() {
     }
 
     async function loadPostingsPage() {
-        setPostingsStatus('Loading...');
         try {
             const r = await fetch('/api/my-postings');
             const d = await r.json();
