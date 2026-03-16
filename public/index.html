@@ -13106,9 +13106,9 @@ function renderJamFeed(type) {
         const visiblePending = isLogistics ? pending.filter(i => i.ship_from !== 'foreign' && i.date && i.date !== '') : pending;
         
         if (visiblePending.length) {
-            html += `<div style="padding:8px 4px;margin-bottom:4px;">
-                <span style="font-size:0.85rem;font-weight:700;color:var(--orange);">${_t('toShip')}</span>
-                <span style="font-size:0.7rem;color:var(--text-2);margin-left:8px;">${visiblePending.length} ${_t('pending')}</span>
+            html += `<div style="padding:16px;margin-bottom:12px;background:var(--bg-2);border:2px solid var(--orange);border-radius:var(--radius-lg);text-align:center;">
+                <div style="font-size:2.2rem;font-weight:700;color:var(--orange);line-height:1.2;">${visiblePending.length}</div>
+                <div style="font-size:1rem;font-weight:600;color:var(--text-0);text-transform:uppercase;letter-spacing:1px;">${_t('pending')}</div>
             </div>`;
             // Group by package
             const renderedPkgs = new Set();
