@@ -12903,7 +12903,7 @@ const _jamLang = {
         langToggle: 'EN', operations: 'Operasi',
     }
 };
-let _jamCurLang = localStorage.getItem('jam_lang') || (window.__USER_ROLE && window.__USER_ROLE.role === 'logistics' ? 'id' : 'en');
+let _jamCurLang = (window.__USER_ROLE && window.__USER_ROLE.lang) ? window.__USER_ROLE.lang : (localStorage.getItem('jam_lang') || (window.__USER_ROLE && window.__USER_ROLE.role === 'logistics' ? 'id' : 'en'));
 function _t(key) { return (_jamLang[_jamCurLang] || _jamLang.en)[key] || _jamLang.en[key] || key; }
 function toggleJamLang() {
     _jamCurLang = _jamCurLang === 'en' ? 'id' : 'en';
