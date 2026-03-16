@@ -13127,6 +13127,7 @@ function renderJamFeed(type) {
             // Group by package
             const renderedPkgs = new Set();
             let lastDate = '';
+            let _logisticsPkgSeq = 0;
             for (const item of visiblePending) {
                 const d = item.date || 'Unscheduled';
                 if (isLogistics && (d === 'Unscheduled' || d === '')) continue;
@@ -13145,7 +13146,7 @@ function renderJamFeed(type) {
                     const pkgNotes = item.package_notes || '';
                     html += '<div style="border:2px solid var(--accent);border-radius:10px;padding:2px;margin:8px 0;">'
                         + '<div style="background:var(--accent-dim);padding:6px 12px;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:space-between;">'
-                        + '<span style="font-size:0.75rem;font-weight:700;color:var(--accent);">' + (item.package_name || 'Package') + ' (' + pkgItems.length + ' watches)</span>'
+                        + '<span style="font-size:0.75rem;font-weight:700;color:var(--accent);">' + (isLogistics ? 'Package ' + (++_logisticsPkgSeq) : (item.package_name || 'Package')) + ' (' + pkgItems.length + ' watches)</span>'
                         + pkgLabelBtn
                         + '</div>'
                         + (pkgNotes ? '<div style="padding:10px 14px;font-size:1rem;color:var(--text-0);background:var(--bg-1);border-bottom:1px solid var(--border);line-height:1.5;"><strong style="color:var(--orange);font-size:1.05rem;">Instructions:</strong> <span style="font-weight:600;">' + pkgNotes.replace(/</g,'&lt;') + '</span></div>' : '');
