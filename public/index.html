@@ -13069,7 +13069,7 @@ async function loadJamFeed(type, append = false) {
         renderJamFeed(type);
     } catch(e) {
         console.error('Jam feed:', e);
-        feed.innerHTML = '<div style="text-align:center;color:var(--red);padding:24px;">Failed to load feed</div>';
+        feed.innerHTML = '<div style="text-align:center;color:var(--red);padding:24px;">Failed to load feed<br><small style="color:var(--text-2);">' + (e.message||e) + '</small></div>';
     }
 }
 
@@ -13219,6 +13219,7 @@ function renderJamFeed(type) {
 }
 
 function _jamCard(type, item) {
+    const isLogistics = _userRole.role === 'logistics';
     const desc = item.description || '';
     // Extract ref from description (first 5-6 digit number with optional suffix)
     const refMatch = desc.match(/\b(\d{5,6}[A-Z]{0,6})\b/);
