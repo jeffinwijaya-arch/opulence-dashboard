@@ -2014,13 +2014,10 @@
                 <p>Watch photo library, documentation system, and serial-specific archives</p>
             </div>
 
-            <!-- View Tabs -->
-            <div class="tabs" style="margin-bottom:16px;">
-                <div class="tab active" id="photos-tab-library" onclick="switchPhotosTab('library',this)">Photo Library</div>
-                <div class="tab" id="photos-tab-documentation" onclick="switchPhotosTab('documentation',this)">Documentation</div>
-            </div>
+            <!-- Documentation Status Bar (loaded dynamically) -->
+            <div id="doc-status-bar" style="margin-bottom:16px;"></div>
 
-            <!-- Photo Library Panel -->
+            <!-- Photo Library Panel (always visible) -->
             <div id="photos-panel-library">
                 <!-- Photo Stats -->
                 <div class="metrics" id="photo-stats" style="margin-bottom:16px;">
@@ -2124,62 +2121,7 @@
             </div>
 
             <!-- Documentation Panel -->
-            <div id="photos-panel-documentation" style="display:none;">
-                <!-- Documentation Summary -->
-                <div class="metrics" id="doc-summary" style="margin-bottom:16px;">
-                    <div class="metric">
-                        <div class="label">Total Watches</div>
-                        <div class="val" id="doc-total-watches">—</div>
-                    </div>
-                    <div class="metric">
-                        <div class="label">SKUs</div>
-                        <div class="val" id="doc-total-skus">—</div>
-                    </div>
-                    <div class="metric">
-                        <div class="label">Photos</div>
-                        <div class="val" id="doc-total-photos">—</div>
-                    </div>
-                    <div class="metric">
-                        <div class="label">Coverage</div>
-                        <div class="val" id="doc-coverage">—</div>
-                    </div>
-                </div>
-
-                <!-- Documentation Controls -->
-                <div class="card" style="margin-bottom:16px;">
-                    <div class="card-head"><span>Actions</span></div>
-                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;padding:12px;">
-                        <button class="btn" onclick="documentAllInventory()" style="background:var(--accent);color:var(--bg-1);flex:1;min-width:140px;">
-                            Document All Inventory
-                        </button>
-                        <button class="btn" onclick="refreshDocumentationReport()" style="background:var(--blue);color:var(--bg-1);flex:1;min-width:120px;">
-                            Refresh Report
-                        </button>
-                        <button class="btn" onclick="setupAutoDocumentation()" style="background:var(--green);color:var(--bg-1);flex:1;min-width:150px;">
-                            Setup Auto-Documentation
-                        </button>
-                        <div style="flex:1;"></div>
-                        <div style="font-size:0.7rem;color:var(--text-3);text-align:right;" id="doc-last-updated">
-                            Not loaded
-                        </div>
-                    </div>
-                </div>
-
-                <!-- SKU Browser -->
-                <div class="card">
-                    <div class="card-head"><span>Browse by Model</span></div>
-                    <div style="padding:12px;">
-                        <input class="input" id="sku-search" placeholder="Search models, serials, or SKUs..." 
-                               oninput="filterSkuBrowser()" style="width:100%;margin-bottom:16px;">
-                        <div id="sku-browser" style="max-height:600px;overflow-y:auto;">
-                            <div style="text-align:center;padding:40px;color:var(--text-2);">
-                                <div style="margin-bottom:8px;">Ready to load</div>
-                                <div style="font-size:0.8rem;color:var(--text-3);">Click "Refresh Report" to load documentation data</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- Documentation panel removed — merged into Photo Library -->
         </div>
 
         <!-- ═══ ALERTS ═══ -->
@@ -2845,7 +2787,7 @@ function showPage(name, pushState=true) {
     if (name === 'shipping') loadShippingPage();
     if (name === 'inventory') loadInventoryPage();
     if (name === 'payments') loadPayments();
-    if (name === 'photos') { loadPhotoLibrary(); loadDocumentationPage(); }
+    if (name === 'photos') { loadPhotoLibrary(); loadDocStatusBar(); }
 
     if (name === 'aging') loadAgingHeatmap();
     if (name === 'mission-control') loadMissionControl();
@@ -7361,13 +7303,66 @@ Next step: Integrate with your Bot Sheet update workflow`);
 // ── Photos Tab Switching ──
 let _photosCurrentTab = 'library';
 
+// Doc status bar — loads missing documentation summary into photo library page
+async function loadDocStatusBar() {
+    try {
+        const r = await fetch('/api/watch-documentation', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ action: 'get_report' })
+        });
+        const d = await r.json();
+        if (!d.success) return;
+
+        const missing = d.missing_docs || [];
+        const bar = document.getElementById('doc-status-bar');
+        if (!bar) return;
+
+        const noHero = missing.filter(w => !w.has_hero).length;
+        const noSerial = missing.filter(w => !w.has_serial).length;
+        const noCard = missing.filter(w => !w.has_card_date).length;
+        const coverage = d.coverage_pct || 0;
+        const coverageColor = coverage >= 80 ? 'var(--green)' : coverage >= 50 ? 'var(--orange)' : 'var(--red)';
+
+        if (missing.length === 0) {
+            bar.innerHTML = `<div style="background:var(--green-dim,rgba(16,185,129,0.1));border:1px solid var(--green);border-radius:8px;padding:10px 16px;display:flex;align-items:center;gap:8px;">
+                <span style="color:var(--green);font-weight:700;font-size:0.8rem;">All ${d.total_arrived} arrived watches fully documented</span>
+            </div>`;
+            return;
+        }
+
+        bar.innerHTML = `<div style="background:var(--bg-2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <span style="font-weight:700;font-size:0.8rem;color:var(--text-0);">Documentation Status</span>
+                <span style="font-size:0.72rem;color:${coverageColor};font-weight:600;">${coverage}% hero coverage</span>
+            </div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:0.72rem;">
+                <span style="color:var(--text-1);">Missing: <strong style="color:var(--red);">${noHero}</strong> hero pics · <strong style="color:var(--red);">${noSerial}</strong> serials · <strong style="color:var(--orange);">${noCard}</strong> card dates</span>
+            </div>
+            ${missing.length > 0 ? `<details style="margin-top:8px;">
+                <summary style="cursor:pointer;font-size:0.7rem;color:var(--text-2);user-select:none;">Show ${missing.length} incomplete watches</summary>
+                <div style="margin-top:6px;max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;">
+                    ${missing.map(w => {
+                        const badges = [];
+                        if (!w.has_hero) badges.push('<span style="background:var(--red);color:#000;padding:1px 4px;border-radius:3px;font-size:0.58rem;font-weight:600;">NO HERO</span>');
+                        if (!w.has_serial) badges.push('<span style="background:#f59e0b;color:#000;padding:1px 4px;border-radius:3px;font-size:0.58rem;font-weight:600;">NO SERIAL</span>');
+                        if (!w.has_card_date) badges.push('<span style="background:#f59e0b;color:#000;padding:1px 4px;border-radius:3px;font-size:0.58rem;font-weight:600;">NO DATE</span>');
+                        return `<div style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:0.65rem;">
+                            <span style="color:var(--text-2);min-width:30px;">#${w.id}</span>
+                            <span style="color:var(--text-0);flex:1;">${w.description}</span>
+                            <span style="display:flex;gap:2px;">${badges.join('')}</span>
+                        </div>`;
+                    }).join('')}
+                </div>
+            </details>` : ''}
+        </div>`;
+    } catch(e) {
+        console.warn('Doc status bar error:', e);
+    }
+}
+
 function switchPhotosTab(tab, el) {
-    if (_photosCurrentTab === tab) return;
-    _photosCurrentTab = tab;
-    document.querySelectorAll('#page-photos .tab').forEach(t => t.classList.remove('active'));
-    if (el) el.classList.add('active');
-    document.getElementById('photos-panel-library').style.display = tab === 'library' ? '' : 'none';
-    document.getElementById('photos-panel-documentation').style.display = tab === 'documentation' ? '' : 'none';
+    // Legacy — no longer needed but keep for safety
     
     // Load documentation data when switching to documentation tab
     if (tab === 'documentation') {
@@ -9423,6 +9418,13 @@ async function loadPayments() {
             // Determine if it's a grail piece
             const isGrail = ['126509', '126515LN'].includes(model);
             const grailBadge = isGrail ? '<div style="position:absolute;top:4px;right:4px;background:linear-gradient(45deg,#d4af37,#e8c84a);color:#000;padding:2px 6px;border-radius:3px;font-size:0.6rem;font-weight:700;">GRAIL</div>' : '';
+            const hasHero = watch.has_hero !== false;
+            const heroIndicator = hasHero 
+                ? '<span style="color:var(--green);font-size:0.58rem;font-weight:700;">HERO</span>' 
+                : '<span style="color:var(--red);font-size:0.58rem;font-weight:700;">NO HERO</span>';
+            const serialInfo = watch.serial 
+                ? `<span style="font-family:var(--mono);font-size:0.6rem;color:var(--text-2);">${watch.serial}</span>`
+                : '<span style="color:var(--red);font-size:0.58rem;font-weight:700;">NO SERIAL</span>';
             
             // Model badge color
             let modelColor = 'var(--text-2)';
@@ -9449,6 +9451,9 @@ async function loadPayments() {
                     <div style="padding:12px;">
                         <div style="font-weight:600;color:${modelColor};font-size:0.85rem;margin-bottom:4px;">${model}</div>
                         <div style="color:var(--text-1);font-size:0.75rem;margin-bottom:6px;">${dial} ${bracelet}</div>
+                        <div style="display:flex;gap:4px;align-items:center;margin-bottom:4px;">
+                            ${heroIndicator} ${serialInfo}
+                        </div>
                         <div style="display:flex;justify-content:space-between;align-items:center;">
                             <span style="font-size:0.65rem;color:var(--text-2);">${cardDate}</span>
                             <span style="font-size:0.65rem;color:var(--accent);cursor:pointer;" onclick="event.stopPropagation();copyPhotoInfo('${watch.watch_id}')">Copy Info</span>
