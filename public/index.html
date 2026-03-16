@@ -2531,6 +2531,16 @@
                     .chat-msg.assistant{align-self:flex-start;background:var(--bg-2);color:var(--text-0);border:1px solid var(--border);border-bottom-left-radius:4px;}
                     .chat-msg .chat-time{font-size:0.6rem;opacity:0.6;margin-top:4px;display:block;}
                     .chat-msg.assistant .chat-time{color:var(--text-3);}
+                    .chat-thinking{margin-bottom:6px;border:1px solid rgba(139,92,246,0.25);border-radius:8px;overflow:hidden;}
+                    .chat-thinking-header{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(139,92,246,0.08);cursor:pointer;font-size:0.65rem;color:#a78bfa;font-weight:600;user-select:none;}
+                    .chat-thinking-header:hover{background:rgba(139,92,246,0.12);}
+                    .chat-thinking-body{display:none;padding:8px 10px;font-size:0.68rem;color:var(--text-2);line-height:1.5;max-height:200px;overflow-y:auto;border-top:1px solid rgba(139,92,246,0.15);white-space:pre-wrap;font-family:var(--mono);}
+                    .chat-thinking.open .chat-thinking-body{display:block;}
+                    .chat-thinking-arrow{transition:transform 0.2s;font-size:0.5rem;}
+                    .chat-thinking.open .chat-thinking-arrow{transform:rotate(90deg);}
+                    .chat-tool{display:flex;align-items:center;gap:6px;padding:4px 8px;margin-bottom:4px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:6px;font-size:0.65rem;color:#60a5fa;font-family:var(--mono);}
+                    .chat-tool-name{font-weight:600;}
+                    .chat-tool-args{color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:250px;}
                     .chat-input-bar{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border);background:var(--bg-2);}
                     .chat-input{flex:1;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:0.78rem;color:var(--text-0);font-family:inherit;resize:none;outline:none;min-height:20px;max-height:120px;}
                     .chat-input:focus{border-color:var(--accent);touch-action:manipulation;}
@@ -13681,7 +13691,7 @@ async function loadChatHistory() {
                 const msgId = m.iso || (m.role + '_' + m.ts);
                 if (!_chatLoadedIds.has(msgId)) {
                     _chatLoadedIds.add(msgId);
-                    appendChatMsg(m.role, m.text, m.ts);
+                    appendChatMsg(m.role, m.text, m.ts, {thinking: m.thinking, tools: m.tools});
                 }
                 if (m.iso && m.iso > _chatLastTs) _chatLastTs = m.iso;
             });
@@ -13700,7 +13710,7 @@ async function pollChatMessages() {
                 const msgId = m.iso || (m.role + '_' + m.ts);
                 if (!_chatLoadedIds.has(msgId)) {
                     _chatLoadedIds.add(msgId);
-                    appendChatMsg(m.role, m.text, m.ts);
+                    appendChatMsg(m.role, m.text, m.ts, {thinking: m.thinking, tools: m.tools});
                 }
                 if (m.iso && m.iso > _chatLastTs) _chatLastTs = m.iso;
             });
@@ -13708,7 +13718,7 @@ async function pollChatMessages() {
     } catch(e) {}
 }
 
-function appendChatMsg(role, text, ts) {
+function appendChatMsg(role, text, ts, extras) {
     const el = document.getElementById('chat-messages');
     const welcome = el.querySelector('.chat-welcome');
     if (welcome) welcome.remove();
@@ -13717,10 +13727,41 @@ function appendChatMsg(role, text, ts) {
     const div = document.createElement('div');
     div.className = 'chat-msg ' + role;
     const time = ts ? new Date(ts * 1000).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
-    div.innerHTML = _escHtml(text) + (time ? '<span class="chat-time">' + time + '</span>' : '');
+    
+    let html = '';
+    
+    // Thinking block (collapsible)
+    if (extras && extras.thinking) {
+        const thinkId = 'think-' + Math.random().toString(36).slice(2,8);
+        html += `<div class="chat-thinking" id="${thinkId}">
+            <div class="chat-thinking-header" onclick="this.parentElement.classList.toggle('open')">
+                <span class="chat-thinking-arrow">&#9654;</span> Reasoning
+                <span style="font-weight:400;opacity:0.6;">${extras.thinking.length} chars</span>
+            </div>
+            <div class="chat-thinking-body">${_escHtml(extras.thinking)}</div>
+        </div>`;
+    }
+    
+    // Tool calls
+    if (extras && extras.tools && extras.tools.length) {
+        extras.tools.forEach(t => {
+            html += `<div class="chat-tool">
+                <span style="opacity:0.5;">&#9881;</span>
+                <span class="chat-tool-name">${_escHtml(t.name)}</span>
+                <span class="chat-tool-args">${_escHtml(t.args || '')}</span>
+            </div>`;
+        });
+    }
+    
+    // Text content
+    if (text && text.trim()) {
+        html += _escHtml(text);
+    }
+    
+    html += (time ? '<span class="chat-time">' + time + '</span>' : '');
+    div.innerHTML = html;
     el.appendChild(div);
     el.scrollTop = el.scrollHeight;
-    // Restore focus if user was typing
     if (wasFocused) setTimeout(() => document.getElementById('chat-input')?.focus(), 50);
 }
 
