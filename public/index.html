@@ -972,7 +972,7 @@
             <a data-page="lookup" onclick="showPage('lookup')">Prices</a>
             <a data-page="portfolio" onclick="showPage('portfolio')">Portfolio</a>
             <a data-page="deals" onclick="showPage('deals')">Deals <span class="badge" id="deals-count">0</span></a>
-            <a data-page="browse" onclick="showPage('browse')">Market</a>
+            <!-- Market tab removed — Price Intelligence covers it -->
             <a data-page="invoices" onclick="showPage('invoices')">Invoices</a>
             <a data-page="shipping" onclick="showPage('shipping')">Shipping</a>
             <a data-page="inventory" onclick="showPage('inventory')">Inventory</a>
@@ -1036,7 +1036,7 @@
             <a class="more-grid-item" onclick="mobileNav('payments')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>Payments</a>
             <a class="more-grid-item" onclick="mobileNav('postings')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></span>Postings</a>
             <a class="more-grid-item" onclick="mobileNav('photos')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></span>Photos</a>
-            <a class="more-grid-item" onclick="mobileNav('browse')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></span>Market</a>
+            <!-- Market mobile nav removed -->
 
             <a class="more-grid-item" onclick="mobileNav('aging')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>Aging</a>
             <a class="more-grid-item" onclick="mobileNav('briefing')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></span>Briefing</a>
@@ -2800,7 +2800,7 @@ let browseOffset = 0;
 const BROWSE_PAGE = 80;
 let currentDealsRegion = 'all';
 
-const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals & Arbitrage',browse:'Market',invoices:'Invoices',shipping:'Shipping',inventory:'Inventory',payments:'Payments',photos:'Photos','mission-control':'Mission Control'};
+const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals & Arbitrage',invoices:'Invoices',shipping:'Shipping',inventory:'Inventory',payments:'Payments',photos:'Photos','mission-control':'Mission Control'};
 
 function toggleMobileMore() {
     const m = document.getElementById('mobile-more-menu');
