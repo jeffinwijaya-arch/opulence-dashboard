@@ -13233,6 +13233,7 @@ function _jamCard(type, item) {
     } else if (type === 'keluar') {
         const toName = (item.to || '').split('\n')[0];
         const parts = [];
+        if (item.package_num) parts.push(`<span style="font-weight:700;color:var(--accent);">Pkg #${item.package_num}</span>`);
         if (toName) parts.push(`<span>To:</span> ${toName}`);
         if (item.sold_price) parts.push(`<span>Price:</span> ${_jamFmt(item.sold_price)}`);
         detailLine = parts.join('  •  ');
