@@ -13656,10 +13656,16 @@ function jamUploadShipPhoto(watchId, photoType) {
 let _termInterval = null;
 // ─── Mochie Chat ────────────────────────────────────────────────
 let _chatSending = false;
+let _chatLastTs = '';
+let _chatPollInterval = null;
+let _chatLoadedIds = new Set();
 
 function startTerminal() {
-    // Load chat history on tab open
     loadChatHistory();
+    // Poll for new messages every 3s (catches Telegram messages)
+    if (!_chatPollInterval) {
+        _chatPollInterval = setInterval(pollChatMessages, 3000);
+    }
 }
 
 async function loadChatHistory() {
@@ -13670,9 +13676,36 @@ async function loadChatHistory() {
         if (data.messages && data.messages.length) {
             const el = document.getElementById('chat-messages');
             el.innerHTML = '';
-            data.messages.forEach(m => appendChatMsg(m.role, m.text, m.ts));
+            _chatLoadedIds.clear();
+            data.messages.forEach(m => {
+                const msgId = m.iso || (m.role + '_' + m.ts);
+                if (!_chatLoadedIds.has(msgId)) {
+                    _chatLoadedIds.add(msgId);
+                    appendChatMsg(m.role, m.text, m.ts);
+                }
+                if (m.iso && m.iso > _chatLastTs) _chatLastTs = m.iso;
+            });
         }
     } catch(e) { console.error('Chat history:', e); }
+}
+
+async function pollChatMessages() {
+    if (!_chatLastTs || _chatSending) return;
+    try {
+        const r = await fetch('/api/chat/history?limit=10&after=' + encodeURIComponent(_chatLastTs));
+        if (!r.ok) return;
+        const data = await r.json();
+        if (data.messages && data.messages.length) {
+            data.messages.forEach(m => {
+                const msgId = m.iso || (m.role + '_' + m.ts);
+                if (!_chatLoadedIds.has(msgId)) {
+                    _chatLoadedIds.add(msgId);
+                    appendChatMsg(m.role, m.text, m.ts);
+                }
+                if (m.iso && m.iso > _chatLastTs) _chatLastTs = m.iso;
+            });
+        }
+    } catch(e) {}
 }
 
 function appendChatMsg(role, text, ts) {
