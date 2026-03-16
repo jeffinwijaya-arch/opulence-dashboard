@@ -13103,16 +13103,7 @@ function renderJamFeed(type) {
         
         // Filter: logistics employees only see scheduled items
         const isLogistics = _userRole.role === 'logistics';
-        const visiblePending = isLogistics ? pending.filter(i => {
-            if (i.ship_from === 'foreign') return false;
-            if (!i.date || i.date === '') return false;
-            // Only show today + tomorrow for logistics
-            const d = new Date(i.date + 'T00:00:00');
-            const now = new Date();
-            const tomorrow = new Date(now);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            return d <= tomorrow;
-        }) : pending;
+        const visiblePending = isLogistics ? pending.filter(i => i.ship_from !== 'foreign' && i.date && i.date !== '') : pending;
         
         if (visiblePending.length) {
             html += `<div style="padding:8px 4px;margin-bottom:4px;">
@@ -13153,12 +13144,15 @@ function renderJamFeed(type) {
         }
         
         if (shipped.length) {
+            // Logistics: only show last 2 days of shipped history
+            const twoDaysAgo = _localDate(-2);
+            const visibleShipped = isLogistics ? shipped.filter(i => (i.date || '') >= twoDaysAgo) : shipped;
             html += `<div style="padding:8px 4px;margin-top:${pending.length?'24px':'0'};margin-bottom:4px;">
                 <span style="font-size:0.85rem;font-weight:700;color:var(--green);">${_t('shipped')}</span>
-                <span style="font-size:0.7rem;color:var(--text-2);margin-left:8px;">${shipped.length} ${_t('completed')}</span>
+                <span style="font-size:0.7rem;color:var(--text-2);margin-left:8px;">${visibleShipped.length} ${_t('completed')}</span>
             </div>`;
             let lastDate = '';
-            for (const item of shipped) {
+            for (const item of visibleShipped) {
                 const d = item.date || 'Unknown';
                 if (d !== lastDate) {
                     html += _dateHeader(d, 'var(--green)');
