@@ -1,6 +1,16 @@
 {
   "articles": [
     {
+      "id": "634f49f00ebe",
+      "title": "First Look \u2013 The Final Editions of the Greubel Forsey Balancier Convexe S\u00b2 now in White or Black Ceramic",
+      "link": "https://monochrome-watches.com/greubel-forsey-balancier-convexe-s2-white-and-black-ceramic-final-editions-review/",
+      "desc": "Within Greubel Forsey\u2018s modern catalogue, the Convexe collection has become one of the brand\u2019s most recognisable showcases of its approach to watchmaking. Revealed in 2019, the Convexe case introduced",
+      "date": "2026-03-17T17:00:39+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/Greubel-Forsey-Balancier-Convexe-S2-White-Ceramic-Black-Ceramic-Final-Editions-review-5-600x237.jpg",
+      "relevance": 0
+    },
+    {
       "id": "19a12b8cd797",
       "title": "Introducing \u2013 Dominique Renaud Launches New Brand and Presents the One-Hertz-Beating Pulse60 Watch",
       "link": "https://monochrome-watches.com/haute-horlogerie-dominique-renaud-hhdr-new-brand-first-watch-pulse60-one-hertz-movement-introducing-price/",
@@ -18,6 +28,16 @@
       "date": "2026-03-17T13:00:24+00:00",
       "source": "REVOLUTION",
       "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "dc965189d477",
+      "title": "Hands-On: The De Rijke & Co. Capri Is A Unique Take On The Rectangular Dress Watch",
+      "link": "https://www.hodinkee.com/articles/the-de-rijke-and-co-capri-is-a-unique-take-on-the-rectangular-dress-watch",
+      "desc": "A big pivot for the Dutch brand, the Capri offers a distinct design full of interesting details, making it a dressy yet playful watch.",
+      "date": "2026-03-17T13:00:00-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/efbb99b1-4e5d-4620-a7bb-524b71ca7eb7/tan2h-derijkecapri-aventurine-08539-header.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
       "relevance": 0
     },
     {
@@ -261,16 +281,6 @@
       "relevance": 0
     },
     {
-      "id": "8e83d06ba744",
-      "title": "Hands-on \u2013 Coachbuilder Meets Watchmaker on the Chopard Zagato Lab One Concept",
-      "link": "https://monochrome-watches.com/review-chopard-zagato-lab-one-concept-coachbuilder-meets-watchmaker/",
-      "desc": "Initial reactions to Chopard\u2019s Zagato Lab One Concept were anything but neutral. Far removed from Chopard\u2019s more conventional Mille Miglia racing-themed watches, this avant-garde concept car on the wr",
-      "date": "2026-03-13T17:30:38+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/Chopard-Zagato-Lab-One-Concept-Tourbillon-review-8-600x237.jpg",
-      "relevance": 0
-    },
-    {
       "id": "1488e727ad37",
       "title": "Hands-On: The Citizen Eco-Drive Promaster Land GMT",
       "link": "https://www.hodinkee.com/articles/hands-on-citizen-eco-drive-land-gmt",
@@ -341,16 +351,6 @@
       "relevance": 0
     },
     {
-      "id": "068526a6b9c1",
-      "title": "Hands-On: The Daniel Roth Extra Plat Skeleton",
-      "link": "https://www.hodinkee.com/articles/hands-on-daniel-roth-extra-plat-skeleton-rose",
-      "desc": "Less is a lot more for Daniel Roth.",
-      "date": "2026-03-12T11:00:00-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/df58199f-8afb-41eb-8991-dff3b3ad0a84/20260305_DanielRothExtraPlat_051.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
-    },
-    {
       "id": "01e0cc99a1c6",
       "title": "The Time to Watches Village",
       "link": "https://revolutionwatch.com/the-time-to-watches-village/",
@@ -361,7 +361,7 @@
       "relevance": 0
     }
   ],
-  "fetched_at": "2026-03-17T16:00:04.354858+00:00",
+  "fetched_at": "2026-03-17T19:00:04.070880+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
