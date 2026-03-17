@@ -8113,7 +8113,7 @@ async function loadShippingPackages() {
         // Find or create container
         let container = document.getElementById('shipping-packages');
         if (!container) {
-            const shipContent = document.querySelector('[data-page="shipping"]');
+            const shipContent = document.getElementById('page-shipping');
             if (!shipContent) return;
             container = document.createElement('div');
             container.id = 'shipping-packages';

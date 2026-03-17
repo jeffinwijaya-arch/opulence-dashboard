@@ -1,6 +1,36 @@
 {
   "articles": [
     {
+      "id": "bd111d4e26c8",
+      "title": "L\u2019Ep\u00e9e 1839\u2019s Objects Of Desire",
+      "link": "https://revolutionwatch.com/lepee-1839s-objects-of-desire/",
+      "desc": "The post L\u2019Ep\u00e9e 1839\u2019s Objects Of Desire appeared first on Revolution Watch.",
+      "date": "2026-03-17T01:00:21+00:00",
+      "source": "REVOLUTION",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "a61f8a9408ee",
+      "title": "Introducing \u2013 The Marco Lang Seven Spheres, with Seven-Axis Central Tourbillon",
+      "link": "https://monochrome-watches.com/marco-lang-seven-spheres-with-seven-axis-central-tourbillon-watch-introducing-price/",
+      "desc": "The name Marco Lang should be familiar to the most seasoned of our readers, for an obvious reason. The man is one of the most revered German watchmakers and one of the founders of the brand Lang & Hey",
+      "date": "2026-03-16T18:00:14+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/Marco-Lang-Seven-Spheres-Multi-Axis-Tourbillon-1-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "0280e4d7d111",
+      "title": "Photo Report: British Watchmakers Day 2026",
+      "link": "https://www.hodinkee.com/articles/british-watchmakers-day-2026",
+      "desc": "A sold-out celebration of British watchmaking with special editions and serious wrist spotting on display. Afternoon tea and biscuits not included.",
+      "date": "2026-03-16T15:00:00-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/4ba372a4-c874-4eec-b1c1-b9819595fe29/cw-3.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "relevance": 0
+    },
+    {
       "id": "04a822525d0b",
       "title": "First Look \u2013 The Doxa SUB 200 Grande Roma Edition",
       "link": "https://monochrome-watches.com/doxa-sub-200-grande-roma-edition-gioielleria-grande-black-gradient-dial-review-price/",
@@ -8,6 +38,16 @@
       "date": "2026-03-16T13:00:57+00:00",
       "source": "MONOCHROME",
       "image": "https://monochrome-watches.com/app/uploads/2026/03/Doxa-SUB-200-Grande-Roma-Edition-review-6-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "f10ca4382431",
+      "title": "Introducing: Merci Instruments Launches Six New Versions of its Geometric 'Beaumarchais'",
+      "link": "https://www.hodinkee.com/articles/intro-merci-new-beaumarchais-watch-collection",
+      "desc": "The 1970s-inspired case design returns in a larger collection for the brand.",
+      "date": "2026-03-16T13:00:00-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/f4b62347-936f-4119-8cf1-0172e2e6f077/CopiedeMERCISHOOT-4.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
       "relevance": 0
     },
     {
@@ -261,16 +301,6 @@
       "relevance": 0
     },
     {
-      "id": "896eeb4c04a4",
-      "title": "Industry News \u2013 B\u00e9atrice Goasglas Appointed CEO of Tag Heuer",
-      "link": "https://monochrome-watches.com/news-beatrice-goasglas-appointed-ceo-of-tag-heuer/",
-      "desc": "Following the sudden and surprising departure of Antoine Pin in January, after being at the head of TAG Heuer for just over a year, the Swiss watchmaker owned by French luxury powerhouse LVMH has just",
-      "date": "2026-03-12T17:53:55+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/Beatrice-Goasglas-new-CEO-of-Tag-Heuer-May-2026-600x237.jpg",
-      "relevance": 0
-    },
-    {
       "id": "70cd980e6664",
       "title": "Business News: TAG Heuer Names B\u00e9atrice Goasglas, Current Head Of The Americas, As New CEO",
       "link": "https://www.hodinkee.com/articles/tag-heuer-names-beatrice-goasglas-current-head-of-the-americas-as-new-ceo",
@@ -321,16 +351,6 @@
       "relevance": 0
     },
     {
-      "id": "52b73cc57dc8",
-      "title": "Sean Lim, Inside a $5 Million Watch Vault | The Collector\u2019s Perspective",
-      "link": "https://revolutionwatch.com/sean-lim-inside-a-5-million-watch-vault-the-collectors-perspective/",
-      "desc": "The post Sean Lim, Inside a $5 Million Watch Vault | The Collector\u2019s Perspective appeared first on Revolution Watch.",
-      "date": "2026-03-12T03:47:39+00:00",
-      "source": "REVOLUTION",
-      "image": "",
-      "relevance": 10
-    },
-    {
       "id": "54f87b35dfe8",
       "title": "Shohei Ohtani Joins Grand Seiko As A Global Ambassador",
       "link": "https://www.hodinkee.com/articles/shohei-ohtani-joins-grand-seiko-as-a-global-ambassador",
@@ -339,29 +359,9 @@
       "source": "HODINKEE",
       "image": "https://hodinkee.imgix.net/uploads/images/8bef424b-b7c7-4218-8df3-ba70ce703bcc/shohei-otani-grand-seiko.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
       "relevance": 0
-    },
-    {
-      "id": "1b8478450ad7",
-      "title": "The Business of Watches Podcast: Greubel Forsey CEO Michel Nydegger",
-      "link": "https://www.hodinkee.com/articles/greubel-forsey-ceo-michel-nydegger",
-      "desc": "The CEO of Greubel Forsey discusses what's next for the ultra-high-end watchmaker after the departure of one of its founders from the board.",
-      "date": "2026-03-11T11:00:00-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/7b37261e-6a5f-4a3c-81b8-11e9a78a19f6/BusinessOfWatches_Ep007_Article-Hero1.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
-    },
-    {
-      "id": "8c7cff060fd8",
-      "title": "Hands-On: The Louis Vuitton Escale Minute Repeater",
-      "link": "https://www.hodinkee.com/articles/the-louis-vuitton-escale-minute-repeater",
-      "desc": "Over-the-top watchmaking meets a design full of character for a showcase of the brand at its best.",
-      "date": "2026-03-11T09:00:00-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/98c3abfc-0030-4739-b5e5-85eb9e6e7058/tan2h-lv-escale-minute-repeater-00500-header.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
     }
   ],
-  "fetched_at": "2026-03-16T16:33:13.830558+00:00",
+  "fetched_at": "2026-03-17T04:33:15.243493+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
