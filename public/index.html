@@ -5455,7 +5455,9 @@ function loadMoreBrowse(){renderBrowse(true);}
 
 // ── KEYBOARD ──
 document.addEventListener('keydown',e=>{
-    if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;
+    if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT'||e.target.tagName==='TEXTAREA')return;
+    // Don't fire shortcuts when Mission Control terminal is active
+    if(e.target.closest && e.target.closest('#mc-terminal'))return;
     const map={'1':'dashboard','2':'lookup','3':'portfolio','4':'deals','5':'arbitrage','6':'browse'};
     if(map[e.key])showPage(map[e.key]);
     if(e.key==='/'||e.key==='s'){e.preventDefault();showPage('lookup');$('#ref-search').focus();}
