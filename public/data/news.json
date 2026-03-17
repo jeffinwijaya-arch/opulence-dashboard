@@ -1,8 +1,28 @@
 {
   "articles": [
     {
-      "id": "2338502a3521",
-      "title": "Hands-on \u2013 The new Tissot Visodate Collection, a Classic Redesigned",
+      "id": "19a12b8cd797",
+      "title": "Introducing \u2013 Dominique Renaud Launches New Brand and Presents the One-Hertz-Beating Pulse60 Watch",
+      "link": "https://monochrome-watches.com/haute-horlogerie-dominique-renaud-hhdr-new-brand-first-watch-pulse60-one-hertz-movement-introducing-price/",
+      "desc": "If high-frequency is often marketed as the pinnacle of precision in modern watchmaking, things are actually more nuanced and more about managing the inevitable trade-offs. Every gain in one area usual",
+      "date": "2026-03-17T14:01:05+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/Dominique-Renaud-Pulse60-one-hertz-watch-1-600x237.jpg",
+      "relevance": 10
+    },
+    {
+      "id": "005e81d3105b",
+      "title": "Graduation for the Greubel Forsey Balancier Convexe S2",
+      "link": "https://revolutionwatch.com/graduation-for-the-greubel-forsey-balancier-convexe-s2/",
+      "desc": "The post Graduation for the Greubel Forsey Balancier Convexe S2 appeared first on Revolution Watch.",
+      "date": "2026-03-17T13:00:24+00:00",
+      "source": "REVOLUTION",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "5618d051aa5f",
+      "title": "Hands-on \u2013 The New Tissot Visodate Collection, a Classic Redesigned",
       "link": "https://monochrome-watches.com/2026-tissot-visodate-collection-redesigned-powermatic-80-review-price/",
       "desc": "With over 170 years of history, you can easily imagine that Tissot has a few, if not many, important models in its portfolio. Next to watches such as the PR516 or the 1973 Chronograph, the brand has o",
       "date": "2026-03-17T11:01:21+00:00",
@@ -21,6 +41,16 @@
       "relevance": 10
     },
     {
+      "id": "709c5c550887",
+      "title": "Introducing: Girard-Perregaux Minute Repeater Flying Bridges, Its First In-House Chiming Watch",
+      "link": "https://www.hodinkee.com/articles/intro-girard-perregaux-minute-repeater-flying-bridges",
+      "desc": "A highly technical release shows off the brand's full capabilities, fully skeletonized.",
+      "date": "2026-03-17T11:00:00-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/89a5119a-4191-4a9e-9cd9-34ea7d501b04/99840-52-2013-5CC_SDT_Minute-Repeater.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "relevance": 0
+    },
+    {
       "id": "e28c97c1c2dd",
       "title": "Fratello On Air: Does Price Transparency In The Vintage Watch Market Exist?",
       "link": "https://www.fratellowatches.com/fratello-on-air-does-price-transparency-in-the-vintage-watch-market-exist/",
@@ -31,8 +61,8 @@
       "relevance": 30
     },
     {
-      "id": "218df02d5003",
-      "title": "First Look \u2013 The new Yema Superman Titanium MoonTide CMM.11",
+      "id": "88c03aff8c9e",
+      "title": "First Look \u2013 The New Yema Superman Titanium MoonTide CMM.11",
       "link": "https://monochrome-watches.com/yema-superman-titanium-moontide-cmm-11-limited-edition-review-price/",
       "desc": "The Superman is easily the watch most people think of when Yema comes up in conversation. Introduced in the late 1960s, the French dive watch has been part of the brand\u2019s lineup ever since. Along the ",
       "date": "2026-03-17T08:00:44+00:00",
@@ -241,16 +271,6 @@
       "relevance": 0
     },
     {
-      "id": "55c6d32e47bf",
-      "title": "Introducing \u2013 Beaubleu and the Monnaie de Paris Join Forces to Strike the Dials of La Pi\u00e8ce 1 & 2",
-      "link": "https://monochrome-watches.com/beaubleu-and-the-french-monnaie-de-paris-join-forces-to-strike-the-dials-of-la-piece-1-2-introducing-price/",
-      "desc": "Beaubleu is a young, independent French brand founded in 2017 by automotive and luxury product designer Nicolas Ducoudert. Gaining attention for the circular, orbiting hands featured in the brand\u2019s co",
-      "date": "2026-03-13T13:01:35+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/Beaubleu-x-Monnaie-de-Paris-La-Piece-Collection-1-600x237.jpg",
-      "relevance": 0
-    },
-    {
       "id": "1488e727ad37",
       "title": "Hands-On: The Citizen Eco-Drive Promaster Land GMT",
       "link": "https://www.hodinkee.com/articles/hands-on-citizen-eco-drive-land-gmt",
@@ -339,29 +359,9 @@
       "source": "REVOLUTION",
       "image": "",
       "relevance": 0
-    },
-    {
-      "id": "4286d62446cb",
-      "title": "Introducing the Girard-Perregaux Minute Repeater Flying Bridges",
-      "link": "https://revolutionwatch.com/introducing-the-girard-perregaux-minute-repeater-flying-bridges/",
-      "desc": "The post Introducing the Girard-Perregaux Minute Repeater Flying Bridges appeared first on Revolution Watch.",
-      "date": "2026-03-12T09:00:53+00:00",
-      "source": "REVOLUTION",
-      "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "54f87b35dfe8",
-      "title": "Shohei Ohtani Joins Grand Seiko As A Global Ambassador",
-      "link": "https://www.hodinkee.com/articles/shohei-ohtani-joins-grand-seiko-as-a-global-ambassador",
-      "desc": "The Japanese baseball superstar is a rare global ambassador for Grand Seiko as the brand continues its international push.",
-      "date": "2026-03-11T23:00:00-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/8bef424b-b7c7-4218-8df3-ba70ce703bcc/shohei-otani-grand-seiko.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
     }
   ],
-  "fetched_at": "2026-03-17T13:00:03.954968+00:00",
+  "fetched_at": "2026-03-17T16:00:04.354858+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
