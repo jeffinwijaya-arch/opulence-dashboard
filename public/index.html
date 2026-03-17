@@ -13115,7 +13115,6 @@ function renderJamFeed(type) {
         const myUserId = _userRole.userId || null;
         const visiblePending = isLogistics ? pending.filter(i => {
             if (i.ship_from === 'foreign') return false;
-            if (!i.date || i.date === '') return false;
             // Logistics users only see their own assigned packages
             if (myUserId && i.assigned_shipper && i.assigned_shipper !== myUserId) return false;
             if (myUserId && !i.assigned_shipper) return false; // unassigned = don't show
