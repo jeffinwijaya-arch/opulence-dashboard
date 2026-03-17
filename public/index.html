@@ -13122,8 +13122,16 @@ function renderJamFeed(type) {
         }) : pending;
         
         if (visiblePending.length) {
+            // Count unique packages + unpackaged watches
+            const _pkgIds = new Set();
+            let _looseCount = 0;
+            for (const i of visiblePending) {
+                if (i.package_id) _pkgIds.add(i.package_id);
+                else _looseCount++;
+            }
+            const _packageCount = _pkgIds.size + _looseCount;
             html += `<div style="padding:16px;margin-bottom:12px;background:var(--bg-2);border:2px solid var(--orange);border-radius:var(--radius-lg);text-align:center;">
-                <div style="font-size:2.2rem;font-weight:700;color:var(--orange);line-height:1.2;">${visiblePending.length}</div>
+                <div style="font-size:2.2rem;font-weight:700;color:var(--orange);line-height:1.2;">${_packageCount}</div>
                 <div style="font-size:1rem;font-weight:600;color:var(--text-0);text-transform:uppercase;letter-spacing:1px;">${_t('pending')}</div>
             </div>`;
             // Group by package
