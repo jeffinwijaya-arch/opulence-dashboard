@@ -1971,6 +1971,14 @@
                 <p>Track receivables, payables, and cash flow</p>
             </div>
             
+            <!-- Sub-tabs -->
+            <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--border);">
+                <div class="tab active" id="pay-subtab-main" onclick="switchPaySubtab('main',this)" style="padding:10px 20px;cursor:pointer;border-bottom:2px solid var(--accent);margin-bottom:-2px;font-weight:600;">Overview</div>
+                <div class="tab" id="pay-subtab-sin" onclick="switchPaySubtab('sin',this)" style="padding:10px 20px;cursor:pointer;margin-bottom:-2px;">Sin Jeff</div>
+            </div>
+            
+            <!-- Main Payments Content -->
+            <div id="pay-section-main">
             <!-- Cash Flow Summary -->
             <div class="metrics" id="payment-summary" style="margin-bottom:16px;">
                 <div class="metric">
@@ -2008,6 +2016,99 @@
                 <h3 style="margin:0 0 12px 0;">Collection Reminders</h3>
                 <div id="collection-reminders">Loading reminders...</div>
             </div>
+            </div><!-- /pay-section-main -->
+
+            <!-- Sin Jeff Cash Flow -->
+            <div id="pay-section-sin" style="display:none;">
+                <!-- Summary Cards -->
+                <div class="metrics" style="margin-bottom:16px;">
+                    <div class="metric">
+                        <div class="label">Cleared Balance</div>
+                        <div class="val green" id="sin-cleared">$0</div>
+                        <div class="sub" id="sin-cleared-label" style="font-size:0.65rem;color:var(--text-2);">Sin owes MK</div>
+                    </div>
+                    <div class="metric">
+                        <div class="label">Total Balance</div>
+                        <div class="val" id="sin-total">$0</div>
+                        <div class="sub" style="font-size:0.65rem;color:var(--text-2);">incl. pending</div>
+                    </div>
+                    <div class="metric">
+                        <div class="label">Pending Clearance</div>
+                        <div class="val accent" id="sin-pending">$0</div>
+                        <div class="sub" id="sin-uncleared" style="font-size:0.65rem;color:var(--text-2);">0 items</div>
+                    </div>
+                    <div class="metric">
+                        <div class="label">Unsold Watches</div>
+                        <div class="val" id="sin-unsold" style="color:var(--text-2);">0</div>
+                        <div class="sub" style="font-size:0.65rem;color:var(--text-2);">in inventory</div>
+                    </div>
+                </div>
+
+                <!-- Volume -->
+                <div class="card" style="margin-bottom:16px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:0.8rem;">
+                        <div><span style="color:var(--text-2);">Starting Balance:</span> <strong id="sin-starting">$0</strong></div>
+                        <div><span style="color:var(--text-2);">Total Outflows:</span> <strong style="color:var(--red);" id="sin-outflows-total">$0</strong></div>
+                        <div><span style="color:var(--text-2);">Total Inflows:</span> <strong style="color:var(--green);" id="sin-inflows-total">$0</strong></div>
+                    </div>
+                </div>
+
+                <!-- Category Breakdown -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                    <div class="card">
+                        <h3 style="margin:0 0 12px 0;color:var(--red);">Outflows by Category</h3>
+                        <div id="sin-out-cats"></div>
+                    </div>
+                    <div class="card">
+                        <h3 style="margin:0 0 12px 0;color:var(--green);">Inflows by Category</h3>
+                        <div id="sin-in-cats"></div>
+                    </div>
+                </div>
+
+                <!-- Monthly Breakdown -->
+                <div class="card" style="margin-bottom:16px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <h3 style="margin:0;">Monthly Breakdown</h3>
+                    </div>
+                    <div id="sin-monthly" style="overflow-x:auto;"></div>
+                </div>
+
+                <!-- Transactions -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                    <!-- Outflows -->
+                    <div class="card">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                            <h3 style="margin:0;color:var(--red);">Outflows — MK &gt; Sin</h3>
+                            <div style="display:flex;gap:6px;">
+                                <select id="sin-out-filter" onchange="filterSinTable('out')" style="background:var(--bg-3);color:var(--text-1);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:0.7rem;">
+                                    <option value="all">All</option>
+                                    <option value="watch">Watches</option>
+                                    <option value="wire">Wires</option>
+                                    <option value="crypto">Crypto</option>
+                                    <option value="expense">Expenses</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="sin-outflows" style="max-height:600px;overflow-y:auto;"></div>
+                    </div>
+                    <!-- Inflows -->
+                    <div class="card">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                            <h3 style="margin:0;color:var(--green);">Inflows — Sin &gt; MK</h3>
+                            <div style="display:flex;gap:6px;">
+                                <select id="sin-in-filter" onchange="filterSinTable('in')" style="background:var(--bg-3);color:var(--text-1);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:0.7rem;">
+                                    <option value="all">All</option>
+                                    <option value="watch">Watches</option>
+                                    <option value="wire">Wires</option>
+                                    <option value="crypto">Crypto/USDT</option>
+                                    <option value="cash">Cash</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="sin-inflows" style="max-height:600px;overflow-y:auto;"></div>
+                    </div>
+                </div>
+            </div><!-- /pay-section-sin -->
         </div>
 
         <!-- ═══ PHOTOS ═══ -->
@@ -6332,6 +6433,16 @@ function applyRoleRestrictions() {
         const mm = document.getElementById('mobile-more-menu');
         if (mm) mm.style.display = 'none';
     }
+    // Consignment role: auto-open Sin tab
+    if (_userRole.role === 'consignment') {
+        setTimeout(() => {
+            const mainSection = document.getElementById('pay-section-main');
+            const mainTab = document.getElementById('pay-subtab-main');
+            if (mainSection) mainSection.style.display = 'none';
+            if (mainTab) mainTab.style.display = 'none';
+            switchPaySubtab('sin', document.getElementById('pay-subtab-sin'));
+        }, 200);
+    }
     const defaultPage = ap[0] || 'jam';
     showPage(defaultPage);
 }
@@ -9199,6 +9310,114 @@ async function viewWatchInvoice(row) {
 // ═══════════════════════════════════════════════════════════════════════════════
 //  NEW FEATURE FUNCTIONS (global scope for showPage access)
 // ═══════════════════════════════════════════════════════════════════════════════
+
+// ── Payments Sub-tabs ──
+let _sinData = null;
+function switchPaySubtab(tab, el) {
+    document.getElementById('pay-section-main').style.display = tab === 'main' ? '' : 'none';
+    document.getElementById('pay-section-sin').style.display = tab === 'sin' ? '' : 'none';
+    document.querySelectorAll('#page-payments .tab').forEach(t => {
+        t.classList.remove('active');
+        t.style.borderBottom = '2px solid transparent';
+    });
+    if (el) { el.classList.add('active'); el.style.borderBottom = '2px solid var(--accent)'; }
+    if (tab === 'sin') loadSinCashflow();
+}
+
+// Auto-show Sin tab for consignment role
+if (window._userRole === 'consignment') {
+    setTimeout(() => {
+        document.getElementById('pay-section-main').style.display = 'none';
+        document.getElementById('pay-subtab-main').style.display = 'none';
+        switchPaySubtab('sin', document.getElementById('pay-subtab-sin'));
+    }, 100);
+}
+
+async function loadSinCashflow() {
+    try {
+        const r = await fetch('/api/payments/sin-cashflow');
+        const data = await r.json();
+        if (!data.ok) throw new Error(data.error || 'Failed');
+        _sinData = data;
+        
+        const b = data.balances;
+        document.getElementById('sin-cleared').textContent = fmt(b.cleared);
+        document.getElementById('sin-cleared').className = 'val ' + (b.cleared >= 0 ? 'green' : 'red');
+        document.getElementById('sin-cleared-label').textContent = b.cleared >= 0 ? 'Sin owes MK' : 'MK owes Sin';
+        document.getElementById('sin-total').textContent = fmt(b.total);
+        document.getElementById('sin-total').className = 'val ' + (b.total >= 0 ? 'green' : 'red');
+        document.getElementById('sin-pending').textContent = fmt(b.pending);
+        document.getElementById('sin-unsold').textContent = data.counts.unsold_watches;
+        document.getElementById('sin-uncleared').textContent = data.counts.uncleared + ' items';
+        document.getElementById('sin-starting').textContent = fmt(b.starting);
+        document.getElementById('sin-outflows-total').textContent = fmt(data.totals.outflows);
+        document.getElementById('sin-inflows-total').textContent = fmt(data.totals.inflows);
+        
+        // Category breakdowns
+        const catLabels = {watch:'Watches',wire:'Wires',crypto:'Crypto/USDT',expense:'Labels & Fees',profit:'Profit',cash:'Cash',adjustment:'Adjustments'};
+        const renderCats = (cats, el, color) => {
+            el.innerHTML = Object.entries(cats).sort((a,b) => Math.abs(b[1]) - Math.abs(a[1]))
+                .map(([k,v]) => `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:0.75rem;">
+                    <span>${catLabels[k] || k}</span>
+                    <span style="color:var(${color});font-family:var(--mono);">${fmt(v)}</span>
+                </div>`).join('');
+        };
+        renderCats(data.categories.outflows, document.getElementById('sin-out-cats'), '--red');
+        renderCats(data.categories.inflows, document.getElementById('sin-in-cats'), '--green');
+        
+        // Monthly
+        let mhtml = `<table style="width:100%;font-size:0.75rem;border-collapse:collapse;">
+            <tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:6px;">Month</th>
+            <th style="text-align:right;padding:6px;color:var(--red);">Outflows</th>
+            <th style="text-align:right;padding:6px;color:var(--green);">Inflows</th>
+            <th style="text-align:right;padding:6px;">Net</th></tr>`;
+        data.monthly.forEach((m, i) => {
+            const nc = m.net >= 0 ? 'var(--green)' : 'var(--red)';
+            mhtml += `<tr style="border-bottom:1px solid var(--border);${i%2?'background:var(--bg-3);':''}">
+                <td style="padding:5px 6px;">${m.month}</td>
+                <td style="text-align:right;padding:5px 6px;color:var(--red);font-family:var(--mono);">${fmt(m.outflows)}</td>
+                <td style="text-align:right;padding:5px 6px;color:var(--green);font-family:var(--mono);">${fmt(m.inflows)}</td>
+                <td style="text-align:right;padding:5px 6px;color:${nc};font-family:var(--mono);font-weight:600;">${fmt(m.net)}</td></tr>`;
+        });
+        mhtml += '</table>';
+        document.getElementById('sin-monthly').innerHTML = mhtml;
+        
+        // Transactions
+        renderSinTable('out');
+        renderSinTable('in');
+        
+    } catch (e) {
+        console.error('Sin cashflow error:', e);
+    }
+}
+
+function renderSinTable(side) {
+    const filter = document.getElementById(side === 'out' ? 'sin-out-filter' : 'sin-in-filter').value;
+    const items = side === 'out' ? _sinData.outflows : _sinData.inflows;
+    const filtered = filter === 'all' ? items : items.filter(i => i.category === filter);
+    const el = document.getElementById(side === 'out' ? 'sin-outflows' : 'sin-inflows');
+    
+    if (side === 'out') {
+        el.innerHTML = filtered.map((o, i) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.73rem;${i%2?'background:var(--bg-3);':''}">
+            <div style="flex:0 0 65px;color:var(--text-2);">${o.date}</div>
+            <div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 8px;">${o.description}</div>
+            <div style="flex:0 0 55px;text-align:center;"><span style="color:${o.status.toLowerCase()==='shipped'?'var(--green)':'var(--accent)'};font-size:0.65rem;">${o.status}</span></div>
+            <div style="flex:0 0 85px;text-align:right;font-family:var(--mono);color:${o.amount<0?'var(--green)':'var(--text-1)'};">${fmt(o.amount)}</div>
+        </div>`).join('');
+    } else {
+        el.innerHTML = filtered.map((inf, i) => {
+            const unsold = !inf.has_amount && inf.cost;
+            return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.73rem;${unsold?'background:rgba(200,169,81,0.1);':''}${i%2&&!unsold?'background:var(--bg-3);':''}">
+                <div style="flex:0 0 70px;color:var(--text-2);">${inf.date}</div>
+                <div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 8px;">${inf.description}</div>
+                <div style="flex:0 0 40px;text-align:center;">${inf.cleared.toLowerCase()==='yes'?'<span style="color:var(--green);">✓</span>':inf.cleared.toLowerCase()==='no'?'<span style="color:var(--red);">✗</span>':''}</div>
+                <div style="flex:0 0 85px;text-align:right;font-family:var(--mono);color:var(--green);">${inf.has_amount ? fmt(inf.amount) : (unsold ? '<span style="color:var(--accent);font-size:0.65rem;">unsold</span>' : '—')}</div>
+            </div>`;
+        }).join('');
+    }
+}
+
+function filterSinTable(side) { renderSinTable(side); }
 
 // ── Payments & Collections ──
 async function loadPayments() {
