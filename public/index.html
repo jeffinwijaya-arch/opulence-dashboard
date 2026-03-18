@@ -12203,8 +12203,8 @@ async function loadPayments() {
             if (visits.length) {
                 html += '<div style="max-height:300px;overflow-y:auto;">';
                 html += visits.map(v => {
-                    const isInbound = v.visit_type === 'inbound_imessage';
-                    const isOutbound = v.visit_type === 'outbound_imessage' || v.visit_type === 'followup_imessage';
+                    const isInbound = v.visit_type === 'inbound_imessage' || v.visit_type === 'inbound_gv' || v.visit_type.startsWith('inbound_');
+                    const isOutbound = v.visit_type === 'outbound_imessage' || v.visit_type === 'outbound_gv' || v.visit_type === 'followup_imessage' || v.visit_type.startsWith('outbound_') || v.visit_type === 'email_outreach';
                     const isVisit = v.visit_type === 'visit';
                     const isCall = v.visit_type === 'call';
                     const isReview = v.visit_type === 'google_review';
