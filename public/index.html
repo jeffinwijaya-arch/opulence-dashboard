@@ -3573,9 +3573,15 @@ function openPostingModal(item, photoCount) {
             <div style="color:var(--text-2);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Price Intelligence</div>
             <div style="color:var(--text-2);">Loading...</div>
         </div>
-        <div style="margin-bottom:10px;">
-            <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Asking Price</label>
-            <input id="posting-price" type="text" placeholder="e.g. 15000" style="width:100%;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);color:var(--text-0);padding:8px;font-family:var(--mono);font-size:0.82rem;margin-top:4px;" />
+        <div style="margin-bottom:10px;display:flex;gap:12px;align-items:flex-end;">
+            <div style="flex:1;">
+                <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Asking Price</label>
+                <input id="posting-price" type="text" placeholder="e.g. 15000" style="width:100%;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);color:var(--text-0);padding:8px;font-family:var(--mono);font-size:0.82rem;margin-top:4px;" />
+            </div>
+            <div style="padding-bottom:2px;">
+                <div style="font-size:0.6rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Cost</div>
+                <div style="font-family:var(--mono);font-size:0.82rem;color:var(--text-1);padding:8px 0;">${item.cost_price ? '$' + Number(item.cost_price).toLocaleString() : '—'}</div>
+            </div>
         </div>
         <div style="display:flex;gap:8px;justify-content:flex-end;">
             <button class="btn" onclick="document.getElementById('posting-modal').remove()" style="font-size:0.75rem;padding:6px 14px;">Cancel</button>
