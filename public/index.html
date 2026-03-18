@@ -9429,6 +9429,10 @@ async function loadSinCashflow() {
         mhtml += '</table>';
         document.getElementById('sin-monthly').innerHTML = mhtml;
         
+        // Reverse so newest (bottom of sheet) shows first
+        _sinData.outflows = data.outflows.slice().reverse();
+        _sinData.inflows = data.inflows.slice().reverse();
+        
         // Transactions
         renderSinTable('out');
         renderSinTable('in');
