@@ -12297,7 +12297,7 @@ async function loadPayments() {
         if (!contact) return;
         
         const modal = document.getElementById('crm-detail-content');
-        const phoneTypes = ['iMessage','Google Voice','Talkatone','Hushed','Nextline','TextMe','TextFree','Talku','2number','Burner','SMS'];
+        const phoneTypes = ['iMessage','Google Voice','Talkatone','Hushed','Nextline','TextMe','TextFree','Talku','2number','Burner','SMS','Email'];
         
         modal.innerHTML = `<div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
@@ -12317,7 +12317,9 @@ async function loadPayments() {
                     <input id="ec-phone-email" class="input" value="${contact.phone_email||''}" style="width:100%;font-size:0.8rem;padding:6px 8px;" placeholder="email@gmail.com"/></div>
                 <div><label style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Customer Name (your alias)</label>
                     <input id="ec-cust-name" class="input" value="${contact.customer_name||''}" style="width:100%;font-size:0.8rem;padding:6px 8px;"/></div>
-                <div><label style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Customer Email</label>
+                <div><label style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">SA Email</label>
+                    <input id="ec-sa-email" class="input" value="${contact.sa_email||''}" style="width:100%;font-size:0.8rem;padding:6px 8px;" placeholder="sa@store.com"/></div>
+                <div><label style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Customer Email (your identity)</label>
                     <input id="ec-cust-email" class="input" value="${contact.customer_email||''}" style="width:100%;font-size:0.8rem;padding:6px 8px;"/></div>
                 <div><label style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Customer Address</label>
                     <input id="ec-cust-addr" class="input" value="${contact.customer_address||''}" style="width:100%;font-size:0.8rem;padding:6px 8px;"/></div>
@@ -12342,6 +12344,7 @@ async function loadPayments() {
             phone_type: document.getElementById('ec-phone-type').value,
             phone_email: document.getElementById('ec-phone-email').value,
             customer_name: document.getElementById('ec-cust-name').value,
+            sa_email: document.getElementById('ec-sa-email')?.value || '',
             customer_email: document.getElementById('ec-cust-email').value,
             customer_address: document.getElementById('ec-cust-addr').value,
             special_dates: document.getElementById('ec-specials').value,
@@ -12380,7 +12383,7 @@ async function loadPayments() {
     
     async function addCrmContact(storeId) {
         const modal = document.getElementById('crm-detail-content');
-        const phoneTypes = ['iMessage','Google Voice','Talkatone','Hushed','Nextline','TextMe','TextFree','Talku','2number','Burner','SMS'];
+        const phoneTypes = ['iMessage','Google Voice','Talkatone','Hushed','Nextline','TextMe','TextFree','Talku','2number','Burner','SMS','Email'];
         
         modal.innerHTML = `<div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
@@ -12398,6 +12401,10 @@ async function loadPayments() {
                     </select></div>
                 <div><label style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Customer Name (your alias)</label>
                     <input id="ec-cust-name" class="input" style="width:100%;font-size:0.8rem;padding:6px 8px;"/></div>
+                <div><label style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">SA Email</label>
+                    <input id="ec-sa-email" class="input" style="width:100%;font-size:0.8rem;padding:6px 8px;" placeholder="sa@store.com"/></div>
+                <div><label style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Customer Email (your identity)</label>
+                    <input id="ec-cust-email" class="input" style="width:100%;font-size:0.8rem;padding:6px 8px;" placeholder="your-alias@gmail.com"/></div>
                 <div style="display:flex;gap:8px;margin-top:6px;">
                     <button class="btn" onclick="saveNewCrmContact(${storeId})" style="flex:1;background:var(--green);color:var(--bg-1);padding:8px;font-weight:600;">Save</button>
                     <button class="btn" onclick="showCrmStore(${storeId})" style="flex:1;padding:8px;opacity:0.7;">Cancel</button>
@@ -12415,6 +12422,8 @@ async function loadPayments() {
             phone: document.getElementById('ec-phone').value,
             phone_type: document.getElementById('ec-phone-type').value,
             customer_name: document.getElementById('ec-cust-name').value,
+            sa_email: document.getElementById('ec-sa-email')?.value || '',
+            customer_email: document.getElementById('ec-cust-email')?.value || '',
         };
         try {
             const r = await fetch('/api/ad-crm/add-contact', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
