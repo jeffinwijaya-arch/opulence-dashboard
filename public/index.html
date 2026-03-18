@@ -2188,6 +2188,7 @@
                     <input type="checkbox" id="crm-group-toggle" onchange="filterCrmStores()" style="accent-color:var(--accent);"> Group by Region
                 </label>
                 <button id="crm-expand-all-btn" class="btn" onclick="crmExpandCollapseAll()" style="font-size:0.6rem;padding:2px 8px;display:none;">Expand All</button>
+                <button id="crm-sync-btn" class="btn" onclick="crmSyncMessages()" style="font-size:0.62rem;padding:3px 8px;opacity:0.8;">⟳ Sync Messages</button>
                 <div style="flex:1;"></div>
                 <div id="crm-bulk-bar" style="display:none;align-items:center;gap:6px;">
                     <span id="crm-bulk-count" style="font-size:0.7rem;font-weight:600;color:var(--accent);"></span>
@@ -12095,6 +12096,23 @@ async function loadPayments() {
         filterCrmStores();
     }
     
+    async function crmSyncMessages() {
+        const btn = document.getElementById('crm-sync-btn');
+        btn.textContent = '⟳ Syncing...';
+        btn.disabled = true;
+        try {
+            const r = await fetch('/api/ad-crm/sync-messages', {method:'POST'}).then(r=>r.json());
+            if (r.ok) {
+                btn.textContent = `✓ ${r.new_visits} new`;
+                await loadAdCrm();
+                setTimeout(() => { btn.textContent = '⟳ Sync Messages'; btn.disabled = false; }, 3000);
+            } else {
+                btn.textContent = '✗ Error';
+                setTimeout(() => { btn.textContent = '⟳ Sync Messages'; btn.disabled = false; }, 3000);
+            }
+        } catch(e) { btn.textContent = '⟳ Sync Messages'; btn.disabled = false; alert(e.message); }
+    }
+
     async function crmBulkOutreach() {
         if (!_crmSelectedIds.size) return;
         if (!confirm(`Log outreach for ${_crmSelectedIds.size} stores?`)) return;
