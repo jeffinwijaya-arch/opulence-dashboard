@@ -2162,6 +2162,21 @@
                         <option value="ok">Up to Date</option>
                         <option value="never">Never Visited</option>
                     </select>
+                    <select id="crm-platform-filter" class="input" style="font-size:0.75rem;" onchange="filterCrmStores()">
+                        <option value="">All Platforms</option>
+                        <option value="iMessage">iMessage</option>
+                        <option value="Google Voice">Google Voice</option>
+                        <option value="Hushed">Hushed</option>
+                        <option value="Talkatone">Talkatone</option>
+                        <option value="TalkU">TalkU</option>
+                        <option value="2Number">2Number</option>
+                        <option value="Nextline">Nextline</option>
+                        <option value="TextNow">TextNow</option>
+                        <option value="TextMe">TextMe</option>
+                        <option value="TextFree">TextFree</option>
+                        <option value="Burner">Burner</option>
+                        <option value="Email">Email</option>
+                    </select>
                     <button class="btn" onclick="showAddStoreForm()" style="font-size:0.7rem;">+ Add Store</button>
                 </div>
             </div>
@@ -11881,6 +11896,7 @@ async function loadPayments() {
     function filterCrmStores() {
         const region = document.getElementById('crm-region-filter').value;
         const status = document.getElementById('crm-status-filter').value;
+        const platform = document.getElementById('crm-platform-filter')?.value || '';
         let stores = _crmStores;
         if (region) stores = stores.filter(s=>s.region === region);
         // Always hide deactivated from main list (they appear in bottom section)
@@ -11888,6 +11904,7 @@ async function loadPayments() {
         if (status === 'overdue') stores = stores.filter(s=>s.is_overdue && s.last_visit);
         else if (status === 'ok') stores = stores.filter(s=>!s.is_overdue && s.last_visit);
         else if (status === 'never') stores = stores.filter(s=>!s.last_visit);
+        if (platform) stores = stores.filter(s=>(s.contacts||[]).some(c=>c.phone_type===platform));
         
         // Group by region
         const grouped = {};
