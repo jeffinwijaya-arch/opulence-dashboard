@@ -2030,8 +2030,8 @@
                         <div style="flex:0 0 auto;">
                             <label style="font-size:0.65rem;color:var(--text-2);display:block;margin-bottom:2px;">Side</label>
                             <select id="sin-add-side" onchange="sinAddSideChanged()" style="background:var(--bg-3);color:var(--text-1);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:0.8rem;">
-                                <option value="outflow">Outflow (MK → Sin)</option>
-                                <option value="inflow">Inflow (Sin → MK)</option>
+                                <option value="outflow">Sent to Sin</option>
+                                <option value="inflow">Received from Sin</option>
                             </select>
                         </div>
                         <div style="flex:0 0 auto;">
@@ -2099,19 +2099,19 @@
                 <!-- Volume -->
                 <div class="card" style="margin-bottom:16px;">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:0.8rem;">
-                        <div><span style="color:var(--text-2);">Total Outflows:</span> <strong style="color:var(--red);" id="sin-outflows-total">$0</strong></div>
-                        <div><span style="color:var(--text-2);">Total Inflows:</span> <strong style="color:var(--green);" id="sin-inflows-total">$0</strong></div>
+                        <div><span style="color:var(--text-2);">Total Sent:</span> <strong style="color:var(--red);" id="sin-outflows-total">$0</strong></div>
+                        <div><span style="color:var(--text-2);">Total Received:</span> <strong style="color:var(--green);" id="sin-inflows-total">$0</strong></div>
                     </div>
                 </div>
 
                 <!-- Category Breakdown -->
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                     <div class="card">
-                        <h3 style="margin:0 0 12px 0;color:var(--red);">Outflows by Category</h3>
+                        <h3 style="margin:0 0 12px 0;color:var(--red);">Sent to Sin by Category</h3>
                         <div id="sin-out-cats"></div>
                     </div>
                     <div class="card">
-                        <h3 style="margin:0 0 12px 0;color:var(--green);">Inflows by Category</h3>
+                        <h3 style="margin:0 0 12px 0;color:var(--green);">Received from Sin by Category</h3>
                         <div id="sin-in-cats"></div>
                     </div>
                 </div>
@@ -2129,7 +2129,7 @@
                     <!-- Outflows -->
                     <div class="card">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                            <h3 style="margin:0;color:var(--red);">Outflows — MK &gt; Sin</h3>
+                            <h3 style="margin:0;color:var(--red);">Sent to Sin</h3>
                             <div style="display:flex;gap:6px;">
                                 <select id="sin-out-filter" onchange="filterSinTable('out')" style="background:var(--bg-3);color:var(--text-1);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:0.7rem;">
                                     <option value="all">All</option>
@@ -2145,7 +2145,7 @@
                     <!-- Inflows -->
                     <div class="card">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                            <h3 style="margin:0;color:var(--green);">Inflows — Sin &gt; MK</h3>
+                            <h3 style="margin:0;color:var(--green);">Received from Sin</h3>
                             <div style="display:flex;gap:6px;">
                                 <select id="sin-in-filter" onchange="filterSinTable('in')" style="background:var(--bg-3);color:var(--text-1);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:0.7rem;">
                                     <option value="all">All</option>
@@ -9418,8 +9418,8 @@ async function loadSinCashflow() {
         // Monthly
         let mhtml = `<table style="width:100%;font-size:0.75rem;border-collapse:collapse;">
             <tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:6px;">Month</th>
-            <th style="text-align:right;padding:6px;color:var(--red);">Outflows</th>
-            <th style="text-align:right;padding:6px;color:var(--green);">Inflows</th></tr>`;
+            <th style="text-align:right;padding:6px;color:var(--red);">Sent</th>
+            <th style="text-align:right;padding:6px;color:var(--green);">Received</th></tr>`;
         data.monthly.forEach((m, i) => {
             mhtml += `<tr style="border-bottom:1px solid var(--border);${i%2?'background:var(--bg-3);':''}">
                 <td style="padding:5px 6px;">${m.month}</td>
