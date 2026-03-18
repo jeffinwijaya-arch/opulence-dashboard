@@ -1,6 +1,16 @@
 {
   "articles": [
     {
+      "id": "9c4fdd49c8d9",
+      "title": "ArtyA\u2019s Curvy Tourbillon Gets A Cosmic Twist In Moissanite",
+      "link": "https://www.fratellowatches.com/artyas-curvy-tourbillon-gets-a-cosmic-twist-in-moissanite/",
+      "desc": "One of the things I\u2019ve learned over the years is that ArtyA watches tend to reward the experience of seeing them in person. Photographs rarely tell us the full story. The brand\u2019s fascination with unus",
+      "date": "2026-03-17T23:01:51+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
       "id": "634f49f00ebe",
       "title": "First Look \u2013 The Final Editions of the Greubel Forsey Balancier Convexe S\u00b2 now in White or Black Ceramic",
       "link": "https://monochrome-watches.com/greubel-forsey-balancier-convexe-s2-white-and-black-ceramic-final-editions-review/",
@@ -271,16 +281,6 @@
       "relevance": 0
     },
     {
-      "id": "d08284452cc0",
-      "title": "Do You Know The Difference Between Openworked And Skeletonized Watches? You Should",
-      "link": "https://www.fratellowatches.com/the-difference-between-openworked-and-skeletonized-watches/",
-      "desc": "A watch brand that arguably creates some of the most spectacular watches with skeletonized movements gives these pieces the moniker \u201cOpenworked.\u201d However, this term also applies to watches with a cut-",
-      "date": "2026-03-14T06:00:41+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 0
-    },
-    {
       "id": "1488e727ad37",
       "title": "Hands-On: The Citizen Eco-Drive Promaster Land GMT",
       "link": "https://www.hodinkee.com/articles/hands-on-citizen-eco-drive-land-gmt",
@@ -361,7 +361,7 @@
       "relevance": 0
     }
   ],
-  "fetched_at": "2026-03-17T22:00:03.135127+00:00",
+  "fetched_at": "2026-03-18T01:00:03.375493+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
