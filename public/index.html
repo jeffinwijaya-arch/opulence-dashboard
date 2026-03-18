@@ -12237,7 +12237,10 @@ async function loadPayments() {
         try {
             const r = await fetch('/api/ad-crm/toggle-active', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({store_id: storeId, is_active: newValue})});
             const d = await r.json();
-            if (d.ok) { await loadAdCrm(); showCrmStore(storeId); }
+            if (d.ok) {
+                document.getElementById('crm-detail-modal').style.display='none';
+                await loadAdCrm();
+            }
             else alert(d.error || 'Failed');
         } catch(e) { alert(e.message); }
     }
