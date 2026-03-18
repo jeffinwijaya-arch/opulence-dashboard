@@ -1303,8 +1303,8 @@
                     <div>
                         <label style="font-size:0.7rem;color:var(--text-2);display:block;margin-bottom:3px;">Pickup Location</label>
                         <select id="fedex-pickup-location" class="input" style="width:100%;">
+                            <option value="home">Home — 15 Hudson Yards 31B</option>
                             <option value="office">Office — 505 W 37th St</option>
-                            <option value="home">Home — 15 Hudson Yards</option>
                         </select>
                     </div>
                     <div>
@@ -8088,7 +8088,7 @@ async function scheduleFedexPickup() {
                     <strong>Confirmation:</strong> ${data.confirmation}<br>
                     <strong>Date:</strong> ${data.pickup_date}<br>
                     <strong>Window:</strong> ${data.ready_time} — ${data.close_time}<br>
-                    <strong>Location:</strong> ${data.location === 'home' ? '15 Hudson Yards' : '505 W 37th St'}
+                    <strong>Location:</strong> ${data.location === 'office' ? '505 W 37th St' : '15 Hudson Yards 31B'}
                 </div>
                 <button onclick="cancelFedexPickup('${data.confirmation}','${data.pickup_date}','${data.location}')" 
                     style="margin-top:8px;background:var(--red);color:white;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:0.75rem;">Cancel Pickup</button>
