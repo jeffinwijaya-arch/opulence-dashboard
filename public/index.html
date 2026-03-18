@@ -1292,6 +1292,54 @@
                 </div>
             </div>
 
+            <!-- FedEx Pickup Request -->
+            <div style="margin:20px 0 12px;display:flex;align-items:center;gap:10px;">
+                <span style="font-family:var(--mono);font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:1px;">FedEx Pickup</span>
+                <div style="flex:1;height:1px;background:var(--border);"></div>
+            </div>
+            <div class="card" style="margin-bottom:16px;">
+                <h3 style="margin:0 0 12px 0;">Schedule FedEx Pickup</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                    <div>
+                        <label style="font-size:0.7rem;color:var(--text-2);display:block;margin-bottom:3px;">Pickup Location</label>
+                        <select id="fedex-pickup-location" class="input" style="width:100%;">
+                            <option value="office">Office — 505 W 37th St</option>
+                            <option value="home">Home — 15 Hudson Yards</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:0.7rem;color:var(--text-2);display:block;margin-bottom:3px;">Pickup Date</label>
+                        <input id="fedex-pickup-date" class="input" type="date" style="width:100%;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.7rem;color:var(--text-2);display:block;margin-bottom:3px;">Packages</label>
+                        <input id="fedex-pickup-count" class="input" type="number" value="1" min="1" style="width:100%;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.7rem;color:var(--text-2);display:block;margin-bottom:3px;">Ready Time</label>
+                        <input id="fedex-pickup-ready" class="input" type="time" value="10:00" style="width:100%;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.7rem;color:var(--text-2);display:block;margin-bottom:3px;">Close Time</label>
+                        <input id="fedex-pickup-close" class="input" type="time" value="18:00" style="width:100%;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.7rem;color:var(--text-2);display:block;margin-bottom:3px;">Total Weight (lbs)</label>
+                        <input id="fedex-pickup-weight" class="input" type="number" value="1" min="1" style="width:100%;">
+                    </div>
+                </div>
+                <div style="margin-top:8px;">
+                    <label style="font-size:0.7rem;color:var(--text-2);display:block;margin-bottom:3px;">Special Instructions</label>
+                    <input id="fedex-pickup-remarks" class="input" type="text" placeholder="e.g. Ring doorbell, leave at front desk..." style="width:100%;">
+                </div>
+                <div style="display:flex;gap:8px;margin-top:12px;align-items:center;">
+                    <button onclick="scheduleFedexPickup()" style="background:var(--accent);color:var(--bg-1);border:none;border-radius:6px;padding:10px 24px;font-weight:600;cursor:pointer;font-size:0.85rem;">Schedule Pickup</button>
+                    <button onclick="checkPickupAvailability()" style="background:var(--bg-3);color:var(--text-1);border:1px solid var(--border);border-radius:6px;padding:10px 16px;cursor:pointer;font-size:0.8rem;">Check Availability</button>
+                    <div id="fedex-pickup-status" style="font-size:0.75rem;color:var(--text-2);"></div>
+                </div>
+                <div id="fedex-pickup-result" style="margin-top:10px;"></div>
+            </div>
+
             <!-- Divider: Label creation tools -->
             <div style="margin:20px 0 12px;display:flex;align-items:center;gap:10px;">
                 <span style="font-family:var(--mono);font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:1px;">Label Creation</span>
@@ -7967,6 +8015,110 @@ async function submitSale() {
         else { status.style.color='var(--red)'; status.textContent='Error: '+(d.error||'Unknown'); }
     } catch(e) { status.style.color='var(--red)'; status.textContent='Error: '+e.message; }
     btn.disabled = false; btn.textContent = 'Sell';
+}
+
+// ── FedEx Pickup ──
+// Set default pickup date to today
+(function() {
+    const d = document.getElementById('fedex-pickup-date');
+    if (d) d.value = new Date().toISOString().split('T')[0];
+})();
+
+async function checkPickupAvailability() {
+    const status = document.getElementById('fedex-pickup-status');
+    const result = document.getElementById('fedex-pickup-result');
+    status.textContent = 'Checking availability...';
+    try {
+        const r = await fetch('/api/fedex/pickup/availability', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                date: document.getElementById('fedex-pickup-date').value,
+                location: document.getElementById('fedex-pickup-location').value,
+            })
+        });
+        const data = await r.json();
+        if (data.ok) {
+            const opts = data.options || [];
+            if (opts.length) {
+                result.innerHTML = opts.map(o => `<div style="padding:6px;background:var(--bg-3);border-radius:6px;margin-bottom:4px;font-size:0.75rem;">
+                    <strong>${o.carrier || 'FedEx'}</strong> — ${o.pickupDate || data.date}
+                    ${o.cutOffTime ? `<span style="color:var(--text-2);"> Cutoff: ${o.cutOffTime}</span>` : ''}
+                    ${o.accessTime ? `<span style="color:var(--text-2);"> Access: ${o.accessTime}</span>` : ''}
+                </div>`).join('');
+            } else {
+                result.innerHTML = `<div style="color:var(--green);font-size:0.75rem;">Pickup available for ${data.date}</div>`;
+            }
+            status.textContent = '';
+        } else {
+            status.textContent = '';
+            result.innerHTML = `<div style="color:var(--red);font-size:0.75rem;">${data.error || 'Not available'}</div>`;
+        }
+    } catch (e) {
+        status.textContent = '';
+        result.innerHTML = `<div style="color:var(--red);font-size:0.75rem;">Error: ${e.message}</div>`;
+    }
+}
+
+async function scheduleFedexPickup() {
+    const status = document.getElementById('fedex-pickup-status');
+    const result = document.getElementById('fedex-pickup-result');
+    
+    if (!confirm('Schedule FedEx pickup?')) return;
+    status.textContent = 'Scheduling pickup...';
+    
+    try {
+        const r = await fetch('/api/fedex/pickup/create', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                date: document.getElementById('fedex-pickup-date').value,
+                ready_time: document.getElementById('fedex-pickup-ready').value,
+                close_time: document.getElementById('fedex-pickup-close').value,
+                location: document.getElementById('fedex-pickup-location').value,
+                package_count: parseInt(document.getElementById('fedex-pickup-count').value) || 1,
+                total_weight: parseInt(document.getElementById('fedex-pickup-weight').value) || 1,
+                remarks: document.getElementById('fedex-pickup-remarks').value,
+            })
+        });
+        const data = await r.json();
+        status.textContent = '';
+        if (data.ok) {
+            result.innerHTML = `<div style="padding:12px;background:rgba(46,204,113,0.1);border:1px solid var(--green);border-radius:8px;">
+                <div style="font-size:0.85rem;font-weight:600;color:var(--green);margin-bottom:4px;">Pickup Scheduled</div>
+                <div style="font-size:0.75rem;color:var(--text-1);">
+                    <strong>Confirmation:</strong> ${data.confirmation}<br>
+                    <strong>Date:</strong> ${data.pickup_date}<br>
+                    <strong>Window:</strong> ${data.ready_time} — ${data.close_time}<br>
+                    <strong>Location:</strong> ${data.location === 'home' ? '15 Hudson Yards' : '505 W 37th St'}
+                </div>
+                <button onclick="cancelFedexPickup('${data.confirmation}','${data.pickup_date}','${data.location}')" 
+                    style="margin-top:8px;background:var(--red);color:white;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:0.75rem;">Cancel Pickup</button>
+            </div>`;
+        } else {
+            result.innerHTML = `<div style="color:var(--red);font-size:0.75rem;padding:8px;background:rgba(231,76,60,0.1);border-radius:6px;">${data.error || 'Failed to schedule pickup'}</div>`;
+        }
+    } catch (e) {
+        status.textContent = '';
+        result.innerHTML = `<div style="color:var(--red);font-size:0.75rem;">Error: ${e.message}</div>`;
+    }
+}
+
+async function cancelFedexPickup(confirmation, pickupDate, location) {
+    if (!confirm('Cancel this pickup?')) return;
+    try {
+        const r = await fetch('/api/fedex/pickup/cancel', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ confirmation, date: pickupDate, location })
+        });
+        const data = await r.json();
+        const result = document.getElementById('fedex-pickup-result');
+        if (data.ok) {
+            result.innerHTML = `<div style="color:var(--text-2);font-size:0.75rem;">Pickup cancelled.</div>`;
+        } else {
+            result.innerHTML += `<div style="color:var(--red);font-size:0.75rem;margin-top:4px;">Cancel failed: ${data.error}</div>`;
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
 }
 
 // ── Ship Modal ──
