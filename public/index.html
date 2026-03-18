@@ -2020,6 +2020,58 @@
 
             <!-- Sin Jeff Cash Flow -->
             <div id="pay-section-sin" style="display:none;">
+                <!-- Quick Add -->
+                <div class="card" style="margin-bottom:16px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <h3 style="margin:0;">Add Entry</h3>
+                        <button class="btn" onclick="loadSinCashflow()" style="font-size:0.7rem;">Refresh</button>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;">
+                        <div style="flex:0 0 auto;">
+                            <label style="font-size:0.65rem;color:var(--text-2);display:block;margin-bottom:2px;">Side</label>
+                            <select id="sin-add-side" onchange="sinAddSideChanged()" style="background:var(--bg-3);color:var(--text-1);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:0.8rem;">
+                                <option value="outflow">Outflow (MK → Sin)</option>
+                                <option value="inflow">Inflow (Sin → MK)</option>
+                            </select>
+                        </div>
+                        <div style="flex:0 0 auto;">
+                            <label style="font-size:0.65rem;color:var(--text-2);display:block;margin-bottom:2px;">Type</label>
+                            <select id="sin-add-type" onchange="sinAddTypeChanged()" style="background:var(--bg-3);color:var(--text-1);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:0.8rem;">
+                                <option value="wire">Wire</option>
+                                <option value="watch">Watch</option>
+                                <option value="crypto">Crypto/USDT</option>
+                                <option value="expense">Label/Fee</option>
+                            </select>
+                        </div>
+                        <div style="flex:1;min-width:180px;">
+                            <label style="font-size:0.65rem;color:var(--text-2);display:block;margin-bottom:2px;">Description</label>
+                            <input id="sin-add-desc" class="input" type="text" placeholder="e.g. US WIRE or 134300BLACK - 03/26" style="width:100%;font-size:0.8rem;">
+                        </div>
+                        <div style="flex:0 0 100px;">
+                            <label style="font-size:0.65rem;color:var(--text-2);display:block;margin-bottom:2px;">Amount</label>
+                            <input id="sin-add-amount" class="input" type="number" placeholder="0" style="width:100%;font-size:0.8rem;">
+                        </div>
+                        <div id="sin-add-cost-wrap" style="flex:0 0 100px;display:none;">
+                            <label style="font-size:0.65rem;color:var(--text-2);display:block;margin-bottom:2px;">Cost (internal)</label>
+                            <input id="sin-add-cost" class="input" type="number" placeholder="0" style="width:100%;font-size:0.8rem;">
+                        </div>
+                        <div id="sin-add-tracking-wrap" style="flex:0 0 130px;display:none;">
+                            <label style="font-size:0.65rem;color:var(--text-2);display:block;margin-bottom:2px;">Tracking</label>
+                            <input id="sin-add-tracking" class="input" type="text" placeholder="FedEx #" style="width:100%;font-size:0.8rem;">
+                        </div>
+                        <div id="sin-add-cleared-wrap" style="flex:0 0 auto;display:none;">
+                            <label style="font-size:0.65rem;color:var(--text-2);display:block;margin-bottom:2px;">Cleared</label>
+                            <select id="sin-add-cleared" style="background:var(--bg-3);color:var(--text-1);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:0.8rem;">
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
+                                <option value="">—</option>
+                            </select>
+                        </div>
+                        <button onclick="sinAddEntry()" style="background:var(--accent);color:var(--bg-1);border:none;border-radius:6px;padding:8px 20px;font-weight:600;cursor:pointer;font-size:0.8rem;">Add</button>
+                    </div>
+                    <div style="margin-top:6px;font-size:0.65rem;color:var(--text-2);" id="sin-add-hint">Watches from Sin: leave Amount blank, fill Cost only — won't count in balance until sold.</div>
+                </div>
+
                 <!-- Summary Cards -->
                 <div class="metrics" style="margin-bottom:16px;">
                     <div class="metric">
@@ -9418,6 +9470,76 @@ function renderSinTable(side) {
 }
 
 function filterSinTable(side) { renderSinTable(side); }
+
+function sinAddSideChanged() {
+    const side = document.getElementById('sin-add-side').value;
+    const isIn = side === 'inflow';
+    document.getElementById('sin-add-cleared-wrap').style.display = isIn ? '' : 'none';
+    document.getElementById('sin-add-cost-wrap').style.display = isIn ? '' : 'none';
+    document.getElementById('sin-add-tracking-wrap').style.display = isIn ? '' : 'none';
+    sinAddTypeChanged();
+}
+
+function sinAddTypeChanged() {
+    const side = document.getElementById('sin-add-side').value;
+    const type = document.getElementById('sin-add-type').value;
+    const isWatch = type === 'watch';
+    const isIn = side === 'inflow';
+    document.getElementById('sin-add-cost-wrap').style.display = isIn && isWatch ? '' : 'none';
+    document.getElementById('sin-add-tracking-wrap').style.display = isIn && isWatch ? '' : 'none';
+    const hint = document.getElementById('sin-add-hint');
+    if (isIn && isWatch) {
+        hint.textContent = 'Watches from Sin: leave Amount blank, fill Cost only — won\'t count in balance until sold.';
+    } else if (type === 'wire') {
+        hint.textContent = side === 'outflow' ? 'Wire sent to Sin (e.g. "Wire Sent for 228238")' : 'Wire from Sin (e.g. "US WIRE")';
+    } else {
+        hint.textContent = '';
+    }
+}
+
+async function sinAddEntry() {
+    const side = document.getElementById('sin-add-side').value;
+    const type = document.getElementById('sin-add-type').value;
+    const desc = document.getElementById('sin-add-desc').value.trim();
+    const amount = document.getElementById('sin-add-amount').value;
+    const cost = document.getElementById('sin-add-cost').value;
+    const tracking = document.getElementById('sin-add-tracking').value;
+    const cleared = document.getElementById('sin-add-cleared').value;
+    
+    if (!desc) { alert('Description required'); return; }
+    if (side === 'outflow' && !amount) { alert('Amount required for outflows'); return; }
+    
+    const body = { side, type, description: desc };
+    if (amount) body.amount = parseFloat(amount);
+    if (cost) body.cost = parseFloat(cost);
+    if (tracking) body.tracking = tracking;
+    if (side === 'inflow') body.cleared = cleared;
+    // For inflow watches with no amount, don't set cleared
+    if (side === 'inflow' && type === 'watch' && !amount) {
+        body.cleared = '';
+    }
+    
+    try {
+        const r = await fetch('/api/payments/sin-cashflow/add', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
+        const data = await r.json();
+        if (data.ok) {
+            // Clear form
+            document.getElementById('sin-add-desc').value = '';
+            document.getElementById('sin-add-amount').value = '';
+            document.getElementById('sin-add-cost').value = '';
+            document.getElementById('sin-add-tracking').value = '';
+            // Reload
+            loadSinCashflow();
+        } else {
+            alert(data.error || 'Failed to add entry');
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
 
 // ── Payments & Collections ──
 async function loadPayments() {
