@@ -2098,8 +2098,7 @@
 
                 <!-- Volume -->
                 <div class="card" style="margin-bottom:16px;">
-                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:0.8rem;">
-                        <div><span style="color:var(--text-2);">Starting Balance:</span> <strong id="sin-starting">$0</strong></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:0.8rem;">
                         <div><span style="color:var(--text-2);">Total Outflows:</span> <strong style="color:var(--red);" id="sin-outflows-total">$0</strong></div>
                         <div><span style="color:var(--text-2);">Total Inflows:</span> <strong style="color:var(--green);" id="sin-inflows-total">$0</strong></div>
                     </div>
@@ -9401,7 +9400,6 @@ async function loadSinCashflow() {
         document.getElementById('sin-pending').textContent = fmt(b.pending);
         document.getElementById('sin-unsold').textContent = data.counts.unsold_watches;
         document.getElementById('sin-uncleared').textContent = data.counts.uncleared + ' items';
-        document.getElementById('sin-starting').textContent = fmt(b.starting);
         document.getElementById('sin-outflows-total').textContent = fmt(data.totals.outflows);
         document.getElementById('sin-inflows-total').textContent = fmt(data.totals.inflows);
         
@@ -9421,15 +9419,12 @@ async function loadSinCashflow() {
         let mhtml = `<table style="width:100%;font-size:0.75rem;border-collapse:collapse;">
             <tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:6px;">Month</th>
             <th style="text-align:right;padding:6px;color:var(--red);">Outflows</th>
-            <th style="text-align:right;padding:6px;color:var(--green);">Inflows</th>
-            <th style="text-align:right;padding:6px;">Net</th></tr>`;
+            <th style="text-align:right;padding:6px;color:var(--green);">Inflows</th></tr>`;
         data.monthly.forEach((m, i) => {
-            const nc = m.net >= 0 ? 'var(--green)' : 'var(--red)';
             mhtml += `<tr style="border-bottom:1px solid var(--border);${i%2?'background:var(--bg-3);':''}">
                 <td style="padding:5px 6px;">${m.month}</td>
                 <td style="text-align:right;padding:5px 6px;color:var(--red);font-family:var(--mono);">${fmt(m.outflows)}</td>
-                <td style="text-align:right;padding:5px 6px;color:var(--green);font-family:var(--mono);">${fmt(m.inflows)}</td>
-                <td style="text-align:right;padding:5px 6px;color:${nc};font-family:var(--mono);font-weight:600;">${fmt(m.net)}</td></tr>`;
+                <td style="text-align:right;padding:5px 6px;color:var(--green);font-family:var(--mono);">${fmt(m.inflows)}</td></tr>`;
         });
         mhtml += '</table>';
         document.getElementById('sin-monthly').innerHTML = mhtml;
