@@ -9458,9 +9458,11 @@ function renderSinTable(side) {
     } else {
         el.innerHTML = filtered.map((inf, i) => {
             const unsold = !inf.has_amount && inf.cost;
+            const trackingHtml = inf.tracking ? `<a href="https://www.fedex.com/fedextrack/?trknbr=${inf.tracking}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:0.65rem;" title="${inf.tracking}">${inf.tracking.slice(-6)}</a>` : '';
             return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.73rem;${unsold?'background:rgba(200,169,81,0.1);':''}${i%2&&!unsold?'background:var(--bg-3);':''}">
                 <div style="flex:0 0 70px;color:var(--text-2);">${inf.date}</div>
                 <div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 8px;">${inf.description}</div>
+                <div style="flex:0 0 70px;text-align:center;font-family:var(--mono);">${trackingHtml}</div>
                 <div style="flex:0 0 40px;text-align:center;">${inf.cleared.toLowerCase()==='yes'?'<span style="color:var(--green);">✓</span>':inf.cleared.toLowerCase()==='no'?'<span style="color:var(--red);">✗</span>':''}</div>
                 <div style="flex:0 0 85px;text-align:right;font-family:var(--mono);color:var(--green);">${inf.has_amount ? fmt(inf.amount) : (unsold ? '<span style="color:var(--accent);font-size:0.65rem;">unsold</span>' : '—')}</div>
             </div>`;
