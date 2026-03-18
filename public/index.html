@@ -12201,7 +12201,7 @@ async function loadPayments() {
             // Visits — clean timeline
             html += '<div style="margin-top:14px;"><div style="font-size:0.7rem;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:6px;">Recent Activity</div>';
             if (visits.length) {
-                html += '<div style="max-height:300px;overflow-y:auto;">';
+                html += '<div style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;">';
                 html += visits.map(v => {
                     const isInbound = v.visit_type === 'inbound_imessage' || v.visit_type === 'inbound_gv' || v.visit_type.startsWith('inbound_');
                     const isOutbound = v.visit_type === 'outbound_imessage' || v.visit_type === 'outbound_gv' || v.visit_type === 'followup_imessage' || v.visit_type.startsWith('outbound_') || v.visit_type === 'email_outreach';
@@ -12210,8 +12210,9 @@ async function loadPayments() {
                     const isReview = v.visit_type === 'google_review';
                     
                     let icon = '📌', color = 'var(--text-2)', label = v.visit_type;
-                    if (isInbound) { icon = '←'; color = 'var(--green)'; label = ''; }
-                    else if (isOutbound) { icon = '→'; color = 'var(--accent)'; label = ''; }
+                    const platform = v.visit_type.replace(/^(inbound|outbound)_/, '').toUpperCase();
+                    if (isInbound) { icon = '←'; color = 'var(--green)'; label = platform !== 'IMESSAGE' ? platform : ''; }
+                    else if (isOutbound) { icon = '→'; color = 'var(--accent)'; label = platform !== 'IMESSAGE' ? platform : ''; }
                     else if (isVisit) { icon = '🏪'; label = 'Visit'; }
                     else if (isCall) { icon = '📞'; label = 'Call'; }
                     else if (isReview) { icon = '⭐'; label = 'Google Review'; }
@@ -12227,20 +12228,21 @@ async function loadPayments() {
                     const dateStr = v.visit_date || '';
                     
                     if (isInbound || isOutbound) {
-                        return `<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);align-items:flex-start;">
+                        return `<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);align-items:flex-start;flex-shrink:0;">
                             <div style="color:${color};font-weight:700;font-size:0.8rem;min-width:16px;text-align:center;margin-top:1px;">${icon}</div>
-                            <div style="flex:1;min-width:0;">
-                                <div style="font-size:0.7rem;color:var(--text-0);word-break:break-word;">${noteText.length > 120 ? noteText.substring(0,120)+'...' : noteText}</div>
+                            <div style="flex:1;min-width:0;overflow:hidden;">
+                                ${label ? `<div style="font-size:0.6rem;color:${color};font-weight:600;text-transform:uppercase;">${label}</div>` : ''}
+                                <div style="font-size:0.7rem;color:var(--text-0);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${noteText.length > 120 ? noteText.substring(0,120)+'...' : noteText}</div>
                                 <div style="font-size:0.6rem;color:var(--text-2);margin-top:1px;">${dateStr}</div>
                             </div>
                         </div>`;
                     }
                     
-                    return `<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);align-items:flex-start;">
+                    return `<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);align-items:flex-start;flex-shrink:0;">
                         <div style="font-size:0.75rem;min-width:16px;text-align:center;margin-top:1px;">${icon}</div>
-                        <div style="flex:1;min-width:0;">
+                        <div style="flex:1;min-width:0;overflow:hidden;">
                             <div style="font-size:0.7rem;color:var(--text-0);font-weight:600;">${label}</div>
-                            ${noteText ? `<div style="font-size:0.68rem;color:var(--text-2);word-break:break-word;">${noteText}</div>` : ''}
+                            ${noteText ? `<div style="font-size:0.68rem;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${noteText}</div>` : ''}
                             <div style="font-size:0.6rem;color:var(--text-2);margin-top:1px;">${dateStr}</div>
                         </div>
                     </div>`;
