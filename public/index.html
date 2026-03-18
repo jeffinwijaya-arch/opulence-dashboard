@@ -2182,8 +2182,25 @@
             </div>
             <!-- Stats cards -->
             <div id="crm-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;"></div>
-            <!-- Store list -->
-            <div id="crm-store-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+            <!-- View toggle + bulk bar -->
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                <label style="font-size:0.65rem;color:var(--text-2);display:flex;align-items:center;gap:4px;cursor:pointer;">
+                    <input type="checkbox" id="crm-group-toggle" onchange="filterCrmStores()" style="accent-color:var(--accent);"> Group by Region
+                </label>
+                <button id="crm-expand-all-btn" class="btn" onclick="crmExpandCollapseAll()" style="font-size:0.6rem;padding:2px 8px;display:none;">Expand All</button>
+                <div style="flex:1;"></div>
+                <div id="crm-bulk-bar" style="display:none;align-items:center;gap:6px;">
+                    <span id="crm-bulk-count" style="font-size:0.7rem;font-weight:600;color:var(--accent);"></span>
+                    <button class="btn" onclick="crmBulkOutreach()" style="font-size:0.62rem;padding:3px 8px;background:var(--green);color:#fff;">Log Outreach</button>
+                    <button class="btn" onclick="crmBulkDeactivate()" style="font-size:0.62rem;padding:3px 8px;background:var(--red);color:#fff;">Deactivate</button>
+                    <button class="btn" onclick="crmExportCsv()" style="font-size:0.62rem;padding:3px 8px;">Export CSV</button>
+                    <button class="btn" onclick="crmClearSelection()" style="font-size:0.62rem;padding:3px 8px;opacity:0.6;">Clear</button>
+                </div>
+            </div>
+            <!-- Store list (table) -->
+            <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+                <div id="crm-store-list"></div>
+            </div>
             <!-- Deactivated stores -->
             <div id="crm-inactive-section" style="margin-top:30px;display:none;">
                 <div onclick="document.getElementById('crm-inactive-list').style.display=document.getElementById('crm-inactive-list').style.display==='none'?'block':'none'; this.querySelector('span').textContent=document.getElementById('crm-inactive-list').style.display==='none'?'▸':'▾'" style="cursor:pointer;padding:10px 0;border-top:1px solid var(--border);display:flex;align-items:center;gap:6px;">
@@ -11893,97 +11910,84 @@ async function loadPayments() {
         }
     }
     
+    let _crmSelectedIds = new Set();
+    let _crmSortCol = 'days'; // default sort
+    let _crmSortAsc = true;
+    
     function filterCrmStores() {
         const region = document.getElementById('crm-region-filter').value;
         const status = document.getElementById('crm-status-filter').value;
         const platform = document.getElementById('crm-platform-filter')?.value || '';
+        const groupByRegion = document.getElementById('crm-group-toggle')?.checked || false;
         let stores = _crmStores;
         if (region) stores = stores.filter(s=>s.region === region);
-        // Always hide deactivated from main list (they appear in bottom section)
         stores = stores.filter(s=>s.is_active_ad!==0);
         if (status === 'overdue') stores = stores.filter(s=>s.is_overdue && s.last_visit);
         else if (status === 'ok') stores = stores.filter(s=>!s.is_overdue && s.last_visit);
         else if (status === 'never') stores = stores.filter(s=>!s.last_visit);
         if (platform) stores = stores.filter(s=>(s.contacts||[]).some(c=>c.phone_type===platform));
         
-        // Group by region
-        const grouped = {};
-        stores.forEach(s => { const r = s.region||'Other'; (grouped[r]=grouped[r]||[]).push(s); });
-        
-        // Sort regions: most overdue first
-        const regionOrder = Object.entries(grouped).sort((a,b) => {
-            const aOver = a[1].filter(s=>s.is_overdue).length;
-            const bOver = b[1].filter(s=>s.is_overdue).length;
-            return bOver - aOver || a[0].localeCompare(b[0]);
+        // Sort
+        stores = [...stores].sort((a,b) => {
+            let va, vb;
+            if (_crmSortCol === 'name') { va = a.name||''; vb = b.name||''; }
+            else if (_crmSortCol === 'region') { va = a.region||''; vb = b.region||''; }
+            else if (_crmSortCol === 'sa') { va = (a.contacts||[])[0]?.sales_name||''; vb = (b.contacts||[])[0]?.sales_name||''; }
+            else if (_crmSortCol === 'platform') { va = (a.contacts||[])[0]?.phone_type||''; vb = (b.contacts||[])[0]?.phone_type||''; }
+            else if (_crmSortCol === 'days') { va = a.days_since ?? 9999; vb = b.days_since ?? 9999; }
+            else if (_crmSortCol === 'status') { va = _crmStatusRank(a); vb = _crmStatusRank(b); }
+            else { va = a.name||''; vb = b.name||''; }
+            if (typeof va === 'string') { const c = va.localeCompare(vb); return _crmSortAsc ? c : -c; }
+            return _crmSortAsc ? va - vb : vb - va;
         });
         
         const container = document.getElementById('crm-store-list');
-        if (!stores.length) { container.innerHTML = '<div style="text-align:center;color:var(--text-2);padding:40px;">No stores match</div>'; return; }
+        const expandBtn = document.getElementById('crm-expand-all-btn');
+        expandBtn.style.display = groupByRegion ? '' : 'none';
         
-        // If single region selected, auto-open it
-        if (region) _crmOpenRegions.add(region);
+        if (!stores.length) { container.innerHTML = '<div style="text-align:center;color:var(--text-2);padding:40px;">No stores match</div>'; _crmUpdateBulkBar(); return; }
         
-        container.innerHTML = regionOrder.map(([regionName, regionStores]) => {
-            const overdueCount = regionStores.filter(s=>s.is_overdue).length;
-            const neverCount = regionStores.filter(s=>!s.last_visit).length;
-            const isOpen = _crmOpenRegions.has(regionName);
-            const rid = regionName.replace(/[^a-zA-Z0-9]/g,'_');
+        if (groupByRegion) {
+            // Grouped view with collapsible region sections containing tables
+            const grouped = {};
+            stores.forEach(s => { const r = s.region||'Other'; (grouped[r]=grouped[r]||[]).push(s); });
+            const regionOrder = Object.entries(grouped).sort((a,b) => {
+                const aOver = a[1].filter(s=>s.is_overdue).length;
+                const bOver = b[1].filter(s=>s.is_overdue).length;
+                return bOver - aOver || a[0].localeCompare(b[0]);
+            });
             
-            // Region health bar
-            const pctOk = regionStores.length ? Math.round(((regionStores.length - overdueCount - neverCount) / regionStores.length) * 100) : 0;
-            const barColor = pctOk >= 80 ? 'var(--green)' : pctOk >= 40 ? '#f59e0b' : 'var(--red)';
-            
-            // Badges
-            let badges = '';
-            if (overdueCount) badges += `<span style="font-size:0.6rem;background:rgba(239,68,68,0.15);color:var(--red);padding:2px 6px;border-radius:4px;margin-left:6px;">${overdueCount} overdue</span>`;
-            if (neverCount) badges += `<span style="font-size:0.6rem;background:rgba(245,158,11,0.15);color:#f59e0b;padding:2px 6px;border-radius:4px;margin-left:4px;">${neverCount} new</span>`;
-            
-            // Store rows (only if open)
-            let storeRows = '';
-            if (isOpen) {
-                storeRows = `<div id="crm-region-${rid}" style="padding:0 0 8px;">` +
-                    regionStores.map(s => {
-                        const days = s.days_since != null ? s.days_since : null;
-                        let statusColor = 'var(--green)', statusBg = 'rgba(34,197,94,0.08)';
-                        let daysText = days != null ? `${days}d` : '—';
-                        if (!s.last_visit) { statusColor = '#f59e0b'; statusBg = 'rgba(245,158,11,0.08)'; daysText = 'NEW'; }
-                        else if (days >= 30) { statusColor = 'var(--red)'; statusBg = 'rgba(239,68,68,0.08)'; }
-                        else if (days >= 15) { statusColor = '#f59e0b'; statusBg = 'rgba(245,158,11,0.08)'; }
-                        
-                        const mainContact = (s.contacts||[])[0];
-                        const contactInfo = mainContact ? 
-                            `<span style="color:var(--text-2);">${mainContact.sales_name}${mainContact.phone_type && mainContact.phone_type !== 'iMessage' ? ` <span style="font-size:0.55rem;background:var(--accent-dim);color:var(--accent);padding:0 4px;border-radius:3px;">${mainContact.phone_type}</span>` : ''}</span>` : '';
-                        const extraContacts = (s.contacts||[]).length > 1 ? ` <span style="color:var(--text-2);">+${s.contacts.length-1}</span>` : '';
-                        const inactive = s.is_active_ad === 0 ? ' <span style="color:var(--red);font-size:0.55rem;">CLOSED</span>' : '';
-                        
-                        return `<div onclick="showCrmStore(${s.id})" style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.1s;" onmouseover="this.style.background='var(--bg-3)'" onmouseout="this.style.background='transparent'">
-                            <div style="width:36px;text-align:center;flex-shrink:0;">
-                                <div style="font-size:0.7rem;font-weight:700;color:${statusColor};background:${statusBg};padding:3px 0;border-radius:4px;">${daysText}</div>
+            container.innerHTML = regionOrder.map(([regionName, regionStores]) => {
+                const overdueCount = regionStores.filter(s=>s.is_overdue).length;
+                const neverCount = regionStores.filter(s=>!s.last_visit).length;
+                const isOpen = _crmOpenRegions.has(regionName);
+                let badges = '';
+                if (overdueCount) badges += `<span style="font-size:0.6rem;background:rgba(239,68,68,0.15);color:var(--red);padding:2px 6px;border-radius:4px;margin-left:6px;">${overdueCount} overdue</span>`;
+                if (neverCount) badges += `<span style="font-size:0.6rem;background:rgba(245,158,11,0.15);color:#f59e0b;padding:2px 6px;border-radius:4px;margin-left:4px;">${neverCount} new</span>`;
+                const pctOk = regionStores.length ? Math.round(((regionStores.length - overdueCount - neverCount) / regionStores.length) * 100) : 0;
+                const barColor = pctOk >= 80 ? 'var(--green)' : pctOk >= 40 ? '#f59e0b' : 'var(--red)';
+                
+                return `<div style="background:var(--bg-2);border-radius:10px;overflow:hidden;margin-bottom:8px;">
+                    <div onclick="toggleCrmRegion('${regionName}')" style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;user-select:none;" onmouseover="this.style.background='var(--bg-3)'" onmouseout="this.style.background='transparent'">
+                        <svg style="width:12px;height:12px;color:var(--text-2);transition:transform 0.2s;transform:rotate(${isOpen?'90':'0'}deg);flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-size:0.8rem;font-weight:600;">${regionName} <span style="color:var(--text-2);font-weight:400;">(${regionStores.length})</span>${badges}</div>
+                            <div style="height:3px;background:var(--border);border-radius:2px;margin-top:5px;overflow:hidden;">
+                                <div style="height:100%;width:${pctOk}%;background:${barColor};border-radius:2px;transition:width 0.3s;"></div>
                             </div>
-                            <div style="flex:1;min-width:0;">
-                                <div style="font-size:0.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}${inactive}</div>
-                                <div style="font-size:0.68rem;margin-top:1px;">${contactInfo}${extraContacts}</div>
-                            </div>
-                            <svg style="width:14px;height:14px;color:var(--text-2);flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-                        </div>`;
-                    }).join('') + '</div>';
-            }
-            
-            return `<div style="background:var(--bg-2);border-radius:10px;overflow:hidden;margin-bottom:8px;">
-                <div onclick="toggleCrmRegion('${regionName}')" style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;user-select:none;" onmouseover="this.style.background='var(--bg-3)'" onmouseout="this.style.background='transparent'">
-                    <svg style="width:12px;height:12px;color:var(--text-2);transition:transform 0.2s;transform:rotate(${isOpen?'90':'0'}deg);flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
-                    <div style="flex:1;min-width:0;">
-                        <div style="font-size:0.8rem;font-weight:600;">${regionName} <span style="color:var(--text-2);font-weight:400;">(${regionStores.length})</span>${badges}</div>
-                        <div style="height:3px;background:var(--border);border-radius:2px;margin-top:5px;overflow:hidden;">
-                            <div style="height:100%;width:${pctOk}%;background:${barColor};border-radius:2px;transition:width 0.3s;"></div>
                         </div>
                     </div>
-                </div>
-                ${storeRows}
-            </div>`;
-        }).join('');
+                    ${isOpen ? _crmBuildTable(regionStores, true) : ''}
+                </div>`;
+            }).join('');
+        } else {
+            // Flat table view
+            container.innerHTML = _crmBuildTable(stores, false);
+        }
         
-        // Populate deactivated stores section at bottom
+        _crmUpdateBulkBar();
+        
+        // Deactivated stores section
         const inactiveStores = _crmStores.filter(s => s.is_active_ad === 0);
         const inactiveSection = document.getElementById('crm-inactive-section');
         const inactiveList = document.getElementById('crm-inactive-list');
@@ -12004,6 +12008,135 @@ async function loadPayments() {
         } else {
             inactiveSection.style.display = 'none';
         }
+    }
+    
+    function _crmStatusRank(s) {
+        if (!s.last_visit) return 2; // never
+        if (s.is_overdue) return 0; // overdue first
+        return 1; // ok
+    }
+    
+    function _crmStatusBadge(s) {
+        const days = s.days_since != null ? s.days_since : null;
+        if (!s.last_visit) return `<span style="font-size:0.65rem;font-weight:600;padding:2px 8px;border-radius:4px;background:rgba(245,158,11,0.12);color:#f59e0b;">NEW</span>`;
+        if (days >= 30) return `<span style="font-size:0.65rem;font-weight:600;padding:2px 8px;border-radius:4px;background:rgba(239,68,68,0.12);color:var(--red);">${days}d</span>`;
+        if (days >= 15) return `<span style="font-size:0.65rem;font-weight:600;padding:2px 8px;border-radius:4px;background:rgba(245,158,11,0.12);color:#f59e0b;">${days}d</span>`;
+        return `<span style="font-size:0.65rem;font-weight:600;padding:2px 8px;border-radius:4px;background:rgba(34,197,94,0.1);color:var(--green);">${days}d</span>`;
+    }
+    
+    function _crmBuildTable(stores, hideRegionCol) {
+        const sortIcon = (col) => _crmSortCol === col ? (_crmSortAsc ? ' ▲' : ' ▼') : '';
+        const thStyle = 'padding:8px 10px;text-align:left;font-size:0.62rem;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;cursor:pointer;user-select:none;white-space:nowrap;border-bottom:1px solid var(--border);';
+        
+        let html = `<table style="width:100%;border-collapse:collapse;font-size:0.75rem;">
+            <thead><tr style="background:var(--bg-3);">
+                <th style="${thStyle}width:32px;"><input type="checkbox" onchange="crmToggleAll(this.checked, this)" style="accent-color:var(--accent);"></th>
+                <th style="${thStyle}" onclick="crmSort('name')">Store${sortIcon('name')}</th>
+                ${hideRegionCol ? '' : `<th style="${thStyle}" onclick="crmSort('region')">Region${sortIcon('region')}</th>`}
+                <th style="${thStyle}" onclick="crmSort('sa')">SA${sortIcon('sa')}</th>
+                <th style="${thStyle}" onclick="crmSort('platform')">Platform${sortIcon('platform')}</th>
+                <th style="${thStyle}" onclick="crmSort('days')">Days${sortIcon('days')}</th>
+                <th style="${thStyle}" onclick="crmSort('status')">Status${sortIcon('status')}</th>
+            </tr></thead><tbody>`;
+        
+        stores.forEach(s => {
+            const mc = (s.contacts||[])[0];
+            const checked = _crmSelectedIds.has(s.id) ? 'checked' : '';
+            const extra = (s.contacts||[]).length > 1 ? ` <span style="color:var(--text-2);font-size:0.6rem;">+${s.contacts.length-1}</span>` : '';
+            html += `<tr onclick="showCrmStore(${s.id})" style="cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.1s;" onmouseover="this.style.background='var(--bg-3)'" onmouseout="this.style.background=''">
+                <td style="padding:6px 10px;" onclick="event.stopPropagation()"><input type="checkbox" ${checked} onchange="crmToggleRow(${s.id},this.checked)" style="accent-color:var(--accent);"></td>
+                <td style="padding:6px 10px;font-weight:600;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;">${s.name}</td>
+                ${hideRegionCol ? '' : `<td style="padding:6px 10px;color:var(--text-2);font-size:0.7rem;white-space:nowrap;">${s.region||'—'}</td>`}
+                <td style="padding:6px 10px;color:var(--text-2);font-size:0.7rem;white-space:nowrap;">${mc?.sales_name||'—'}${extra}</td>
+                <td style="padding:6px 10px;font-size:0.65rem;white-space:nowrap;">${mc?.phone_type ? `<span style="background:var(--bg-3);padding:1px 6px;border-radius:3px;">${mc.phone_type}</span>` : '—'}</td>
+                <td style="padding:6px 10px;text-align:center;white-space:nowrap;">${s.days_since != null ? s.days_since : '—'}</td>
+                <td style="padding:6px 10px;white-space:nowrap;">${_crmStatusBadge(s)}</td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        return `<div style="background:var(--bg-2);border-radius:10px;overflow:hidden;">${html}</div>`;
+    }
+    
+    function crmSort(col) {
+        if (_crmSortCol === col) _crmSortAsc = !_crmSortAsc;
+        else { _crmSortCol = col; _crmSortAsc = true; }
+        filterCrmStores();
+    }
+    
+    function crmToggleRow(id, checked) {
+        if (checked) _crmSelectedIds.add(id); else _crmSelectedIds.delete(id);
+        _crmUpdateBulkBar();
+    }
+    
+    function crmToggleAll(checked, el) {
+        // Toggle all visible checkboxes in same table
+        const table = el.closest('table');
+        table.querySelectorAll('tbody input[type=checkbox]').forEach(cb => { cb.checked = checked; });
+        // Get store ids from visible rows
+        const active = _crmStores.filter(s=>s.is_active_ad!==0);
+        if (checked) active.forEach(s => _crmSelectedIds.add(s.id));
+        else _crmSelectedIds.clear();
+        _crmUpdateBulkBar();
+    }
+    
+    function _crmUpdateBulkBar() {
+        const bar = document.getElementById('crm-bulk-bar');
+        const count = document.getElementById('crm-bulk-count');
+        if (_crmSelectedIds.size > 0) {
+            bar.style.display = 'flex';
+            count.textContent = `${_crmSelectedIds.size} selected`;
+        } else {
+            bar.style.display = 'none';
+        }
+    }
+    
+    function crmClearSelection() {
+        _crmSelectedIds.clear();
+        filterCrmStores();
+    }
+    
+    async function crmBulkOutreach() {
+        if (!_crmSelectedIds.size) return;
+        if (!confirm(`Log outreach for ${_crmSelectedIds.size} stores?`)) return;
+        try {
+            const r = await fetch('/api/ad-crm/bulk-visit', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({store_ids:[..._crmSelectedIds], visit_type:'outreach'})}).then(r=>r.json());
+            if (r.ok) { _crmSelectedIds.clear(); await loadAdCrm(); }
+            else alert(r.error||'Failed');
+        } catch(e) { alert(e.message); }
+    }
+    
+    async function crmBulkDeactivate() {
+        if (!_crmSelectedIds.size) return;
+        if (!confirm(`Deactivate ${_crmSelectedIds.size} stores? They'll be hidden from the main list.`)) return;
+        try {
+            const r = await fetch('/api/ad-crm/bulk-deactivate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({store_ids:[..._crmSelectedIds]})}).then(r=>r.json());
+            if (r.ok) { _crmSelectedIds.clear(); await loadAdCrm(); }
+            else alert(r.error||'Failed');
+        } catch(e) { alert(e.message); }
+    }
+    
+    function crmExportCsv() {
+        const ids = _crmSelectedIds.size ? _crmSelectedIds : new Set(_crmStores.filter(s=>s.is_active_ad!==0).map(s=>s.id));
+        const stores = _crmStores.filter(s => ids.has(s.id));
+        const rows = [['Store','Region','SA Name','Platform','Days Since Contact','Status']];
+        stores.forEach(s => {
+            const mc = (s.contacts||[])[0];
+            const st = !s.last_visit ? 'Never' : s.is_overdue ? 'Overdue' : 'OK';
+            rows.push([s.name, s.region||'', mc?.sales_name||'', mc?.phone_type||'', s.days_since ?? '', st]);
+        });
+        const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], {type:'text/csv'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'ad-crm-export.csv'; a.click();
+    }
+    
+    function crmExpandCollapseAll() {
+        const regions = [...new Set(_crmStores.map(s=>s.region).filter(Boolean))];
+        const allOpen = regions.every(r => _crmOpenRegions.has(r));
+        if (allOpen) _crmOpenRegions.clear();
+        else regions.forEach(r => _crmOpenRegions.add(r));
+        const btn = document.getElementById('crm-expand-all-btn');
+        btn.textContent = allOpen ? 'Expand All' : 'Collapse All';
+        filterCrmStores();
     }
     
     function toggleCrmRegion(region) {
