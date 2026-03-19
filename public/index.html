@@ -1091,7 +1091,7 @@
         <a data-page="jam" onclick="showPage('jam')">
             <span class="mn-icon"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span>Ops
         </a>
-        <a data-page="lookup" onclick="(function(){var tmp=document.createElement('input');tmp.style.cssText='position:fixed;top:0;left:0;opacity:0;height:0;width:0;font-size:16px;';document.body.appendChild(tmp);tmp.focus();showPage('lookup');setTimeout(function(){var si=document.getElementById('ref-search');if(si){si.focus();si.click();}tmp.remove();},50);})()">
+        <a data-page="lookup" onclick="showPage('lookup')">
             <span class="mn-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>Prices
         </a>
         <a id="more-toggle" onclick="toggleMobileMore()" style="position:relative;">
@@ -3078,10 +3078,27 @@ function showPage(name, pushState=true) {
     }
     $$('.nav a, #mobile-nav a').forEach(n => n.classList.remove('active'));
     const mm = document.getElementById('mobile-more-menu'); if (mm) mm.style.display = 'none';
+    // Capture keyboard focus synchronously for mobile (before async page switch)
+    // This preserves the user-gesture chain so iOS will show the keyboard
+    var _focusProxy = null;
+    if (name === 'lookup') {
+        _focusProxy = document.createElement('input');
+        _focusProxy.style.cssText = 'position:fixed;top:-100px;left:0;opacity:0;height:1px;width:1px;font-size:16px;border:none;';
+        document.body.appendChild(_focusProxy);
+        _focusProxy.focus();
+    }
     // Small delay for exit animation, then show new page
     setTimeout(() => {
         $$('.page').forEach(p => p.classList.remove('active'));
         $(`#page-${name}`)?.classList.add('active');
+        // Transfer focus from proxy to real input
+        if (name === 'lookup' && _focusProxy) {
+            requestAnimationFrame(() => {
+                var si = document.getElementById('ref-search');
+                if (si) si.focus();
+                if (_focusProxy.parentNode) _focusProxy.remove();
+            });
+        }
     }, currentPage && currentPage.id !== `page-${name}` ? 80 : 0);
     $$(`[data-page="${name}"]`).forEach(n => n.classList.add('active'));
     if (name === 'browse') { if (!allListings.length) loadListings(); }
