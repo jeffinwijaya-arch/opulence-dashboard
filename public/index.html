@@ -10901,7 +10901,7 @@ async function loadPayments() {
         const container = document.getElementById('fb-bundles-list');
         container.innerHTML = '<div style="text-align:center;color:var(--text-2);padding:20px;font-size:0.75rem;">Loading...</div>';
         try {
-            const resp = await fetch(`/api/postings/facebook-bundles?api_key=${API_KEY}`);
+            const resp = await fetch('/api/postings/facebook-bundles');
             const data = await resp.json();
             if (!data.ok) throw new Error(data.error || 'Failed');
             _fbBundlesData = data.bundles || [];
