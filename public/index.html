@@ -1088,8 +1088,8 @@
         <a data-page="inventory" onclick="showPage('inventory')">
             <span class="mn-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>Stock
         </a>
-        <a onclick="openUnifiedSearch()" style="position:relative;">
-            <span class="mn-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>Search
+        <a data-page="jam" onclick="showPage('jam')">
+            <span class="mn-icon"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span>Ops
         </a>
         <a data-page="lookup" onclick="showPage('lookup')">
             <span class="mn-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>Prices
@@ -1113,7 +1113,7 @@
             <!-- Aging mobile nav removed -->
             <!-- Briefing mobile nav removed -->
             <a class="more-grid-item" onclick="mobileNav('mission-control')"><span class="mgi-icon"></span>Mission Control</a>
-            <a class="more-grid-item" onclick="mobileNav('jam')"><span class="mgi-icon" style="font-size:0.9rem;">OP</span>Operations</a>
+            <a class="more-grid-item" onclick="mobileNav('dashboard');openUnifiedSearch()"><span class="mgi-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>Search</a>
             <a class="more-grid-item" onclick="mobileNav('ad-crm')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span>AD CRM</a>
         </div>
     </div>
