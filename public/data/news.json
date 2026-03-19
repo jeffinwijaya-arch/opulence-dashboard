@@ -1,6 +1,46 @@
 {
   "articles": [
     {
+      "id": "54a3d745f4d9",
+      "title": "The Unique Creations of L.Leroy",
+      "link": "https://revolutionwatch.com/the-unique-creations-of-l-leroy/",
+      "desc": "The post The Unique Creations of L.Leroy appeared first on Revolution Watch.",
+      "date": "2026-03-19T12:27:38+00:00",
+      "source": "REVOLUTION",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "50c6c6b92441",
+      "title": "Introducing \u2013 Christopher Ward debuts Calibre CW-002 and the new C63 Sealander True GMT",
+      "link": "https://monochrome-watches.com/christopher-ward-debuts-calibre-cw-002-and-the-new-c63-sealander-true-gmt-introducing-price/",
+      "desc": "One of the most active brands on British soil, Christopher Ward has recently demonstrated its capacity to create intricate mechanisms and movements, such as the Bel Canto and its chiming mechanism, or",
+      "date": "2026-03-19T10:01:34+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/Christopher-Ward-debuts-Calibre-CW-002-and-the-new-C63-Sealander-True-GMT-1-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "85f57d98b1f9",
+      "title": "Hands-On With The Remarkable New Christopher Ward C63 Sealander True GMT",
+      "link": "https://www.fratellowatches.com/hands-on-with-the-remarkable-new-christopher-ward-c63-sealander-true-gmt/",
+      "desc": "Christopher Ward is, without a doubt, one of the most active watch brands around today. It has consistently shown us how to push the envelope of what is possible in the realm of affordable watches. Th",
+      "date": "2026-03-19T10:00:29+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "f644ce20e94b",
+      "title": "Fratello Talks: Does Resale Value Affect How Much You Enjoy A Watch?",
+      "link": "https://www.fratellowatches.com/fratello-talks-does-resale-value-affect-how-much-you-enjoy-a-watch/",
+      "desc": "It\u2019s a question that comes up from time to time in today\u2019s watch world: Does resale value affect how much you enjoy a watch? With secondary market prices discussed almost as frequently as specificatio",
+      "date": "2026-03-19T05:00:47+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 30
+    },
+    {
       "id": "29b64e1143a2",
       "title": "Introducing \u2013 The Citizen Eco-Drive 50th Anniversary Edition",
       "link": "https://monochrome-watches.com/citizen-eco-drive-50th-anniversary-edition-aq4091-56w-history-eco-drive-technology-introducing-price/",
@@ -271,16 +311,6 @@
       "relevance": 0
     },
     {
-      "id": "75e5211adbcc",
-      "title": "Long-Term Review: Five Years Owning The Omega Speedmaster Moonwatch And Omega Seamaster 300",
-      "link": "https://www.fratellowatches.com/long-term-review-five-years-owning-the-omega-speedmaster-moonwatch-and-omega-seamaster-300/",
-      "desc": "Inspired by RJ\u2019s recent article on five years of owning the Omega\u2019s current Moonwatch, today, I\u2019ll reflect on my experience. Indeed, 2021 was a barnstorming year for Omega. On the first Tuesday of 202",
-      "date": "2026-03-17T06:00:57+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 0
-    },
-    {
       "id": "bd111d4e26c8",
       "title": "L\u2019Ep\u00e9e 1839\u2019s Objects Of Desire",
       "link": "https://revolutionwatch.com/lepee-1839s-objects-of-desire/",
@@ -288,16 +318,6 @@
       "date": "2026-03-17T01:00:21+00:00",
       "source": "REVOLUTION",
       "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "a61f8a9408ee",
-      "title": "Introducing \u2013 The Marco Lang Seven Spheres, with Seven-Axis Central Tourbillon",
-      "link": "https://monochrome-watches.com/marco-lang-seven-spheres-with-seven-axis-central-tourbillon-watch-introducing-price/",
-      "desc": "The name Marco Lang should be familiar to the most seasoned of our readers, for an obvious reason. The man is one of the most revered German watchmakers and one of the founders of the brand Lang & Hey",
-      "date": "2026-03-16T18:00:14+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/Marco-Lang-Seven-Spheres-Multi-Axis-Tourbillon-1-600x237.jpg",
       "relevance": 0
     },
     {
@@ -331,26 +351,6 @@
       "relevance": 0
     },
     {
-      "id": "f20bd8df85f4",
-      "title": "Hands-On With The Three New Audemars Piguet Royal Oak Offshore Selfwinding Diver Watches In Steel",
-      "link": "https://www.fratellowatches.com/hands-on-three-new-audemars-piguet-royal-oak-offshore-selfwinding-diver-models/",
-      "desc": "The 150 Heritage pocket watch, the Neo Frame Jumping Hour, and the skeletonized Royal Oak Perpetual Calendar might have stolen most of the limelight when Audemars Piguet presented many novelties in Ja",
-      "date": "2026-03-16T10:00:36+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 30
-    },
-    {
-      "id": "7d552e85f8bd",
-      "title": "Making Its Mark",
-      "link": "https://revolutionwatch.com/franck-muller-vanguard-apac-exclusives-making-its-mark/",
-      "desc": "The post Making Its Mark appeared first on Revolution Watch.",
-      "date": "2026-03-16T07:42:44+00:00",
-      "source": "REVOLUTION",
-      "image": "",
-      "relevance": 0
-    },
-    {
       "id": "1488e727ad37",
       "title": "Hands-On: The Citizen Eco-Drive Promaster Land GMT",
       "link": "https://www.hodinkee.com/articles/hands-on-citizen-eco-drive-land-gmt",
@@ -361,7 +361,7 @@
       "relevance": 0
     }
   ],
-  "fetched_at": "2026-03-19T04:33:12.323753+00:00",
+  "fetched_at": "2026-03-19T13:00:04.647007+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",

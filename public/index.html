@@ -5090,7 +5090,7 @@ async function doLookup() {
                     <div class="metric"><div class="label">Low</div><div class="val green">${fmt(low)}</div></div>
                     <div class="metric"><div class="label">Avg B25</div><div class="val" style="color:var(--accent)">${fmt(b25)}</div></div>
                     <div class="metric"><div class="label">High</div><div class="val">${fmt(high)}</div></div>
-                    <div class="metric"><div class="label">Spread</div><div class="val">${b25>0?pct((high-low)/b25*100):'—'}</div></div>
+                    <div class="metric"><div class="label">Spread</div><div class="val">${b25>0?(()=>{const s=(high-low)/b25*100;return s>999?'>999%':pct(s);})():'—'}</div></div>
                 </div>
                 <div class="detail-grid">
                     <div><div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:600;">Regional Pricing</div>${regionalHtml||'<div style="color:var(--text-2)">Single region</div>'}</div>
