@@ -11220,7 +11220,7 @@ async function loadPayments() {
                 if (!fn) return;
                 const img = document.createElement('img');
                 if (p._isLibrary) {
-                    img.src = `/api/watch-photos/library-image/${p.watch_id || p.id}`;
+                    img.src = `/api/watch-photo/${p.id}`;
                 } else {
                     img.src = `/api/watch-photos/${row}/images/${fn}`;
                 }
