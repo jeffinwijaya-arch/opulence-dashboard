@@ -10930,7 +10930,7 @@ async function loadPayments() {
             html += `
             <div style="border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;background:var(--bg-1);">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                    <span style="font-weight:600;font-size:0.85rem;">${b.ref} <span style="color:var(--text-2);font-weight:400;font-size:0.72rem;">(${watchCount} watches)</span></span>
+                    <span style="font-weight:600;font-size:0.85rem;">${b.title || b.ref || 'Bundle'} <span style="color:var(--text-2);font-weight:400;font-size:0.72rem;">(${watchCount} watches)</span></span>
                     <button class="btn" onclick="copyFbBundle(${idx})" style="font-size:0.68rem;padding:4px 10px;">Copy Caption</button>
                 </div>
                 <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">${photoGrid}</div>
