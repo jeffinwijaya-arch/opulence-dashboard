@@ -9496,8 +9496,13 @@ document.addEventListener('DOMContentLoaded', () => setTimeout(initPopouts, 500)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function showWatchDetail(row) {
-    if (!inventoryItems) return;
-    const item = inventoryItems.find(i => i.row === row);
+    // Search across all data sources: portfolio inventory, inventory management, action items
+    let item = null;
+    if (typeof row === 'object') { item = row; } // Direct item object (from action items)
+    else {
+        if (inventoryItems) item = inventoryItems.find(i => i.row === row || i.id === row);
+        if (!item && typeof invMgmtData !== 'undefined' && invMgmtData) item = invMgmtData.find(i => i.row === row || i.id === row);
+    }
     if (!item) return;
 
     const status = getStatus(item);

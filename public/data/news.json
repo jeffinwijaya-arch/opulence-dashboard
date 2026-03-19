@@ -1,6 +1,16 @@
 {
   "articles": [
     {
+      "id": "507a1842908a",
+      "title": "Introducing \u2013 Awake Son Mai Silver Leaf \u201cAtlantis Blue\u201d",
+      "link": "https://monochrome-watches.com/awake-son-mai-silver-leaf-atlantis-blue-limited-introducin-price/",
+      "desc": "Awake, the young Parisian-based indie brand founded by Lilian Thibault in 2019, is a keen advocate of sustainability and fosters an eco-friendly approach to watchmaking. Introduced in 2024, Awake\u2019s So",
+      "date": "2026-03-19T13:00:23+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/awake-son-mai-silver-leaf-atlantis-blue-limited-introducin-1-600x237.jpg",
+      "relevance": 0
+    },
+    {
       "id": "54a3d745f4d9",
       "title": "The Unique Creations of L.Leroy",
       "link": "https://revolutionwatch.com/the-unique-creations-of-l-leroy/",
@@ -8,6 +18,16 @@
       "date": "2026-03-19T12:27:38+00:00",
       "source": "REVOLUTION",
       "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "cc535a416b21",
+      "title": "Introducing: The Christopher Ward 'C63 True GMT' Adds A Local Jumping Hour Hand GMT To The Lineup",
+      "link": "https://www.hodinkee.com/articles/the-christopher-ward-c63-true-gmt-adds-a-local-jumping-hour-hand-gmt-to-the-lineup",
+      "desc": "The UK's biggest watch brand says building a flyer GMT movement was a trying and 'painful' endeavor that took longer than expected.",
+      "date": "2026-03-19T11:00:00-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/323d6cea-b24f-4b41-a148-0770036fb80f/UNDEREMBARGOUNTILMARCH19TH10AMGMT1.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
       "relevance": 0
     },
     {
@@ -301,16 +321,6 @@
       "relevance": 30
     },
     {
-      "id": "88c03aff8c9e",
-      "title": "First Look \u2013 The New Yema Superman Titanium MoonTide CMM.11",
-      "link": "https://monochrome-watches.com/yema-superman-titanium-moontide-cmm-11-limited-edition-review-price/",
-      "desc": "The Superman is easily the watch most people think of when Yema comes up in conversation. Introduced in the late 1960s, the French dive watch has been part of the brand\u2019s lineup ever since. Along the ",
-      "date": "2026-03-17T08:00:44+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/Yema-Superman-Titanium-MoonTide-CMM.11-Limited-Edition-Review-8-600x237.jpg",
-      "relevance": 0
-    },
-    {
       "id": "bd111d4e26c8",
       "title": "L\u2019Ep\u00e9e 1839\u2019s Objects Of Desire",
       "link": "https://revolutionwatch.com/lepee-1839s-objects-of-desire/",
@@ -349,19 +359,9 @@
       "source": "HODINKEE",
       "image": "https://hodinkee.imgix.net/uploads/images/21b3e401-88bf-4336-bde8-1c9dc105df01/kollokium-projekt-02-variant-b-5.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
       "relevance": 0
-    },
-    {
-      "id": "1488e727ad37",
-      "title": "Hands-On: The Citizen Eco-Drive Promaster Land GMT",
-      "link": "https://www.hodinkee.com/articles/hands-on-citizen-eco-drive-land-gmt",
-      "desc": "While it might say \"Land,\" this could be a great, affordable watch for people who spend a lot of time in the air.",
-      "date": "2026-03-13T13:00:00-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/0ec2b8bd-459c-42f7-bfb9-e227bdae4c72/20260310_CitizenPromasterLandGMT_013.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
     }
   ],
-  "fetched_at": "2026-03-19T13:00:04.647007+00:00",
+  "fetched_at": "2026-03-19T16:00:04.353409+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
