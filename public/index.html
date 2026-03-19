@@ -1091,7 +1091,7 @@
         <a data-page="jam" onclick="showPage('jam')">
             <span class="mn-icon"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span>Ops
         </a>
-        <a data-page="lookup" onclick="showPage('lookup')">
+        <a data-page="lookup" onclick="(function(){var tmp=document.createElement('input');tmp.style.cssText='position:fixed;top:0;left:0;opacity:0;height:0;width:0;font-size:16px;';document.body.appendChild(tmp);tmp.focus();showPage('lookup');setTimeout(function(){var si=document.getElementById('ref-search');if(si){si.focus();si.click();}tmp.remove();},50);})()">
             <span class="mn-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>Prices
         </a>
         <a id="more-toggle" onclick="toggleMobileMore()" style="position:relative;">
@@ -3085,7 +3085,7 @@ function showPage(name, pushState=true) {
     }, currentPage && currentPage.id !== `page-${name}` ? 80 : 0);
     $$(`[data-page="${name}"]`).forEach(n => n.classList.add('active'));
     if (name === 'browse') { if (!allListings.length) loadListings(); }
-    if (name === 'lookup') { const _q = ($('#ref-search')?.value||'').trim(); if (!_q) { _lookupInitialized = false; initLookupPage(); } setTimeout(()=>{const si=$('#ref-search');if(si){si.focus();}},100); }
+    if (name === 'lookup') { const _q = ($('#ref-search')?.value||'').trim(); if (!_q) { _lookupInitialized = false; initLookupPage(); } }
     if (name === 'portfolio') { if (DATA.portfolio) renderPortfolio(); else loadPortfolio(); }
     if (name === 'invoices') loadInvoicePage();
     if (name === 'shipping') loadShippingPage();
