@@ -1845,6 +1845,7 @@
                 <button class="btn" onclick="location.reload(true)" style="opacity:0.6;font-size:0.65rem;">Hard Reload</button>
                 <button class="btn" onclick="syncPostings()" id="postings-sync-btn" style="opacity:0.8;">&#8635; Reload Log</button>
                 <button class="btn" onclick="repostAllPostings()" id="postings-repost-all-btn" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);font-weight:600;">Sync All</button>
+                <button class="btn" onclick="syncExportChats()" id="sync-export-btn" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);">Sync Export Chats</button>
                 <span id="postings-status-msg" style="font-size:0.72rem;color:var(--text-2);margin-left:4px;"></span>
             </div>
 
@@ -11727,6 +11728,29 @@ async function loadPayments() {
             statusEl.style.color = 'var(--red, #ff6b6b)';
             statusEl.textContent = '❌ Sync failed: ' + e.message;
             btn.textContent = 'Sync All';
+            btn.disabled = false;
+        }
+    }
+
+    async function syncExportChats() {
+        const btn = document.getElementById('sync-export-btn');
+        const statusEl = document.getElementById('postings-status-msg');
+        btn.disabled = true;
+        btn.textContent = 'Syncing...';
+        statusEl.textContent = 'Syncing WhatsApp export chats from Google Drive...';
+        statusEl.style.color = 'var(--text-2)';
+        try {
+            const r = await fetch('/api/drive/sync-exports', { method: 'POST' });
+            const d = await r.json();
+            if (!d.ok) throw new Error(d.error || 'Sync failed');
+            statusEl.style.color = 'var(--green, #4caf50)';
+            statusEl.textContent = d.message || 'Export chats synced';
+            btn.textContent = 'Sync Export Chats';
+            btn.disabled = false;
+        } catch (e) {
+            statusEl.style.color = 'var(--red, #ff6b6b)';
+            statusEl.textContent = '❌ ' + e.message;
+            btn.textContent = 'Sync Export Chats';
             btn.disabled = false;
         }
     }
