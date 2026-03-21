@@ -11158,13 +11158,13 @@ async function loadPayments() {
             }
             tbody.innerHTML = ready.map(it => {
                 const desc = (it.description || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-                const shortDesc = desc.length > 65 ? desc.slice(0, 65) + '…' : desc;
+                // full desc - no truncation
                 const salePrice = it.sale_price ? '$' + Number(it.sale_price).toLocaleString() : '<span style="color:var(--text-2);">—</span>';
                 const arrived = '<span style="font-size:0.65rem;padding:2px 5px;border-radius:3px;background:rgba(0,230,118,0.15);color:var(--green);">Yes</span>';
                 const row = it.row || '';
                 return `<tr>
                     <td style="font-weight:600;white-space:nowrap;color:var(--accent);">${it.ref || '—'}</td>
-                    <td style="max-width:280px;font-size:0.72rem;" title="${desc}">${shortDesc}</td>
+                    <td style="max-width:400px;font-size:0.72rem;white-space:pre-line;line-height:1.35;word-break:break-word;" title="${desc}">${desc}</td>
                     <td>${arrived}</td>
                     <td class="right" style="font-size:0.72rem;font-family:monospace;">${salePrice}</td>
                     <td><button class="btn" style="font-size:0.65rem;padding:3px 8px;background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);font-weight:600;"
@@ -12312,7 +12312,7 @@ async function loadPayments() {
         }
         tbody.innerHTML = postings.map(p => {
             const desc = (p.description || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-            const shortDesc = desc.length > 55 ? desc.slice(0, 55) + '…' : desc;
+            // full desc - no truncation
             const posted = (p.posted_at || p.posted_date || '').slice(0, 10);
             const price = p.price ? '$' + Number(p.price).toLocaleString() : '—';
             const mid = p.message_id || '';
@@ -12332,7 +12332,7 @@ async function loadPayments() {
             return `<tr>
                 <td style="vertical-align:middle;">${photoHtml}</td>
                 <td style="font-weight:600;white-space:nowrap;">${p.ref || '—'}</td>
-                <td style="max-width:220px;font-size:0.72rem;" title="${desc}">${shortDesc}</td>
+                <td style="max-width:400px;font-size:0.72rem;white-space:pre-line;line-height:1.35;word-break:break-word;" title="${desc}">${desc}</td>
                 <td class="right" style="font-size:0.72rem;font-family:monospace;font-weight:600;">${price}</td>
                 <td class="right" style="font-size:0.72rem;white-space:nowrap;">${posted}</td>
                 <td class="right">${daysHtml}</td>
@@ -12340,6 +12340,8 @@ async function loadPayments() {
                 <td style="white-space:nowrap;">
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);"
                         onclick="repostSinglePosting(${p.id},'${safeDesc}',this)">Repost</button>
+                    ${p.photo ? `<button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;background:#1877f2;color:white;border-color:#1877f2;"
+                        onclick="window.open('https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(window.location.origin+'/share/${p.id}')+'&quote='+encodeURIComponent('${safeDesc}'+(${priceRaw}?'\\n$'+Number(${priceRaw}).toLocaleString()+' + label':'')),'fb_share','width=600,height=400')">FB</button>` : ''}
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;"
                         onclick="openPriceEditModal('${mid}','${priceRaw}','${safeDesc}','${safePhoto}','${p.row||""}')">Edit</button>
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);"
