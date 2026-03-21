@@ -11056,7 +11056,7 @@ async function loadPayments() {
             const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\').replace(/\n/g,' ').replace(/\r/g,'');
             const safePhoto = (p.photo || '').replace(/'/g,'&apos;');
             const priceRaw = p.price || '';
-            const fbShareUrl = p.photo ? `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin+'/share/'+p.id)}&quote=${encodeURIComponent(desc + (p.price ? '\n$'+Number(p.price).toLocaleString()+' + label' : ''))}` : '';
+            const _fbPhoto = (p.photo||'').replace(/'/g,"\\'");
             return `<tr>
                 <td style="vertical-align:middle;">${photoHtml}</td>
                 <td style="font-weight:600;white-space:nowrap;">${p.ref || '—'}</td>
@@ -11069,8 +11069,8 @@ async function loadPayments() {
                             onclick="sendPostingToTelegram(${p.id})">Send to WA</button>`
                         : `<button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);"
                             onclick="repostSinglePosting(${p.id},'${safeDesc}',this)">Repost</button>`}
-                    ${fbShareUrl ? `<button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;background:#1877f2;color:white;border-color:#1877f2;"
-                        onclick="window.open('${fbShareUrl}','fb_share','width=600,height=400')">FB</button>` : ''}
+                    ${p.photo ? `<button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;background:#1877f2;color:white;border-color:#1877f2;"
+                        onclick="shareToFBStory(${p.id},'${_fbPhoto}','${safeDesc}','${priceRaw}',this)">FB Story</button>` : ''}
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;"
                         onclick="openPriceEditModal('${mid}','${priceRaw}','${safeDesc}','${safePhoto}','${p.row||""}')">Edit</button>
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);"
@@ -11127,7 +11127,7 @@ async function loadPayments() {
                                 : `<button class="btn" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);"
                                     onclick="repostSinglePosting(${p.id},'${safeDesc}',this)">Repost</button>`}
                             ${p.photo ? `<button class="btn" style="background:#1877f2;color:white;border-color:#1877f2;"
-                                onclick="window.open('https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(window.location.origin+'/share/${p.id}')+'&quote='+encodeURIComponent('${safeDesc}'+(${priceRaw}?'\\n$'+Number(${priceRaw}).toLocaleString()+' + label':'')),'fb_share','width=600,height=400')">FB</button>` : ''}
+                                onclick="shareToFBStory(${p.id},'${(p.photo||'').replace(/'/g,"\\'")}','${safeDesc}','${priceRaw}',this)">FB Story</button>` : ''}
                             <button class="btn" onclick="openPriceEditModal('${mid}','${priceRaw}','${safeDesc}','${safePhoto}','${p.row||""}')">Edit</button>
                             <button class="btn" style="background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);"
                                 onclick="openPostingDeleteModal('${mid}','${safeDesc}','${safePhoto}','${priceRaw}','${p.id||""}')">Delete</button>
@@ -11636,6 +11636,36 @@ async function loadPayments() {
         _origShowPage(page);
         if (page === 'postings') loadPostingsPage();
     };
+    async function shareToFBStory(postingId, photoFile, caption, price, btn) {
+        try {
+            if (btn) { btn.disabled = true; btn.textContent = '...'; }
+            // Copy caption to clipboard
+            const fullCaption = caption + (price ? '\n$' + Number(price).toLocaleString() + ' + label' : '');
+            await navigator.clipboard.writeText(fullCaption);
+            // Download the photo
+            const photoUrl = '/api/posting-photo/' + photoFile;
+            const a = document.createElement('a');
+            a.href = photoUrl;
+            a.download = photoFile;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            // Open FB Stories
+            const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+            setTimeout(() => {
+                if (isMobile) {
+                    window.open('fb://story/camera', '_blank');
+                } else {
+                    window.open('https://www.facebook.com/stories/create', '_blank');
+                }
+            }, 500);
+            if (btn) { btn.textContent = 'Copied!'; btn.style.background = 'var(--green)'; setTimeout(() => { btn.textContent = 'FB Story'; btn.style.background = '#1877f2'; btn.disabled = false; }, 2000); }
+        } catch(e) {
+            alert('Error: ' + e.message);
+            if (btn) { btn.textContent = 'FB Story'; btn.disabled = false; }
+        }
+    }
+
     async function repostSinglePosting(postingId, desc, btn) {
         if (!confirm(`Repost to WhatsApp?`)) return;
         const origText = btn.textContent;
@@ -12341,7 +12371,7 @@ async function loadPayments() {
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);"
                         onclick="repostSinglePosting(${p.id},'${safeDesc}',this)">Repost</button>
                     ${p.photo ? `<button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;background:#1877f2;color:white;border-color:#1877f2;"
-                        onclick="window.open('https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(window.location.origin+'/share/${p.id}')+'&quote='+encodeURIComponent('${safeDesc}'+(${priceRaw}?'\\n$'+Number(${priceRaw}).toLocaleString()+' + label':'')),'fb_share','width=600,height=400')">FB</button>` : ''}
+                        onclick="shareToFBStory(${p.id},'${(p.photo||'').replace(/'/g,"\\'")}','${safeDesc}','${priceRaw}',this)">FB Story</button>` : ''}
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;"
                         onclick="openPriceEditModal('${mid}','${priceRaw}','${safeDesc}','${safePhoto}','${p.row||""}')">Edit</button>
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);"
