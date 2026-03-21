@@ -11047,7 +11047,6 @@ async function loadPayments() {
         }
         tbody.innerHTML = postings.map(p => {
             const desc = (p.description || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-            const shortDesc = desc.length > 60 ? desc.slice(0, 60) + '…' : desc;
             const posted = (p.posted_at || p.posted_date || '').slice(0, 10);
             const price = p.price ? '$' + Number(p.price).toLocaleString() : '—';
             const mid = p.message_id || '';
@@ -11057,10 +11056,11 @@ async function loadPayments() {
             const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\').replace(/\n/g,' ').replace(/\r/g,'');
             const safePhoto = (p.photo || '').replace(/'/g,'&apos;');
             const priceRaw = p.price || '';
+            const fbShareUrl = p.photo ? `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin+'/share/'+p.id)}&quote=${encodeURIComponent(desc + (p.price ? '\n$'+Number(p.price).toLocaleString()+' + label' : ''))}` : '';
             return `<tr>
                 <td style="vertical-align:middle;">${photoHtml}</td>
                 <td style="font-weight:600;white-space:nowrap;">${p.ref || '—'}</td>
-                <td style="max-width:240px;font-size:0.72rem;" title="${desc}">${shortDesc}</td>
+                <td style="max-width:400px;font-size:0.72rem;white-space:pre-line;line-height:1.35;word-break:break-word;" title="${desc}">${desc}</td>
                 <td class="right" style="font-size:0.72rem;font-family:monospace;font-weight:600;">${price}</td>
                 <td class="right" style="font-size:0.72rem;white-space:nowrap;">${p.time_ago || posted}</td>
                 <td style="white-space:nowrap;">
@@ -11069,6 +11069,8 @@ async function loadPayments() {
                             onclick="sendPostingToTelegram(${p.id})">Send to WA</button>`
                         : `<button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);"
                             onclick="repostSinglePosting(${p.id},'${safeDesc}',this)">Repost</button>`}
+                    ${fbShareUrl ? `<button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;background:#1877f2;color:white;border-color:#1877f2;"
+                        onclick="window.open('${fbShareUrl}','fb_share','width=600,height=400')">FB</button>` : ''}
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;margin-right:4px;"
                         onclick="openPriceEditModal('${mid}','${priceRaw}','${safeDesc}','${safePhoto}','${p.row||""}')">Edit</button>
                     <button class="btn" style="font-size:0.65rem;padding:3px 8px;background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);"
@@ -11124,6 +11126,8 @@ async function loadPayments() {
                                     onclick="sendPostingToTelegram(${p.id})">Send to WA</button>`
                                 : `<button class="btn" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);"
                                     onclick="repostSinglePosting(${p.id},'${safeDesc}',this)">Repost</button>`}
+                            ${p.photo ? `<button class="btn" style="background:#1877f2;color:white;border-color:#1877f2;"
+                                onclick="window.open('https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(window.location.origin+'/share/${p.id}')+'&quote='+encodeURIComponent('${safeDesc}'+(${priceRaw}?'\\n$'+Number(${priceRaw}).toLocaleString()+' + label':'')),'fb_share','width=600,height=400')">FB</button>` : ''}
                             <button class="btn" onclick="openPriceEditModal('${mid}','${priceRaw}','${safeDesc}','${safePhoto}','${p.row||""}')">Edit</button>
                             <button class="btn" style="background:var(--red-dim);color:var(--red);border-color:rgba(255,23,68,0.3);"
                                 onclick="openPostingDeleteModal('${mid}','${safeDesc}','${safePhoto}','${priceRaw}','${p.id||""}')">Delete</button>
