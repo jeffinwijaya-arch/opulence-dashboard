@@ -5434,7 +5434,7 @@ function renderPosTable(items) {
         const spark = _sparkData[i.ref] ? sparkline(_sparkData[i.ref], 56, 18) : '';
         const askPrice = i.sale_price ? fmt(parseFloat(String(i.sale_price).replace(/[$,]/g, ''))) : '<span class="dim">—</span>';
         return `<tr style="cursor:pointer;" onclick="showWatchDetail(${i.row})">
-            <td class="ref" onclick="event.stopPropagation();lookupRef('${i.ref}','${(i.dial||'').replace(/'/g,"\\'")}')" style="cursor:pointer;text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:2px;">${i.ref}</td>
+            <td class="ref"><span onclick="event.stopPropagation();lookupRef('${i.ref}','${(i.dial||'').replace(/'/g,"\\'")}')" style="cursor:pointer;text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:2px;">${i.ref}</span> <span onclick="event.stopPropagation();showWatchDetail(${i.row})" style="cursor:pointer;font-size:0.6rem;color:var(--text-2);border:1px solid var(--border);border-radius:3px;padding:1px 4px;margin-left:2px;" title="Watch Details">i</span></td>
             <td class="dim" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${[i.bracelet,i.dial].filter(Boolean).join(' | ')}</td>
             <td class="right">${fmt(i.cost_price)}</td>
             <td class="right" style="color:var(--accent-light);">${askPrice}</td>
@@ -5473,7 +5473,7 @@ function renderPosCards(items) {
         return `<div style="background:var(--bg-2);border:1px solid var(--border);border-left:3px solid ${borderColor};border-radius:var(--radius);padding:10px 12px;display:flex;flex-direction:column;gap:6px;cursor:pointer;" onclick="showWatchDetail(${i.row})">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;">
                 <div>
-                    <span class="ref" style="font-size:0.95rem;text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:2px;cursor:pointer;" onclick="event.stopPropagation();lookupRef('${i.ref}','${(i.dial||'').replace(/'/g,"\\'")}')">${i.ref}</span>
+                    <span class="ref" style="font-size:0.95rem;text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:2px;cursor:pointer;" onclick="event.stopPropagation();lookupRef('${i.ref}','${(i.dial||'').replace(/'/g,"\\'")}')">${i.ref}</span> <span onclick="event.stopPropagation();showWatchDetail(${i.row})" style="cursor:pointer;font-size:0.6rem;color:var(--text-2);border:1px solid var(--border);border-radius:3px;padding:1px 4px;margin-left:2px;" title="Watch Details">i</span>
                     <div style="font-size:0.72rem;color:var(--text-2);margin-top:1px;">${[i.bracelet,i.dial].filter(Boolean).join(' | ')}</div>
                 </div>
                 <span class="tag ${sCls}">${status}</span>
