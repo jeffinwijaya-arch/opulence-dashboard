@@ -1660,7 +1660,7 @@
                         <th class="right" style="cursor:pointer;" onclick="sortInventory('cost_price')">Cost <span id="imh-cost_price"></span></th>
                         <th class="right" style="cursor:pointer;" onclick="sortInventory('sold_price')">Sold $ <span id="imh-sold_price"></span></th>
                         <th class="right" style="cursor:pointer;" onclick="sortInventory('pnl')">P&L <span id="imh-pnl"></span></th>
-                        <th>Arr</th><th>Post</th><th>Sold</th><th>Ship</th><th>Paid</th><th>Actions</th>
+                        <th style="cursor:pointer;" onclick="sortInventory('arrived')">Arr <span id="imh-arrived"></span></th><th style="cursor:pointer;" onclick="sortInventory('posted')">Post <span id="imh-posted"></span></th><th style="cursor:pointer;" onclick="sortInventory('sold')">Sold <span id="imh-sold"></span></th><th style="cursor:pointer;" onclick="sortInventory('shipped')">Ship <span id="imh-shipped"></span></th><th style="cursor:pointer;" onclick="sortInventory('paid_after_sold')">Paid <span id="imh-paid_after_sold"></span></th><th>Actions</th>
                     </tr></thead>
                     <tbody id="im-tbody"></tbody>
                 </table>
@@ -6912,11 +6912,15 @@ function filterInventory() {
     const p = v => { const n = parseFloat(String(v||'0').replace(/[$,]/g,'')); return isNaN(n)?0:n; };
     rows.sort((a, b) => {
         let va, vb;
+        const _ynCols = ['arrived','posted','sold','shipped','paid_after_sold'];
         if (invSortCol === 'cost_price' || invSortCol === 'sold_price') {
             va = p(a[invSortCol]); vb = p(b[invSortCol]);
         } else if (invSortCol === 'pnl') {
             va = a.sold==='Yes' ? p(a.sold_price) - p(a.cost_price) : -Infinity;
             vb = b.sold==='Yes' ? p(b.sold_price) - p(b.cost_price) : -Infinity;
+        } else if (_ynCols.includes(invSortCol)) {
+            va = a[invSortCol]==='Yes' ? 1 : 0;
+            vb = b[invSortCol]==='Yes' ? 1 : 0;
         } else {
             va = (a[invSortCol]||'').toLowerCase(); vb = (b[invSortCol]||'').toLowerCase();
         }
