@@ -10937,6 +10937,7 @@ async function loadPayments() {
                 <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">${photoGrid}</div>
                 <div style="background:var(--bg-2);border-radius:6px;padding:10px;font-size:0.75rem;white-space:pre-wrap;font-family:var(--font);color:var(--text-1);line-height:1.5;" id="fb-caption-${idx}">${_escHtml(b.caption)}</div>
                 <div style="margin-top:6px;display:flex;gap:6px;">
+                    <button class="btn" onclick="shareToFBStoryBundle(${idx})" style="font-size:0.68rem;padding:4px 10px;background:#1877f2;color:#fff;">Post Bundle to FB Story</button>
                     <button class="btn" onclick="downloadFbPhotos(${idx})" style="font-size:0.68rem;padding:4px 10px;">Download All Photos</button>
                 </div>
             </div>`;
@@ -11638,31 +11639,46 @@ async function loadPayments() {
     };
     async function shareToFBStory(postingId, photoFile, caption, price, btn) {
         try {
-            if (btn) { btn.disabled = true; btn.textContent = '...'; }
-            // Copy caption to clipboard
-            const fullCaption = caption + (price ? '\n$' + Number(price).toLocaleString() + ' + label' : '');
-            await navigator.clipboard.writeText(fullCaption);
-            // Download the photo
-            const photoUrl = '/api/posting-photo/' + photoFile;
-            const a = document.createElement('a');
-            a.href = photoUrl;
-            a.download = photoFile;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            // Open FB Stories
-            const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
-            setTimeout(() => {
-                if (isMobile) {
-                    window.open('fb://story/camera', '_blank');
-                } else {
-                    window.open('https://www.facebook.com/stories/create', '_blank');
-                }
-            }, 500);
-            if (btn) { btn.textContent = 'Copied!'; btn.style.background = 'var(--green)'; setTimeout(() => { btn.textContent = 'FB Story'; btn.style.background = '#1877f2'; btn.disabled = false; }, 2000); }
+            if (btn) { btn.disabled = true; btn.textContent = 'Posting...'; }
+            const resp = await fetch(`/api/fb-story/${postingId}`, { method: 'POST' });
+            const data = await resp.json();
+            if (data.ok) {
+                if (btn) { btn.textContent = 'Posted!'; btn.style.background = 'var(--green)'; setTimeout(() => { btn.textContent = 'FB Story'; btn.style.background = '#1877f2'; btn.disabled = false; }, 3000); }
+                showToast('FB Story posted successfully!', 'success');
+            } else {
+                throw new Error(data.error || 'Unknown error');
+            }
         } catch(e) {
-            alert('Error: ' + e.message);
+            alert('FB Story error: ' + e.message);
             if (btn) { btn.textContent = 'FB Story'; btn.disabled = false; }
+        }
+    }
+
+    async function shareToFBStoryBundle(bundleIdx) {
+        const b = _fbBundlesData[bundleIdx];
+        if (!b || !b.watches) return;
+        const postingIds = b.watches.map(w => w.posting_id).filter(Boolean);
+        if (!postingIds.length) { alert('No posting IDs in this bundle'); return; }
+        const btn = event.target;
+        btn.disabled = true; btn.textContent = 'Posting...';
+        try {
+            const resp = await fetch('/api/fb-story/bundle', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({posting_ids: postingIds})
+            });
+            const data = await resp.json();
+            if (data.ok) {
+                btn.textContent = `${data.success}/${data.total} Posted!`;
+                btn.style.background = 'var(--green)';
+                setTimeout(() => { btn.textContent = 'Post Bundle to FB'; btn.style.background = '#1877f2'; btn.disabled = false; }, 3000);
+                showToast(`FB Stories: ${data.success}/${data.total} posted`, data.success === data.total ? 'success' : 'warning');
+            } else {
+                throw new Error(data.error || 'Unknown error');
+            }
+        } catch(e) {
+            alert('FB Story bundle error: ' + e.message);
+            btn.textContent = 'Post Bundle to FB'; btn.disabled = false;
         }
     }
 
@@ -14062,10 +14078,35 @@ function renderJamFeed(type) {
         }) : pending;
         
         if (visiblePending.length) {
+            // Shipper filter (admin only)
+            if (!isLogistics) {
+                const _shipperCounts = {};
+                for (const i of visiblePending) {
+                    const s = i.assigned_shipper || 0;
+                    _shipperCounts[s] = (_shipperCounts[s] || 0) + 1;
+                }
+                const _shipperNames = {2: 'Eddy', 4: 'Luigi', 0: 'Unassigned'};
+                const _shipperColors = {2: '#4A90D9', 4: '#9B59B6', 0: 'var(--text-2)'};
+                const _activeFilter = window._keluarShipperFilter || 'all';
+                html += `<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">`;
+                html += `<button onclick="window._keluarShipperFilter='all';loadJamFeed('keluar')" style="cursor:pointer;padding:6px 14px;border-radius:20px;font-size:0.75rem;font-weight:700;border:1px solid var(--border);background:${_activeFilter==='all'?'var(--accent)':'var(--bg-2)'};color:${_activeFilter==='all'?'#000':'var(--text-1)'};">ALL (${visiblePending.length})</button>`;
+                for (const [sid, cnt] of Object.entries(_shipperCounts)) {
+                    const sn = _shipperNames[sid] || ('Shipper #'+sid);
+                    const sc = _shipperColors[sid] || 'var(--text-2)';
+                    const active = _activeFilter === String(sid);
+                    html += `<button onclick="window._keluarShipperFilter='${sid}';loadJamFeed('keluar')" style="cursor:pointer;padding:6px 14px;border-radius:20px;font-size:0.75rem;font-weight:700;border:1px solid ${sc};background:${active?sc:'var(--bg-2)'};color:${active?'#fff':sc};">${sn.toUpperCase()} (${cnt})</button>`;
+                }
+                html += `</div>`;
+            }
+
+            // Apply shipper filter
+            const _sf = window._keluarShipperFilter || 'all';
+            const filteredPending = _sf === 'all' ? visiblePending : visiblePending.filter(i => String(i.assigned_shipper || 0) === _sf);
+
             // Count unique packages + unpackaged watches
             const _pkgIds = new Set();
             let _looseCount = 0;
-            for (const i of visiblePending) {
+            for (const i of filteredPending) {
                 if (i.package_id) _pkgIds.add(i.package_id);
                 else _looseCount++;
             }
@@ -14078,7 +14119,7 @@ function renderJamFeed(type) {
             const renderedPkgs = new Set();
             let lastDate = '';
             let _logisticsPkgSeq = 0;
-            for (const item of visiblePending) {
+            for (const item of filteredPending) {
                 const d = item.date || 'Unscheduled';
                 if (isLogistics && (d === 'Unscheduled' || d === '')) continue;
                 if (d !== lastDate) {
@@ -14089,7 +14130,7 @@ function renderJamFeed(type) {
                 // If item has a package, render package group
                 if (item.package_id && !renderedPkgs.has(item.package_id)) {
                     renderedPkgs.add(item.package_id);
-                    const pkgItems = visiblePending.filter(i => i.package_id === item.package_id);
+                    const pkgItems = filteredPending.filter(i => i.package_id === item.package_id);
                     const pkgLabelBtn = item.has_label && item.label_file
                         ? '<button onclick="event.stopPropagation();window.open(\'/api/jam/label/' + item.label_file + '\',\'_blank\')" style="cursor:pointer;padding:8px 14px;border:none;border-radius:8px;background:var(--green);color:#000;font-weight:700;font-size:0.78rem;min-height:36px;">VIEW LABEL</button>'
                         : '';
@@ -14227,6 +14268,14 @@ function _jamCard(type, item) {
         // External shipment badge (hidden from logistics, visible to admin)
         if (item.ship_from === 'foreign' && _userRole.role !== 'logistics') {
             pills += `<span class="jam-pill" style="border:1px solid var(--orange);background:var(--orange);color:#000;font-weight:600;">FOREIGN</span>`;
+        }
+        // Shipper badge (admin only)
+        if (_userRole.role !== 'logistics' && item.assigned_shipper) {
+            const _shipperNames = {2: 'EDDY', 4: 'LUIGI'};
+            const _shipperColors = {2: '#4A90D9', 4: '#9B59B6'};
+            const sName = _shipperNames[item.assigned_shipper] || ('SHIPPER #' + item.assigned_shipper);
+            const sColor = _shipperColors[item.assigned_shipper] || 'var(--text-2)';
+            pills += `<span class="jam-pill" style="border:1px solid ${sColor};background:${sColor}22;color:${sColor};font-weight:700;">${sName}</span>`;
         }
         
         if (item.has_label && item.label_file && !item.package_id) {
