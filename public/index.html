@@ -1622,6 +1622,7 @@
                 <div class="metric"><div class="label">Capital</div><div class="val" id="im-capital">—</div></div>
                 <div class="metric"><div class="label">Revenue</div><div class="val" id="im-revenue">—</div></div>
                 <div class="metric"><div class="label">Profit</div><div class="val" id="im-profit">—</div></div>
+                <div class="metric" style="border-left:2px solid var(--accent);padding-left:10px;"><div class="label" id="im-month-label">This Month</div><div class="val" id="im-month-profit">—</div></div>
             </div>
             <!-- Controls -->
             <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
@@ -1846,6 +1847,7 @@
                 <button class="btn" onclick="syncPostings()" id="postings-sync-btn" style="opacity:0.8;">&#8635; Reload Log</button>
                 <button class="btn" onclick="repostAllPostings()" id="postings-repost-all-btn" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);font-weight:600;">Sync All</button>
                 <button class="btn" onclick="syncExportChats()" id="sync-export-btn" style="background:var(--accent-dim);color:var(--accent);border-color:var(--accent-border);">Sync Export Chats</button>
+                <button class="btn" onclick="openWaExportManager()" style="background:var(--bg-2);font-size:0.68rem;">Manage Groups</button>
                 <span id="postings-status-msg" style="font-size:0.72rem;color:var(--text-2);margin-left:4px;"></span>
             </div>
 
@@ -6845,12 +6847,27 @@ function updateInventorySummary() {
     el('im-unposted').textContent = d.filter(r => r.sold !== 'Yes' && r.posted !== 'Yes' && r.arrived === 'Yes').length;
     const totalCost = d.filter(r=>r.sold!=='Yes').reduce((s,r) => s + p(r.cost_price), 0);
     const totalRevenue = d.filter(r=>r.sold==='Yes').reduce((s,r) => s + p(r.sold_price), 0);
-    const totalProfit = d.filter(r=>r.sold==='Yes'&&p(r.cost_price)>0).reduce((s,r) => s + (p(r.sold_price) - p(r.cost_price)), 0);
+    const totalProfitAll = d.filter(r=>r.sold==='Yes'&&p(r.cost_price)>0).reduce((s,r) => s + (p(r.sold_price) - p(r.cost_price)), 0);
+    const totalProfit = d.filter(r=>r.sold==='Yes'&&r.shipped==='Yes'&&r.paid_buyer==='Yes'&&p(r.cost_price)>0).reduce((s,r) => s + (p(r.sold_price) - p(r.cost_price)), 0);
     el('im-capital').textContent = fmt(totalCost);
     el('im-revenue').textContent = fmt(totalRevenue);
     const profitEl = el('im-profit');
     profitEl.textContent = (totalProfit>=0?'+':'') + fmt(totalProfit);
     profitEl.style.color = totalProfit >= 0 ? 'var(--green)' : 'var(--red)';
+    profitEl.title = `Complete (paid): ${fmt(totalProfit)} | All sold: ${fmt(totalProfitAll)}`;
+    // Current month profit (complete lifecycle: sold+shipped+paid)
+    const now = new Date();
+    const moPrefix = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    const moName = now.toLocaleString('en-US',{month:'short'});
+    const monthProfit = d.filter(r => r.sold==='Yes' && r.shipped==='Yes' && r.paid_buyer==='Yes' && (r.sale_date||'').startsWith(moPrefix) && p(r.cost_price)>0)
+        .reduce((s,r) => s + (p(r.sold_price) - p(r.cost_price)), 0);
+    const monthAll = d.filter(r => r.sold==='Yes' && (r.sale_date||'').startsWith(moPrefix) && p(r.cost_price)>0)
+        .reduce((s,r) => s + (p(r.sold_price) - p(r.cost_price)), 0);
+    const mpEl = el('im-month-profit');
+    mpEl.textContent = (monthProfit>=0?'+':'') + fmt(monthProfit);
+    mpEl.style.color = monthProfit >= 0 ? 'var(--green)' : 'var(--red)';
+    mpEl.title = `Complete (paid): ${fmt(monthProfit)} | All sold: ${fmt(monthAll)}`;
+    el('im-month-label').textContent = moName + ' Profit';
 }
 
 window._showCompletedWatches = false;
@@ -10123,7 +10140,7 @@ async function loadPayments() {
                     ${grailBadge}
                     <div style="height:160px;background:var(--bg-3);overflow:hidden;position:relative;">
                         <div style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,0.7);padding:2px 6px;border-radius:3px;font-size:0.6rem;color:white;font-weight:600;">${condition}</div>
-                        <img src="/api/watch-photos/${watch.watch_id}/image" 
+                        <img src="/api/watch-photos/${watch.watch_id}/image?thumb=true" loading="lazy"
                              style="width:100%;height:100%;object-fit:cover;transition:transform 0.2s ease;" 
                              onerror="this.style.display='none'; this.parentElement.insertAdjacentHTML('beforeend', '<div style=\\'display:flex;align-items:center;justify-content:center;position:absolute;top:0;left:0;width:100%;height:100%;color:var(--text-2);font-size:0.8rem;\\'>Photo: ${model}</div>')"
                              onmouseover="this.style.transform='scale(1.05)'"
@@ -11807,6 +11824,153 @@ async function loadPayments() {
             btn.textContent = 'Sync Export Chats';
             btn.disabled = false;
         }
+    }
+
+    // ── WA EXPORT GROUP MANAGER ──────────────────────────────────────
+    let _waExportGroups = [];
+    
+    async function openWaExportManager() {
+        // Create modal
+        let modal = document.getElementById('wa-export-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'wa-export-modal';
+            modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);';
+            modal.innerHTML = `
+                <div style="background:var(--bg-1);border-radius:12px;width:90%;max-width:700px;max-height:85vh;display:flex;flex-direction:column;border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <span style="font-weight:700;font-size:0.95rem;">WhatsApp Auto-Export Groups</span>
+                            <span id="wa-export-count" style="font-size:0.72rem;color:var(--text-2);margin-left:8px;"></span>
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <input type="text" id="wa-export-search" placeholder="Search groups..." 
+                                style="font-size:0.75rem;padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg-2);color:var(--text-1);width:180px;" 
+                                oninput="filterWaExportGroups()">
+                            <button class="btn" onclick="selectAllWaVisible()" style="font-size:0.65rem;padding:3px 8px;">Select All Visible</button>
+                            <button class="btn" onclick="waExportSyncNow()" id="wa-sync-now-btn" style="font-size:0.65rem;padding:3px 8px;background:var(--accent-dim);color:var(--accent);">Sync Now</button>
+                            <button onclick="document.getElementById('wa-export-modal').style.display='none'" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:1.2rem;padding:4px;">&times;</button>
+                        </div>
+                    </div>
+                    <div id="wa-export-list" style="overflow-y:auto;flex:1;padding:8px 12px;"></div>
+                    <div id="wa-export-status" style="padding:10px 16px;border-top:1px solid var(--border);font-size:0.72rem;color:var(--text-2);"></div>
+                </div>`;
+            document.body.appendChild(modal);
+            modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+        }
+        modal.style.display = 'flex';
+        document.getElementById('wa-export-list').innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-2);">Loading groups...</div>';
+        
+        try {
+            const r = await fetch('/api/wa-export/groups');
+            const d = await r.json();
+            if (!d.ok) throw new Error(d.error);
+            _waExportGroups = d.groups;
+            document.getElementById('wa-export-count').textContent = `${d.configured} of ${d.total} selected`;
+            renderWaExportGroups(_waExportGroups);
+        } catch (e) {
+            document.getElementById('wa-export-list').innerHTML = `<div style="text-align:center;padding:30px;color:var(--red);">${e.message}</div>`;
+        }
+    }
+
+    function renderWaExportGroups(groups) {
+        const container = document.getElementById('wa-export-list');
+        if (!groups.length) {
+            container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-2);">No groups found</div>';
+            return;
+        }
+        const search = (document.getElementById('wa-export-search')?.value || '').toLowerCase();
+        const filtered = search ? groups.filter(g => g.name.toLowerCase().includes(search)) : groups;
+        
+        let html = '';
+        filtered.forEach((g, i) => {
+            const lastMsg = g.last_message ? new Date(g.last_message).toLocaleDateString() : '—';
+            html += `
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--border);${g.enabled ? 'background:var(--accent-dim);' : ''}" data-jid="${g.jid}">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;min-width:0;">
+                    <input type="checkbox" ${g.enabled ? 'checked' : ''} 
+                        onchange="toggleWaExportGroup('${g.jid}', this.checked, '${g.name.replace(/'/g, "\\'")}')"
+                        style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+                    <span style="font-size:0.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_escHtml(g.name)}</span>
+                </label>
+                <span style="font-size:0.65rem;color:var(--text-2);white-space:nowrap;">${lastMsg}</span>
+            </div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function filterWaExportGroups() {
+        renderWaExportGroups(_waExportGroups);
+    }
+
+    async function toggleWaExportGroup(jid, enabled, name) {
+        try {
+            const r = await fetch('/api/wa-export/toggle', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({jid, enabled, name})
+            });
+            const d = await r.json();
+            if (!d.ok) throw new Error(d.error);
+            // Update local state
+            const g = _waExportGroups.find(g => g.jid === jid);
+            if (g) { g.enabled = enabled; g.configured = enabled; }
+            const configured = _waExportGroups.filter(g => g.enabled).length;
+            document.getElementById('wa-export-count').textContent = `${configured} of ${_waExportGroups.length} selected`;
+            // Highlight row
+            const row = document.querySelector(`[data-jid="${jid}"]`);
+            if (row) row.style.background = enabled ? 'var(--accent-dim)' : '';
+        } catch (e) {
+            document.getElementById('wa-export-status').textContent = 'Error: ' + e.message;
+        }
+    }
+
+    function selectAllWaVisible() {
+        const search = (document.getElementById('wa-export-search')?.value || '').toLowerCase();
+        const visible = search ? _waExportGroups.filter(g => g.name.toLowerCase().includes(search)) : _waExportGroups;
+        const allEnabled = visible.every(g => g.enabled);
+        const groups = visible.map(g => ({jid: g.jid, name: g.name, enabled: !allEnabled}));
+        
+        fetch('/api/wa-export/toggle-bulk', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({groups})
+        }).then(r => r.json()).then(d => {
+            if (!d.ok) throw new Error(d.error);
+            groups.forEach(({jid, enabled}) => {
+                const g = _waExportGroups.find(g => g.jid === jid);
+                if (g) { g.enabled = enabled; g.configured = enabled; }
+            });
+            const configured = _waExportGroups.filter(g => g.enabled).length;
+            document.getElementById('wa-export-count').textContent = `${configured} of ${_waExportGroups.length} selected`;
+            renderWaExportGroups(_waExportGroups);
+        }).catch(e => {
+            document.getElementById('wa-export-status').textContent = 'Error: ' + e.message;
+        });
+    }
+
+    async function waExportSyncNow() {
+        const btn = document.getElementById('wa-sync-now-btn');
+        const status = document.getElementById('wa-export-status');
+        btn.disabled = true;
+        btn.textContent = 'Syncing...';
+        status.textContent = 'Pulling messages from WhatsApp...';
+        try {
+            const r = await fetch('/api/wa-export/sync', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({days: 1, force: true})
+            });
+            const d = await r.json();
+            if (!d.ok) throw new Error(d.error);
+            status.textContent = d.output || 'Sync complete';
+            status.style.color = 'var(--green)';
+        } catch (e) {
+            status.textContent = 'Error: ' + e.message;
+            status.style.color = 'var(--red)';
+        }
+        btn.disabled = false;
+        btn.textContent = 'Sync Now';
     }
 
     // Auto-load if postings page was opened via URL param
@@ -14331,7 +14495,7 @@ function _jamCard(type, item) {
                 const p = list[list.length-1];
                 return `<div style="position:relative;width:90px;height:90px;">
                     <div onclick="event.stopPropagation();showShipPhotoLightbox('/api/jam/ship-photo/${item.id}/${p.filename}','${label}')" style="cursor:pointer;width:90px;height:90px;border-radius:10px;overflow:hidden;border:2px solid var(--green);">
-                        <img src="/api/jam/ship-photo/${item.id}/${p.filename}" style="width:100%;height:100%;object-fit:cover;">
+                        <img src="/api/jam/ship-photo/${item.id}/${p.filename}?thumb=true" loading="lazy" style="width:100%;height:100%;object-fit:cover;">
                         <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);color:var(--green);font-size:0.55rem;text-align:center;padding:2px;">${label}</div>
                     </div>
                     ${canEditPhotos ? `<button onclick="event.stopPropagation();jamUploadShipPhoto(${item.id},'${type}')" style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:none;background:var(--orange);color:#000;font-size:0.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;z-index:1;" title="Replace photo">&#8635;</button>` : ''}
