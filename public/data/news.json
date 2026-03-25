@@ -21,6 +21,16 @@
       "relevance": 0
     },
     {
+      "id": "78a4d61241d7",
+      "title": "The Business of Watches Podcast: La Joux-Perret CEO Jean-Claude Eggen",
+      "link": "https://www.hodinkee.com/articles/la-joux-perret-ceo-jean-claude-eggen",
+      "desc": "The head of the Swiss movement maker explains the economics of producing the engines that drive timepieces.",
+      "date": "2026-03-25T11:00:00-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/96086310-17fc-4b57-8092-1d123eafa853/BusinessOfWatches-21-hero.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "relevance": 0
+    },
+    {
       "id": "db873f1ded50",
       "title": "Introducing \u2013 The Jacob & Co. Billionaire Double Tourbillon Angel, A Cut Above The Rest",
       "link": "https://monochrome-watches.com/introducing-jacob-and-co-billionaire-double-tourbillon-angel-cut-specs-price-pics/",
@@ -341,16 +351,6 @@
       "relevance": 0
     },
     {
-      "id": "8bd3ec8d38d2",
-      "title": "In Partnership - 50 Years Illuminated",
-      "link": "https://www.hodinkee.com/articles/50-years-illuminated-citizen-2026",
-      "desc": "The CITIZEN reflects Eco-Drive's light-powered craft and precision",
-      "date": "2026-03-19T00:01:00-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/9aed2e6c-dace-4a1f-8d32-09ba5ba3e2cf/CITIZEN50_12.jpeg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
-    },
-    {
       "id": "f72d3d4eb7bb",
       "title": "Breitling Forever: Breitling Navitimer B19 Chronograph 43 Perpetual Calendar",
       "link": "https://revolutionwatch.com/breiting-perpetual-calendar/",
@@ -361,7 +361,7 @@
       "relevance": 20
     }
   ],
-  "fetched_at": "2026-03-25T13:00:04.325166+00:00",
+  "fetched_at": "2026-03-25T16:00:04.092628+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",

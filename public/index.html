@@ -11884,7 +11884,8 @@ async function loadPayments() {
         
         let html = '';
         filtered.forEach((g, i) => {
-            const lastMsg = g.last_message ? new Date(g.last_message).toLocaleDateString() : '—';
+            const lastMsg = g.last_message || '—';
+            const members = g.members ? `${g.members} members` : '';
             html += `
             <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--border);${g.enabled ? 'background:var(--accent-dim);' : ''}" data-jid="${g.jid}">
                 <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;min-width:0;">
@@ -11893,7 +11894,8 @@ async function loadPayments() {
                         style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
                     <span style="font-size:0.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_escHtml(g.name)}</span>
                 </label>
-                <span style="font-size:0.65rem;color:var(--text-2);white-space:nowrap;">${lastMsg}</span>
+                <span style="font-size:0.6rem;color:var(--text-2);white-space:nowrap;margin-right:4px;">${members}</span>
+                <span style="font-size:0.6rem;color:var(--text-2);white-space:nowrap;">${lastMsg}</span>
             </div>`;
         });
         container.innerHTML = html;
