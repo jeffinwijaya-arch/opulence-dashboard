@@ -1,6 +1,26 @@
 {
   "articles": [
     {
+      "id": "54700afcfc54",
+      "title": "First Look \u2013 The Strehler S\u00e4ntis, A Fine and Intuitive Worldtimer from an Independent Mind",
+      "link": "https://monochrome-watches.com/first-look-andreas-stregler-santis-world-timer-independent-watchmaking-specs-live-pics-price/",
+      "desc": "Andreas Strehler is one of the most accomplished independent watchmakers. He is known for sophisticated creations such as the Sauterelle \u00e0 Lune Exacte and the Trans-Axial Tourbillon, and his work has ",
+      "date": "2026-03-25T16:01:14+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/Strehler-Santis-Andreas-Strehler-World-Timer-Featured-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "2be1e964cafc",
+      "title": "Andreas Strehler Introduces the S\u00e4ntis World Time",
+      "link": "https://revolutionwatch.com/andreas-strehler-introduces-the-santis-world-time/",
+      "desc": "The post Andreas Strehler Introduces the S\u00e4ntis World Time appeared first on Revolution Watch.",
+      "date": "2026-03-25T16:00:07+00:00",
+      "source": "REVOLUTION",
+      "image": "",
+      "relevance": 0
+    },
+    {
       "id": "59541316a544",
       "title": "Hands-On With The Surprisingly Creative Nordic Marine Instruments Lun\u00f8r",
       "link": "https://www.fratellowatches.com/hands-on-nordic-marine-instruments-lunor/",
@@ -221,16 +241,6 @@
       "relevance": 0
     },
     {
-      "id": "a2bbdb9c0c53",
-      "title": "First Look \u2013 The Watch Ho & Co x Selten Jui Bauhinia in Pink and Purple Mother-of-Pearl",
-      "link": "https://monochrome-watches.com/watch-ho-and-co-x-selten-jui-bauhinia-in-pink-and-purple-mother-of-pearl-review-price/",
-      "desc": "The original Jui came out last year as a collaboration between Hong Kong-based Watch Ho & Co(mmunity) and microbrand Selten, and it did not stay under the radar for long. It was one of those watches t",
-      "date": "2026-03-23T08:00:34+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/Watch-Ho-and-Co-x-Selten-Jui-Bauhinia-in-Pink-and-Purple-Mother-of-Pearl-review-10-600x237.jpg",
-      "relevance": 0
-    },
-    {
       "id": "9377d97acf3f",
       "title": "Citizen Introduces Two New Limited-Edition Photon Models That Take Eco-Drive To The Next Level",
       "link": "https://www.fratellowatches.com/citizen-introduces-two-new-limited-edition-photon-models-that-take-eco-drive-to-the-next-level/",
@@ -349,19 +359,9 @@
       "source": "HODINKEE",
       "image": "https://hodinkee.imgix.net/uploads/images/a327f17c-5fdc-47a2-a3b8-a77f7645b8f0/Hero.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
       "relevance": 0
-    },
-    {
-      "id": "f72d3d4eb7bb",
-      "title": "Breitling Forever: Breitling Navitimer B19 Chronograph 43 Perpetual Calendar",
-      "link": "https://revolutionwatch.com/breiting-perpetual-calendar/",
-      "desc": "The post Breitling Forever: Breitling Navitimer B19 Chronograph 43 Perpetual Calendar appeared first on Revolution Watch.",
-      "date": "2026-03-18T13:01:56+00:00",
-      "source": "REVOLUTION",
-      "image": "",
-      "relevance": 20
     }
   ],
-  "fetched_at": "2026-03-25T16:00:04.092628+00:00",
+  "fetched_at": "2026-03-25T16:35:15.181241+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",

@@ -14291,7 +14291,7 @@ function renderJamFeed(type) {
             let _logisticsPkgSeq = 0;
             for (const item of filteredPending) {
                 const d = item.date || 'Unscheduled';
-                if (isLogistics && (d === 'Unscheduled' || d === '')) continue;
+                // Show all pending items for logistics — don't hide unscheduled
                 if (d !== lastDate) {
                     const clr = (d === today || d === 'Unscheduled') ? 'var(--red)' : 'var(--orange)';
                     html += _dateHeader(d === 'Unscheduled' ? 'Unscheduled' : d, clr);
