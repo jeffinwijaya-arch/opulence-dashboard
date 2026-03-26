@@ -14514,7 +14514,9 @@ function _jamCard(type, item) {
         let photoSection = '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">';
         photoSection += _shipSlot(hasWatchPhoto, watchPhotos, 'watch_photo', 'WATCH');
         if (isLocal) {
-            photoSection += _shipSlot(hasReceiptPhoto, receiptPhotos, 'receipt_photo', 'RECIPIENT');
+            const deliveryPhotos = photos.filter(p => p.type === 'delivery_photo');
+            const hasDeliveryPhoto = deliveryPhotos.length > 0;
+            photoSection += _shipSlot(hasDeliveryPhoto || hasReceiptPhoto, hasDeliveryPhoto ? deliveryPhotos : receiptPhotos, 'delivery_photo', 'DELIVERY');
         } else {
             photoSection += _shipSlot(hasLabelPhoto, labelPhotos, 'label_photo', 'LABEL');
             photoSection += _shipSlot(hasBoxPhoto, boxPhotos, 'box_photo', 'BOX');
