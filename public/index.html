@@ -1027,6 +1027,122 @@
             pointer-events: auto !important;
             touch-action: manipulation !important;
         }
+
+        /* ── QUICK COMMAND BAR ── */
+        #qcmd-overlay {
+            display:none; position:fixed; inset:0; z-index:3000;
+            background:rgba(0,0,0,0.75); backdrop-filter:blur(6px);
+            -webkit-backdrop-filter:blur(6px);
+            align-items:flex-start; justify-content:center;
+            padding-top:clamp(60px, 12vh, 140px);
+        }
+        #qcmd-overlay.open { display:flex; }
+        #qcmd-panel {
+            width:100%; max-width:620px; margin:0 16px;
+            background:var(--bg-1); border:1px solid rgba(212,175,55,0.2);
+            border-radius:var(--radius-lg); box-shadow:0 16px 60px rgba(0,0,0,0.7);
+            overflow:hidden;
+        }
+        #qcmd-input-row {
+            display:flex; align-items:center; gap:10px; padding:14px 16px;
+            border-bottom:1px solid var(--border);
+        }
+        #qcmd-icon {
+            flex-shrink:0; width:20px; height:20px; opacity:0.5;
+            color:var(--accent);
+        }
+        #qcmd-input {
+            flex:1; background:transparent; border:none; outline:none;
+            font-family:var(--mono); font-size:0.95rem; color:var(--text-0);
+            caret-color:var(--accent);
+        }
+        #qcmd-input::placeholder { color:var(--text-2); }
+        #qcmd-hint {
+            font-size:0.7rem; color:var(--text-2); white-space:nowrap;
+            font-family:var(--mono);
+        }
+        #qcmd-preview {
+            padding:12px 16px; min-height:48px;
+            font-size:0.82rem; font-family:var(--mono);
+            color:var(--text-1); line-height:1.5;
+            border-bottom:1px solid var(--border);
+            display:none;
+        }
+        #qcmd-selected {
+            display:none;
+            padding:8px 12px;
+            background:rgba(33,150,243,0.08);
+            border:1px solid rgba(33,150,243,0.25);
+            border-radius:6px;
+            margin:6px 0;
+            position:relative;
+        }
+        .sel-label { font-size:0.6rem; color:var(--text-2); text-transform:uppercase; letter-spacing:0.5px; }
+        .sel-desc { font-size:0.9rem; font-weight:600; color:var(--text-0); margin-top:2px; }
+        .sel-clear {
+            position:absolute; top:8px; right:10px; font-size:0.7rem;
+            color:var(--accent); cursor:pointer; opacity:0.7;
+        }
+        .sel-clear:hover { opacity:1; }
+        #qcmd-suggestions {
+            max-height:250px; overflow-y:auto; background:var(--bg-1);
+            border-bottom:1px solid var(--border); display:none;
+        }
+        .qcmd-suggestion {
+            padding:10px 16px; cursor:pointer; display:flex; flex-direction:column; gap:2px;
+            border-bottom:1px solid rgba(255,255,255,0.03);
+        }
+        .qcmd-suggestion:hover, .qcmd-suggestion.selected {
+            background:rgba(212,175,55,0.08);
+        }
+        .qcmd-suggestion .sg-top { display:flex; align-items:center; gap:8px; }
+        .qcmd-suggestion .sg-desc { font-weight:600; color:var(--text-0); font-size:0.85rem; }
+        .qcmd-suggestion .sg-id { font-size:0.65rem; color:var(--text-2); opacity:0.6; }
+        .qcmd-suggestion .sg-status { font-size:0.6rem; padding:1px 6px; border-radius:3px; font-weight:600; }
+        .qcmd-suggestion .sg-status.sold { background:rgba(76,175,80,0.15); color:#4caf50; }
+        .qcmd-suggestion .sg-status.stock { background:rgba(33,150,243,0.15); color:#2196f3; }
+        .qcmd-suggestion .sg-status.shipped { background:rgba(255,152,0,0.15); color:#ff9800; }
+        .qcmd-suggestion .sg-context { font-size:0.7rem; color:var(--text-2); }
+        #qcmd-selected {
+            display:none; padding:10px 16px; background:rgba(212,175,55,0.06);
+            border-bottom:1px solid var(--border); font-size:0.82rem;
+        }
+        #qcmd-selected .sel-label { font-size:0.65rem; color:var(--accent); text-transform:uppercase; letter-spacing:0.06em; }
+        #qcmd-selected .sel-desc { color:var(--text-0); font-weight:600; margin-top:2px; }
+        #qcmd-selected .sel-clear { color:var(--text-2); cursor:pointer; float:right; font-size:0.75rem; }
+        #qcmd-selected .sel-clear:hover { color:var(--red); }
+        #qcmd-fields { display:none; padding:10px 16px; border-bottom:1px solid var(--border); }
+        #qcmd-fields input, #qcmd-fields select {
+            background:var(--bg-0); border:1px solid var(--border); border-radius:4px;
+            padding:8px 10px; color:var(--text-0); font-size:0.85rem; width:100%;
+            margin-bottom:8px; font-family:var(--mono);
+        }
+        #qcmd-fields label { font-size:0.7rem; color:var(--text-2); display:block; margin-bottom:3px; }
+        #qcmd-fields .field-row { margin-bottom:6px; }
+        #qcmd-preview.visible { display:block; }
+        #qcmd-preview .qp-action { color:var(--accent); font-weight:600; text-transform:uppercase; font-size:0.7rem; letter-spacing:0.06em; }
+        #qcmd-preview .qp-line { margin-top:4px; color:var(--text-0); }
+        #qcmd-preview .qp-error { color:var(--red); }
+        #qcmd-footer {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:8px 16px; opacity:0.5; font-size:0.7rem; font-family:var(--mono);
+            color:var(--text-2);
+        }
+        #qcmd-footer kbd {
+            display:inline-block; padding:1px 5px; border:1px solid var(--border);
+            border-radius:3px; font-size:0.65rem; font-family:var(--mono);
+            background:var(--bg-3); color:var(--text-1);
+        }
+        #qcmd-examples {
+            padding:0 16px 12px; display:flex; flex-wrap:wrap; gap:6px;
+        }
+        .qcmd-example {
+            font-size:0.7rem; font-family:var(--mono); color:var(--text-2);
+            background:var(--bg-3); border:1px solid var(--border);
+            border-radius:4px; padding:3px 8px; cursor:pointer;
+            transition:border-color 0.15s, color 0.15s;
+        }
+        .qcmd-example:hover { border-color:var(--accent); color:var(--accent); }
     </style>
 </head>
 <body>
@@ -1039,6 +1155,7 @@
                    onkeydown="if(event.key==='Enter'){showPage('lookup');$('#ref-search').value=this.value;doLookup();}">
             <span class="search-hint" id="searchHint">/</span>
         </div>
+        <button onclick="openQuickCmd()" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 12px;font-size:0.75rem;font-weight:600;cursor:pointer;margin-right:8px;white-space:nowrap;" title="Cmd+K">⚡ Quick</button>
         <nav class="nav" id="mainNav">
             <a data-page="dashboard" class="active" onclick="showPage('dashboard')">Overview</a>
             <a data-page="lookup" onclick="showPage('lookup')">Prices</a>
@@ -1080,6 +1197,35 @@
         </div>
     </div>
 
+    <!-- QUICK COMMAND BAR (Cmd+K) -->
+    <div id="qcmd-overlay" onclick="if(event.target===this)closeQuickCmd()">
+        <div id="qcmd-panel">
+            <div id="qcmd-input-row">
+                <svg id="qcmd-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6l4-4 4 4"/><path d="M12 2v10.3"/><path d="M4 14l2 2 4-4"/><path d="M2 20h20"/><path d="M17 14l2 2 2-2"/></svg>
+                <input id="qcmd-input" type="text" autocomplete="off" spellcheck="false"
+                    placeholder="bought 126518 from ABC for 27000  |  sold 116500LV to Bob for 19000  |  ship 228238"
+                    oninput="onQcmdInput(this.value)"
+                    onkeydown="onQcmdKey(event)">
+                <button id="qcmd-execute" onclick="executeCurrentCommand()" style="background:var(--accent);color:#000;border:none;border-radius:4px;padding:6px 12px;font-size:0.8rem;font-weight:600;cursor:pointer;flex-shrink:0;margin-left:8px;">Go</button>
+                <span id="qcmd-hint"><kbd>↵</kbd> execute &nbsp;<kbd>Esc</kbd> close</span>
+            </div>
+            <div id="qcmd-suggestions"></div>
+            <div id="qcmd-selected"></div>
+            <div id="qcmd-fields"></div>
+            <div id="qcmd-preview"></div>
+            <div id="qcmd-examples">
+                <span class="qcmd-example" onclick="setQcmdExample(this)">bought 126518 Black from ABC for 27000</span>
+                <span class="qcmd-example" onclick="setQcmdExample(this)">sold 126518LN to XYZ for 30000</span>
+                <span class="qcmd-example" onclick="setQcmdExample(this)">ship 228238 to Bob</span>
+                <span class="qcmd-example" onclick="setQcmdExample(this)">label 116500LV for Mike</span>
+            </div>
+            <div id="qcmd-footer">
+                <span>Quick Commands &mdash; no AI, instant execution</span>
+                <span><kbd>⌘K</kbd> to open</span>
+            </div>
+        </div>
+    </div>
+
     <!-- MOBILE NAV -->
     <nav class="mobile-nav" id="mobile-nav">
         <a data-page="dashboard" class="active" onclick="showPage('dashboard')">
@@ -1093,6 +1239,9 @@
         </a>
         <a data-page="lookup" onclick="showPage('lookup')">
             <span class="mn-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>Prices
+        </a>
+        <a onclick="openQuickCmd()" style="color:var(--accent);">
+            <span class="mn-icon"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>Quick
         </a>
         <a id="more-toggle" onclick="toggleMobileMore()" style="position:relative;">
             <span class="mn-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></span>More
@@ -1136,6 +1285,45 @@
                     </div>
                     <div id="devotion-verse" style="font-size:1.05rem;line-height:1.7;color:var(--text-1);font-style:italic;white-space:normal;"></div>
                     <div class="devotion-full" style="display:none;"></div>
+                </div>
+            </div>
+
+            <!-- Cash Flow Snapshot -->
+            <div class="card" style="margin-bottom:12px;">
+                <div class="card-head"><span>Cash Flow</span></div>
+                <div id="cashflow-grid" style="padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    <div style="background:var(--card-2);border-radius:8px;padding:10px;">
+                        <div style="font-size:0.6rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.05em;">Receivable</div>
+                        <div id="cf-receivable" style="font-size:1.1rem;font-weight:700;color:var(--green);margin-top:2px;">—</div>
+                        <div id="cf-receivable-sub" style="font-size:0.65rem;color:var(--text-2);margin-top:1px;"></div>
+                    </div>
+                    <div style="background:var(--card-2);border-radius:8px;padding:10px;">
+                        <div style="font-size:0.6rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.05em;">Payable</div>
+                        <div id="cf-payable" style="font-size:1.1rem;font-weight:700;color:var(--red);margin-top:2px;">—</div>
+                        <div id="cf-payable-sub" style="font-size:0.65rem;color:var(--text-2);margin-top:1px;"></div>
+                    </div>
+                    <div style="background:var(--card-2);border-radius:8px;padding:10px;">
+                        <div style="font-size:0.6rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.05em;">Inventory Value</div>
+                        <div id="cf-inventory" style="font-size:1.1rem;font-weight:700;color:var(--accent);margin-top:2px;">—</div>
+                        <div id="cf-inventory-sub" style="font-size:0.65rem;color:var(--text-2);margin-top:1px;"></div>
+                    </div>
+                    <div style="background:var(--card-2);border-radius:8px;padding:10px;">
+                        <div style="font-size:0.6rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.05em;">Total Profit</div>
+                        <div id="cf-profit" style="font-size:1.1rem;font-weight:700;color:var(--green);margin-top:2px;">—</div>
+                        <div id="cf-profit-sub" style="font-size:0.65rem;color:var(--text-2);margin-top:1px;"></div>
+                    </div>
+                </div>
+                <div id="cf-debtors" style="padding:0 10px 10px;display:none;">
+                    <div style="font-size:0.6rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Top Debtors</div>
+                    <div id="cf-debtors-list"></div>
+                </div>
+            </div>
+
+            <!-- Recent Activity Feed -->
+            <div class="card" style="margin-bottom:12px;">
+                <div class="card-head"><span>Recent Activity</span><span id="activity-count" style="font-size:0.6rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px;"></span></div>
+                <div id="activity-feed" style="padding:4px 10px;max-height:240px;overflow-y:auto;">
+                    <div style="color:var(--text-2);font-size:0.75rem;padding:12px 0;text-align:center;">Loading...</div>
                 </div>
             </div>
 
@@ -1624,19 +1812,65 @@
                 <div class="metric"><div class="label">Profit</div><div class="val" id="im-profit">—</div></div>
                 <div class="metric" style="border-left:2px solid var(--accent);padding-left:10px;"><div class="label" id="im-month-label">This Month</div><div class="val" id="im-month-profit">—</div></div>
             </div>
-            <!-- Controls -->
+            <!-- Quick Stats Bar -->
+            <div id="inventory-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px;padding:12px;background:var(--bg-2);border-radius:var(--radius);border:1px solid var(--border);">
+                <div class="stat-item" style="text-align:center;">
+                    <div style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Total</div>
+                    <div id="stats-total" style="font-size:1.1rem;font-weight:700;color:var(--text-0);margin-top:2px;">—</div>
+                </div>
+                <div class="stat-item" style="text-align:center;">
+                    <div style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Unsold</div>
+                    <div id="stats-unsold" style="font-size:1.1rem;font-weight:700;color:var(--accent);margin-top:2px;">—</div>
+                </div>
+                <div class="stat-item" style="text-align:center;">
+                    <div style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Sold</div>
+                    <div id="stats-sold" style="font-size:1.1rem;font-weight:700;color:var(--green);margin-top:2px;">—</div>
+                </div>
+                <div class="stat-item" style="text-align:center;">
+                    <div style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Shipped</div>
+                    <div id="stats-shipped" style="font-size:1.1rem;font-weight:700;color:var(--blue);margin-top:2px;">—</div>
+                </div>
+                <div class="stat-item" style="text-align:center;">
+                    <div style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Inventory Value</div>
+                    <div id="stats-value" style="font-size:1.1rem;font-weight:700;color:var(--accent);margin-top:2px;">—</div>
+                </div>
+                <div class="stat-item" style="text-align:center;">
+                    <div style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">P&L Total</div>
+                    <div id="stats-pnl" style="font-size:1.1rem;font-weight:700;color:var(--green);margin-top:2px;">—</div>
+                </div>
+            </div>
+            
+            <!-- Enhanced Controls -->
             <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
                 <input class="input" id="im-search" placeholder="Search ref, seller, buyer, serial..." style="flex:1;min-width:150px;" oninput="filterInventory()">
-                <select class="input" id="im-filter" style="width:auto;" onchange="filterInventory()">
-                    <option value="all">All</option>
-                    <option value="unsold">Unsold</option>
-                    <option value="sold">Sold</option>
-                    <option value="not-arrived">Not Arrived</option>
-                    <option value="not-shipped">Sold Not Shipped</option>
-                    <option value="not-paid">Sold Not Paid</option>
-                    <option value="not-posted">Not Posted</option>
-                    <option value="completed">Completed Lifecycle</option>
+                
+                <!-- Status Filter -->
+                <select class="input" id="im-status-filter" style="width:auto;" onchange="filterInventory()">
+                    <option value="all">All Status</option>
+                    <option value="unsold">🔸 Unsold</option>
+                    <option value="sold">✅ Sold</option>
+                    <option value="shipped">📦 Shipped</option>
+                    <option value="not-arrived">❌ Not Arrived</option>
+                    <option value="not-shipped">⏳ Sold Not Shipped</option>
+                    <option value="not-paid">💰 Sold Not Paid</option>
+                    <option value="not-posted">📝 Not Posted</option>
+                    <option value="completed">🎯 Completed</option>
                 </select>
+                
+                <!-- Sort Options -->
+                <select class="input" id="im-sort-select" style="width:auto;" onchange="applySortFromSelect()">
+                    <option value="description-asc">Name A→Z</option>
+                    <option value="description-desc">Name Z→A</option>
+                    <option value="cost_price-desc">Cost: High→Low</option>
+                    <option value="cost_price-asc">Cost: Low→High</option>
+                    <option value="sold_price-desc">Price: High→Low</option>
+                    <option value="sold_price-asc">Price: Low→High</option>
+                    <option value="pnl-desc">P&L: High→Low</option>
+                    <option value="pnl-asc">P&L: Low→High</option>
+                    <option value="bought_date-desc">Newest First</option>
+                    <option value="bought_date-asc">Oldest First</option>
+                </select>
+                
                 <button class="btn" onclick="showAddWatchModal()" style="background:var(--green);color:var(--bg-1);white-space:nowrap;">+ Add Watch</button>
                 <button class="btn" onclick="loadInventoryPage()" style="opacity:0.6;">Refresh</button>
             </div>
@@ -3163,7 +3397,7 @@ async function loadListings() {
     try {
         let r = await fetch('/data/listings.json?v=' + Date.now()); if (!r.ok) r = await fetch('/api/search?q=');
         if (r.ok) {
-            allListings = (await r.json()).map(l => ({ref:l.ref||'',model:l.model||'',dial:l.dial||'',bracelet:l.bracelet||'',price:l.price_usd||l.price||0,condition:l.condition||'',completeness:l.completeness||'',region:l.region||'',seller:l.seller||'',group:l.group||'',brand:l.brand||'Rolex',year:l.year||'',source_text:l.source_text||''}));
+            allListings = (await r.json()).map(l => ({ref:l.ref||'',model:l.model||'',dial:l.dial||'',bracelet:l.bracelet||'',price:l.price_usd||l.price||0,condition:l.condition||'',completeness:l.completeness||'',region:l.region||'',seller:l.seller||'',phone:l.phone||'',group:l.group||'',brand:l.brand||'Rolex',year:l.year||'',source_text:l.source_text||''}));
             allListings.sort((a,b)=>a.price-b.price);
             $('#browse-subtitle').textContent = allListings.length.toLocaleString()+' listings in database';
             browseOffset=0; renderBrowse();
@@ -3175,7 +3409,83 @@ async function refreshData() {
 }
 
 // ── RENDER ──
-function renderAll() { renderTicker(); renderDashboard(); renderDeals(); renderArbitrage(); }
+function renderAll() { renderTicker(); renderDashboard(); renderDeals(); renderArbitrage(); loadActivityFeed(); loadCashFlow(); }
+
+async function loadCashFlow() {
+    try {
+        const r = await fetch('/api/cash-flow');
+        if (!r.ok) return;
+        const d = await r.json();
+        
+        const fmt = n => '$' + Math.round(n).toLocaleString();
+        
+        const recv = document.getElementById('cf-receivable');
+        const recvSub = document.getElementById('cf-receivable-sub');
+        if (recv) recv.textContent = fmt(d.receivable?.total || 0);
+        if (recvSub) recvSub.textContent = `${d.receivable?.count || 0} watches`;
+        
+        const pay = document.getElementById('cf-payable');
+        const paySub = document.getElementById('cf-payable-sub');
+        if (pay) pay.textContent = fmt(d.payable?.total || 0);
+        if (paySub) paySub.textContent = `${d.payable?.count || 0} watches`;
+        
+        const inv = document.getElementById('cf-inventory');
+        const invSub = document.getElementById('cf-inventory-sub');
+        if (inv) inv.textContent = fmt(d.inventory?.total || 0);
+        if (invSub) invSub.textContent = `${d.inventory?.count || 0} unsold (${d.unsold_count || 0} total)`;
+        
+        const prof = document.getElementById('cf-profit');
+        const profSub = document.getElementById('cf-profit-sub');
+        if (prof) prof.textContent = fmt(d.profit?.total || 0);
+        if (profSub) profSub.textContent = `${d.profit?.count || 0} completed deals`;
+        
+        // Top debtors
+        if (d.top_debtors && d.top_debtors.length > 0) {
+            const debtorsDiv = document.getElementById('cf-debtors');
+            const debtorsList = document.getElementById('cf-debtors-list');
+            if (debtorsDiv && debtorsList) {
+                debtorsDiv.style.display = 'block';
+                debtorsList.innerHTML = d.top_debtors.map(db =>
+                    `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:0.75rem;border-bottom:1px solid var(--border);">
+                        <span style="color:var(--text-1);">${escHtml(db.name)}</span>
+                        <span style="color:var(--red);font-weight:600;">${fmt(db.total)} (${db.count})</span>
+                    </div>`
+                ).join('');
+            }
+        }
+    } catch(e) { console.error('Cash flow error:', e); }
+}
+
+async function loadActivityFeed() {
+    try {
+        const r = await fetch('/api/recent-activity?limit=12');
+        if (!r.ok) return;
+        const d = await r.json();
+        const feed = document.getElementById('activity-feed');
+        const counter = document.getElementById('activity-count');
+        if (!feed || !d.activities) return;
+        
+        if (d.activities.length === 0) {
+            feed.innerHTML = '<div style="color:var(--text-2);font-size:0.75rem;padding:12px 0;text-align:center;">No recent activity</div>';
+            return;
+        }
+        
+        if (counter) counter.textContent = `Last ${d.activities.length} actions`;
+        
+        const colorMap = {blue:'#2196f3',green:'#4caf50',orange:'#ff9800',purple:'#9c27b0',red:'#f44336',gray:'var(--text-2)'};
+        
+        feed.innerHTML = d.activities.map(a => {
+            const c = colorMap[a.color] || colorMap.gray;
+            const time = a.timestamp ? new Date(a.timestamp).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true}) : '';
+            const ref = a.description ? a.description.split(' ').slice(0,2).join(' ') : `#${a.watch_id}`;
+            return `<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:0.75rem;">
+                <span style="color:${c};font-weight:700;font-size:0.7rem;min-width:50px;">${escHtml(a.action.split(' ')[0])}</span>
+                <span style="flex:1;color:var(--text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escHtml(a.description)}">${escHtml(ref)}</span>
+                <span style="color:var(--text-3);font-size:0.65rem;white-space:nowrap;flex-shrink:0;">${time}</span>
+            </div>`;
+        }).join('');
+    } catch(e) { console.error('Activity feed error:', e); }
+}
 
 async function renderTicker() {
     try {
@@ -3904,6 +4214,17 @@ function openPostingModal(item, photoCount) {
         <div style="margin-bottom:10px;">
             <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Caption</label>
             <textarea id="posting-caption" rows="3" style="width:100%;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);color:var(--text-0);padding:8px;font-family:var(--mono);font-size:0.75rem;resize:vertical;margin-top:4px;">${postingText}</textarea>
+        </div>
+        <div style="margin-bottom:10px;padding:10px;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);font-size:0.72rem;">
+            <div style="color:var(--text-2);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Inventory Details</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;">
+                <div><span style="color:var(--text-2);">Serial:</span> <span style="color:var(--text-0);font-family:var(--mono);">${item.serial || '—'}</span></div>
+                <div><span style="color:var(--text-2);">Card Date:</span> <span style="color:var(--text-0);">${item.card_date || '—'}</span></div>
+                <div><span style="color:var(--text-2);">Cost:</span> <span style="color:var(--text-0);font-family:var(--mono);">${item.cost_price ? '$' + Number(item.cost_price).toLocaleString() : '—'}</span></div>
+                <div><span style="color:var(--text-2);">From:</span> <span style="color:var(--text-0);">${item.bought_from || item.seller || '—'}</span></div>
+                <div><span style="color:var(--text-2);">Arrived:</span> <span style="color:${item.arrived ? 'var(--green)' : 'var(--orange)'};">${item.arrived ? 'Yes' : 'No'}</span></div>
+                <div><span style="color:var(--text-2);">WT:</span> <span style="color:var(--text-0);">${item.wt || desc.toLowerCase().includes('with wt') ? 'Yes' : 'No'}</span></div>
+            </div>
         </div>
         <div id="posting-price-intel" style="margin-bottom:10px;padding:10px;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);font-size:0.72rem;">
             <div style="color:var(--text-2);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Price Intelligence</div>
@@ -4734,7 +5055,7 @@ function applyDealsFilter() {
                 <div class="deal-stat"><div class="ds-val" style="color:${profitColor}">${fmt(estProfit)}</div><div class="ds-label">Est Profit (${estMargin}%)</div></div>
             </div>
             <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-2);font-family:var(--mono);">
-                <span>${d.seller||'?'} (${d.seller_listings||0}) | ${d.group||''}</span>
+                <span>${d.phone ? `<a href="https://wa.me/${d.phone.replace(/[^0-9]/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);text-decoration:none;font-weight:700;">WA</a> ` : ''}${d.seller||'?'} (${d.seller_listings||0}) | ${d.group||''}</span>
                 <span>${fmtTs(d.ts)} | ${regionLabel(d.region)} | Conf: ${d.confidence||0}</span>
             </div>
         </div>`;
@@ -5010,14 +5331,15 @@ function expandCheapest() {
     var all = window._cheapestAll;
     var html = all.map(function(l,i) {
         var srcText = String(l.source_text||'').replace(/\+?\s*label\s+gambar tidak disertakan/gi,'').replace(/gambar tidak disertakan/gi,'').replace(/\(file terlampir\)/gi,'').trim().split('<').join('&lt;').split('>').join('&gt;');
-        var phone = l.phone ? ' ·  '+l.phone : '';
+        var phoneClean = (l.phone||'').replace(/[^0-9]/g,'');
+        var waBtn = phoneClean ? ' <a href="https://wa.me/'+phoneClean+'" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);text-decoration:none;font-weight:700;">WA</a>' : '';
         var ts = l.ts || '';
         var card = '<div class="listing-card">';
         card += '<div style="display:flex;justify-content:space-between;align-items:center;">';
         card += '<span style="font-family:var(--mono);font-weight:700;color:var(--green)">'+fmt(l.price_usd||l.price)+'</span>';
         card += '<span><span class="tag '+condTag(l.condition)+'">'+(l.condition||'\u2014')+'</span> '+regionLabel(l.region)+'</span>';
         card += '</div>';
-        card += '<div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">'+(l.dial||'')+' '+(l.bracelet||'')+' '+(l.year?'('+l.year+')':'')+' · '+(l.completeness||'')+' ·  '+(l.seller||'?')+phone+' ·  '+(l.group||'?')+'</div>';
+        card += '<div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">'+(l.dial||'')+' '+(l.bracelet||'')+' '+(l.year?'('+l.year+')':'')+' · '+(l.completeness||'')+' · '+(l.seller||'?')+waBtn+' · '+(l.group||'?')+'</div>';
         if(ts) card += '<div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;"> '+ts+'</div>';
         if(srcText) card += '<div style="font-size:0.70rem;color:var(--text-1);margin-top:4px;padding:6px 8px;background:rgba(255,255,255,0.04);border-radius:4px;border-left:2px solid var(--accent);font-family:var(--mono);white-space:pre-wrap;word-break:break-all;line-height:1.4;">'+srcText+'</div>';
         card += '</div>';
@@ -5081,14 +5403,15 @@ async function doLookup() {
         const _allListingsData = window._cheapestAll;
         const cheapest = _allListingsData.map((l,i)=>{
             const srcText = String(l.source_text||'').replace(/\+?\s*label\s+gambar tidak disertakan/gi,'').replace(/gambar tidak disertakan/gi,'').replace(/\(file terlampir\)/gi,'').trim().split('<').join('&lt;').split('>').join('&gt;');
-            const phone = l.phone ? ' ·  '+l.phone : '';
+            const phoneClean2 = (l.phone||'').replace(/[^0-9]/g,'');
+            const waBtn2 = phoneClean2 ? ' <a href="https://wa.me/'+phoneClean2+'" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);text-decoration:none;font-weight:700;">WA</a>' : '';
             const ts = l.ts || '';
             let card = '<div class="listing-card">';
             card += '<div style="display:flex;justify-content:space-between;align-items:center;">';
             card += '<span style="font-family:var(--mono);font-weight:700;color:var(--green)">'+fmt(l.price_usd||l.price)+'</span>';
             card += '<span><span class="tag '+condTag(l.condition)+'">'+(l.condition||'\u2014')+'</span> '+regionLabel(l.region)+'</span>';
             card += '</div>';
-            card += '<div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">'+(l.dial||'')+' '+(l.bracelet||'')+' '+(l.year?'('+l.year+')':'')+' · '+(l.completeness||'')+' ·  '+(l.seller||'?')+phone+' ·  '+(l.group||'?')+'</div>';
+            card += '<div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">'+(l.dial||'')+' '+(l.bracelet||'')+' '+(l.year?'('+l.year+')':'')+' · '+(l.completeness||'')+' · '+(l.seller||'?')+waBtn2+' · '+(l.group||'?')+'</div>';
             if(ts) card += '<div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;"> '+ts+'</div>';
             if(srcText) card += '<div style="font-size:0.70rem;color:var(--text-1);margin-top:4px;padding:6px 8px;background:rgba(255,255,255,0.04);border-radius:4px;border-left:2px solid var(--accent);font-family:var(--mono);white-space:pre-wrap;word-break:break-all;line-height:1.4;">'+srcText+'</div>';
             card += '</div>';
@@ -5783,7 +6106,7 @@ function renderBrowse(append) {
         <td><span class="tag ${condTag(l.condition)}">${l.condition||'—'}</span></td>
         ${yearCell}
         <td class="dim">${l.completeness}</td><td class="dim">${regionLabel(l.region)}</td>
-        <td class="dim" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.seller}</td>
+        <td class="dim" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.phone ? `<a href="https://wa.me/${l.phone.replace(/[^0-9]/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);text-decoration:none;margin-right:4px;" title="WhatsApp ${l.seller}">WA</a>` : ''}${l.seller}</td>
         <td class="dim" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.group}</td>
     </tr>${srcRow}`;
     }).join('');
@@ -6830,6 +7153,7 @@ async function loadInventoryPage() {
         // Auto-reload if server HTML has changed
         if (d._v && window.__V && d._v !== window.__V) { location.reload(true); return; }
         updateInventorySummary();
+        updateInventoryStats(invMgmtData);
         filterInventory();
     } catch(e) {
         tbody.innerHTML = `<tr><td colspan="11" style="color:var(--red);">Error: ${e.message}</td></tr>`;
@@ -6886,9 +7210,55 @@ function sortInventory(col) {
     filterInventory();
 }
 
+function applySortFromSelect() {
+    const sortSelect = document.getElementById('im-sort-select');
+    if (!sortSelect) return;
+    
+    const [field, direction] = sortSelect.value.split('-');
+    invSortCol = field;
+    invSortAsc = direction === 'asc';
+    
+    // Update column headers
+    document.querySelectorAll('[id^="imh-"]').forEach(el => el.textContent = '');
+    const ind = document.getElementById('imh-' + field);
+    if (ind) ind.textContent = invSortAsc ? '\u25B2' : '\u25BC';
+    
+    filterInventory();
+}
+
+function updateInventoryStats(filteredRows) {
+    const allRows = invMgmtData;
+    const p = v => { const n = parseFloat(String(v||'0').replace(/[$,]/g,'')); return isNaN(n)?0:n; };
+    const fmt = n => '$' + Math.round(n).toLocaleString();
+    
+    // Calculate stats from all data (not filtered)
+    const totalCount = allRows.length;
+    const unsoldCount = allRows.filter(r => r.sold !== 'Yes').length;
+    const soldCount = allRows.filter(r => r.sold === 'Yes').length;
+    const shippedCount = allRows.filter(r => r.shipped === 'Yes').length;
+    
+    // Inventory value (unsold watches)
+    const inventoryValue = allRows.filter(r => r.sold !== 'Yes').reduce((s,r) => s + p(r.cost_price), 0);
+    
+    // Total P&L (sold watches only)
+    const totalPnL = allRows.filter(r => r.sold === 'Yes').reduce((s,r) => {
+        const cost = p(r.cost_price);
+        const sold = p(r.sold_price);
+        return s + (sold - cost);
+    }, 0);
+    
+    // Update DOM
+    document.getElementById('stats-total').textContent = totalCount.toString();
+    document.getElementById('stats-unsold').textContent = unsoldCount.toString();
+    document.getElementById('stats-sold').textContent = soldCount.toString();
+    document.getElementById('stats-shipped').textContent = shippedCount.toString();
+    document.getElementById('stats-value').textContent = fmt(inventoryValue);
+    document.getElementById('stats-pnl').textContent = fmt(totalPnL);
+}
+
 function filterInventory() {
     const q = (document.getElementById('im-search')?.value || '').toLowerCase();
-    const f = document.getElementById('im-filter')?.value || 'all';
+    const f = document.getElementById('im-status-filter')?.value || 'all';
     let rows = [...invMgmtData];
     
     if (q) rows = rows.filter(r => 
@@ -6898,8 +7268,10 @@ function filterInventory() {
         (r.serial||'').toLowerCase().includes(q)
     );
     
+    // Enhanced status filtering
     if (f === 'unsold') rows = rows.filter(r => r.sold !== 'Yes');
     else if (f === 'sold') rows = rows.filter(r => r.sold === 'Yes');
+    else if (f === 'shipped') rows = rows.filter(r => r.shipped === 'Yes');
     else if (f === 'not-arrived') rows = rows.filter(r => r.arrived !== 'Yes');
     else if (f === 'not-shipped') rows = rows.filter(r => r.sold === 'Yes' && r.shipped !== 'Yes');
     else if (f === 'not-paid') rows = rows.filter(r => r.sold === 'Yes' && r.paid_after_sold !== 'Yes');
@@ -6935,6 +7307,10 @@ function filterInventory() {
         } else if (invSortCol === 'pnl') {
             va = a.sold==='Yes' ? p(a.sold_price) - p(a.cost_price) : -Infinity;
             vb = b.sold==='Yes' ? p(b.sold_price) - p(b.cost_price) : -Infinity;
+        } else if (invSortCol === 'bought_date') {
+            // Try to parse dates, fall back to string comparison
+            va = a.bought_date ? new Date(a.bought_date).getTime() || 0 : 0;
+            vb = b.bought_date ? new Date(b.bought_date).getTime() || 0 : 0;
         } else if (_ynCols.includes(invSortCol)) {
             va = a[invSortCol]==='Yes' ? 1 : 0;
             vb = b[invSortCol]==='Yes' ? 1 : 0;
@@ -6945,6 +7321,9 @@ function filterInventory() {
         if (va > vb) return invSortAsc ? 1 : -1;
         return 0;
     });
+    
+    // Update stats bar
+    updateInventoryStats(rows);
     
     renderInventoryTable(rows);
 }
@@ -10024,7 +10403,7 @@ async function loadPayments() {
     }
 
     // ── Photo Library Functions ──
-    let photoLibraryData = [];
+    var photoLibraryData = [];
     
     async function loadPhotoLibrary() {
         try {
@@ -15260,6 +15639,503 @@ if (_userRole.allowedPages) {
         _hs.addEventListener('blur', () => { const h=document.getElementById('searchHint'); if(h&&!_hs.value) h.style.display=''; });
     }
 
+</script>
+
+<!-- ── QUICK COMMAND BAR LOGIC ── -->
+<script>
+(function(){
+    // ── State ──
+    let _qcmdTimer = null;
+    let _qcmdLastPreview = null;
+
+    // ── Open / Close ──
+    window.openQuickCmd = function(prefill) {
+        const ov = document.getElementById('qcmd-overlay');
+        const inp = document.getElementById('qcmd-input');
+        if (!ov || !inp) return;
+        ov.classList.add('open');
+        inp.value = prefill || '';
+        inp.focus();
+        inp.select();
+        if (prefill) onQcmdInput(prefill);
+        else clearQcmdPreview();
+    };
+
+    window.closeQuickCmd = function() {
+        const ov = document.getElementById('qcmd-overlay');
+        if (ov) ov.classList.remove('open');
+        clearQcmdPreview();
+        clearQcmdSuggestions();
+        clearSelectedWatch();
+        const inp = document.getElementById('qcmd-input');
+        if (inp) { inp.value = ''; inp.placeholder = 'bought 126518 from ABC for 27000  |  sold 116500LV to Bob for 19000  |  ship 228238'; }
+    };
+
+    // ── Cmd+K keyboard shortcut ──
+    document.addEventListener('keydown', function(e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            const ov = document.getElementById('qcmd-overlay');
+            if (ov && ov.classList.contains('open')) {
+                closeQuickCmd();
+            } else {
+                openQuickCmd();
+            }
+        }
+    });
+
+    // ── SKU picker state ──
+    let _qcmdSelectedWatch = null;  // {id, description, ...}
+    let _qcmdSelectedIdx = -1;      // keyboard nav index
+    let _qcmdSuggestionsList = [];   // current suggestions array
+
+    // ── Input handler (debounced preview + suggestions) ──
+    window.onQcmdInput = function(val) {
+        clearTimeout(_qcmdTimer);
+        if (!val.trim()) { 
+            clearQcmdPreview(); 
+            clearQcmdSuggestions();
+            return; 
+        }
+        _qcmdTimer = setTimeout(() => {
+            // If a watch is already selected, check for customer autocomplete
+            if (_qcmdSelectedWatch) {
+                checkCustomerAutocomplete(val.trim());
+                const fullCmd = buildFullCommand(val.trim());
+                if (fullCmd) fetchQcmdPreview(fullCmd);
+                return;
+            }
+            fetchQcmdPreview(val.trim());
+            fetchQcmdSuggestions(val.trim());
+        }, 150);
+    };
+
+    // ── Key handler (with arrow navigation) ──
+    window.onQcmdKey = function(e) {
+        if (e.key === 'Escape') { closeQuickCmd(); return; }
+        
+        const sg = document.getElementById('qcmd-suggestions');
+        const hasWatchSuggestions = sg && sg.style.display === 'block' && _qcmdSuggestionsList.length > 0;
+        const hasCustomerSuggestions = sg && sg.style.display === 'block' && _customerSuggestions.length > 0;
+        const hasSuggestions = hasWatchSuggestions || hasCustomerSuggestions;
+        
+        if (hasSuggestions && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+            e.preventDefault();
+            if (hasCustomerSuggestions) {
+                if (e.key === 'ArrowDown') _customerSelectedIdx = Math.min(_customerSelectedIdx + 1, _customerSuggestions.length - 1);
+                else _customerSelectedIdx = Math.max(_customerSelectedIdx - 1, 0);
+                highlightSuggestion(_customerSelectedIdx);
+            } else {
+                if (e.key === 'ArrowDown') _qcmdSelectedIdx = Math.min(_qcmdSelectedIdx + 1, _qcmdSuggestionsList.length - 1);
+                else _qcmdSelectedIdx = Math.max(_qcmdSelectedIdx - 1, 0);
+                highlightSuggestion(_qcmdSelectedIdx);
+            }
+            return;
+        }
+        
+        if (e.key === 'Tab' && hasSuggestions) {
+            e.preventDefault();
+            if (hasCustomerSuggestions && _customerSelectedIdx >= 0) {
+                selectCustomer(_customerSelectedIdx);
+            } else if (hasWatchSuggestions && _qcmdSelectedIdx >= 0) {
+                selectSuggestionByIndex(_qcmdSelectedIdx);
+            }
+            return;
+        }
+        
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (hasCustomerSuggestions && _customerSelectedIdx >= 0) {
+                selectCustomer(_customerSelectedIdx);
+                return;
+            }
+            if (hasWatchSuggestions && _qcmdSelectedIdx >= 0) {
+                selectSuggestionByIndex(_qcmdSelectedIdx);
+                return;
+            }
+            executeCurrentCommand();
+        }
+    };
+
+    // ── Execute current command ──
+    window.executeCurrentCommand = function() {
+        const inp = document.getElementById('qcmd-input');
+        if (!inp) return;
+        
+        let cmd = inp.value.trim();
+        if (_qcmdSelectedWatch) {
+            cmd = buildFullCommand(cmd);
+        }
+        if (cmd) executeQcmd(cmd);
+    };
+    
+    // ── Build full command from selected watch + remaining input ──
+    function buildFullCommand(inputVal) {
+        if (!_qcmdSelectedWatch) return inputVal;
+        
+        // Parse the action from input
+        const words = inputVal.split(/\s+/);
+        const action = words[0].toLowerCase();
+        const rest = words.slice(1).join(' ');
+        
+        // The rest after action should be additional params (to X, for Y)
+        // We inject the watch description as the ref
+        const desc = _qcmdSelectedWatch.description || '';
+        const refMatch = desc.match(/^(\S+)/);
+        const ref = refMatch ? refMatch[1] : desc;
+        
+        // Build: action ref rest (but use watch ID for precision)
+        return `${action} #${_qcmdSelectedWatch.id} ${rest}`.trim();
+    }
+
+    // ── Example click ──
+    window.setQcmdExample = function(el) {
+        const inp = document.getElementById('qcmd-input');
+        if (!inp) return;
+        inp.value = el.textContent;
+        inp.focus();
+        onQcmdInput(el.textContent);
+    };
+
+    // ── Preview fetch (dry run) ──
+    async function fetchQcmdPreview(text) {
+        try {
+            const r = await fetch('/api/quick-command', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({text, dry_run: true}),
+            });
+            const d = await r.json();
+            _qcmdLastPreview = d;
+            showQcmdPreview(d);
+        } catch(err) {
+            showQcmdPreviewError('Network error');
+        }
+    }
+
+    function showQcmdPreview(d) {
+        const pv = document.getElementById('qcmd-preview');
+        if (!pv) return;
+        pv.classList.add('visible');
+        if (!d.valid || d.error) {
+            pv.innerHTML = `<span class="qp-error">${escHtml(d.error || 'Cannot parse command')}</span>`;
+            return;
+        }
+        const p = d.parsed || {};
+        const actionLabels = {buy:'Buy', sell:'Sell', ship:'Ship', label:'Label'};
+        let html = `<span class="qp-action">${escHtml(actionLabels[p.action]||p.action)}</span>`;
+        html += `<div class="qp-line">${escHtml(d.preview || '')}</div>`;
+        pv.innerHTML = html;
+    }
+
+    function showQcmdPreviewError(msg) {
+        const pv = document.getElementById('qcmd-preview');
+        if (!pv) return;
+        pv.classList.add('visible');
+        pv.innerHTML = `<span class="qp-error">${escHtml(msg)}</span>`;
+    }
+
+    function clearQcmdPreview() {
+        const pv = document.getElementById('qcmd-preview');
+        if (pv) { pv.classList.remove('visible'); pv.innerHTML = ''; }
+        _qcmdLastPreview = null;
+    }
+
+    function clearQcmdSuggestions() {
+        const sg = document.getElementById('qcmd-suggestions');
+        if (sg) { sg.style.display = 'none'; sg.innerHTML = ''; }
+        _qcmdSelectedIdx = -1;
+        _qcmdSuggestionsList = [];
+    }
+
+    // ── Suggestions fetch ──
+    async function fetchQcmdSuggestions(text) {
+        try {
+            if (_qcmdSelectedWatch) return; // Already selected a watch
+            
+            const words = text.split(/\s+/);
+            if (words.length < 2) return clearQcmdSuggestions();
+            
+            const actionWord = words[0].toLowerCase().replace(/^\//, '');
+            const actionMap = {
+                'sold': 'sold', 'sell': 'sold', 'invoice': 'invoice', 'invoiced': 'invoice',
+                'ship': 'ship', 'shipped': 'ship', 'label': 'label',
+                'bought': 'bought', 'buy': 'bought'
+            };
+            const action = actionMap[actionWord] || '';
+            
+            // Get the search query (everything after the action word)
+            const query = words.slice(1).join(' ').replace(/\b(to|for|from|on|at)\b.*/i, '').trim();
+            if (query.length < 2) return clearQcmdSuggestions();
+            
+            const r = await fetch(`/api/watch-suggestions?q=${encodeURIComponent(query)}&action=${action}&limit=8`);
+            const d = await r.json();
+            
+            if (d.suggestions && d.suggestions.length > 0) {
+                _qcmdSuggestionsList = d.suggestions;
+                _qcmdSelectedIdx = 0; // Pre-select first
+                renderSuggestions();
+            } else {
+                clearQcmdSuggestions();
+            }
+        } catch(err) {
+            clearQcmdSuggestions();
+        }
+    }
+
+    function renderSuggestions() {
+        const sg = document.getElementById('qcmd-suggestions');
+        if (!sg) return;
+        
+        sg.innerHTML = _qcmdSuggestionsList.map((s, i) => {
+            const statusClass = s.status.includes('SOLD') ? 'sold' : s.status.includes('STOCK') ? 'stock' : s.status.includes('SHIPPED') ? 'shipped' : '';
+            return `<div class="qcmd-suggestion ${i === _qcmdSelectedIdx ? 'selected' : ''}" onclick="selectSuggestionByIndex(${i})">
+                <div class="sg-top">
+                    <span class="sg-desc">${escHtml(s.description)}</span>
+                    <span class="sg-id">#${s.id}</span>
+                    ${s.status ? `<span class="sg-status ${statusClass}">${escHtml(s.status)}</span>` : ''}
+                </div>
+                ${s.context ? `<div class="sg-context">${escHtml(s.context)}</div>` : ''}
+            </div>`;
+        }).join('');
+        
+        sg.style.display = 'block';
+    }
+    
+    function highlightSuggestion(idx) {
+        document.querySelectorAll('.qcmd-suggestion').forEach((el, i) => {
+            el.classList.toggle('selected', i === idx);
+        });
+        // Scroll into view
+        const selected = document.querySelector('.qcmd-suggestion.selected');
+        if (selected) selected.scrollIntoView({block: 'nearest'});
+    }
+
+    window.selectSuggestionByIndex = function(idx) {
+        const s = _qcmdSuggestionsList[idx];
+        if (!s) return;
+        
+        _qcmdSelectedWatch = s;
+        clearQcmdSuggestions();
+        
+        // Show selected watch
+        const sel = document.getElementById('qcmd-selected');
+        if (sel) {
+            sel.style.display = 'block';
+            sel.innerHTML = `
+                <span class="sel-clear" onclick="clearSelectedWatch()">✕ change</span>
+                <div class="sel-label">Selected Watch #${s.id}</div>
+                <div class="sel-desc">${escHtml(s.description)}</div>
+                ${s.context ? `<div style="font-size:0.75rem;color:var(--text-2);margin-top:2px">${escHtml(s.context)}</div>` : ''}
+            `;
+        }
+        
+        // Update input to show action + remaining fields needed
+        const inp = document.getElementById('qcmd-input');
+        if (inp) {
+            const words = inp.value.split(/\s+/);
+            const action = words[0];
+            // Clear everything after action, let user type remaining fields
+            inp.value = action + ' ';
+            inp.placeholder = getFieldHint(action.toLowerCase().replace(/^\//, ''));
+            inp.focus();
+        }
+        
+        // Update preview
+        const fullCmd = buildFullCommand(document.getElementById('qcmd-input')?.value?.trim() || '');
+        if (fullCmd) fetchQcmdPreview(fullCmd);
+    };
+    
+    window.clearSelectedWatch = function() {
+        _qcmdSelectedWatch = null;
+        const sel = document.getElementById('qcmd-selected');
+        if (sel) { sel.style.display = 'none'; sel.innerHTML = ''; }
+        const inp = document.getElementById('qcmd-input');
+        if (inp) {
+            inp.placeholder = 'bought 126518 from ABC for 27000  |  sold 116500LV to Bob for 19000  |  ship 228238';
+        }
+        clearQcmdPreview();
+    };
+    
+    function getFieldHint(action) {
+        switch(action) {
+            case 'sold': case 'sell': return 'to [customer] for [price]';
+            case 'invoice': case 'invoiced': return 'to [customer] for [price]';
+            case 'ship': case 'shipped': return 'to [customer]';
+            case 'label': return 'to [customer]';
+            default: return '';
+        }
+    }
+
+    // ── Execute ──
+    async function executeQcmd(text) {
+        // If preview says invalid, don't execute
+        if (_qcmdLastPreview && !_qcmdLastPreview.valid) {
+            showToast(_qcmdLastPreview.error || 'Invalid command', 'error');
+            return;
+        }
+        const pv = document.getElementById('qcmd-preview');
+        if (pv) pv.innerHTML = '<span style="color:var(--text-2)">Executing…</span>';
+
+        try {
+            const r = await fetch('/api/quick-command', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({text}),
+            });
+            const d = await r.json();
+            if (d.success) {
+                showToast(d.message || 'Done', 'success', 4000);
+                closeQuickCmd();
+                // Refresh relevant data
+                if (typeof loadData === 'function') loadData();
+                else if (typeof refreshInventory === 'function') refreshInventory();
+            } else {
+                // Handle multi-match case: show choices
+                if (d.matches && d.matches.length > 1) {
+                    showQcmdMatches(d.matches, text);
+                } else {
+                    showToast(d.message || 'Command failed', 'error', 5000);
+                    if (pv) pv.innerHTML = `<span class="qp-error">${escHtml(d.message||'Failed')}</span>`;
+                }
+            }
+        } catch(err) {
+            showToast('Network error', 'error');
+            if (pv) pv.innerHTML = `<span class="qp-error">Network error</span>`;
+        }
+    }
+
+    function showQcmdMatches(matches, originalText) {
+        const pv = document.getElementById('qcmd-preview');
+        if (!pv) return;
+        pv.classList.add('visible');
+        let html = `<span class="qp-error">Multiple matches — click one:</span>`;
+        matches.slice(0, 4).forEach(m => {
+            html += `<div style="margin-top:6px;cursor:pointer;padding:4px 8px;background:var(--bg-3);border-radius:4px;font-size:0.8rem;"
+                onclick="disambiguateQcmd(${m.id}, '${escHtml(originalText)}')">#${m.id}: ${escHtml(m.description)}</div>`;
+        });
+        pv.innerHTML = html;
+    }
+
+    // After disambiguation, re-execute with specific watch ID appended to text
+    window.disambiguateQcmd = async function(watchId, originalText) {
+        // Append #ID so user can see what was chosen
+        const inp = document.getElementById('qcmd-input');
+        // Just execute directly with watch_id override
+        const pv = document.getElementById('qcmd-preview');
+        if (pv) pv.innerHTML = '<span style="color:var(--text-2)">Executing…</span>';
+        try {
+            const r = await fetch('/api/quick-command', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({text: originalText, watch_id: watchId}),
+            });
+            const d = await r.json();
+            if (d.success) {
+                showToast(d.message || 'Done', 'success', 4000);
+                closeQuickCmd();
+                if (typeof loadData === 'function') loadData();
+            } else {
+                if (pv) pv.innerHTML = `<span class="qp-error">${escHtml(d.message||'Failed')}</span>`;
+                showToast(d.message || 'Failed', 'error', 5000);
+            }
+        } catch(err) {
+            showToast('Network error', 'error');
+        }
+    };
+
+    // ── Customer autocomplete ──
+    let _customerSuggestions = [];
+    let _customerSelectedIdx = -1;
+    let _customerTimer = null;
+    
+    function checkCustomerAutocomplete(val) {
+        // Only trigger when watch is selected and user types "to " or "from "
+        if (!_qcmdSelectedWatch) return;
+        
+        const words = val.split(/\s+/);
+        if (words.length < 2) return clearCustomerSuggestions();
+        
+        // Find "to" or "from" keyword
+        const rest = words.slice(1).join(' ');
+        const toMatch = rest.match(/^(?:to|from)\s+(.+)/i);
+        if (!toMatch) return clearCustomerSuggestions();
+        
+        const nameQuery = toMatch[1].replace(/\s+for\s+.*$/i, '').trim();
+        if (nameQuery.length < 1) return clearCustomerSuggestions();
+        
+        // Don't suggest if there's already a "for" (price part started)
+        if (/\bfor\s+\d/i.test(rest)) return clearCustomerSuggestions();
+        
+        clearTimeout(_customerTimer);
+        _customerTimer = setTimeout(() => fetchCustomerSuggestions(nameQuery), 120);
+    }
+    
+    async function fetchCustomerSuggestions(query) {
+        try {
+            const r = await fetch(`/api/customer-suggestions?q=${encodeURIComponent(query)}&limit=6`);
+            const d = await r.json();
+            if (d.customers && d.customers.length > 0) {
+                _customerSuggestions = d.customers;
+                _customerSelectedIdx = 0;
+                renderCustomerSuggestions();
+            } else {
+                clearCustomerSuggestions();
+            }
+        } catch(e) { clearCustomerSuggestions(); }
+    }
+    
+    function renderCustomerSuggestions() {
+        const sg = document.getElementById('qcmd-suggestions');
+        if (!sg) return;
+        sg.innerHTML = _customerSuggestions.map((c, i) =>
+            `<div class="qcmd-suggestion ${i === _customerSelectedIdx ? 'selected' : ''}" onclick="selectCustomer(${i})">
+                <div class="sg-top">
+                    <span class="sg-desc">${escHtml(c.name)}</span>
+                    <span class="sg-context" style="margin-left:auto;">${c.deals} deal${c.deals !== 1 ? 's' : ''}</span>
+                </div>
+            </div>`
+        ).join('');
+        sg.style.display = 'block';
+    }
+    
+    window.selectCustomer = function(idx) {
+        const c = _customerSuggestions[idx];
+        if (!c) return;
+        
+        const inp = document.getElementById('qcmd-input');
+        if (!inp) return;
+        
+        // Replace the name portion in the input
+        const val = inp.value;
+        const words = val.split(/\s+/);
+        const action = words[0];
+        const rest = words.slice(1).join(' ');
+        
+        // Find "to/from NAME" and replace NAME with selected customer
+        const replaced = rest.replace(/^((?:to|from)\s+).*$/i, `$1${c.name} for `);
+        inp.value = `${action} ${replaced}`;
+        inp.focus();
+        
+        clearCustomerSuggestions();
+        onQcmdInput(inp.value);
+    };
+    
+    function clearCustomerSuggestions() {
+        _customerSuggestions = [];
+        _customerSelectedIdx = -1;
+        // Only clear if showing customer suggestions (not watch suggestions)
+        if (_qcmdSelectedWatch) {
+            const sg = document.getElementById('qcmd-suggestions');
+            if (sg) { sg.style.display = 'none'; sg.innerHTML = ''; }
+        }
+    }
+
+    function escHtml(s) {
+        if (!s) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+})();
 </script>
 
 </body>
