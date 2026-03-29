@@ -3385,16 +3385,26 @@ function renderAll() { renderTicker(); renderDashboard(); renderDeals(); renderA
 
 
 async function loadActivityFeed() {
+    const feed = document.getElementById('activity-feed');
+    const counter = document.getElementById('activity-count');
+    if (!feed) return;
+    
     try {
         const r = await fetch('/api/recent-activity?limit=12');
-        if (!r.ok) return;
+        if (!r.ok) {
+            feed.innerHTML = '<div style="color:var(--text-2);font-size:0.75rem;padding:12px 0;text-align:center;">Sign in to view activity</div>';
+            if (counter) counter.textContent = '';
+            return;
+        }
         const d = await r.json();
-        const feed = document.getElementById('activity-feed');
-        const counter = document.getElementById('activity-count');
-        if (!feed || !d.activities) return;
+        if (!d.activities) {
+            feed.innerHTML = '<div style="color:var(--text-2);font-size:0.75rem;padding:12px 0;text-align:center;">No activity data</div>';
+            return;
+        }
         
         if (d.activities.length === 0) {
             feed.innerHTML = '<div style="color:var(--text-2);font-size:0.75rem;padding:12px 0;text-align:center;">No recent activity</div>';
+            if (counter) counter.textContent = '';
             return;
         }
         
@@ -3412,7 +3422,11 @@ async function loadActivityFeed() {
                 <span style="color:var(--text-3);font-size:0.65rem;white-space:nowrap;flex-shrink:0;">${time}</span>
             </div>`;
         }).join('');
-    } catch(e) { console.error('Activity feed error:', e); }
+    } catch(e) { 
+        console.error('Activity feed error:', e);
+        feed.innerHTML = '<div style="color:var(--red);font-size:0.75rem;padding:12px 0;text-align:center;">Failed to load activity</div>';
+        if (counter) counter.textContent = '';
+    }
 }
 
 async function renderTicker() {
