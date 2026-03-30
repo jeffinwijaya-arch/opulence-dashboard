@@ -14816,7 +14816,7 @@ function _jamCard(type, item) {
         const _shipSlot = (has, list, type, label) => {
             if (has) {
                 const p = list[list.length-1];
-                return `<div style="position:relative;width:90px;height:90px;">
+                return `<div style="position:relative;width:90px;height:90px;" ondragover="event.preventDefault();event.stopPropagation();this.firstElementChild.style.borderColor='var(--orange)';this.firstElementChild.style.background='rgba(255,140,0,0.1)'" ondragleave="this.firstElementChild.style.borderColor='var(--green)';this.firstElementChild.style.background=''" ondrop="event.preventDefault();event.stopPropagation();this.firstElementChild.style.borderColor='var(--green)';this.firstElementChild.style.background='';dropShipPhoto(event,${item.id},'${type}')">
                     <div onclick="event.stopPropagation();showShipPhotoLightbox('/api/jam/ship-photo/${item.id}/${p.filename}','${label}')" style="cursor:pointer;width:90px;height:90px;border-radius:10px;overflow:hidden;border:2px solid var(--green);">
                         <img src="/api/jam/ship-photo/${item.id}/${p.filename}?thumb=true" loading="lazy" style="width:100%;height:100%;object-fit:cover;">
                         <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);color:var(--green);font-size:0.55rem;text-align:center;padding:2px;">${label}</div>
@@ -14824,7 +14824,7 @@ function _jamCard(type, item) {
                     ${canEditPhotos ? `<button onclick="event.stopPropagation();jamUploadShipPhoto(${item.id},'${type}')" style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:none;background:var(--orange);color:#000;font-size:0.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;z-index:1;" title="Replace photo">&#8635;</button>` : ''}
                 </div>`;
             } else if (canEditPhotos) {
-                return `<div onclick="event.stopPropagation();jamUploadShipPhoto(${item.id},'${type}')" style="cursor:pointer;width:90px;height:90px;border-radius:10px;border:2px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border)'">
+                return `<div onclick="event.stopPropagation();jamUploadShipPhoto(${item.id},'${type}')" style="cursor:pointer;width:90px;height:90px;border-radius:10px;border:2px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border)'" ondragover="event.preventDefault();event.stopPropagation();this.style.borderColor='var(--orange)';this.style.background='rgba(255,140,0,0.1)'" ondragleave="this.style.borderColor='var(--border)';this.style.background=''" ondrop="event.preventDefault();event.stopPropagation();this.style.borderColor='var(--border)';this.style.background='';dropShipPhoto(event,${item.id},'${type}')">
                     <span style="font-size:0.65rem;color:var(--text-2);font-weight:600;">${label}</span>
                     <span style="font-size:0.55rem;color:var(--text-3);">tap to add</span>
                 </div>`;
@@ -15292,6 +15292,30 @@ function showShipPhotoLightbox(src, label) {
         <img src="${src}" style="max-width:90vw;max-height:85vh;object-fit:contain;border-radius:8px;">
     `;
     document.body.appendChild(overlay);
+}
+
+function dropShipPhoto(event, watchId, photoType) {
+    const file = event.dataTransfer.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/') && !file.name.match(/\.(heic|heif)$/i)) {
+        alert('Please drop an image file');
+        return;
+    }
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('watch_id', watchId);
+    fd.append('photo_type', photoType);
+    fetch('/api/jam/upload-ship-photo', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                if (data.auto_shipped) alert(_t('bothUploaded'));
+                loadJamFeed(_jamState.tab);
+            } else {
+                alert('Upload failed: ' + (data.error || 'unknown'));
+            }
+        })
+        .catch(e => alert('Upload error: ' + e.message));
 }
 
 function jamUploadShipPhoto(watchId, photoType) {
