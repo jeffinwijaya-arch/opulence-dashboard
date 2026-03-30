@@ -14606,37 +14606,54 @@ function renderJamFeed(type) {
                 <div style="font-size:2.2rem;font-weight:700;color:var(--orange);line-height:1.2;">${_packageCount}</div>
                 <div style="font-size:1rem;font-weight:600;color:var(--text-0);text-transform:uppercase;letter-spacing:1px;">${_t('pending')}</div>
             </div>`;
-            // Group by package
-            const renderedPkgs = new Set();
+            // Group ALL watches into visual packages
+            // Priority: package_id > auto-group by buyer+date
+            const _pkgColors = ['#FF6B35', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'];
+            const _visualGroups = [];
+            const _usedPkgIds = new Set();
+            const _usedAutoKeys = new Set();
+            for (const item of filteredPending) {
+                if (item.package_id && !_usedPkgIds.has(item.package_id)) {
+                    _usedPkgIds.add(item.package_id);
+                    const pkgItems = filteredPending.filter(i => i.package_id === item.package_id);
+                    _visualGroups.push({ items: pkgItems, buyer: item.sold_to || '', date: item.date || 'Unscheduled', label: item.package_name || null, hasLabel: item.has_label, labelFile: item.label_file, notes: item.package_notes || '' });
+                    pkgItems.forEach(pi => { if (!pi.package_id) return; });
+                } else if (!item.package_id) {
+                    const autoKey = (item.sold_to || 'unknown') + '|' + (item.date || 'Unscheduled');
+                    if (!_usedAutoKeys.has(autoKey)) {
+                        _usedAutoKeys.add(autoKey);
+                        const grouped = filteredPending.filter(i => !i.package_id && (i.sold_to || 'unknown') === (item.sold_to || 'unknown') && (i.date || 'Unscheduled') === (item.date || 'Unscheduled'));
+                        _visualGroups.push({ items: grouped, buyer: item.sold_to || '', date: item.date || 'Unscheduled', label: null, hasLabel: false, labelFile: null, notes: '' });
+                    }
+                }
+            }
+            // Sort groups by date
+            _visualGroups.sort((a, b) => { if (a.date === 'Unscheduled') return -1; if (b.date === 'Unscheduled') return 1; return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
             let lastDate = '';
             let _logisticsPkgSeq = 0;
-            for (const item of filteredPending) {
-                const d = item.date || 'Unscheduled';
-                // Show all pending items for logistics — don't hide unscheduled
+            for (const grp of _visualGroups) {
+                const d = grp.date;
                 if (d !== lastDate) {
                     const clr = (d === today || d === 'Unscheduled') ? 'var(--red)' : 'var(--orange)';
                     html += _dateHeader(d === 'Unscheduled' ? 'Unscheduled' : d, clr);
                     lastDate = d;
                 }
-                // If item has a package, render package group
-                if (item.package_id && !renderedPkgs.has(item.package_id)) {
-                    renderedPkgs.add(item.package_id);
-                    const pkgItems = filteredPending.filter(i => i.package_id === item.package_id);
-                    const pkgLabelBtn = item.has_label && item.label_file
-                        ? '<button onclick="event.stopPropagation();window.open(\'/api/jam/label/' + item.label_file + '\',\'_blank\')" style="cursor:pointer;padding:8px 14px;border:none;border-radius:8px;background:var(--green);color:#000;font-weight:700;font-size:0.78rem;min-height:36px;">VIEW LABEL</button>'
-                        : '';
-                    const pkgNotes = item.package_notes || '';
-                    html += '<div style="border:2px solid var(--accent);border-radius:10px;padding:2px;margin:8px 0;">'
-                        + '<div style="background:var(--accent-dim);padding:6px 12px;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:space-between;">'
-                        + '<span style="font-size:0.75rem;font-weight:700;color:var(--accent);">' + (isLogistics ? 'Package ' + (++_logisticsPkgSeq) : (item.package_name || 'Package')) + ' (' + pkgItems.length + ' watches)</span>'
-                        + pkgLabelBtn
-                        + '</div>'
-                        + (pkgNotes ? '<div style="padding:10px 14px;font-size:1rem;color:var(--text-0);background:var(--bg-1);border-bottom:1px solid var(--border);line-height:1.5;"><strong style="color:var(--orange);font-size:1.05rem;">Instructions:</strong> <span style="font-weight:600;">' + pkgNotes.replace(/</g,'&lt;') + '</span></div>' : '');
-                    for (const pi of pkgItems) html += _jamCard(type, pi);
-                    html += '</div>';
-                } else if (!item.package_id) {
-                    html += _jamCard(type, item);
-                }
+                _logisticsPkgSeq++;
+                const pColor = _pkgColors[(_logisticsPkgSeq - 1) % _pkgColors.length];
+                const buyerName = grp.buyer || 'Unknown buyer';
+                const watchCount = grp.items.length;
+                const pkgLabel = grp.label || (isLogistics ? 'Package ' + _logisticsPkgSeq : 'Package ' + _logisticsPkgSeq);
+                const pkgLabelBtn = grp.hasLabel && grp.labelFile
+                    ? '<button onclick="event.stopPropagation();window.open(\'/api/jam/label/' + grp.labelFile + '\',\'_blank\')" style="cursor:pointer;padding:8px 14px;border:none;border-radius:8px;background:var(--green);color:#000;font-weight:700;font-size:0.78rem;min-height:36px;">VIEW LABEL</button>'
+                    : '';
+                html += '<div style="border:2px solid ' + pColor + ';border-radius:12px;padding:4px;margin:8px 0;background:var(--bg-1);">'
+                    + '<div style="padding:8px 14px;border-radius:8px 8px 0 0;background:var(--accent-dim);display:flex;align-items:center;justify-content:space-between;">'
+                    + '<span style="font-size:0.8rem;font-weight:700;color:' + pColor + ';">📦 ' + pkgLabel + ' — ' + buyerName.replace(/</g,'&lt;') + ' (' + watchCount + (watchCount === 1 ? ' watch' : ' watches') + ')</span>'
+                    + pkgLabelBtn
+                    + '</div>'
+                    + (grp.notes ? '<div style="padding:10px 14px;font-size:1rem;color:var(--text-0);background:var(--bg-1);border-bottom:1px solid var(--border);line-height:1.5;"><strong style="color:var(--orange);font-size:1.05rem;">Instructions:</strong> <span style="font-weight:600;">' + grp.notes.replace(/</g,'&lt;') + '</span></div>' : '');
+                for (const pi of grp.items) html += _jamCard(type, pi);
+                html += '</div>';
             }
         }
         
