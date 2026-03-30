@@ -14616,14 +14616,15 @@ function renderJamFeed(type) {
                 if (item.package_id && !_usedPkgIds.has(item.package_id)) {
                     _usedPkgIds.add(item.package_id);
                     const pkgItems = filteredPending.filter(i => i.package_id === item.package_id);
-                    _visualGroups.push({ items: pkgItems, buyer: item.sold_to || '', date: item.date || 'Unscheduled', label: item.package_name || null, hasLabel: item.has_label, labelFile: item.label_file, notes: item.package_notes || '' });
+                    _visualGroups.push({ items: pkgItems, buyer: item.sold_to || item.to || '', date: item.date || 'Unscheduled', label: item.package_name || null, hasLabel: item.has_label, labelFile: item.label_file, notes: item.package_notes || '' });
                     pkgItems.forEach(pi => { if (!pi.package_id) return; });
                 } else if (!item.package_id) {
-                    const autoKey = (item.sold_to || 'unknown') + '|' + (item.date || 'Unscheduled');
+                    const _buyer = item.sold_to || item.to || 'unknown';
+                    const autoKey = _buyer + '|' + (item.date || 'Unscheduled');
                     if (!_usedAutoKeys.has(autoKey)) {
                         _usedAutoKeys.add(autoKey);
-                        const grouped = filteredPending.filter(i => !i.package_id && (i.sold_to || 'unknown') === (item.sold_to || 'unknown') && (i.date || 'Unscheduled') === (item.date || 'Unscheduled'));
-                        _visualGroups.push({ items: grouped, buyer: item.sold_to || '', date: item.date || 'Unscheduled', label: null, hasLabel: false, labelFile: null, notes: '' });
+                        const grouped = filteredPending.filter(i => !i.package_id && (i.sold_to || i.to || 'unknown') === _buyer && (i.date || 'Unscheduled') === (item.date || 'Unscheduled'));
+                        _visualGroups.push({ items: grouped, buyer: _buyer, date: item.date || 'Unscheduled', label: null, hasLabel: false, labelFile: null, notes: '' });
                     }
                 }
             }
