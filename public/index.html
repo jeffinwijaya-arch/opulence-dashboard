@@ -7371,7 +7371,8 @@ function renderInventoryTable(rows) {
         html += `<a onclick="processOCR(${r.row})" style="cursor:pointer;color:#9b59b6;margin-right:6px;padding:4px 8px;border:1px solid #9b59b6;border-radius:4px;font-size:0.7rem;">Vision</a>`;
         html += `<a onclick="viewWatchPhotos('${r.description}', ${r.row})" style="cursor:pointer;color:#06b6d4;margin-right:6px;padding:4px 8px;border:1px solid #06b6d4;border-radius:4px;font-size:0.7rem;">Photos</a>`;
         html += `<a onclick="documentSingleWatch(${r.row})" style="cursor:pointer;color:#2563eb;padding:4px 8px;border:1px solid #2563eb;border-radius:4px;font-size:0.7rem;margin-right:6px;">Doc</a>`;
-        html += `<a onclick="shareWatchCard(${r.row},'${(r.description||'').replace(/'/g,"\\'")}')" style="cursor:pointer;color:#a855f7;padding:4px 8px;border:1px solid #a855f7;border-radius:4px;font-size:0.7rem;">Share</a>`;
+        html += `<a onclick="shareWatchCard(${r.row},'${(r.description||'').replace(/'/g,"\\'")}')" style="cursor:pointer;color:#a855f7;padding:4px 8px;border:1px solid #a855f7;border-radius:4px;font-size:0.7rem;margin-right:6px;">Share</a>`;
+        html += `<a onclick="deleteWatchDirect(${r.row},'${(r.description||'').replace(/'/g,"\\'")}')" style="cursor:pointer;color:var(--red);padding:4px 8px;border:1px solid var(--red);border-radius:4px;font-size:0.7rem;">Del</a>`;
         return html;
     };
     
@@ -7405,7 +7406,8 @@ function renderInventoryTable(rows) {
                 <a onclick="editWatch(${r.row})" style="cursor:pointer;color:var(--text-2);margin-right:4px;">Edit</a>
                 <a onclick="processOCR(${r.row})" style="cursor:pointer;color:#9b59b6;margin-right:4px;">Vision</a>
                 <a onclick="viewWatchPhotos('${r.description}', ${r.row})" style="cursor:pointer;color:#06b6d4;margin-right:4px;">Photos</a>
-                <a onclick="documentSingleWatch(${r.row})" style="cursor:pointer;color:#2563eb;">Doc</a>
+                <a onclick="documentSingleWatch(${r.row})" style="cursor:pointer;color:#2563eb;margin-right:4px;">Doc</a>
+                <a onclick="deleteWatchDirect(${r.row},'${(r.description||'').replace(/'/g,"\\'")}')" style="cursor:pointer;color:var(--red);">Del</a>
             </td>
         </tr>`).join('');
     }
@@ -8665,6 +8667,16 @@ async function submitShip() {
         else { status.style.color='var(--red)'; status.textContent='Error: '+(d.error||'Unknown'); }
     } catch(e) { status.style.color='var(--red)'; status.textContent='Error: '+e.message; }
     btn.disabled = false; btn.textContent = 'Ship';
+}
+
+async function deleteWatchDirect(row, desc) {
+    if (!confirm(`DELETE "${desc}"? This cannot be undone.`)) return;
+    try {
+        const r = await fetch(`/api/inventory/${row}/delete`, {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+        const d = await r.json();
+        if (d.ok) { loadInventoryPage(); }
+        else { alert('Error: '+(d.error||'Unknown')); }
+    } catch(e) { alert('Error: '+e.message); }
 }
 
 async function deleteWatch() {
