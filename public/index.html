@@ -7165,8 +7165,11 @@ function buildInventoryTabs() {
     
     let html = `<div onclick="switchInventoryTab('active')" style="${tabStyle(_inventoryTab==='active')}">Active (${activeCount})</div>`;
     sortedMonths.forEach(mo => {
+        if (!/^\d{4}-\d{2}$/.test(mo)) return;
         const [y, m] = mo.split('-');
-        const label = new Date(parseInt(y), parseInt(m)-1).toLocaleString('en-US',{month:'short'}) + ' ' + y;
+        const d = new Date(parseInt(y), parseInt(m)-1);
+        if (isNaN(d.getTime())) return;
+        const label = d.toLocaleString('en-US',{month:'short'}) + ' ' + y;
         const active = _inventoryTab === mo;
         html += `<div onclick="switchInventoryTab('${mo}')" style="${tabStyle(active)}">${label} (${months[mo]})</div>`;
     });
