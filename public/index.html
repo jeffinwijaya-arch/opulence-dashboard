@@ -1847,7 +1847,7 @@
             </div>
             <!-- Batch Toolbar -->
             <!-- Inventory Month Tabs -->
-            <div id="inv-month-tabs" style="display:flex;gap:0;margin-bottom:12px;border-bottom:2px solid var(--border);overflow-x:auto;"></div>
+            <div id="inv-month-tabs" style="display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;"></div>
             <div id="batch-toolbar" style="display:none;padding:8px 12px;background:rgba(10,132,255,0.1);border:1px solid var(--accent);border-radius:var(--radius);margin-bottom:8px;display:none;align-items:center;gap:8px;flex-wrap:wrap;">
                 <span id="batch-count" style="font-size:0.75rem;color:var(--accent);font-weight:600;">0 selected</span>
                 <button class="btn" onclick="batchArrived()" style="font-size:0.7rem;padding:4px 10px;background:var(--accent);color:var(--bg-1);">Mark Arrived</button>
@@ -7150,7 +7150,7 @@ function buildInventoryTabs() {
     const curMonth = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
     invMgmtData.forEach(r => {
         const sd = r.sale_date || '';
-        if (sd && r.sold === 'Yes') {
+        if (sd && r.sold === 'Yes' && /^\d{4}-\d{2}/.test(sd)) {
             const mo = sd.substring(0, 7);
             if (mo < curMonth) {
                 if (!months[mo]) months[mo] = 0;
@@ -7161,12 +7161,14 @@ function buildInventoryTabs() {
     const activeCount = invMgmtData.filter(r => r.sold !== 'Yes' || (r.sale_date||'').substring(0,7) >= curMonth).length;
     const sortedMonths = Object.keys(months).sort().reverse();
     
-    let html = `<div class="inv-tab${_inventoryTab==='active'?' inv-tab-active':''}" onclick="switchInventoryTab('active')" style="cursor:pointer;padding:8px 16px;font-size:0.75rem;font-weight:600;white-space:nowrap;border-bottom:2px solid ${_inventoryTab==='active'?'var(--accent)':'transparent'};color:${_inventoryTab==='active'?'var(--accent)':'var(--text-2)'};margin-bottom:-2px;transition:all 0.15s;">Active (${activeCount})</div>`;
+    const tabStyle = (isActive) => `cursor:pointer;padding:10px 20px;font-size:0.75rem;font-weight:600;white-space:nowrap;border-bottom:2px solid ${isActive?'var(--accent)':'transparent'};color:${isActive?'var(--accent)':'var(--text-2)'};margin-bottom:-1px;transition:all 0.15s;letter-spacing:0.3px;`;
+    
+    let html = `<div onclick="switchInventoryTab('active')" style="${tabStyle(_inventoryTab==='active')}">Active (${activeCount})</div>`;
     sortedMonths.forEach(mo => {
         const [y, m] = mo.split('-');
         const label = new Date(parseInt(y), parseInt(m)-1).toLocaleString('en-US',{month:'short'}) + ' ' + y;
         const active = _inventoryTab === mo;
-        html += `<div class="inv-tab${active?' inv-tab-active':''}" onclick="switchInventoryTab('${mo}')" style="cursor:pointer;padding:8px 16px;font-size:0.75rem;font-weight:600;white-space:nowrap;border-bottom:2px solid ${active?'var(--accent)':'transparent'};color:${active?'var(--accent)':'var(--text-2)'};margin-bottom:-2px;transition:all 0.15s;">${label} (${months[mo]})</div>`;
+        html += `<div onclick="switchInventoryTab('${mo}')" style="${tabStyle(active)}">${label} (${months[mo]})</div>`;
     });
     container.innerHTML = html;
 }
@@ -7272,7 +7274,9 @@ function filterInventory() {
     else if (f === 'completed') rows = rows.filter(r => r.sold === 'Yes' && r.shipped === 'Yes' && r.paid_after_sold === 'Yes');
 
     // Hide completed lifecycle watches by default (unless filter is 'all' or 'completed' or 'sold')
-    const showCompleted = window._showCompletedWatches || f === 'completed' || f === 'sold';
+    // On archive month tabs, always show all watches (they're all sold)
+    const isArchiveTab = _inventoryTab !== 'active';
+    const showCompleted = isArchiveTab || window._showCompletedWatches || f === 'completed' || f === 'sold';
     if (!showCompleted && f === 'all') {
         const completedRows = rows.filter(r => r.sold === 'Yes' && r.shipped === 'Yes' && r.paid_after_sold === 'Yes');
         const activeRows = rows.filter(r => !(r.sold === 'Yes' && r.shipped === 'Yes' && r.paid_after_sold === 'Yes'));
