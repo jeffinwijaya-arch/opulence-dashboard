@@ -1155,7 +1155,7 @@
                    onkeydown="if(event.key==='Enter'){showPage('lookup');$('#ref-search').value=this.value;doLookup();}">
             <span class="search-hint" id="searchHint">/</span>
         </div>
-        <button onclick="openQuickCmd()" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 12px;font-size:0.75rem;font-weight:600;cursor:pointer;margin-right:8px;white-space:nowrap;" title="Cmd+K">Quick Quick</button>
+        <button onclick="openQuickCmd()" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 12px;font-size:0.75rem;font-weight:600;cursor:pointer;margin-right:8px;white-space:nowrap;" title="Cmd+K">Quick</button>
         <nav class="nav" id="mainNav">
             <a data-page="dashboard" class="active" onclick="showPage('dashboard')">Overview</a>
             <a data-page="lookup" onclick="showPage('lookup')">Prices</a>
@@ -7238,8 +7238,8 @@ function updateInventoryStats(filteredRows) {
     // Inventory value (unsold watches)
     const inventoryValue = allRows.filter(r => r.sold !== 'Yes').reduce((s,r) => s + p(r.cost_price), 0);
     
-    // Total P&L (sold watches only)
-    const totalPnL = allRows.filter(r => r.sold === 'Yes').reduce((s,r) => {
+    // Total P&L (sold watches only — same calc as Profit card: shipped+paid+cost>0)
+    const totalPnL = allRows.filter(r => r.sold === 'Yes' && r.shipped === 'Yes' && r.paid_buyer === 'Yes' && p(r.cost_price) > 0).reduce((s,r) => {
         const cost = p(r.cost_price);
         const sold = p(r.sold_price);
         return s + (sold - cost);
