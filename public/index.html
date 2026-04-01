@@ -1846,6 +1846,8 @@
                 <button class="btn" onclick="loadInventoryPage()" style="opacity:0.6;">Refresh</button>
             </div>
             <!-- Batch Toolbar -->
+            <!-- Inventory Month Tabs -->
+            <div id="inv-month-tabs" style="display:flex;gap:0;margin-bottom:12px;border-bottom:2px solid var(--border);overflow-x:auto;"></div>
             <div id="batch-toolbar" style="display:none;padding:8px 12px;background:rgba(10,132,255,0.1);border:1px solid var(--accent);border-radius:var(--radius);margin-bottom:8px;display:none;align-items:center;gap:8px;flex-wrap:wrap;">
                 <span id="batch-count" style="font-size:0.75rem;color:var(--accent);font-weight:600;">0 selected</span>
                 <button class="btn" onclick="batchArrived()" style="font-size:0.7rem;padding:4px 10px;background:var(--accent);color:var(--bg-1);">Mark Arrived</button>
@@ -7094,8 +7096,9 @@ async function loadInventoryPage() {
         invMgmtLoaded = true;
         // Auto-reload if server HTML has changed
         if (d._v && window.__V && d._v !== window.__V) { location.reload(true); return; }
+        buildInventoryTabs();
         updateInventorySummary();
-        updateInventoryStats(invMgmtData);
+        updateInventoryStats(getTabFilteredData());
         filterInventory();
     } catch(e) {
         tbody.innerHTML = `<tr><td colspan="11" style="color:var(--red);">Error: ${e.message}</td></tr>`;
@@ -7103,7 +7106,7 @@ async function loadInventoryPage() {
 }
 
 function updateInventorySummary() {
-    const d = invMgmtData;
+    const d = getTabFilteredData();
     const el = id => document.getElementById(id);
     const p = v => { const n = parseFloat(String(v||'0').replace(/[$,]/g,'')); return isNaN(n)?0:n; };
     const fmt = n => '$' + Math.round(n).toLocaleString();
@@ -7137,6 +7140,54 @@ function updateInventorySummary() {
 }
 
 window._showCompletedWatches = false;
+var _inventoryTab = 'active';
+
+function buildInventoryTabs() {
+    const container = document.getElementById('inv-month-tabs');
+    if (!container) return;
+    const months = {};
+    const now = new Date();
+    const curMonth = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    invMgmtData.forEach(r => {
+        const sd = r.sale_date || '';
+        if (sd && r.sold === 'Yes') {
+            const mo = sd.substring(0, 7);
+            if (mo < curMonth) {
+                if (!months[mo]) months[mo] = 0;
+                months[mo]++;
+            }
+        }
+    });
+    const activeCount = invMgmtData.filter(r => r.sold !== 'Yes' || (r.sale_date||'').substring(0,7) >= curMonth).length;
+    const sortedMonths = Object.keys(months).sort().reverse();
+    
+    let html = `<div class="inv-tab${_inventoryTab==='active'?' inv-tab-active':''}" onclick="switchInventoryTab('active')" style="cursor:pointer;padding:8px 16px;font-size:0.75rem;font-weight:600;white-space:nowrap;border-bottom:2px solid ${_inventoryTab==='active'?'var(--accent)':'transparent'};color:${_inventoryTab==='active'?'var(--accent)':'var(--text-2)'};margin-bottom:-2px;transition:all 0.15s;">Active (${activeCount})</div>`;
+    sortedMonths.forEach(mo => {
+        const [y, m] = mo.split('-');
+        const label = new Date(parseInt(y), parseInt(m)-1).toLocaleString('en-US',{month:'short'}) + ' ' + y;
+        const active = _inventoryTab === mo;
+        html += `<div class="inv-tab${active?' inv-tab-active':''}" onclick="switchInventoryTab('${mo}')" style="cursor:pointer;padding:8px 16px;font-size:0.75rem;font-weight:600;white-space:nowrap;border-bottom:2px solid ${active?'var(--accent)':'transparent'};color:${active?'var(--accent)':'var(--text-2)'};margin-bottom:-2px;transition:all 0.15s;">${label} (${months[mo]})</div>`;
+    });
+    container.innerHTML = html;
+}
+
+function switchInventoryTab(tab) {
+    _inventoryTab = tab;
+    buildInventoryTabs();
+    updateInventorySummary();
+    filterInventory();
+}
+
+function getTabFilteredData() {
+    const now = new Date();
+    const curMonth = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    if (_inventoryTab === 'active') {
+        return invMgmtData.filter(r => r.sold !== 'Yes' || (r.sale_date||'').substring(0,7) >= curMonth);
+    } else {
+        return invMgmtData.filter(r => r.sold === 'Yes' && (r.sale_date||'').substring(0,7) === _inventoryTab);
+    }
+}
+
 function toggleCompletedWatches() {
     window._showCompletedWatches = !window._showCompletedWatches;
     filterInventory();
@@ -7169,7 +7220,7 @@ function applySortFromSelect() {
 }
 
 function updateInventoryStats(filteredRows) {
-    const allRows = invMgmtData;
+    const allRows = getTabFilteredData();
     const p = v => { const n = parseFloat(String(v||'0').replace(/[$,]/g,'')); return isNaN(n)?0:n; };
     const fmt = n => '$' + Math.round(n).toLocaleString();
     
@@ -7201,7 +7252,7 @@ function updateInventoryStats(filteredRows) {
 function filterInventory() {
     const q = (document.getElementById('im-search')?.value || '').toLowerCase();
     const f = document.getElementById('im-status-filter')?.value || 'all';
-    let rows = [...invMgmtData];
+    let rows = [...getTabFilteredData()];
     
     if (q) rows = rows.filter(r => 
         (r.description||'').toLowerCase().includes(q) ||
