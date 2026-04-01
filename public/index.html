@@ -1772,42 +1772,42 @@
                 <h1>Inventory</h1>
                 <p>Bot Sheet — Add, edit, and manage watches. Actions auto-sync to Telegram groups.</p>
             </div>
-            <!-- Summary -->
-            <div class="metrics" id="inv-mgmt-summary" style="margin-bottom:12px;">
-                <div class="metric"><div class="label">Total</div><div class="val" id="im-total">—</div></div>
-                <div class="metric"><div class="label">Unsold</div><div class="val" id="im-unsold">—</div></div>
-                <div class="metric"><div class="label">In Transit</div><div class="val" id="im-transit">—</div></div>
-                <div class="metric"><div class="label">Unposted</div><div class="val" id="im-unposted">—</div></div>
-                <div class="metric"><div class="label">Capital</div><div class="val" id="im-capital">—</div></div>
-                <div class="metric"><div class="label">Revenue</div><div class="val" id="im-revenue">—</div></div>
-                <div class="metric"><div class="label">Profit</div><div class="val" id="im-profit">—</div></div>
-                <div class="metric" style="border-left:2px solid var(--accent);padding-left:10px;"><div class="label" id="im-month-label">This Month</div><div class="val" id="im-month-profit">—</div></div>
-            </div>
-            <!-- Quick Stats Bar -->
-            <div id="inventory-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px;padding:12px;background:var(--bg-2);border-radius:var(--radius);border:1px solid var(--border);">
+            <!-- Summary Stats — Single Row -->
+            <div id="inventory-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:16px;margin-bottom:16px;padding:16px 20px;background:var(--bg-2);border-radius:var(--radius);border:1px solid var(--border);">
                 <div class="stat-item" style="text-align:center;">
-                    <div style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Total</div>
-                    <div id="stats-total" style="font-size:1.1rem;font-weight:700;color:var(--text-0);margin-top:2px;">—</div>
+                    <div style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Total</div>
+                    <div id="im-total" style="font-size:1.2rem;font-weight:700;color:var(--text-0);">—</div>
+                    <div id="stats-total" style="display:none;">—</div>
                 </div>
                 <div class="stat-item" style="text-align:center;">
-                    <div style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Unsold</div>
-                    <div id="stats-unsold" style="font-size:1.1rem;font-weight:700;color:var(--accent);margin-top:2px;">—</div>
+                    <div style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Unsold</div>
+                    <div id="im-unsold" style="font-size:1.2rem;font-weight:700;color:var(--accent);">—</div>
+                    <div id="stats-unsold" style="display:none;">—</div>
                 </div>
                 <div class="stat-item" style="text-align:center;">
-                    <div style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Sold</div>
-                    <div id="stats-sold" style="font-size:1.1rem;font-weight:700;color:var(--green);margin-top:2px;">—</div>
+                    <div style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">In Transit</div>
+                    <div id="im-transit" style="font-size:1.2rem;font-weight:700;color:var(--orange);">—</div>
                 </div>
                 <div class="stat-item" style="text-align:center;">
-                    <div style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Shipped</div>
-                    <div id="stats-shipped" style="font-size:1.1rem;font-weight:700;color:var(--blue);margin-top:2px;">—</div>
+                    <div style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Capital</div>
+                    <div id="im-capital" style="font-size:1.2rem;font-weight:700;color:var(--text-0);">—</div>
+                    <div id="stats-value" style="display:none;">—</div>
                 </div>
                 <div class="stat-item" style="text-align:center;">
-                    <div style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Inventory Value</div>
-                    <div id="stats-value" style="font-size:1.1rem;font-weight:700;color:var(--accent);margin-top:2px;">—</div>
+                    <div style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Revenue</div>
+                    <div id="im-revenue" style="font-size:1.2rem;font-weight:700;color:var(--text-0);">—</div>
+                    <div id="stats-sold" style="display:none;">—</div>
+                    <div id="stats-shipped" style="display:none;">—</div>
                 </div>
                 <div class="stat-item" style="text-align:center;">
-                    <div style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">P&L Total</div>
-                    <div id="stats-pnl" style="font-size:1.1rem;font-weight:700;color:var(--green);margin-top:2px;">—</div>
+                    <div style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Profit</div>
+                    <div id="im-profit" style="font-size:1.2rem;font-weight:700;color:var(--green);">—</div>
+                    <div id="stats-pnl" style="display:none;">—</div>
+                </div>
+                <div class="stat-item" style="text-align:center;border-left:2px solid var(--accent);padding-left:12px;">
+                    <div style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;" id="im-month-label">This Month</div>
+                    <div id="im-month-profit" style="font-size:1.2rem;font-weight:700;color:var(--green);">—</div>
+                    <div id="im-unposted" style="display:none;">—</div>
                 </div>
             </div>
             
