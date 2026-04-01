@@ -1155,7 +1155,7 @@
                    onkeydown="if(event.key==='Enter'){showPage('lookup');$('#ref-search').value=this.value;doLookup();}">
             <span class="search-hint" id="searchHint">/</span>
         </div>
-        <button onclick="openQuickCmd()" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 12px;font-size:0.75rem;font-weight:600;cursor:pointer;margin-right:8px;white-space:nowrap;" title="Cmd+K">⚡ Quick</button>
+        <button onclick="openQuickCmd()" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 12px;font-size:0.75rem;font-weight:600;cursor:pointer;margin-right:8px;white-space:nowrap;" title="Cmd+K">Quick Quick</button>
         <nav class="nav" id="mainNav">
             <a data-page="dashboard" class="active" onclick="showPage('dashboard')">Overview</a>
             <a data-page="lookup" onclick="showPage('lookup')">Prices</a>
@@ -1818,14 +1818,14 @@
                 <!-- Status Filter -->
                 <select class="input" id="im-status-filter" style="width:auto;" onchange="filterInventory()">
                     <option value="all">All Status</option>
-                    <option value="unsold">🔸 Unsold</option>
-                    <option value="sold">✅ Sold</option>
-                    <option value="shipped">📦 Shipped</option>
-                    <option value="not-arrived">❌ Not Arrived</option>
-                    <option value="not-shipped">⏳ Sold Not Shipped</option>
-                    <option value="not-paid">💰 Sold Not Paid</option>
-                    <option value="not-posted">📝 Not Posted</option>
-                    <option value="completed">🎯 Completed</option>
+                    <option value="unsold">Unsold</option>
+                    <option value="sold">Sold</option>
+                    <option value="shipped">Shipped</option>
+                    <option value="not-arrived">Not Arrived</option>
+                    <option value="not-shipped">Sold Not Shipped</option>
+                    <option value="not-paid">Sold Not Paid</option>
+                    <option value="not-posted">Not Posted</option>
+                    <option value="completed">Completed</option>
                 </select>
                 
                 <!-- Sort Options -->
@@ -12136,25 +12136,25 @@ async function loadPayments() {
 
             // Build summary
             const summary = [];
-            if (d.posted) summary.push(`✅ ${d.posted} posted`);
-            if (d.deleted) summary.push(`🗑️ ${d.deleted} deleted`);
-            if (d.skipped) summary.push(`⏭️ ${d.skipped} already synced`);
-            if (d.no_photo) summary.push(`📷 ${d.no_photo} skipped (no photo)`);
-            if (d.errors) summary.push(`❌ ${d.errors} errors`);
+            if (d.posted) summary.push(`${d.posted} posted`);
+            if (d.deleted) summary.push(`${d.deleted} deleted`);
+            if (d.skipped) summary.push(`${d.skipped} already synced`);
+            if (d.no_photo) summary.push(`${d.no_photo} skipped (no photo)`);
+            if (d.errors) summary.push(`${d.errors} errors`);
 
             // Build detail log
             const details = d.details || {};
             let logLines = [];
-            (details.deleted || []).forEach(x => logLines.push(`🗑️ Deleted: ${x.ref} (${x.reason})`));
-            (details.posted || []).forEach(x => logLines.push(`✅ Posted: ${x.ref}`));
-            (details.no_photo || []).forEach(x => logLines.push(`📷 No photo: ${x.ref}`));
-            (details.errors || []).forEach(x => logLines.push(`❌ Error: ${x.ref || '#'+x.id} — ${x.error || 'unknown'}`));
-            (details.skipped || []).forEach(x => logLines.push(`⏭️ Skipped: ${x.ref}`));
+            (details.deleted || []).forEach(x => logLines.push(`Deleted: ${x.ref} (${x.reason})`));
+            (details.posted || []).forEach(x => logLines.push(`Posted: ${x.ref}`));
+            (details.no_photo || []).forEach(x => logLines.push(`No photo: ${x.ref}`));
+            (details.errors || []).forEach(x => logLines.push(`Error: ${x.ref || '#'+x.id} — ${x.error || 'unknown'}`));
+            (details.skipped || []).forEach(x => logLines.push(`Skipped: ${x.ref}`));
 
             const hasAction = d.posted || d.deleted || d.errors || d.no_photo;
             const statusColor = d.errors ? 'var(--red, #ff6b6b)' : 'var(--green, #4caf50)';
             statusEl.style.color = statusColor;
-            statusEl.textContent = summary.join(' · ') || 'All up to date ✅';
+            statusEl.textContent = summary.join(' · ') || 'All up to date';
 
             // Show detail modal
             const logHtml = logLines.length
@@ -12188,7 +12188,7 @@ async function loadPayments() {
             loadPostingsPage();
         } catch (e) {
             statusEl.style.color = 'var(--red, #ff6b6b)';
-            statusEl.textContent = '❌ Sync failed: ' + e.message;
+            statusEl.textContent = 'Sync failed: ' + e.message;
             btn.textContent = 'Sync All';
             btn.disabled = false;
         }
@@ -12211,7 +12211,7 @@ async function loadPayments() {
             btn.disabled = false;
         } catch (e) {
             statusEl.style.color = 'var(--red, #ff6b6b)';
-            statusEl.textContent = '❌ ' + e.message;
+            statusEl.textContent = 'Error: ' + e.message;
             btn.textContent = 'Sync Export Chats';
             btn.disabled = false;
         }
@@ -13554,14 +13554,14 @@ async function loadPayments() {
                     const isCall = v.visit_type === 'call';
                     const isReview = v.visit_type === 'google_review';
                     
-                    let icon = '📌', color = 'var(--text-2)', label = v.visit_type;
+                    let icon = '*', color = 'var(--text-2)', label = v.visit_type;
                     const platform = v.visit_type.replace(/^(inbound|outbound)_/, '').toUpperCase();
                     if (isInbound) { icon = '←'; color = 'var(--green)'; label = platform !== 'IMESSAGE' ? platform : ''; }
                     else if (isOutbound) { icon = '→'; color = 'var(--accent)'; label = platform !== 'IMESSAGE' ? platform : ''; }
-                    else if (isVisit) { icon = '🏪'; label = 'Visit'; }
-                    else if (isCall) { icon = '📞'; label = 'Call'; }
+                    else if (isVisit) { icon = '*'; label = 'Visit'; }
+                    else if (isCall) { icon = '*'; label = 'Call'; }
                     else if (isReview) { icon = '⭐'; label = 'Google Review'; }
-                    else if (v.visit_type === 'outreach') { icon = '📤'; label = 'Outreach'; }
+                    else if (v.visit_type === 'outreach') { icon = '>'; label = 'Outreach'; }
                     
                     // Extract just the message text from notes
                     let noteText = v.notes || '';
@@ -13602,7 +13602,7 @@ async function loadPayments() {
                 html += contacts.filter(c=>c.phone).map(c => {
                     const isIMsg = !c.phone_type || c.phone_type === 'iMessage';
                     return `<button class="btn" onclick="showFollowUpModal(${s.id},'${(c.sales_name||'').replace(/'/g,"\\'")}','${(c.phone||'').replace(/'/g,"\\'")}','${(c.phone_type||'iMessage').replace(/'/g,"\\'")}')" style="font-size:0.7rem;margin:0 4px 6px 0;">
-                        ${isIMsg ? '💬' : '📋'} ${c.sales_name}${c.phone_type && c.phone_type !== 'iMessage' ? ' ('+c.phone_type+')' : ''}
+                        ${isIMsg ? 'MSG' : 'NOTE'} ${c.sales_name}${c.phone_type && c.phone_type !== 'iMessage' ? ' ('+c.phone_type+')' : ''}
                     </button>`;
                 }).join('');
                 html += '</div>';
@@ -14719,7 +14719,7 @@ function renderJamFeed(type) {
                     : '';
                 html += '<div style="border:2px solid ' + pColor + ';border-radius:12px;padding:4px;margin:8px 0;background:var(--bg-1);">'
                     + '<div style="padding:8px 14px;border-radius:8px 8px 0 0;background:var(--accent-dim);display:flex;align-items:center;justify-content:space-between;">'
-                    + '<span style="font-size:0.8rem;font-weight:700;color:' + pColor + ';">📦 ' + pkgLabel + ' — ' + buyerName.replace(/</g,'&lt;') + ' (' + watchCount + (watchCount === 1 ? ' watch' : ' watches') + ')</span>'
+                    + '<span style="font-size:0.8rem;font-weight:700;color:' + pColor + ';">' + pkgLabel + ' — ' + buyerName.replace(/</g,'&lt;') + ' (' + watchCount + (watchCount === 1 ? ' watch' : ' watches') + ')</span>'
                     + pkgLabelBtn
                     + '</div>'
                     + (grp.notes ? '<div style="padding:10px 14px;font-size:1rem;color:var(--text-0);background:var(--bg-1);border-bottom:1px solid var(--border);line-height:1.5;"><strong style="color:var(--orange);font-size:1.05rem;">Instructions:</strong> <span style="font-weight:600;">' + grp.notes.replace(/</g,'&lt;') + '</span></div>' : '');
