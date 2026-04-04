@@ -1,104 +1,344 @@
 {
   "articles": [
     {
-      "id": "dcc2797c0b70",
-      "title": "First Look \u2013 Holthinrichs Presents the Signature LAB Series 1 Small Seconds and GMT",
-      "link": "https://monochrome-watches.com/holthinrichs-signature-lab-series-small-seconds-and-gmt-copper-patina-dials-3d-printed-titanium-case-review-price/",
-      "desc": "10 years ago, a young architect named Michiel Holthinrichs had the idea to create watches\u2026 But not like every other young indie watchmaker. What made it unique? The Ornament 1 was the world\u2019s first 3D",
-      "date": "2026-03-29T12:01:19+00:00",
+      "id": "837b926cc99d",
+      "title": "Introducing \u2013 New Brand OraOrea Debuts with the Coriolis Pointer Date",
+      "link": "https://monochrome-watches.com/new-watch-brand-oraorea-debuts-with-coriolis-pointer-date-introducing-price/",
+      "desc": "OraOrea is a new independent brand founded by Zach Weiss, best known as co-founder of Worn & Wound and Windup Watch Fair. After years spent analysing, curating and discussing watches, Weiss now steps ",
+      "date": "2026-04-03T17:01:11+00:00",
       "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/Holthinrichs-Signature-LAB-Series-Small-Seconds-and-GMT-copper-patina-dials-3D-printed-titanium-case-Review-1-600x237.jpg",
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/new-watch-brand-oraorea-debuts-with-coriolis-pointer-date-zach-weiss-worn-wound-introducing-2-600x237.jpg",
       "relevance": 0
     },
     {
-      "id": "5453f5e60cd0",
-      "title": "How Do You Like Your Rotor \u2014 Central, Micro, Or Peripheral? And What About A Hammer?",
-      "link": "https://www.fratellowatches.com/how-do-you-like-your-rotor/",
-      "desc": "Is there such a thing as a best rotor? A pragmatic watchmaker might say a heavy central one that winds the mainspring the most efficiently is the best. A collector of traditional watches with similar ",
-      "date": "2026-03-29T09:00:09+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 10
-    },
-    {
-      "id": "67ea8fc30fb3",
-      "title": "Buying Guide \u2013 Slimming Things Down Part I \u2013 Five Of Today\u2019s Best Ultra-Thin Watches",
-      "link": "https://monochrome-watches.com/buying-guide-ultra-thin-watchmaking-bulgari-jaeger-lecoultre-vacheron-constantin-daniel-roth-piaget/",
-      "desc": "It\u2019s often said that ultra-thin watchmaking should be considered a complication in itself, and there\u2019s a lot of merit to that statement. Making a watch slimmer than, let\u2019s say, a millimetre or six, se",
-      "date": "2026-03-29T08:00:01+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/Piaget-Altiplano-Ultimate-Concept-Tourbillon-Khaki-Green-Featured-600x237.jpg",
-      "relevance": 10
-    },
-    {
-      "id": "f7090272971e",
-      "title": "Sunday Morning Showdown: Tudor Black Bay \u201cMonochrome\u201d Vs. Seiko Prospex Marinemaster HBF001",
-      "link": "https://www.fratellowatches.com/sunday-morning-showdown-tudor-black-bay-monochrome-vs-seiko-prospex-marinemaster-hbf001/",
-      "desc": "It\u2019s Sunday morning, which means it\u2019s time for another epic watch battle in our Sunday Morning Showdown series. This week, Mike and Jorg go head-to-head with two popular dive watches. With the recent ",
-      "date": "2026-03-29T05:00:09+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "4d6cdabf3292",
-      "title": "Just Because \u2013 Your Complete Guide to Watches and Wonders 2026, And Everything Happening During The Geneva Watch Week",
-      "link": "https://monochrome-watches.com/defenitive-guide-map-to-watches-and-wonders-geneva-2026-and-watch-week-geneva/",
-      "desc": "Watches and Wonders Geneva 2026 and the Geneva Watch Week are fast approaching, so it\u2019s the perfect time to start planning your trip. Here\u2019s an overview of what awaits you, whether you\u2019re visiting Gen",
-      "date": "2026-03-28T15:00:54+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/defenitive-guide-map-to-watches-and-wonders-geneva-2026-and-watch-week-geneva-600x237.jpg",
-      "relevance": 10
-    },
-    {
-      "id": "d7b374df29aa",
-      "title": "Introducing: The Singer Reimagined Caballero, Now Reimagined In Titanium",
-      "link": "https://www.fratellowatches.com/introducing-the-singer-reimagined-caballero-now-reimagined-in-titanium/",
-      "desc": "Until late summer 2025, watch enthusiasts lived in a universe where Singer Reimagined watches were reliably awe-inspiring in their complexity. The brand\u2019s many takes on racing chronographs matched its",
-      "date": "2026-03-28T10:00:49+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 10
-    },
-    {
-      "id": "01fcc0a3e53f",
-      "title": "The Petrolhead Corner \u2013 BMW Goes All-Out With The M3 Touring GT3",
-      "link": "https://monochrome-watches.com/the-petrolhead-corner-bmw-g81-m3-touring-gt3-24h-nls2-nurburgring-nordschleife/",
-      "desc": "There\u2019s something inherently cool about a fast estate car. Putting an abundance of power in a car that can also haul the wife and kids to the south of France for a summer holiday just makes total sens",
-      "date": "2026-03-28T09:35:16+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/BMW-M3-Touring-GT3-8-600x237.jpg",
-      "relevance": 0
-    },
-    {
-      "id": "4d30d49ac882",
-      "title": "Visiting Porsche Design\u2019s New Manufaktur And Discovering What It Means For The Brand\u2019s Future",
-      "link": "https://www.fratellowatches.com/visiting-porsche-designs-new-manufaktur-and-discovering-what-it-means-for-the-brands-future/",
-      "desc": "When Porsche Design invited me to visit the opening of its new Timepieces Manufaktur, I was immediately intrigued. Having visited the relatively small old workshop in Solothurn before, a big new facil",
-      "date": "2026-03-28T06:00:26+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "ed5ccb8f544e",
-      "title": "Introducing: The Maison Alc\u00e9e Pers\u00e9e Moon Phase",
-      "link": "https://www.hodinkee.com/articles/the-maison-alcee-persee-moon-phase",
-      "desc": "The French clockmaker adds a long-requested DIY complication to their GPHG-winning clock.",
-      "date": "2026-03-27T17:42:05-04:00",
+      "id": "f64901715c44",
+      "title": "In Partnership - Engineering Excellence: The SLGB003 from Grand Seiko",
+      "link": "https://www.hodinkee.com/articles/grand-seiko-slgb003",
+      "desc": "The SLGB003 from Grand Seiko answers long-time collector requests, becoming the everyday watch for the modern collector.",
+      "date": "2026-04-03T17:00:38-04:00",
       "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/02b819f8-7927-4eaa-b8be-2d90c32ef247/m2.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "image": "https://hodinkee.imgix.net/uploads/images/8d4be929-ac13-441c-bfda-273e8184b693/GrandSeiko_sitearticleheroimage_1MB.jpeg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
       "relevance": 10
     },
     {
-      "id": "c4d986e8056c",
-      "title": "First Look \u2013 The New Generation Maghnam Mohareb, a Transformative Timepiece",
-      "link": "https://monochrome-watches.com/maghnam-mohareb-second-generation-retrograde-watch-transformative-case-review-price/",
-      "desc": "Maghnam operates within an area that few independent brands genuinely explore. Urwerk, MB&F or even Hautlence have long defined the idea of futuristic, space-age watchmaking. Sohaib Maghnam, Qatar-bas",
-      "date": "2026-03-27T17:05:03+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/Maghnam-Mohareb-Second-Generation-watch-review-6-600x237.jpg",
+      "id": "ee668f714d6e",
+      "title": "Business News: Minerva Repositions In New Role As \u201cDistinct Entity\u201d Within Montblanc Brand",
+      "link": "https://www.hodinkee.com/articles/minerva-repositions-in-new-role-as-distinct-entity-within-montblanc-brand",
+      "desc": "New watches will display the standalone Minerva name on the dial.",
+      "date": "2026-04-03T15:00:45-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/d8d5cc77-6620-4941-b1d1-8f3c1650673e/MinervaTheUnveiledCrownless4.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
       "relevance": 0
+    },
+    {
+      "id": "0137e9e3a192",
+      "title": "First Look \u2013 Indie Brand Winnerl Presents its Second Act, the Heart Return",
+      "link": "https://monochrome-watches.com/indie-brand-winnerl-presents-its-second-act-the-heart-return-review-price/",
+      "desc": "Reviving the legacy of an illustrious 19th-century Austrian watchmaker,\u00a0Bernhard Zwinz has breathed new life into the name Winnerl. With this detail-obsessed watchmaker at the helm, each timepiece is ",
+      "date": "2026-04-03T15:00:03+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/Winnerl-Heart-Return-review-1-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "027a89720e49",
+      "title": "First Look \u2013 The Maen x Nico Leonard Grand Tonneau Ultra-Thin",
+      "link": "https://monochrome-watches.com/maen-x-nico-leonard-grand-tonneau-ultra-thin-review-price/",
+      "desc": "Stockholm-based, Dutch-rooted microbrand Maen is now a rather familiar face, being known for compelling and accessible watches such as the Skymaster\u00a0Chronograph or the Manhattan series. Last year, how",
+      "date": "2026-04-03T14:01:29+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/Maen-Watches-x-Nico-Leonard-Grand-Tonneau-Ultra-Thin-review-7-600x237.jpg",
+      "relevance": 10
+    },
+    {
+      "id": "2560caa7790d",
+      "title": "Maen And Nico Leonard Unveil The Grand Tonneau Ultra-Thin",
+      "link": "https://www.fratellowatches.com/maen-and-nico-leonard-unveil-the-grand-tonneau-ultra-thin/",
+      "desc": "It\u2019s been about a year since Maen and Nico Leonard released their first collaborative effort, the Jump Hour. It is safe to say that the Swedish brand with Dutch roots and the Belfast-based Dutch YouTu",
+      "date": "2026-04-03T14:00:23+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "3029135cc212",
+      "title": "Introducing \u2013 The Accessible Earthen Summit Nightfall & Moonglow, A Celestial Evolution in Ceramic",
+      "link": "https://monochrome-watches.com/earthen-summit-nightfall-and-moonglow-accessible-ceramic-field-watches-aventurine-dial-introducing-price/",
+      "desc": "Founded in 2025 in Hong Kong, Earthen Company entered the watchmaking scene, offering a combination of modern materials, vintage-inspired proportions, and accessible pricing. Its inaugural alpine-spir",
+      "date": "2026-04-03T13:01:08+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/earthen-summit-nightfall-and-moonglow-accessible-ceramic-field-watches-aventurine-dial-introducing-price-1-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "3a0a86574de0",
+      "title": "Introducing: The OraOrea Corliolis Pointer Date From Worn & Wound's Zach Starr Weiss",
+      "link": "https://www.hodinkee.com/articles/intro-oraorea-corliolis-pointer-date",
+      "desc": "Pointer dates are under-represented in today's market, so leave it to an industry insider to shine a new light on them with an eye-catching release.",
+      "date": "2026-04-03T13:00:00-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/d097fa36-00af-488e-bf6d-7ebf19f3039a/ORAOREA_CORIOLIS_PD_TRIO_004.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "relevance": 10
+    },
+    {
+      "id": "480049c9c3f9",
+      "title": "Bring a Loupe: A Minerva Triple-Date Chronograph with Moonphase, an Omega Constellation with Cloisonn\u00e9 Dial, and a 1970s Certina Chronograph",
+      "link": "https://www.hodinkee.com/articles/bal-april-3-2026",
+      "desc": "All that and more in this week's edition of Hodinkee's What's Selling Where column.",
+      "date": "2026-04-03T11:00:00-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/82fc6a41-d99e-4ffb-817d-a21f84bd4474/bal-hero.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "relevance": 10
+    },
+    {
+      "id": "a4928259d3e7",
+      "title": "First Look \u2013 A Champagne Dial for the Louis Moinet 1816 Chronograph",
+      "link": "https://monochrome-watches.com/louis-moinet-1816-chronograph-champagne-review-price/",
+      "desc": "Louis Moinet\u2019s 1816 Compteur de Tierces, or \u201cthirds counter\u201d, was originally designed to measure the speed of moving stars. Endowed with a start, stop and reset function and a balance wheel beating at",
+      "date": "2026-04-03T09:00:25+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/Louis-Moinet-1816-Chronograph-Champagne-review-6-600x237.jpg",
+      "relevance": 10
+    },
+    {
+      "id": "e04f84b81681",
+      "title": "Introducing: The Streamlined Desder D001 \u2014 A Wrist-Worn Sculpture With A Triple-Axis Tourbillon",
+      "link": "https://www.fratellowatches.com/introducing-the-streamlined-desder-d001/",
+      "desc": "Let me introduce you to Mo Coppoletta and Luca Soprana, founders of the new watch brand Desder. Italian-born Coppoletta, who\u2019s based in London, is best known as a tattoo artist, designer, and art dire",
+      "date": "2026-04-03T09:00:02+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "a1d5b111960e",
+      "title": "One To Watch: Mineroci Blends Chinese Cultural Influence With A Remontoir D\u2019\u00e9galit\u00e9 For A Complicated Second Watch",
+      "link": "https://www.hodinkee.com/articles/one-to-watch-mineroci",
+      "desc": "The duo behind the brand is pushing Chinese watchmaking to break out of its confines while still staying true to their own heritage.",
+      "date": "2026-04-03T09:00:00-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/f15f5b72-547d-475e-8c8b-b2d2e90b4cbe/Hero_Mineroci.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "relevance": 0
+    },
+    {
+      "id": "888801f5da3e",
+      "title": "Introducing \u2013 Formex Reef 39.5 Forged Carbon, a new Look for the Brand\u2019s Compact Diver",
+      "link": "https://monochrome-watches.com/formex-reef-39-5-forged-carbon-dive-watch-introducing-price/",
+      "desc": "Founded in Biel/Bienne and revitalised in 2016 under the leadership of Rapha\u00ebl Granito, Formex is appreciated for its engineering-driven watchmaking, ergonomic case design and modularity. Known at fir",
+      "date": "2026-04-03T07:05:15+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/Formex-Reef-39.5-mm-Forged-Carbon-Automatic-COSC-300M-Dive-Watch-8-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "7c42e685786e",
+      "title": "Fratello\u2019s Top 5 Rolex Day-Date Alternatives In 2026",
+      "link": "https://www.fratellowatches.com/fratellos-top-5-rolex-day-date-alternatives-in-2026/",
+      "desc": "Another Friday, another list. This week, we close out our series of lists focused on Rolex alternatives, but we have saved the best for last. The Rolex Day-Date has long been the brand\u2019s flagship mode",
+      "date": "2026-04-03T05:00:42+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 20
+    },
+    {
+      "id": "e86a8a89ba5f",
+      "title": "Inside WRK: The Road To The ACF-03",
+      "link": "https://www.fratellowatches.com/inside-wrk-the-road-to-the-acf-03/",
+      "desc": "Independent watchmaking is rarely neat. From the outside, it can sometimes look that way. A launch lands, the renders look polished, the photography is sharp, and everything appears to have gone exact",
+      "date": "2026-04-03T03:00:09+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "0acc9c417a52",
+      "title": "Montblanc Expands 0 Oxygen with New Iced Sea, 1858 and Star Legacy Watches",
+      "link": "https://revolutionwatch.com/montblanc-expands-0-oxygen-with-new-iced-sea-1858-and-star-legacy-watches/",
+      "desc": "The post Montblanc Expands 0 Oxygen with New Iced Sea, 1858 and Star Legacy Watches appeared first on Revolution Watch.",
+      "date": "2026-04-03T01:23:00+00:00",
+      "source": "REVOLUTION",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "268d6c674b5a",
+      "title": "First Look \u2013 The 2026 Minerva Collection, now a Stand-Alone Brand, Unveiling the new Crownless",
+      "link": "https://monochrome-watches.com/2026-minerva-watches-collection-now-a-stand-alone-brand-unveiling-the-new-crownless-review-price/",
+      "desc": "Since its acquisition by the Richemont Group in 2006, historic and highly revered brand Minerva has lived under the control of Montblanc, its watches bearing double-signed dials. 20 years later, under",
+      "date": "2026-04-02T17:05:23+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/2026-new-Minerva-Watches-Collectoon-as-stand-alone-brand-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "7d3f30ae1f49",
+      "title": "First Look \u2013 The Albishorn Thundergraph Khumbu, an Imaginary Vintage Chronograph for Alpine Exploration",
+      "link": "https://monochrome-watches.com/albishorn-thundergraph-khumbu-imaginary-vintage-chronograph-for-alpine-exploration-review-price/",
+      "desc": "Albishorn is one of these intriguing newcomers on the independent scene. The brand operates under the concept of \u201cImaginary Vintage\u201c, designing watches that were never made but could have been. Follow",
+      "date": "2026-04-02T13:01:34+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/03/Albishorn-Thundergraph-Khumbu-review-7-600x237.jpg",
+      "relevance": 10
+    },
+    {
+      "id": "a4b96aafec08",
+      "title": "The Horological Society of New York Raises $1.2 Million At Its 160th Anniversary Gala",
+      "link": "https://www.hodinkee.com/articles/the-horological-society-of-new-york-raises-dollar12-million-at-its-160th-anniversary-gala",
+      "desc": "Over 500 guests attended the black-tie gala held at the Plaza Hotel.",
+      "date": "2026-04-02T11:00:19-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/0b9207dc-e05a-4245-a439-10d4c0c08f28/hsnygalahodinkee.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "relevance": 0
+    },
+    {
+      "id": "f02330954d39",
+      "title": "Interview \u2013 Konstantin Chaykin on Making the World\u2019s Thinnest Mechanical Watch, and the new ThinKing Mystery",
+      "link": "https://monochrome-watches.com/interview-konstantin-chaykin-on-thinnest-mechanical-watch-in-the-world-and-new-thinking-mystery/",
+      "desc": "In 2024, indie watchmaker Konstantin Chaykin unveiled the ThinKing watch as a bold attempt to set a world record: an exceptionally thin mechanical wristwatch measuring just 1.65mm. Holding this watch ",
+      "date": "2026-04-02T10:01:09+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/Konstantin-Chaykin-ThinKing-Mystery-interview-world-thinnest-mechanical-watch-mysterious-display-14-600x237.jpg",
+      "relevance": 10
+    },
+    {
+      "id": "465a0034a783",
+      "title": "Introducing: The 1.65mm-Thin Konstantin Chaykin ThinKing Mystery \u2014\u00a0Is It The Slimmest Mechanical Watch In The World?",
+      "link": "https://www.fratellowatches.com/konstantin-chaykin-thinking-mystery/",
+      "desc": "Do you remember the ThinKing, the ultra-thin, in-house, one-of-a-kind watch with a mere 1.65mm profile that surprised everybody in 2024? Piaget and Bvlgari were locked in battle to come up with the wo",
+      "date": "2026-04-02T10:00:33+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "79e61d81b7a5",
+      "title": "The Watches Worn On The NASA Artemis II Mission",
+      "link": "https://www.fratellowatches.com/the-watches-worn-on-the-nasa-artemis-ii-mission/",
+      "desc": "This month began with the exciting launch of Artemis II on April 1st, 2026, at 22:35:12 (UTC). I stayed up to watch the launch (00:35 here) and witness this next chapter in NASA\u2019s Moon exploration. Th",
+      "date": "2026-04-02T09:27:51+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "dbee477b02a8",
+      "title": "Hands-On: Porsche Design's New Watch Manufacture Creates A New All-Titanium Chronograph 1",
+      "link": "https://www.hodinkee.com/articles/the-porsche-design-chronograph-1-all-titanium-numbered-edition-and-the-opening-of-the-new-porsche-de",
+      "desc": "A major investment in the Porsche brand's watch division includes a new Chronograph 1 to mark the opening of a new manufacture in Switzerland.",
+      "date": "2026-04-02T09:01:15-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/aa5273f0-41b3-4e01-8256-85ba718ae804/tan2h-porschedesignopening-03217-header.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "relevance": 20
+    },
+    {
+      "id": "291aca5aa917",
+      "title": "First Look \u2013 The 2026 Collection of Montblanc Watches, from Rieussec and Iced Sea to 1858 and Star Legacy",
+      "link": "https://monochrome-watches.com/2026-collection-montblanc-watches-rieussec-iced-sea-1858-star-legacy-review-price/",
+      "desc": "When a brand drops a set of updates like this, it is rarely about just one watch. With Montblanc\u2019s start to 2026, the focus is more on variety. The Rieussec brings in a historical link, while pieces l",
+      "date": "2026-04-02T08:00:48+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/2026-collection-montblanc-watches-rieussec-iced-sea-1858-star-legacy-review-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "a12ce94604c9",
+      "title": "Introducing: St\u00e9phane Pierre Launches His Namesake Brand With The Impressive 'l\u2019Imp\u00e9trant'",
+      "link": "https://www.hodinkee.com/articles/introducing-stephane-pierre-limpetrant",
+      "desc": "A double retrograde display with dynamic design and thoughtful case design, plus collaboration with other notable names, makes for a watch worth looking at.",
+      "date": "2026-04-02T07:01:02-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/b7490557-346c-4a18-baf8-2aaea0188e33/SP_Produit_4UHD.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "relevance": 0
+    },
+    {
+      "id": "1924cc1be7f4",
+      "title": "Fratello Talks: Watches We Personally Love But Would Not Recommend",
+      "link": "https://www.fratellowatches.com/fratello-talks-watches-we-personally-love-but-would-not-recommend/",
+      "desc": "We all have watches we absolutely love but would hesitate to recommend to someone else. That might sound contradictory at first, but spend enough time in this hobby, and it starts to make sense. Not e",
+      "date": "2026-04-02T04:00:38+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "d64b0778cf78",
+      "title": "Mathieu Cleguer Makes His Debut with the Inspiration One Souscription",
+      "link": "https://revolutionwatch.com/mathieu-cleguer-makes-his-debut-with-the-inspiration-one-souscription/",
+      "desc": "The post Mathieu Cleguer Makes His Debut with the Inspiration One Souscription appeared first on Revolution Watch.",
+      "date": "2026-04-01T13:52:42+00:00",
+      "source": "REVOLUTION",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "bd032b43be70",
+      "title": "Hands-On With The Exciting New Chronoswiss Pulse GMT",
+      "link": "https://www.fratellowatches.com/traveling-locally-with-the-new-and-exciting-chronoswiss-pulse-gmt/",
+      "desc": "Chronoswiss has long been associated with traditional watch design. While the brand hasn\u2019t lost that classic touch, it has drastically changed the overall appearance of its watches by using new materi",
+      "date": "2026-04-01T11:00:43+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "b3202f1a2e20",
+      "title": "The Business of Watches Podcast: Maxime Couturier And Lorenzo Maillard Of The New Chronopolis Watch Fair",
+      "link": "https://www.hodinkee.com/articles/maxime-couturier-and-lorenzo-maillard-of-the-new-chronopolis-watch-fair",
+      "desc": "Chronopolis will be another venue for brands to exhibit during Geneva Watch Week, and its founders tell us why there's a need for one more fair.",
+      "date": "2026-04-01T11:00:00-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/501a2099-fe60-4a57-aa68-e654a7a16dcd/BusinessOfWatcheshero01.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "relevance": 0
+    },
+    {
+      "id": "557875d7a149",
+      "title": "The Nivada Grenchen Antarctic Erotic \u2014 A Classic With A Secret",
+      "link": "https://www.fratellowatches.com/the-nivada-grenchen-antarctic-erotic-a-classic-with-a-secret/",
+      "desc": "Nivada Grenchen often blends heritage with irreverence, but its latest release surprises even more. Based on the Antarctic platform, the new Antarctic Erotic 38mm updates a familiar design with someth",
+      "date": "2026-04-01T09:00:56+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "74be17697331",
+      "title": "Introducing: Cleguer Debuts The Inspiration One With A Proprietary \u201cInnate\u201d Escapement",
+      "link": "https://www.hodinkee.com/articles/cleguer-debuts-the-inspiration-one-with-a-proprietary-innate-escapement",
+      "desc": "The French watchmaker launches a debut built around a reworked natural escapement.",
+      "date": "2026-04-01T09:00:00-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/9de281b0-dc45-41b8-9c0f-e78a336b9cff/clegeur-hero.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "relevance": 0
+    },
+    {
+      "id": "830b4cd26351",
+      "title": "Hit Or Miss? What To Think About Studio Underd0g\u2019s Revolutionary Strap Solutions?",
+      "link": "https://www.fratellowatches.com/studio-underd0gs-revolutionary-strap-solutions/",
+      "desc": "Geniuses are often misunderstood. Vincent van Gogh is a good example. During his lifetime, the now-much-revered painter sold, most likely, just one painting. Will designer Magnus Swann follow in Van G",
+      "date": "2026-04-01T05:00:44+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "e89c863008f0",
+      "title": "Fleming Series 1 Mark II",
+      "link": "https://revolutionwatch.com/fleming-series-1-mark-ii/",
+      "desc": "The post Fleming Series 1 Mark II appeared first on Revolution Watch.",
+      "date": "2026-03-31T14:00:22+00:00",
+      "source": "REVOLUTION",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "9b8f3dc3d3e9",
+      "title": "Gerald Charles Announces the Masterlink Perpetual Calendar and the Mini Maestro",
+      "link": "https://revolutionwatch.com/gerald-charles-announces-the-masterlink-perpetual-calendar-and-the-mini-maestro/",
+      "desc": "The post Gerald Charles Announces the Masterlink Perpetual Calendar and the Mini Maestro appeared first on Revolution Watch.",
+      "date": "2026-03-31T08:00:37+00:00",
+      "source": "REVOLUTION",
+      "image": "",
+      "relevance": 10
     },
     {
       "id": "da81e2c51403",
@@ -111,106 +351,6 @@
       "relevance": 0
     },
     {
-      "id": "69ba2339338e",
-      "title": "Introducing \u2013 The New Felipe Pikullik Sternenhimmel, Powered by the New Calibre FPA1",
-      "link": "https://monochrome-watches.com/introducing-felipe-pikullik-sternenhimmel-fpa1-in-house-independent-watchmaking-retrograde-date-specs-price-pics/",
-      "desc": "The path of Felipe Pikullik has never been about sudden breakthroughs, but about steady, hands-on progression. Early pieces from his Berlin atelier were built on reworked Unitas movements, extensively",
-      "date": "2026-03-27T13:30:49+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/Felipe-Pikullik-Sternenhimmel-FPA1-Featured-600x237.jpg",
-      "relevance": 0
-    },
-    {
-      "id": "3c4dd561a435",
-      "title": "Introducing: Felipe Pikullik 'The Sternenhimmel FPA1'",
-      "link": "https://www.hodinkee.com/articles/introducing-felipe-pikullik-sternenhimmel-fpa1",
-      "desc": "The Berlin-based independent sets the brand up for the future with its first in-house caliber.",
-      "date": "2026-03-27T13:20:00-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/b49e0b92-1404-4f2b-8b01-aad2122079f8/Gen2gruneSternenhimmelfront_1.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
-    },
-    {
-      "id": "e5effc798494",
-      "title": "A Hands-On Introduction To The Dennison ALD\u00a0Dual Time \u201cShades\u201d Dial",
-      "link": "https://www.fratellowatches.com/dennison-introduces-the-ald-dual-time-shades-dial/",
-      "desc": "Emmanuel Gueit has done it again. His designs for Dennison are a hit, and now there\u2019s a new catchy, slightly moody \u201ctune\u201d that will be on your mind once you\u2019ve been exposed to it. Dennison introduces ",
-      "date": "2026-03-27T11:00:40+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "0f272ff2c81c",
-      "title": "Bring a Loupe: An Omega Grand Luxe, A Very Tropical Zenith El Primero A384, And More",
-      "link": "https://www.hodinkee.com/articles/bring-a-loupe-march-27-2026",
-      "desc": "All that and more in this week's edition of Hodinkee's What's Selling Where column.",
-      "date": "2026-03-27T11:00:04-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/6ed461ca-f996-42eb-b8d2-eb0b8eb24713/BALHero.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
-    },
-    {
-      "id": "d05e3d491e98",
-      "title": "Introducing \u2013 Moritz Grossmann Hamatic Silver-Plated by Friction, For the Founder\u2019s 200th Anniversary",
-      "link": "https://monochrome-watches.com/moritz-grossmann-hamatic-silver-plated-by-friction-200th-anniversary-edition-introducing-price/",
-      "desc": "The Hamatic is one of the more unusual watches from Moritz Grossmann, mainly because of how it handles automatic winding. Instead of a central rotor, it uses a hammer-style system, where a pendulum-li",
-      "date": "2026-03-27T10:00:57+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/Moritz-Grossmann-HAMATIC-Silver-Plated-by-Friction-200th-Anniversary-9-600x237.jpg",
-      "relevance": 0
-    },
-    {
-      "id": "3ca4344f1e47",
-      "title": "Fratello\u2019s Top 5 Rolex Explorer Alternatives In 2026",
-      "link": "https://www.fratellowatches.com/fratellos-top-5-rolex-explorer-alternatives-in-2026/",
-      "desc": "Another Friday, another list. This week, we picked a Rolex that many of us praise as one of the brand\u2019s best \u2014 the Explorer. Introduced in 1953 with its signature 3-6-9 dial, this watch has become a f",
-      "date": "2026-03-27T10:00:25+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 10
-    },
-    {
-      "id": "31cec48aea6a",
-      "title": "Introducing: Dennison ALD Dual Time \"Shades\" (Live Pics)",
-      "link": "https://www.hodinkee.com/articles/dennison-throws-some-shades-on-new-ald-dual-time-models-now-with-indexes-and-pebble-link-bracelet-li",
-      "desc": "After its disco-chic stone dial debut, Dennison goes simple and classy with new monochomatic dual time dials and polished steel link bracelets.",
-      "date": "2026-03-27T10:00:05-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/1ed7a6f4-6cf3-41dd-984a-b3a837799b69/download1.jpeg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
-    },
-    {
-      "id": "db9d1491ae62",
-      "title": "Introducing A Tribute To A Video Game That Conquered The World \u2014 Do You Want To Play With The Krayon \u00d7 Pac-Man?",
-      "link": "https://www.fratellowatches.com/play-with-the-pac-man-x-krayon/",
-      "desc": "Ask yourself, how many hours have you spent playing Pac-Man? That may be hard to recall, but quite possibly when you were in your teens in the 1980s or \u201990s, it was many, many hours. Pac-Man is undoub",
-      "date": "2026-03-27T08:00:58+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "235479fedee1",
-      "title": "Video \u2013 How Does it Work? The Sympathique Clock of the Louis Vuitton x De Bethune Explained by Denis Flageollet",
-      "link": "https://monochrome-watches.com/video-sympathique-clock-of-the-louis-vuitton-x-de-bethune-explained-by-denis-flageollet/",
-      "desc": "As you might remember, Louis Vuitton and De Bethune recently introduced the third chapter in LV\u2019s ongoing journey through independent watchmaking, the LVDB-03 Louis Varius Project, following the LVRR-",
-      "date": "2026-03-27T08:00:40+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/How-does-it-work-The-Sympathique-Clock-of-the-Louis-Vuitton-x-De-Bethune-Louis-Varius-Project-600x237.jpg",
-      "relevance": 0
-    },
-    {
-      "id": "d4f69c1ee590",
-      "title": "In Partnership - The Seiko Prospex Speedtimer Mechanical Measures What Matters",
-      "link": "https://www.hodinkee.com/articles/seiko-prospex-speedtimer-mechanical",
-      "desc": "For those whose hearts lie at the racetrack, no name resonates quite like the Speedtimer.",
-      "date": "2026-03-27T08:00:03-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/de72ae97-a8d1-43bd-8c6b-0b642c3e116f/Seikospeedtimerherodesktop.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
-    },
-    {
       "id": "24cc7c297418",
       "title": "The Oyster Case Turns 100 in 2026: Here\u2019s How Rolex Might Celebrate",
       "link": "https://revolutionwatch.com/the-oyster-case-turns-100-in-2026-heres-how-rolex-might-celebrate/",
@@ -219,149 +359,9 @@
       "source": "REVOLUTION",
       "image": "",
       "relevance": 10
-    },
-    {
-      "id": "a47d6e769885",
-      "title": "A Hands-On Introduction To The Third-Generation Longines Hydroconquest",
-      "link": "https://www.fratellowatches.com/a-hands-on-introduction-to-the-third-generation-longines-hydroconquest/",
-      "desc": "The Longines Hydroconquest has been a popular dive watch in the slightly more accessible segment since 2007. Initially sold in both automatic and quartz versions, it offered an attainable taste of ser",
-      "date": "2026-03-27T06:00:23+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "6cb5fd61acee",
-      "title": "Hands-On: The Ice-Blue Brellum Duobox Triple Calendar Moonphase",
-      "link": "https://www.fratellowatches.com/hands-on-the-ice-blue-brellum-duobox-triple-calendar-moonphase/",
-      "desc": "Today, we\u2019re back with a hands-on look at the latest Brellum watch. Fans of the small but communicative brand may recognize the styling of our current subject, but there\u2019s a difference. The new Duobox",
-      "date": "2026-03-27T04:00:21+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "c739e52e1183",
-      "title": "In Conversation with Bernhard Lederer",
-      "link": "https://revolutionwatch.com/in-conversation-with-bernhard-lederer-2/",
-      "desc": "The post In Conversation with Bernhard Lederer appeared first on Revolution Watch.",
-      "date": "2026-03-27T02:00:43+00:00",
-      "source": "REVOLUTION",
-      "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "8aa1def0b1c4",
-      "title": "Introducing \u2013 The New Nomos Club Campus Full Rose and All Olive Editions",
-      "link": "https://monochrome-watches.com/the-new-nomos-club-campus-full-rose-and-all-olive-editions/",
-      "desc": "The Club Campus collection is Nomos Glash\u00fctte\u2019s accessible, robust mechanical watches, designed with a younger audience in mind and made with the same in-house rigour as the rest of the catalogue. Sin",
-      "date": "2026-03-26T16:30:04+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/2026-Nomos-Glashutte-Club-Campus-Full-Rose-All-Olive-36mm-38mm-Featured-600x237.jpg",
-      "relevance": 0
-    },
-    {
-      "id": "cccad4905980",
-      "title": "The New Longines HydroConquest Dives Deep",
-      "link": "https://revolutionwatch.com/the-new-longines-hydroconquest-dives-deep/",
-      "desc": "The post The New Longines HydroConquest Dives Deep appeared first on Revolution Watch.",
-      "date": "2026-03-26T13:00:36+00:00",
-      "source": "REVOLUTION",
-      "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "0f87040dddfa",
-      "title": "Introducing: The Nomos Club Campus Gets Two New Colors In Full Rose And All Olive",
-      "link": "https://www.hodinkee.com/articles/the-nomos-club-campus-gets-two-new-colors-in-full-rose-and-all-olive",
-      "desc": "Two fun but more subdued dial colors mark the brand's first release of the year.",
-      "date": "2026-03-26T11:04:09-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/61d2e867-3595-4eec-8165-7d7845dcdfcc/02_NOMOSGlashuette_0706_0739_Club_Campus_3543x2362px.jpeg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
-    },
-    {
-      "id": "b4a8e28f56e4",
-      "title": "Hands-on \u2013 The All-New Omega Constellation Observatory Collection (incl. Video)",
-      "link": "https://monochrome-watches.com/2026-omega-constellation-observatory-collection-first-two-hand-watch-master-chronometer-certified-video-review/",
-      "desc": "The launch of a new collection from a brand as important as Omega is always a significant event. In this particular case, however, it is not strictly the introduction of an entirely new design, but ra",
-      "date": "2026-03-26T11:01:20+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/03/2026-Omega-Constellation-Observatory-Collection-review-First-Two-Hand-Watch-Master-Chronometer-Certified-Tested-Laboratoire-de-Precision-1-600x237.jpg",
-      "relevance": 0
-    },
-    {
-      "id": "7a6bf81496cd",
-      "title": "The Omega Constellation Observatory Makes Watchmaking History",
-      "link": "https://revolutionwatch.com/the-omega-constellation-observatory-makes-watchmaking-history/",
-      "desc": "The post The Omega Constellation Observatory Makes Watchmaking History appeared first on Revolution Watch.",
-      "date": "2026-03-26T11:00:55+00:00",
-      "source": "REVOLUTION",
-      "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "9ccbc72bea18",
-      "title": "Nomos Explores Spring Colors With The Club Campus All Olive And Full Rose",
-      "link": "https://www.fratellowatches.com/new-nomos-club-campus-all-olive-and-full-rose/",
-      "desc": "It has become an annual tradition for Nomos Glash\u00fctte to release 36mm and 38.5mm Club Campus models with two new dial colors to celebrate spring. The Club Campus is the perfect youthful series in whic",
-      "date": "2026-03-26T11:00:13+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "d9ff3204eea1",
-      "title": "Introducing: The New Longines Hydroconquest (Live Pics)",
-      "link": "https://www.hodinkee.com/articles/the-new-longines-hydroconquest-live-pics",
-      "desc": "The refresh takes the cleaner design established in the Hydroconquest GMT and brings it to the line's classic dive watch, along with a few interesting additions.",
-      "date": "2026-03-26T07:02:00-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/3391bef6-7970-488b-896e-d227d653b3af/tan2h-hydroconquest-header-01053-header.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
-    },
-    {
-      "id": "89543afe1fbf",
-      "title": "Introducing: The New Omega Constellation Observatory Collection, The First Two-Hand Design To Achieve Master Chronometer Certification",
-      "link": "https://www.hodinkee.com/articles/the-new-omega-constellation-observatory-collection-the-first-two-hand-design-to-achieve-master-chron",
-      "desc": "Omega's mid-century design language is back in nine new references, across stainless steel and precious metals.",
-      "date": "2026-03-26T07:01:00-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/37cde74b-2749-4500-a1c2-d1a61f7afd85/omegaconstellationobservatoryheader.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
-    },
-    {
-      "id": "2be1e964cafc",
-      "title": "Andreas Strehler Introduces the S\u00e4ntis World Time",
-      "link": "https://revolutionwatch.com/andreas-strehler-introduces-the-santis-world-time/",
-      "desc": "The post Andreas Strehler Introduces the S\u00e4ntis World Time appeared first on Revolution Watch.",
-      "date": "2026-03-25T16:00:07+00:00",
-      "source": "REVOLUTION",
-      "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "996bc18dbbb2",
-      "title": "The Nuances Of Vintage Watch Collecting",
-      "link": "https://www.hodinkee.com/articles/the-nuances-of-vintage-watch-collecting",
-      "desc": "Determining the value of your vintage watch might be more subjective than you think.",
-      "date": "2026-03-25T13:00:00-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/68bd793e-b4c8-4fff-9031-3fe3dc4367df/h1.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
-    },
-    {
-      "id": "78a4d61241d7",
-      "title": "The Business of Watches Podcast: La Joux-Perret CEO Jean-Claude Eggen",
-      "link": "https://www.hodinkee.com/articles/la-joux-perret-ceo-jean-claude-eggen",
-      "desc": "The head of the Swiss movement maker explains the economics of producing the engines that drive timepieces.",
-      "date": "2026-03-25T11:00:00-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/96086310-17fc-4b57-8092-1d123eafa853/BusinessOfWatches-21-hero.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
     }
   ],
-  "fetched_at": "2026-03-30T08:33:57.333987+00:00",
+  "fetched_at": "2026-04-04T01:00:03.144534+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",

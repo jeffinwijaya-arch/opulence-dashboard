@@ -3618,7 +3618,8 @@ async function loadActionItems() {
         } catch(e) {}
 
         items.forEach(i => {
-            if (!i.posted && !i.sold && !i.at_store && !draftWatchIds.has(i.id)) unposted.push(i);  // Unposted, no draft, not at store
+            if (!i.posted && !i.sold && !i.at_store && i.arrived && !draftWatchIds.has(i.id)) unposted.push(i);  // Unposted, arrived, no draft, not at store
+            else if (!i.arrived && !i.sold) inTransit.push(i);  // In transit, track separately
             else if (i.sold && !i.shipped) needsShip.push(i);
             else if (i.shipped && !i.paid) awaitPay.push(i);
         });
@@ -3627,8 +3628,7 @@ async function loadActionItems() {
         const actions = [];
         const desc = i => [i.ref, i.bracelet, i.dial].filter(Boolean).join(' ') || i.description || '?';
         unposted.forEach(i => {
-            const inTransitTag = !i.arrived ? ' (in transit)' : '';
-            actions.push({dot:'var(--accent)', text:desc(i), sub:`Unposted${inTransitTag} — idle capital`, action:'post', item:i, label:'Post', color:'var(--accent)'});
+            actions.push({dot:'var(--accent)', text:desc(i), sub:'Unposted — idle capital', action:'post', item:i, label:'Post', color:'var(--accent)'});
         });
         needsShip.forEach(i => actions.push({dot:'var(--red)', text:desc(i), sub:`Sold to ${i.sold_to||'?'} — needs shipping`, action:'shipping', item:i, label:'Ship', color:'var(--red)'}));
         awaitPay.forEach(i => actions.push({dot:'var(--text-2)', text:desc(i), sub:`${i.sold_to||'?'} owes ${i.sold_price||i.sale_price||'?'}`, action:'payment', item:i, label:'Paid?', color:'var(--text-2)'}));
@@ -15407,12 +15407,20 @@ function dropShipPhoto(event, watchId, photoType) {
 }
 
 function jamUploadShipPhoto(watchId, photoType) {
+    // Remove any existing hidden input to avoid stale references
+    const old = document.getElementById('_shipPhotoInput');
+    if (old) old.remove();
+    
     const input = document.createElement('input');
     input.type = 'file';
+    input.id = '_shipPhotoInput';
     input.accept = 'image/*,.heic,.heif';
+    input.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+    document.body.appendChild(input);
+    
     input.onchange = async (e) => {
         const file = e.target.files[0];
-        if (!file) return;
+        if (!file) { input.remove(); return; }
         
         const fd = new FormData();
         fd.append('file', file);
@@ -15431,8 +15439,11 @@ function jamUploadShipPhoto(watchId, photoType) {
         } catch(e) {
             alert('Upload error: ' + e.message);
         }
+        input.remove();
     };
-    input.click();
+    
+    // Small delay for iOS Safari
+    setTimeout(() => input.click(), 100);
 }
 
 // ── TERMINAL ──
