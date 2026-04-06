@@ -14869,6 +14869,7 @@ function _jamCard(type, item) {
             item._labelButton = `<button onclick="event.stopPropagation();window.open('/api/jam/label/${item.label_file}','_blank')" style="cursor:pointer;padding:8px 16px;border:none;border-radius:8px;background:var(--green);color:#000;font-weight:700;font-size:0.8rem;white-space:nowrap;min-height:36px;">${_t('viewLabel')}</button>`;
             if (_userRole.role !== 'logistics') {
                 pills += `<button class="jam-pill" onclick="event.stopPropagation();jamPrintLabel('${item.label_file}')" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);">PRINT</button>`;
+                pills += `<button class="jam-pill" onclick="event.stopPropagation();jamChangeLabel(${item.id})" style="cursor:pointer;border:1px solid var(--orange);background:var(--orange);color:#000;font-weight:600;">CHANGE LABEL</button>`;
             }
         } else if (_userRole.role !== 'logistics' && !isLocal && !item.package_id) {
             pills += `<button class="jam-pill" onclick="event.stopPropagation();jamAttachLabelWithDate(${item.id})" style="cursor:pointer;border:1px solid var(--accent-border);background:var(--accent-dim);color:var(--accent);">Attach Label</button>`;
@@ -15364,6 +15365,29 @@ function jamAttachLabelWithDate(watchId) {
             <button onclick="document.getElementById('jam-label-modal').remove()" style="margin-top:8px;width:100%;padding:8px;background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--text-2);cursor:pointer;">Cancel</button>
         </div>`;
     document.body.appendChild(modal);
+}
+
+function jamChangeLabel(watchId) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,application/pdf';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('watch_id', watchId);
+        try {
+            const r = await fetch('/api/jam/upload-label', { method: 'POST', body: fd });
+            const data = await r.json();
+            if (data.ok) {
+                loadJamFeed(_jamState.tab);
+            } else {
+                alert('Upload failed: ' + (data.error || 'unknown'));
+            }
+        } catch(e) { alert('Upload error: ' + e.message); }
+    };
+    input.click();
 }
 
 function jamDoAttachLabel(watchId) {
