@@ -3083,6 +3083,9 @@
                 .jam-feed{display:flex;flex-direction:column;gap:10px;}
                 .jam-card{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;border-left:4px solid var(--accent);transition:all 0.2s;margin-bottom:8px;box-sizing:border-box;max-width:100%;overflow:hidden;}
                 .jam-card:hover{border-color:var(--border-strong);background:var(--bg-3);}
+.ship-photo-actions{opacity:0!important;transition:opacity .15s}
+                div:hover>.ship-photo-actions{opacity:1!important}
+                @media(hover:none){.ship-photo-actions{opacity:1!important}}
                 .jam-card.type-dibeli{border-left-color:var(--accent);}
                 .jam-card.type-masuk{border-left-color:var(--green);}
                 .jam-card.type-dijual{border-left-color:var(--blue);}
@@ -3160,12 +3163,12 @@
                     <div class="jam-stat-count" id="jam-ct-masuk">—</div>
                     <div class="jam-stat-label">Arrival</div>
                 </div>
-                <div class="jam-stat" onclick="switchJamTab('keluar')">
+                <div class="jam-stat active" onclick="switchJamTab('keluar')">
                     <div class="jam-stat-icon" style="font-size:0.9rem;font-weight:700;">SHIP</div>
                     <div class="jam-stat-count" id="jam-ct-keluar">—</div>
                     <div class="jam-stat-label">Ship</div>
                 </div>
-                <div class="jam-stat active" onclick="switchJamTab('dijual')">
+                <div class="jam-stat" onclick="switchJamTab('dijual')">
                     <div class="jam-stat-icon" style="font-size:0.9rem;font-weight:700;">SOLD</div>
                     <div class="jam-stat-count" id="jam-ct-dijual">—</div>
                     <div class="jam-stat-label">Sold</div>
@@ -3193,8 +3196,8 @@
             <div class="jam-tabs">
                 <button class="jam-tab" data-jam="dibeli" onclick="switchJamTab('dibeli')">Purchased</button>
                 <button class="jam-tab" data-jam="masuk" onclick="switchJamTab('masuk')">Arrival</button>
-                <button class="jam-tab" data-jam="keluar" onclick="switchJamTab('keluar')">Ship</button>
-                <button class="jam-tab active" data-jam="dijual" onclick="switchJamTab('dijual')">Sold</button>
+                <button class="jam-tab active" data-jam="keluar" onclick="switchJamTab('keluar')">Ship</button>
+                <button class="jam-tab" data-jam="dijual" onclick="switchJamTab('dijual')">Sold</button>
             </div>
 
             <!-- Upload zone — shown on Arrival and Ship tabs -->
@@ -3618,7 +3621,7 @@ async function loadActionItems() {
         } catch(e) {}
 
         items.forEach(i => {
-            if (!i.posted && !i.sold && !i.at_store && i.arrived && !draftWatchIds.has(i.id)) unposted.push(i);  // Unposted, arrived, no draft, not at store
+            if (!i.posted && !i.sold && !i.at_store && !draftWatchIds.has(i.id)) unposted.push(i);  // Unposted, no draft, not at store
             else if (!i.arrived && !i.sold) inTransit.push(i);  // In transit, track separately
             else if (i.sold && !i.shipped) needsShip.push(i);
             else if (i.shipped && !i.paid) awaitPay.push(i);
@@ -4023,14 +4026,14 @@ async function loadReadyToPost() {
         const r = await fetch('/api/inventory/all');
         if (!r.ok) return;
         const items = await r.json();
-        const unposted = items.filter(i => i.arrived && !i.posted && !i.sold);
+        const unposted = items.filter(i => !i.posted && !i.sold && !i.at_store);
         const el = document.getElementById('ready-to-post');
         const countEl = document.getElementById('rtp-count');
         const card = document.getElementById('ready-to-post-card');
         if (!el) return;
         if (countEl) countEl.textContent = unposted.length ? `${unposted.length} watches` : '';
         if (!unposted.length) {
-            el.innerHTML = '<div style="text-align:center;padding:12px;color:var(--green);">All arrived watches are posted</div>';
+            el.innerHTML = '<div style="text-align:center;padding:12px;color:var(--green);">All watches are posted</div>';
             return;
         }
 
@@ -5416,7 +5419,10 @@ async function doLookup() {
                 ${relatedHtml}
             </div></div>
             <div class="card" style="margin-top:8px;" id="lookup-chart-card"><div class="card-head"><span>Price History (14d)</span></div><div class="card-body" style="padding:8px;"><canvas id="lookup-chart"></canvas><div id="lookup-chart-empty" class="dim" style="text-align:center;padding:12px;display:none;">No history available</div></div></div>
-            <div class="card" style="margin-top:8px;"><div class="card-head"><span>All Listings (${_allListingsData.length})</span></div><div class="card-body"><div id="cheapest-container">${cheapest||'<div style="color:var(--text-2)">No listings</div>'}</div></div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+                <div class="card"><div class="card-head"><span>🇺🇸 US Listings (${_allListingsData.filter(l=>(l.region||'').toUpperCase()==='US').length})</span></div><div class="card-body" style="max-height:400px;overflow-y:auto;"><div id="cheapest-us">${(()=>{const usL=_allListingsData.filter(l=>(l.region||'').toUpperCase()==='US');if(!usL.length)return'<div style="color:var(--text-2);padding:8px;">No US listings</div>';return usL.map((l,i)=>{const srcText=String(l.source_text||'').replace(/\+?\s*label\s+gambar tidak disertakan/gi,'').replace(/gambar tidak disertakan/gi,'').replace(/\(file terlampir\)/gi,'').trim().split('<').join('&lt;').split('>').join('&gt;');const phoneClean=(l.phone||'').replace(/[^0-9]/g,'');const waBtn=phoneClean?' <a href="https://wa.me/'+phoneClean+'" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);text-decoration:none;font-weight:700;">WA</a>':'';const ts=l.ts||'';let card='<div class="listing-card">';card+='<div style="display:flex;justify-content:space-between;align-items:center;">';card+='<span style="font-family:var(--mono);font-weight:700;color:var(--green)">'+fmt(l.price_usd||l.price)+'</span>';card+='<span><span class="tag '+condTag(l.condition)+'">'+(l.condition||'\u2014')+'</span></span>';card+='</div>';card+='<div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">'+(l.dial||'')+' '+(l.bracelet||'')+' '+(l.year?'('+l.year+')':'')+' · '+(l.seller||'?')+waBtn+'</div>';if(ts)card+='<div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">'+ts+'</div>';if(srcText)card+='<div style="font-size:0.70rem;color:var(--text-1);margin-top:4px;padding:6px 8px;background:rgba(255,255,255,0.04);border-radius:4px;border-left:2px solid var(--green);font-family:var(--mono);white-space:pre-wrap;word-break:break-all;line-height:1.4;">'+srcText+'</div>';card+='</div>';return card;}).join('');})()}</div></div></div>
+                <div class="card"><div class="card-head"><span>🇭🇰 HK Listings (${_allListingsData.filter(l=>(l.region||'').toUpperCase()==='HK').length})</span></div><div class="card-body" style="max-height:400px;overflow-y:auto;"><div id="cheapest-hk">${(()=>{const hkL=_allListingsData.filter(l=>(l.region||'').toUpperCase()==='HK');if(!hkL.length)return'<div style="color:var(--text-2);padding:8px;">No HK listings</div>';return hkL.map((l,i)=>{const srcText=String(l.source_text||'').replace(/\+?\s*label\s+gambar tidak disertakan/gi,'').replace(/gambar tidak disertakan/gi,'').replace(/\(file terlampir\)/gi,'').trim().split('<').join('&lt;').split('>').join('&gt;');const phoneClean=(l.phone||'').replace(/[^0-9]/g,'');const waBtn=phoneClean?' <a href="https://wa.me/'+phoneClean+'" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);text-decoration:none;font-weight:700;">WA</a>':'';const ts=l.ts||'';let card='<div class="listing-card">';card+='<div style="display:flex;justify-content:space-between;align-items:center;">';card+='<span style="font-family:var(--mono);font-weight:700;color:var(--green)">'+fmt(l.price_usd||l.price)+'</span>';card+='<span><span class="tag '+condTag(l.condition)+'">'+(l.condition||'\u2014')+'</span></span>';card+='</div>';card+='<div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">'+(l.dial||'')+' '+(l.bracelet||'')+' '+(l.year?'('+l.year+')':'')+' · '+(l.seller||'?')+waBtn+'</div>';if(ts)card+='<div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">'+ts+'</div>';if(srcText)card+='<div style="font-size:0.70rem;color:var(--text-1);margin-top:4px;padding:6px 8px;background:rgba(255,255,255,0.04);border-radius:4px;border-left:2px solid var(--orange);font-family:var(--mono);white-space:pre-wrap;word-break:break-all;line-height:1.4;">'+srcText+'</div>';card+='</div>';return card;}).join('');})()}</div></div></div>
+            </div>
         </div>`;
         // Load price history chart
         try {
@@ -14446,7 +14452,7 @@ function _localDate(offset=0) {
     const parts = d.toLocaleDateString('en-CA', {timeZone:'America/New_York'}).split('-');
     return parts.join('-');
 }
-const _jamState = { tab: 'dijual', feeds: {}, offsets: {}, totals: {}, stats: null };
+const _jamState = { tab: 'keluar', feeds: {}, offsets: {}, totals: {}, stats: null };
 
 function _jamFmt(n) {
     if (n == null || isNaN(n)) return '—';
@@ -14722,7 +14728,8 @@ function renderJamFeed(type) {
                     + '<span style="font-size:0.8rem;font-weight:700;color:' + pColor + ';">' + pkgLabel + ' — ' + buyerName.replace(/</g,'&lt;') + ' (' + watchCount + (watchCount === 1 ? ' watch' : ' watches') + ')</span>'
                     + pkgLabelBtn
                     + '</div>'
-                    + (grp.notes ? '<div style="padding:10px 14px;font-size:1rem;color:var(--text-0);background:var(--bg-1);border-bottom:1px solid var(--border);line-height:1.5;"><strong style="color:var(--orange);font-size:1.05rem;">Instructions:</strong> <span style="font-weight:600;">' + grp.notes.replace(/</g,'&lt;') + '</span></div>' : '');
+                    + (grp.notes ? '<div style="padding:10px 14px;font-size:1rem;color:var(--text-0);background:var(--bg-1);border-bottom:1px solid var(--border);line-height:1.5;"><strong style="color:var(--orange);font-size:1.05rem;">Instructions:</strong> <span style="font-weight:600;">' + grp.notes.replace(/</g,'&lt;') + '</span></div>' : '')
+                    ;
                 for (const pi of grp.items) html += _jamCard(type, pi);
                 html += '</div>';
             }
@@ -14882,10 +14889,26 @@ function _jamCard(type, item) {
             pills += `<button class="jam-pill" onclick="event.stopPropagation();jamUndoShipped(${item.id})" style="cursor:pointer;border:1px solid var(--red);background:transparent;color:var(--red);font-weight:600;">UNDO SHIP</button>`;
         }
         
-        // Show delivery address for local deliveries
-        if (isLocal && item.delivery_address) {
-            detailLine += `<div style="margin-top:4px;padding:6px 8px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);font-size:0.72rem;color:var(--text-0);">
-                <span style="color:var(--orange);font-weight:600;">DELIVER TO:</span> ${item.delivery_address}
+        // Show delivery address + notes for local deliveries (editable)
+        if (isLocal) {
+            const addrNotes = [item.delivery_address || '', item.package_notes || ''].filter(Boolean).join(' — ');
+            detailLine += `<div style="margin-top:4px;padding:0;font-size:0.72rem;color:var(--text-0);display:flex;align-items:center;gap:4px;">
+                <span style="color:var(--orange);font-weight:600;white-space:nowrap;font-size:0.7rem;">DELIVER TO:</span>
+                <input type="text" value="${(addrNotes).replace(/"/g,'&quot;')}" placeholder="Address + instructions..." 
+                    style="flex:1;font-size:0.72rem;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-2);color:var(--text-0);outline:none;"
+                    id="deliver-input-${item.id}">
+                <button onclick="saveDeliverTo(${item.id},${item.package_id||0},document.getElementById('deliver-input-${item.id}').value);this.textContent='\u2713 Sent';setTimeout(()=>this.textContent='Send',2000)" 
+                    style="padding:4px 10px;font-size:0.65rem;border:1px solid var(--orange);background:none;color:var(--orange);border-radius:6px;cursor:pointer;white-space:nowrap;font-weight:700;">Send</button>
+            </div>`;
+        } else if (isPending) {
+            const noteVal = item.package_notes || '';
+            detailLine += `<div style="margin-top:4px;padding:0;font-size:0.72rem;color:var(--text-0);display:flex;align-items:center;gap:4px;">
+                <span style="color:var(--text-2);font-weight:600;white-space:nowrap;font-size:0.7rem;">NOTES:</span>
+                <input type="text" value="${noteVal.replace(/"/g,'&quot;')}" placeholder="Instructions for shipper..." 
+                    style="flex:1;font-size:0.72rem;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-2);color:var(--text-0);outline:none;"
+                    id="notes-input-${item.id}">
+                <button onclick="saveDeliverTo(${item.id},${item.package_id||0},document.getElementById('notes-input-${item.id}').value);this.textContent='\u2713 Sent';setTimeout(()=>this.textContent='Send',2000)" 
+                    style="padding:4px 10px;font-size:0.65rem;border:1px solid var(--orange);background:none;color:var(--orange);border-radius:6px;cursor:pointer;white-space:nowrap;font-weight:700;">Send</button>
             </div>`;
         }
         
@@ -14909,7 +14932,10 @@ function _jamCard(type, item) {
                         <img src="/api/jam/ship-photo/${item.id}/${p.filename}?thumb=true" loading="lazy" style="width:100%;height:100%;object-fit:cover;">
                         <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);color:var(--green);font-size:0.55rem;text-align:center;padding:2px;">${label}</div>
                     </div>
-                    ${canEditPhotos ? `<button onclick="event.stopPropagation();jamUploadShipPhoto(${item.id},'${type}')" style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:none;background:var(--orange);color:#000;font-size:0.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;z-index:1;" title="Replace photo">&#8635;</button>` : ''}
+                    ${canEditPhotos ? `<div style="position:absolute;top:4px;right:4px;display:flex;gap:3px;z-index:2;opacity:0;transition:opacity .15s;" class="ship-photo-actions">
+                        <button onclick="event.stopPropagation();jamUploadShipPhoto(${item.id},'${type}')" style="width:24px;height:24px;border-radius:6px;border:none;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);color:rgba(255,255,255,.85);font-size:0.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;" title="Replace">&#8635;</button>
+                        <button onclick="event.stopPropagation();jamDeleteShipPhoto(${item.id},'${p.filename}')" style="width:24px;height:24px;border-radius:6px;border:none;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);color:rgba(255,255,255,.85);font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;" title="Remove">&times;</button>
+                    </div>` : ''}
                 </div>`;
             } else if (canEditPhotos) {
                 return `<div onclick="event.stopPropagation();jamUploadShipPhoto(${item.id},'${type}')" style="cursor:pointer;width:90px;height:90px;border-radius:10px;border:2px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor='var(--border)'" ondragover="event.preventDefault();event.stopPropagation();this.style.borderColor='var(--orange)';this.style.background='rgba(255,140,0,0.1)'" ondragleave="this.style.borderColor='var(--border)';this.style.background=''" ondrop="event.preventDefault();event.stopPropagation();this.style.borderColor='var(--border)';this.style.background='';dropShipPhoto(event,${item.id},'${type}')">
@@ -15406,6 +15432,57 @@ function dropShipPhoto(event, watchId, photoType) {
         .catch(e => alert('Upload error: ' + e.message));
 }
 
+async function saveDeliverTo(watchId, pkgId, value) {
+    try {
+        // Save to both watch delivery_address and package notes
+        const r = await fetch('/api/jam/update-delivery-notes', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({watch_id: watchId, package_id: pkgId, notes: value})
+        });
+        const data = await r.json();
+        if (!data.ok) alert('Failed: ' + (data.error || 'unknown'));
+    } catch(e) { console.error(e); }
+}
+async function savePackageNotes(pkgId, notes) {
+    try {
+        const r = await fetch('/api/jam/package-notes', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({package_id: pkgId, notes: notes})
+        });
+        const data = await r.json();
+        if (data.ok) {
+            // Brief flash to confirm
+            if (data.notified) {
+                const el = event?.target;
+                if (el) { el.textContent = '✓ Notified'; setTimeout(() => { el.textContent = 'Save & Notify'; }, 2000); }
+            }
+        } else {
+            alert('Failed: ' + (data.error || 'unknown'));
+        }
+    } catch(e) {
+        alert('Error: ' + e.message);
+    }
+}
+async function jamDeleteShipPhoto(watchId, filename) {
+    if (!confirm('Remove this photo?')) return;
+    try {
+        const r = await fetch('/api/jam/delete-ship-photo', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({watch_id: watchId, filename: filename})
+        });
+        const data = await r.json();
+        if (data.ok) {
+            loadJamFeed(_jamState.tab);
+        } else {
+            alert('Delete failed: ' + (data.error || 'unknown'));
+        }
+    } catch(e) {
+        alert('Delete error: ' + e.message);
+    }
+}
 function jamUploadShipPhoto(watchId, photoType) {
     // Remove any existing hidden input to avoid stale references
     const old = document.getElementById('_shipPhotoInput');
