@@ -13522,6 +13522,14 @@ async function loadPayments() {
                 </div>
             </div>`;
             
+            // Quick log actions — always visible at top
+            html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;padding:8px 0;border-bottom:1px solid var(--border);">
+                <button class="btn" onclick="logCrmVisit(${s.id},'outreach')" style="font-size:0.7rem;padding:4px 10px;background:var(--accent);color:#fff;">📝 Log Outreach</button>
+                <button class="btn" onclick="logCrmVisit(${s.id},'visit')" style="font-size:0.7rem;padding:4px 10px;">Log Visit</button>
+                <button class="btn" onclick="logCrmVisit(${s.id},'call')" style="font-size:0.7rem;padding:4px 10px;">Log Call</button>
+                <button class="btn" onclick="logCrmVisit(${s.id},'google_review')" style="font-size:0.7rem;padding:4px 10px;">Log Google Review</button>
+            </div>`;
+
             // Contacts (editable)
             html += '<div style="margin-top:16px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-size:0.7rem;font-weight:600;color:var(--text-2);text-transform:uppercase;">Contacts</div><button class="btn" onclick="addCrmContact(${s.id})" style="font-size:0.6rem;padding:2px 8px;">+ Add</button></div>';
             if (contacts.length) {
