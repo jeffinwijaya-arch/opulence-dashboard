@@ -13823,9 +13823,10 @@ async function loadPayments() {
     
     async function logCrmVisit(storeId, type) {
         const notes = prompt('Notes (optional):');
+        if (notes === null) return; // user cancelled
         try {
             const data = await fetch('/api/ad-crm/visit', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({store_id:storeId, type, notes:notes||undefined})}).then(r=>r.json());
-            if (data.ok) { document.getElementById('crm-detail-modal').style.display='none'; loadAdCrm(); }
+            if (data.ok) { loadAdCrm(); showCrmStore(storeId); }
             else alert(data.error||'Failed');
         } catch(e) { alert(e.message); }
     }
@@ -13861,7 +13862,10 @@ async function loadPayments() {
         
         content.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                <h2 style="margin:0;font-size:1rem;">Follow Up — ${salesName}</h2>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div onclick="showCrmStore(${storeId})" style="cursor:pointer;color:var(--accent);font-size:0.75rem;font-weight:600;">&larr; Back</div>
+                    <h2 style="margin:0;font-size:1rem;">Follow Up — ${salesName}</h2>
+                </div>
                 <div onclick="document.getElementById('crm-detail-modal').style.display='none'" style="cursor:pointer;color:var(--text-2);font-size:1.2rem;">&times;</div>
             </div>
             <div style="font-size:0.7rem;color:var(--text-2);margin-bottom:12px;">
