@@ -2920,6 +2920,7 @@
                 <div class="mc-tab-btn" onclick="switchMcTab('health')">Health</div>
                 <div class="mc-tab-btn" onclick="switchMcTab('scheduler')">Scheduler</div>
                 <div class="mc-tab-btn" onclick="switchMcTab('journal')">Journal</div>
+                <div class="mc-tab-btn" onclick="switchMcTab('claude-code')">Claude Code</div>
                 <div class="mc-tab-btn" onclick="switchMcTab('terminal')">Terminal</div>
             </div>
 
@@ -2985,6 +2986,30 @@
                 <div class="journal-list" id="journal-list"></div>
             </div>
 
+            <!-- Claude Code Sessions Section -->
+            <div class="mc-section" id="mc-claude-code">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                    <h3 style="margin:0;font-size:0.9rem;color:var(--text-1);">Claude Code Sessions</h3>
+                    <button class="mc-btn" onclick="refreshClaudeSessions()" id="claude-refresh-btn">🔄 Refresh</button>
+                </div>
+                
+                <!-- Sessions List -->
+                <div id="claude-sessions-list" style="margin-bottom:20px;">
+                    <div style="text-align:center;padding:40px;color:var(--text-2);">Loading sessions...</div>
+                </div>
+                
+                <!-- Session Detail View -->
+                <div id="claude-session-detail" style="display:none;">
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                        <button onclick="showClaudeSessions()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.85rem;">← Back to Sessions</button>
+                        <h4 id="claude-session-title" style="margin:0;font-size:0.85rem;color:var(--text-1);"></h4>
+                    </div>
+                    <div id="claude-conversation" style="max-height:500px;overflow-y:auto;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;padding:16px;">
+                        <div style="text-align:center;padding:20px;color:var(--text-2);">Loading conversation...</div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Terminal Section -->
             <div class="mc-section" id="mc-terminal">
                 <style>
@@ -14115,7 +14140,8 @@ function switchMcTab(tab, evt) {
     // Stop terminal polling when switching away
     if (tab !== 'terminal' && _termInterval) { clearInterval(_termInterval); _termInterval = null; }
     document.querySelectorAll('.mc-tab-btn').forEach(b => {
-        b.classList.toggle('active', b.textContent.trim().toLowerCase() === tab.toLowerCase());
+        const btnTab = b.textContent.trim().toLowerCase().replace(/\s+/g,'-');
+        b.classList.toggle('active', btnTab === tab.toLowerCase());
     });
     document.querySelectorAll('.mc-section').forEach(s => s.classList.remove('active'));
     const section = document.getElementById('mc-' + tab);
@@ -14137,6 +14163,7 @@ async function loadMcTab(tab) {
             case 'scheduler': await loadMcScheduler(); break;
             case 'journal': await loadMcJournal(); break;
             case 'terminal': startTerminal(); break;
+            case 'claude-code': loadClaudeSessions(); break;
         }
     } catch(e) { console.error('MC tab load error:', e); }
 }
@@ -15557,6 +15584,80 @@ function jamUploadShipPhoto(watchId, photoType) {
     
     // Small delay for iOS Safari
     setTimeout(() => input.click(), 100);
+}
+
+// ── CLAUDE CODE ──
+async function loadClaudeSessions() {
+    const el = document.getElementById('claude-sessions-list');
+    try {
+        const r = await fetch('/api/mission-control/claude-sessions');
+        const data = await r.json();
+        const sessions = data.sessions || [];
+        if (!sessions.length) { el.innerHTML = '<div class="mc-empty">No Claude Code sessions found</div>'; return; }
+        el.innerHTML = sessions.map(s => {
+            const ago = timeAgo(s.last_activity);
+            const statusColor = s.status === 'active' ? '#4ADE80' : '#6B7280';
+            const preview = s.last_message_preview ? s.last_message_preview.substring(0,120) + (s.last_message_preview.length > 120 ? '...' : '') : 'No preview';
+            return `<div class="backlog-card" onclick="loadClaudeHistory('${s.session_id}','${s.project_name}')" style="cursor:pointer">
+                <div class="backlog-card-header">
+                    <div class="backlog-title" style="display:flex;align-items:center;gap:8px;">
+                        <span style="width:8px;height:8px;border-radius:50%;background:${statusColor};flex-shrink:0;"></span>
+                        ${s.project_name}
+                    </div>
+                    <span class="category-tag">${s.message_count} msgs</span>
+                </div>
+                <div class="backlog-desc">${preview}</div>
+                <div class="backlog-meta">
+                    <span>${s.session_id_short}</span>
+                    <span>${ago}</span>
+                    <span class="priority-badge ${s.status === 'active' ? 'priority-p0' : 'priority-p3'}">${s.status}</span>
+                </div>
+            </div>`;
+        }).join('');
+    } catch(e) { el.innerHTML = `<div class="mc-empty">Error loading sessions: ${e.message}</div>`; }
+}
+
+const refreshClaudeSessions = loadClaudeSessions;
+
+function showClaudeSessions() {
+    document.getElementById('claude-sessions-list').style.display = 'block';
+    document.getElementById('claude-session-detail').style.display = 'none';
+}
+
+async function loadClaudeHistory(sessionId, projectName) {
+    document.getElementById('claude-sessions-list').style.display = 'none';
+    document.getElementById('claude-session-detail').style.display = 'block';
+    document.getElementById('claude-session-title').textContent = projectName + ' — ' + sessionId.substring(0,8);
+    const conv = document.getElementById('claude-conversation');
+    conv.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-2);">Loading...</div>';
+    try {
+        const r = await fetch('/api/mission-control/claude-sessions/' + sessionId);
+        const data = await r.json();
+        const msgs = data.messages || [];
+        if (!msgs.length) { conv.innerHTML = '<div class="mc-empty">No messages</div>'; return; }
+        conv.innerHTML = msgs.map(m => {
+            const isUser = m.role === 'user';
+            const bg = isUser ? 'var(--bg-4)' : 'var(--bg-2)';
+            const label = isUser ? '👤 You' : '🤖 Claude';
+            const text = (m.content || '').substring(0, 2000);
+            return `<div style="background:${bg};border-radius:8px;padding:12px;margin-bottom:8px;">
+                <div style="font-size:0.7rem;font-weight:600;color:var(--text-2);margin-bottom:4px;">${label}</div>
+                <div style="font-size:0.78rem;color:var(--text-1);white-space:pre-wrap;line-height:1.5;">${text.replace(/</g,'&lt;')}</div>
+            </div>`;
+        }).join('');
+        conv.scrollTop = conv.scrollHeight;
+    } catch(e) { conv.innerHTML = `<div class="mc-empty">Error: ${e.message}</div>`; }
+}
+
+function timeAgo(ts) {
+    if (!ts) return '';
+    const diff = Date.now() - new Date(ts).getTime();
+    const mins = Math.floor(diff/60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + 'm ago';
+    const hrs = Math.floor(mins/60);
+    if (hrs < 24) return hrs + 'h ago';
+    return Math.floor(hrs/24) + 'd ago';
 }
 
 // ── TERMINAL ──

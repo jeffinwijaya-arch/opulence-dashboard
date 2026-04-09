@@ -1,6 +1,136 @@
 {
   "articles": [
     {
+      "id": "8c0a9b2bd9b9",
+      "title": "First Look \u2013 Bianchet Teams Up with Maserati for a Limited-Edition UltraFino Maserati",
+      "link": "https://monochrome-watches.com/bianchet-ultrafino-maserati-flying-tourbillon-carbon-review/",
+      "desc": "It\u2019s no secret that cars and watches are not that different if you look closely. Both are built around performance and precision, even if one lives on the road and the other on the wrist. Presented ah",
+      "date": "2026-04-09T16:10:43+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/Bianchet-UltraFino-Maserati-Flying-Tourbillon-Carbon-review-6-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "04cee672365e",
+      "title": "First Look \u2013 The Tangens Komposition Automatic, an Accessible Automatic Sports Watch from Denmark",
+      "link": "https://monochrome-watches.com/tangens-komposition-automatic-accessible-automatic-sports-watch-from-denmark-review-price/",
+      "desc": "Danish microbrand Tangens was founded in 2023, and it did not take long for it to get going. A year later, it introduced the Komposition, a watch that quietly found its audience thanks to its neat, ge",
+      "date": "2026-04-09T14:00:53+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/Tangens-Komposition-Automatic-review-accessible-automatic-watch-1-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "6f87fc3b0b36",
+      "title": "Introducing \u2013 MB&F Releases Two New M.A.D.2 Eric Giroud Editions, Each with a Different Allocation System",
+      "link": "https://monochrome-watches.com/mbf-mad-editions-new-mad-2-eric-giroud-editions-redemption-black-red-availability-price/",
+      "desc": "Originally intended as a way to thank 500 of the brand\u2019s suppliers and clients who couldn\u2019t afford an MB&F watch, Max B\u00fcsser came up with the M.A.D.1, an accessible one-off project. Inevitably, the ne",
+      "date": "2026-04-09T12:01:33+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/MAD-Editions-MAD2-RandB-REDemption-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "2c6a3cf3cf73",
+      "title": "Introducing: The TIMEX\u00ae IRONMAN\u00ae 8-Lap Limited Edition For Hodinkee",
+      "link": "https://www.hodinkee.com/articles/the-timex-ironman-8-lap-limited-edition-for-hodinkee",
+      "desc": "Originally built for pure performance, the TIMEX IRONMAN 8-Lap returns in a limited edition that strips the icon back to its essential form.",
+      "date": "2026-04-09T10:45:39-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/67814cd2-2aa0-46fc-af6d-5dd21ef4e957/ArticleHeroImage.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "relevance": 0
+    },
+    {
+      "id": "54ffc83a2e29",
+      "title": "Introducing \u2013 Lebois & Co Heritage Atelier Chronograph Bleu-sur-Blanc Enamel",
+      "link": "https://monochrome-watches.com/lebois-co-heritage-atelier-chronograph-bleu-sur-blanc-enamel-introducing-price/",
+      "desc": "Following the enamel-dialled Coquille d\u2019\u0153uf, Dutch brand Lebois & Co expands its Atelier sub-collection with the Heritage Chronograph Bleu-sur-Blanc. The concept remains: take the established Heritage",
+      "date": "2026-04-09T10:00:37+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/Lebois-and-Co-Heritage-Atelier-Chronograph-blue-sur-blanc-two-tone-enamel-2-600x237.jpg",
+      "relevance": 10
+    },
+    {
+      "id": "439dd121d1b4",
+      "title": "Introducing: The Demilitarized Hamilton Khaki Field King Day-Date Automatic",
+      "link": "https://www.fratellowatches.com/introducing-the-demilitarized-hamilton-khaki-field-king-day-date-automatic/",
+      "desc": "The Khaki Field King Day-Date Automatic is one of Hamilton\u2019s more popular models. No wonder, as its distinct styling and comprehensive feature set provide a lot of bang for your buck. Today, we get a ",
+      "date": "2026-04-09T10:00:29+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 10
+    },
+    {
+      "id": "6335603d0b06",
+      "title": "Introducing \u2013 The Moritz Grossmann Tremblage Gold, a Hand-Engraved Anniversary Edition in Precious Metal",
+      "link": "https://monochrome-watches.com/moritz-grossmann-tremblage-gold-a-hand-engraved-anniversary-edition-in-precious-metal-introducing-price/",
+      "desc": "Since its revival in 2008, the Moritz Grossmann manufacture has focused on making watches with traditional Saxon construction and meticulous hand-finishing, exemplifying the idea of Sch\u00f6nstes deutsche",
+      "date": "2026-04-09T09:01:49+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/2026-Moritz-Grossmann-Tremblage-Gold-hand-hammered-dial-1-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "f2ce3a0e7071",
+      "title": "Introducing: The M.A.D.Editions M.A.D.2 R&B and REDemption: A Raffled Watch And A Second (Or Third) Chance",
+      "link": "https://www.hodinkee.com/articles/introducing-mad-2-randb",
+      "desc": "If you've been getting FOMO after years of missing some of the coolest watches on the market, the wait is over.",
+      "date": "2026-04-09T08:01:08-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/e5183f68-8d3e-446e-a083-73edc3734839/MADEditions_MAD2_RED_Lifestyle_Duo_2_Hres.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "relevance": 10
+    },
+    {
+      "id": "b823864b20bc",
+      "title": "Hands-On: The New Porsche Design Chronograph 1 All Titanium Numbered Edition",
+      "link": "https://www.fratellowatches.com/hands-on-the-new-porsche-design-chronograph-1-all-titanium-numbered-edition/",
+      "desc": "The Chronograph 1 is Porsche Design\u2019s champion by some margin. In fact, you could probably make a case for it as a candidate for the top 100 most influential watches of all time. Why? Well, for starte",
+      "date": "2026-04-09T07:29:00+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 10
+    },
+    {
+      "id": "36c3e304cc41",
+      "title": "Introducing \u2013 The Updated Hamilton Khaki Field King Collection",
+      "link": "https://monochrome-watches.com/the-updated-hamilton-khaki-field-king-collection/",
+      "desc": "Hamilton is an American-born Swiss watch brand whose Khaki Field collection draws on its military heritage, featuring a clean, highly legible field watch design inspired by watches made for soldiers a",
+      "date": "2026-04-09T06:00:48+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/2026-Updated-Hamilton-Khaki-Field-King-Collection-1-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "37cfe4244276",
+      "title": "Fratello Talks: How Much Does Chronometer Certification Matter?",
+      "link": "https://www.fratellowatches.com/fratello-talks-how-much-does-chronometer-certification-matter/",
+      "desc": "\u201cChronometer\u201d is one term that frequently comes up in watchmaking. We see it stamped on dials, highlighted in marketing materials, and often used as a synonym for \u201chigh quality.\u201d But how much does chr",
+      "date": "2026-04-09T04:00:51+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 10
+    },
+    {
+      "id": "bc4aea5ef2ad",
+      "title": "Naissance d\u2019une Montre 4 \u201cLe Carrousel\u201d and the Revival of Bonniksen",
+      "link": "https://revolutionwatch.com/naissance-dune-montre-4-le-carrousel-and-the-revival-of-bonniksen/",
+      "desc": "The post Naissance d\u2019une Montre 4 \u201cLe Carrousel\u201d and the Revival of Bonniksen appeared first on Revolution Watch.",
+      "date": "2026-04-09T02:31:13+00:00",
+      "source": "REVOLUTION",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "0df2eec87b52",
+      "title": "Introducing \u2013 The New Norqain Wild One Skeleton Chrono",
+      "link": "https://monochrome-watches.com/norqain-wild-one-skeleton-chrono-introducing-price/",
+      "desc": "Norqain\u2019s Wild One high-performance sports watch collection was developed with input from industry maverick Jean-Claude Biver. Launched in 2022, it introduced the brand\u2019s proprietary Norteq material, ",
+      "date": "2026-04-08T19:00:01+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/Norqain-Wild-One-Skeleton-Chrono-1-600x237.jpg",
+      "relevance": 0
+    },
+    {
       "id": "4cd69ee9c9ac",
       "title": "Introducing \u2013 ArtyA Complexity, Two Inclined Tourbillons Working as One",
       "link": "https://monochrome-watches.com/artya-complexity-dual-inclined-tourbillons-watch-introducing-price/",
@@ -81,16 +211,6 @@
       "relevance": 0
     },
     {
-      "id": "2c18d7453559",
-      "title": "Introducing \u2013 Delbana Celebrates 95 Years with the Della Balda Limited Editions",
-      "link": "https://monochrome-watches.com/delbana-della-balda-95th-anniversary-limited-editions-introducing-price/",
-      "desc": "Delbana, founded in 1931 by Goliardo Della Balda, has always delivered classical Swiss watchmaking at approachable prices. The brand launched the stainless steel Della Balda in 2021, later followed by",
-      "date": "2026-04-08T11:01:51+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/04/Delbana-Della-Balda-95th-Anniversary-Limited-Edition-collection-1-600x237.jpg",
-      "relevance": 10
-    },
-    {
       "id": "f66e94ad2c46",
       "title": "The Business of Watches Podcast: Raymond Weil CEO Elie Bernheim (Plus: Ben Clymer On The New RRCHF)",
       "link": "https://www.hodinkee.com/articles/raymond-weil-ceo-elie-bernheim-plus-ben-clymer-on-the-new-rrchf",
@@ -108,16 +228,6 @@
       "date": "2026-04-08T11:00:05+00:00",
       "source": "FRATELLO",
       "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "931bf1070f13",
-      "title": "Introducing \u2013 Chinese Indie Watchmaker Qian GuoBiao Presents the new AB-05 Skylight Series",
-      "link": "https://monochrome-watches.com/chinese-indie-watchmaker-qian-guobiao-presents-the-new-ab-05-skylight-introducing-price/",
-      "desc": "Over the past few years, Qian GuoBiao, an independent watchmaker working in Dongguan, China, known as \u201cthe tourbillon doctor\u201c, has established a quite disciplined design language, shaped by his backgr",
-      "date": "2026-04-08T09:01:56+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/04/Qian-GuoBiao-AB-05-Skylight-Original-AB-05-Skylight-Sun-China-Independent-Watchmaker-2-600x237.jpg",
       "relevance": 0
     },
     {
@@ -181,16 +291,6 @@
       "relevance": 0
     },
     {
-      "id": "eb8e3fa8d062",
-      "title": "Introducing \u2013 The Return of the Angelus Tinkler 1958 Quarter Repeater",
-      "link": "https://monochrome-watches.com/2026-return-of-the-angelus-tinkler-1958-quarter-repeater-introducing-price/",
-      "desc": "Angelus is a historical Swiss watch brand founded in 1891 in Le Locle by Albert and Gustav Stolz, known for technically ambitious and award-winning chronographs, multi-complication watches and even ch",
-      "date": "2026-04-08T07:01:03+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/04/Angelus-Tinkler-1958-Quarter-Repeater-1-600x237.jpg",
-      "relevance": 20
-    },
-    {
       "id": "efaf1da83d91",
       "title": "Sinn Introduces Four New Models Ahead Of Watches And Wonders: The 544, 544 RS, 308, And 936 S",
       "link": "https://www.fratellowatches.com/sinn-introduces-four-new-models-ahead-of-watches-wonders-544-544rs-308-and-936-s/",
@@ -201,36 +301,6 @@
       "relevance": 10
     },
     {
-      "id": "34a8e76cd004",
-      "title": "Introducing \u2013 New Editions of the Union Glash\u00fctte Averin Chronograph",
-      "link": "https://monochrome-watches.com/union-glashutte-averin-chronograph-new-blue-editions-tachymeter-scale-2026-introducing-price/",
-      "desc": "Square chronographs are rare, and inevitably, any watch in this category gets compared with the iconic TAG Heuer Monaco. Since its debut in 2008, the Averin Chronograph by Union Glash\u00fctte has occupied",
-      "date": "2026-04-08T06:30:08+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/04/2026-Union-Glashutte-Averin-Chronograph-square-case-1-600x237.jpg",
-      "relevance": 10
-    },
-    {
-      "id": "c3b5a711dcfb",
-      "title": "Announcing \u2013 The Naissance d\u2019une Montre 4 \u201cLe Carrousel\u201d Project and the Birth of Bonniksen",
-      "link": "https://monochrome-watches.com/announcing-naissance-une-montre-4-carrousel-project-bonniksen-aeon-foundation-news/",
-      "desc": "Few initiatives in modern watchmaking genuinely place craft above product. The Time \u00c6on Foundation is one that looks to safeguard and transmit traditional handmade techniques at the highest level. Its",
-      "date": "2026-04-07T16:00:56+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/04/Announcing-Naissance-une-Montre-4-Carrousel-Project-Bonniksen-AEon-Foundation-2-600x237.jpg",
-      "relevance": 0
-    },
-    {
-      "id": "2e3b3063702a",
-      "title": "Introducing \u2013 Ressence Unveils the Type 11 Powered by its First Proprietary Movement",
-      "link": "https://monochrome-watches.com/ressence-type-11-first-proprietary-movement-calibre-werk-rw-01-introducing-price/",
-      "desc": "Since its founding in 2010 in Antwerp by Belgian industrial designer Beno\u00eet Mintiens, indie brand Ressence has positioned itself as a design-led watch studio that literally rethinks how time is displa",
-      "date": "2026-04-07T14:01:58+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/04/ressence-type-11-first-proprietary-movement-calibre-werk-RW-01-introducing-7-600x237.jpg",
-      "relevance": 0
-    },
-    {
       "id": "de969309a2f5",
       "title": "Ressence Enters A Completely Different Ballgame With The New Type 11 And Its First Fully Integrated Movement",
       "link": "https://www.fratellowatches.com/ressence-type-11-and-rw-01/",
@@ -238,16 +308,6 @@
       "date": "2026-04-07T14:00:00+00:00",
       "source": "FRATELLO",
       "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "16047529a2fa",
-      "title": "Industry News \u2013 Kross Studio Rebranded to Marco Tedeschi, Unveils the MT1.1 Tourbillon 7 Jours",
-      "link": "https://monochrome-watches.com/kross-studio-rebranded-to-marco-tedeschi-unveiling-the-mt1-1-tourbillon-7-jours/",
-      "desc": "Over the past years, Kross Studio has emerged as an intriguing player in independent watchmaking. Founded just before the pandemic, the company has grown, gaining visibility through a series of collab",
-      "date": "2026-04-07T12:01:15+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/04/Marco-Tedeschi-MT1-1-Tourbillon-7-Jours-3-600x237.jpg",
       "relevance": 0
     },
     {
@@ -271,46 +331,6 @@
       "relevance": 10
     },
     {
-      "id": "87a08fd0d4a6",
-      "title": "Introducing: Credor Makes Its First Watches And Wonders Appearance With Three Novelties (Live Pics)",
-      "link": "https://www.hodinkee.com/articles/credor-makes-its-first-watches-and-wonders-appearance-with-three-novelties-live-pics",
-      "desc": "Two Goldfeather models and a Credor Locomotive mark the brand's debut on the international stage, showcasing a wide range of craft.",
-      "date": "2026-04-07T09:21:00-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/83d15edd-3309-4e72-93f4-2ef0ba204229/credorheader.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 10
-    },
-    {
-      "id": "0626b369816f",
-      "title": "What Are 10 More Of The Best Dive Watches Under \u20ac1,000?",
-      "link": "https://www.fratellowatches.com/what-are-10-more-of-the-best-dive-watches-under-e1000/",
-      "desc": "Two weeks ago, we brought you an article looking at some of the best dive watches under \u20ac1,000. Today, we\u2019re continuing that feature with the second part. Before I go further, I should note a few thin",
-      "date": "2026-04-07T05:00:37+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 0
-    },
-    {
-      "id": "bd3e7751382b",
-      "title": "ArtyA\u2019s Uber-Complex Complexity Debuts For Watches And Wonders",
-      "link": "https://www.fratellowatches.com/artyas-uber-complex-complexity-debuts-for-watches-and-wonders/",
-      "desc": "Some watches hit you with the spec sheet and leave you to make sense of the rest later. The new ArtyA Complexity doesn\u2019t really feel like one of those. Yes, the headline is big, and yes, it was always",
-      "date": "2026-04-06T22:01:35+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 10
-    },
-    {
-      "id": "240f2f601f72",
-      "title": "Alto Considers Time Through Patination And Sculpture With The Art 01 Bernar Venet (Live Pics)",
-      "link": "https://www.hodinkee.com/articles/alto-considers-time-through-patination-and-sculpture-with-the-art-01-bernar-venet-live-pics",
-      "desc": "Alto's new iteration of the Art 01 is a collaboration with Bernar Venet, and it's the first time the revered French artist has worked on a watch.",
-      "date": "2026-04-06T13:00:07-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/574eca61-dee1-4bce-bf53-923d2dfaff9f/DSCF5999.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
-    },
-    {
       "id": "5f9b3024ad52",
       "title": "Louis Vuitton Introduces the Tambour Taiko Arty Automata",
       "link": "https://revolutionwatch.com/louis-vuitton-tambour-taiko-arty-automata/",
@@ -319,16 +339,6 @@
       "source": "REVOLUTION",
       "image": "",
       "relevance": 0
-    },
-    {
-      "id": "ba4454af839b",
-      "title": "Watches And Wonders 2026 \u2014 What To Expect From The Year\u2019s Biggest Week In Watches",
-      "link": "https://www.fratellowatches.com/watches-and-wonders-2026-what-to-expect-from-the-years-biggest-week-in-watches/",
-      "desc": "It\u2019s that time again. From April 14th to 20th, the watch world will return to Watches and Wonders Geneva, and the 2026 edition is shaping up to be the biggest, busiest, and most expansive yet. With 64",
-      "date": "2026-04-06T05:00:40+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 10
     },
     {
       "id": "f322a996d368",
@@ -349,19 +359,9 @@
       "source": "REVOLUTION",
       "image": "",
       "relevance": 0
-    },
-    {
-      "id": "d64b0778cf78",
-      "title": "Mathieu Cleguer Makes His Debut with the Inspiration One Souscription",
-      "link": "https://revolutionwatch.com/mathieu-cleguer-makes-his-debut-with-the-inspiration-one-souscription/",
-      "desc": "The post Mathieu Cleguer Makes His Debut with the Inspiration One Souscription appeared first on Revolution Watch.",
-      "date": "2026-04-01T13:52:42+00:00",
-      "source": "REVOLUTION",
-      "image": "",
-      "relevance": 0
     }
   ],
-  "fetched_at": "2026-04-08T19:00:03.008452+00:00",
+  "fetched_at": "2026-04-09T19:00:03.552733+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
