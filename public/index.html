@@ -3013,7 +3013,7 @@
                 <div id="claude-sessions-list">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
                         <h3 style="margin:0;font-size:0.9rem;color:var(--text-1);">Claude Code Sessions</h3>
-                        <button class="mc-btn" onclick="refreshClaudeSessions()">🔄 Refresh</button>
+                        <button class="mc-btn" onclick="refreshClaudeSessions()">Refresh</button>
                     </div>
                     <div id="claude-sessions-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">
                         <div style="padding:20px;text-align:center;color:var(--text-2);">Loading sessions...</div>
@@ -13586,7 +13586,7 @@ async function loadPayments() {
             
             // Quick log actions — always visible at top
             html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;padding:8px 0;border-bottom:1px solid var(--border);">
-                <button class="btn" onclick="logCrmVisit(${s.id},'outreach')" style="font-size:0.7rem;padding:4px 10px;background:var(--accent);color:#fff;">📝 Log Outreach</button>
+                <button class="btn" onclick="logCrmVisit(${s.id},'outreach')" style="font-size:0.7rem;padding:4px 10px;background:var(--accent);color:#fff;"> Log Outreach</button>
                 <button class="btn" onclick="logCrmVisit(${s.id},'visit')" style="font-size:0.7rem;padding:4px 10px;">Log Visit</button>
                 <button class="btn" onclick="logCrmVisit(${s.id},'call')" style="font-size:0.7rem;padding:4px 10px;">Log Call</button>
                 <button class="btn" onclick="logCrmVisit(${s.id},'google_review')" style="font-size:0.7rem;padding:4px 10px;">Log Google Review</button>
@@ -13636,7 +13636,7 @@ async function loadPayments() {
                     else if (isOutbound) { icon = '→'; color = 'var(--accent)'; label = platform !== 'IMESSAGE' ? platform : ''; }
                     else if (isVisit) { icon = '*'; label = 'Visit'; }
                     else if (isCall) { icon = '*'; label = 'Call'; }
-                    else if (isReview) { icon = '⭐'; label = 'Google Review'; }
+                    else if (isReview) { icon = '*'; label = 'Google Review'; }
                     else if (v.visit_type === 'outreach') { icon = '>'; label = 'Outreach'; }
                     
                     // Extract just the message text from notes
