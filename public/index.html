@@ -15642,7 +15642,7 @@ async function loadClaudeSessions() {
             const ago = timeAgo(s.last_activity);
             const statusColor = s.status === 'active' ? '#4ADE80' : '#6B7280';
             const preview = s.last_message_preview ? s.last_message_preview.substring(0,100) + (s.last_message_preview.length > 100 ? '...' : '') : 'No recent activity';
-            return `<div class="claude-session-card" onclick="openClaudeSession('${s.session_id}', '${s.project_name}')">
+            return `<div class="claude-session-card" onclick="openClaudeSession('${s.session_id}', '${s.project_name}', '${s.project_path || ''}')">
                 <div class="claude-session-header">
                     <div class="claude-session-id">${s.session_id_short}</div>
                     <span style="width:8px;height:8px;border-radius:50%;background:${statusColor};"></span>
@@ -15665,9 +15665,9 @@ function showClaudeSessions() {
     _currentClaudeSessionId = null;
 }
 
-async function openClaudeSession(sessionId, projectName) {
+async function openClaudeSession(sessionId, projectName, projectPath) {
     _currentClaudeSessionId = sessionId;
-    _currentClaudeProject = '/Users/jeffin/.openclaw/workspace';
+    _currentClaudeProject = projectPath || '/Users/jeffin/.openclaw/workspace';
     
     document.getElementById('claude-sessions-list').style.display = 'none';
     document.getElementById('claude-chat-view').style.display = 'block';
