@@ -3042,6 +3042,14 @@
                     .chat-input:focus{border-color:var(--accent);touch-action:manipulation;}
                     .chat-input::placeholder{color:var(--text-3);}
                     .chat-container *{touch-action:manipulation;}
+                    .chat-input-area{padding:16px;border-top:1px solid var(--border);display:flex;align-items:flex-end;gap:8px;background:var(--bg-2);}
+                    .claude-session-card{background:var(--bg-2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;transition:all 0.15s ease;}
+                    .claude-session-card:hover{border-color:var(--accent-border);background:var(--bg-3);}
+                    .claude-session-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+                    .claude-session-id{font-family:var(--mono);font-size:0.75rem;color:var(--accent);font-weight:600;}
+                    .claude-session-project{font-size:0.8rem;color:var(--text-1);font-weight:500;}
+                    .claude-session-meta{font-size:0.7rem;color:var(--text-2);}
+                    .claude-session-preview{font-size:0.75rem;color:var(--text-2);margin-top:4px;line-height:1.3;max-height:2.6em;overflow:hidden;}
                     .chat-send-btn{background:var(--accent);color:var(--bg-1);border:none;border-radius:8px;padding:10px 16px;font-size:0.78rem;font-weight:600;cursor:pointer;flex-shrink:0;transition:opacity 0.2s;}
                     .chat-send-btn:hover{opacity:0.85;}
                     .chat-send-btn:disabled{opacity:0.4;cursor:not-allowed;}
@@ -15586,67 +15594,202 @@ function jamUploadShipPhoto(watchId, photoType) {
     setTimeout(() => input.click(), 100);
 }
 
-// ── CLAUDE CODE ──
+// ── CLAUDE CODE INTERACTIVE CHAT ──
+let _currentClaudeSessionId = null;
+let _currentClaudeProject = '/Users/jeffin/.openclaw/workspace';
+
 async function loadClaudeSessions() {
-    const el = document.getElementById('claude-sessions-list');
+    const el = document.getElementById('claude-sessions-grid');
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-2);font-size:0.8rem;">Loading...</div>';
     try {
         const r = await fetch('/api/mission-control/claude-sessions');
         const data = await r.json();
         const sessions = data.sessions || [];
-        if (!sessions.length) { el.innerHTML = '<div class="mc-empty">No Claude Code sessions found</div>'; return; }
+        if (!sessions.length) { 
+            el.innerHTML = '<div class="mc-empty">No Claude Code sessions found<br/><span style="font-size:0.7rem;color:var(--text-3);">Start a new session to get started</span></div>'; 
+            return; 
+        }
         el.innerHTML = sessions.map(s => {
             const ago = timeAgo(s.last_activity);
             const statusColor = s.status === 'active' ? '#4ADE80' : '#6B7280';
-            const preview = s.last_message_preview ? s.last_message_preview.substring(0,120) + (s.last_message_preview.length > 120 ? '...' : '') : 'No preview';
-            return `<div class="backlog-card" onclick="loadClaudeHistory('${s.session_id}','${s.project_name}')" style="cursor:pointer">
-                <div class="backlog-card-header">
-                    <div class="backlog-title" style="display:flex;align-items:center;gap:8px;">
-                        <span style="width:8px;height:8px;border-radius:50%;background:${statusColor};flex-shrink:0;"></span>
-                        ${s.project_name}
-                    </div>
-                    <span class="category-tag">${s.message_count} msgs</span>
+            const preview = s.last_message_preview ? s.last_message_preview.substring(0,100) + (s.last_message_preview.length > 100 ? '...' : '') : 'No recent activity';
+            return `<div class="claude-session-card" onclick="openClaudeSession('${s.session_id}', '${s.project_name}')">
+                <div class="claude-session-header">
+                    <div class="claude-session-id">${s.session_id_short}</div>
+                    <span style="width:8px;height:8px;border-radius:50%;background:${statusColor};"></span>
                 </div>
-                <div class="backlog-desc">${preview}</div>
-                <div class="backlog-meta">
-                    <span>${s.session_id_short}</span>
-                    <span>${ago}</span>
-                    <span class="priority-badge ${s.status === 'active' ? 'priority-p0' : 'priority-p3'}">${s.status}</span>
-                </div>
+                <div class="claude-session-project">${s.project_name}</div>
+                <div class="claude-session-meta">${s.message_count} messages • ${ago}</div>
+                <div class="claude-session-preview">${preview}</div>
             </div>`;
         }).join('');
-    } catch(e) { el.innerHTML = `<div class="mc-empty">Error loading sessions: ${e.message}</div>`; }
+    } catch(e) { 
+        el.innerHTML = `<div class="mc-empty">Error loading sessions: ${e.message}</div>`; 
+    }
 }
 
 const refreshClaudeSessions = loadClaudeSessions;
 
 function showClaudeSessions() {
     document.getElementById('claude-sessions-list').style.display = 'block';
-    document.getElementById('claude-session-detail').style.display = 'none';
+    document.getElementById('claude-chat-view').style.display = 'none';
+    _currentClaudeSessionId = null;
 }
 
-async function loadClaudeHistory(sessionId, projectName) {
+async function openClaudeSession(sessionId, projectName) {
+    _currentClaudeSessionId = sessionId;
+    _currentClaudeProject = '/Users/jeffin/.openclaw/workspace';
+    
     document.getElementById('claude-sessions-list').style.display = 'none';
-    document.getElementById('claude-session-detail').style.display = 'block';
-    document.getElementById('claude-session-title').textContent = projectName + ' — ' + sessionId.substring(0,8);
-    const conv = document.getElementById('claude-conversation');
-    conv.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-2);">Loading...</div>';
+    document.getElementById('claude-chat-view').style.display = 'block';
+    
+    document.getElementById('claude-chat-title').textContent = projectName;
+    document.getElementById('claude-chat-subtitle').textContent = sessionId.substring(0,8) + '...';
+    
+    await loadClaudeConversation(sessionId);
+    
+    const input = document.getElementById('claude-chat-input');
+    if (input) input.focus();
+}
+
+async function loadClaudeConversation(sessionId) {
+    const messagesEl = document.getElementById('claude-chat-messages');
+    messagesEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-2);">Loading conversation...</div>';
+    
     try {
         const r = await fetch('/api/mission-control/claude-sessions/' + sessionId);
         const data = await r.json();
-        const msgs = data.messages || [];
-        if (!msgs.length) { conv.innerHTML = '<div class="mc-empty">No messages</div>'; return; }
-        conv.innerHTML = msgs.map(m => {
-            const isUser = m.role === 'user';
-            const bg = isUser ? 'var(--bg-4)' : 'var(--bg-2)';
-            const label = isUser ? '👤 You' : '🤖 Claude';
-            const text = (m.content || '').substring(0, 2000);
-            return `<div style="background:${bg};border-radius:8px;padding:12px;margin-bottom:8px;">
-                <div style="font-size:0.7rem;font-weight:600;color:var(--text-2);margin-bottom:4px;">${label}</div>
-                <div style="font-size:0.78rem;color:var(--text-1);white-space:pre-wrap;line-height:1.5;">${text.replace(/</g,'&lt;')}</div>
-            </div>`;
-        }).join('');
-        conv.scrollTop = conv.scrollHeight;
-    } catch(e) { conv.innerHTML = `<div class="mc-empty">Error: ${e.message}</div>`; }
+        const messages = data.messages || [];
+        
+        if (!messages.length) { 
+            messagesEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-2);">No messages in this session</div>'; 
+            return; 
+        }
+        
+        messagesEl.innerHTML = '';
+        messages.forEach(msg => {
+            appendChatMessage(msg.role, msg.content || '');
+        });
+        
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+        
+    } catch(e) { 
+        messagesEl.innerHTML = `<div style="text-align:center;padding:20px;color:var(--red);">Error loading conversation: ${e.message}</div>`; 
+    }
+}
+
+function appendChatMessage(role, content) {
+    const messagesEl = document.getElementById('claude-chat-messages');
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `chat-msg ${role}`;
+    msgDiv.textContent = content;
+    messagesEl.appendChild(msgDiv);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function showClaudeThinking() {
+    const statusEl = document.getElementById('claude-chat-status');
+    if (statusEl) statusEl.className = 'chat-status thinking';
+    
+    const messagesEl = document.getElementById('claude-chat-messages');
+    const thinkingDiv = document.createElement('div');
+    thinkingDiv.className = 'chat-msg assistant';
+    thinkingDiv.id = 'claude-thinking';
+    thinkingDiv.innerHTML = '<em>Claude is thinking...</em>';
+    messagesEl.appendChild(thinkingDiv);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function hideClaudeThinking() {
+    const statusEl = document.getElementById('claude-chat-status');
+    if (statusEl) statusEl.className = 'chat-status';
+    
+    const thinkingEl = document.getElementById('claude-thinking');
+    if (thinkingEl) thinkingEl.remove();
+}
+
+async function sendClaudeMessage() {
+    const input = document.getElementById('claude-chat-input');
+    const sendBtn = document.getElementById('claude-send-btn');
+    
+    const message = input.value.trim();
+    if (!message) return;
+    
+    if (!_currentClaudeSessionId) {
+        alert('No session selected');
+        return;
+    }
+    
+    input.disabled = true;
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Sending...';
+    
+    appendChatMessage('user', message);
+    input.value = '';
+    
+    showClaudeThinking();
+    
+    try {
+        const response = await fetch('/api/mission-control/claude-code/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                session_id: _currentClaudeSessionId,
+                message: message,
+                project_path: _currentClaudeProject
+            })
+        });
+        
+        const data = await response.json();
+        
+        hideClaudeThinking();
+        
+        if (response.ok && data.response) {
+            appendChatMessage('assistant', data.response);
+        } else {
+            appendChatMessage('assistant', `Error: ${data.error || 'Failed to send message'}`);
+        }
+        
+    } catch (e) {
+        hideClaudeThinking();
+        appendChatMessage('assistant', `Error: ${e.message}`);
+    } finally {
+        input.disabled = false;
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send';
+        if (input) input.focus();
+    }
+}
+
+async function createNewClaudeSession() {
+    const message = prompt('Enter your first message to Claude:');
+    if (!message) return;
+    
+    try {
+        const response = await fetch('/api/mission-control/claude-code/new-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: message,
+                project_path: _currentClaudeProject
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.session_id) {
+            await openClaudeSession(data.session_id, 'New Session');
+            appendChatMessage('user', message);
+            if (data.response) {
+                appendChatMessage('assistant', data.response);
+            }
+            loadClaudeSessions();
+        } else {
+            alert(`Error creating session: ${data.error || 'Unknown error'}`);
+        }
+    } catch (e) {
+        alert(`Error: ${e.message}`);
+    }
 }
 
 function timeAgo(ts) {
@@ -15658,6 +15801,26 @@ function timeAgo(ts) {
     const hrs = Math.floor(mins/60);
     if (hrs < 24) return hrs + 'h ago';
     return Math.floor(hrs/24) + 'd ago';
+}
+
+// Handle Enter key in Claude input
+if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', () => {
+        const input = document.getElementById('claude-chat-input');
+        if (input) {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendClaudeMessage();
+                }
+            });
+            
+            input.addEventListener('input', () => {
+                input.style.height = 'auto';
+                input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+            });
+        }
+    });
 }
 
 // ── TERMINAL ──
