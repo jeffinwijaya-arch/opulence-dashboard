@@ -15759,7 +15759,7 @@ async function sendClaudeMessage() {
     showClaudeThinking();
     
     try {
-        const response = await fetch('/api/mission-control/claude-code/send', {
+        const r = await fetch('/api/mission-control/claude-code/send', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -15768,17 +15768,34 @@ async function sendClaudeMessage() {
                 project_path: _currentClaudeProject
             })
         });
-        
-        const data = await response.json();
-        
-        hideClaudeThinking();
-        
-        if (response.ok && data.response) {
-            appendChatMessage('assistant', data.response);
-        } else {
-            appendChatMessage('assistant', `Error: ${data.error || 'Failed to send message'}`);
+        const startData = await r.json();
+        if (!r.ok || !startData.task_id) {
+            hideClaudeThinking();
+            appendChatMessage('assistant', `Error: ${startData.error || 'Failed to start'}`);
+            return;
         }
-        
+        // Poll for result
+        const taskId = startData.task_id;
+        let elapsed = 0;
+        while (elapsed < 300000) {
+            await new Promise(ok => setTimeout(ok, 2000));
+            elapsed += 2000;
+            try {
+                const pr = await fetch('/api/mission-control/claude-code/poll/' + taskId);
+                const pd = await pr.json();
+                if (pd.status === 'done') {
+                    hideClaudeThinking();
+                    appendChatMessage('assistant', pd.response);
+                    return;
+                } else if (pd.status === 'error') {
+                    hideClaudeThinking();
+                    appendChatMessage('assistant', `Error: ${pd.error}`);
+                    return;
+                }
+            } catch(pe) { /* poll failed, keep trying */ }
+        }
+        hideClaudeThinking();
+        appendChatMessage('assistant', 'Timed out waiting for response');
     } catch (e) {
         hideClaudeThinking();
         appendChatMessage('assistant', `Error: ${e.message}`);
