@@ -2988,24 +2988,53 @@
 
             <!-- Claude Code Sessions Section -->
             <div class="mc-section" id="mc-claude-code">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                    <h3 style="margin:0;font-size:0.9rem;color:var(--text-1);">Claude Code Sessions</h3>
-                    <button class="mc-btn" onclick="refreshClaudeSessions()" id="claude-refresh-btn">🔄 Refresh</button>
-                </div>
-                
+                <style>
+                    .claude-session-card{background:var(--bg-3);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all 0.2s;}
+                    .claude-session-card:hover{border-color:var(--border-strong);transform:translateY(-1px);}
+                    .claude-session-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+                    .claude-session-id{font-family:var(--mono);font-size:0.7rem;color:var(--text-3);}
+                    .claude-session-project{font-size:0.85rem;font-weight:600;color:var(--text-0);margin-bottom:4px;}
+                    .claude-session-meta{font-size:0.7rem;color:var(--text-2);margin-bottom:6px;}
+                    .claude-session-preview{font-size:0.72rem;color:var(--text-3);line-height:1.3;}
+                    .claude-chat-container{display:flex;flex-direction:column;height:calc(100vh - 300px);min-height:400px;}
+                    .claude-chat-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+                    #claude-chat-messages{flex:1;overflow-y:auto;background:var(--bg-3);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px;}
+                    #claude-chat-messages .chat-msg{padding:10px 14px;border-radius:10px;margin-bottom:8px;font-size:0.8rem;line-height:1.5;white-space:pre-wrap;word-break:break-word;}
+                    #claude-chat-messages .chat-msg.user{background:var(--accent);color:var(--bg-1);margin-left:20%;text-align:right;}
+                    #claude-chat-messages .chat-msg.assistant{background:var(--bg-2);color:var(--text-0);margin-right:20%;}
+                    .claude-input-row{display:flex;gap:8px;}
+                    #claude-chat-input{flex:1;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text-0);font-size:0.8rem;resize:none;font-family:inherit;min-height:40px;max-height:120px;}
+                    #claude-chat-input:focus{outline:none;border-color:var(--accent);}
+                    #claude-send-btn{background:var(--accent);color:var(--bg-1);border:none;border-radius:8px;padding:10px 16px;font-weight:600;cursor:pointer;font-size:0.8rem;}
+                    #claude-send-btn:disabled{opacity:0.5;cursor:not-allowed;}
+                </style>
+
                 <!-- Sessions List -->
-                <div id="claude-sessions-list" style="margin-bottom:20px;">
-                    <div style="text-align:center;padding:40px;color:var(--text-2);">Loading sessions...</div>
-                </div>
-                
-                <!-- Session Detail View -->
-                <div id="claude-session-detail" style="display:none;">
-                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-                        <button onclick="showClaudeSessions()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.85rem;">← Back to Sessions</button>
-                        <h4 id="claude-session-title" style="margin:0;font-size:0.85rem;color:var(--text-1);"></h4>
+                <div id="claude-sessions-list">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                        <h3 style="margin:0;font-size:0.9rem;color:var(--text-1);">Claude Code Sessions</h3>
+                        <button class="mc-btn" onclick="refreshClaudeSessions()">🔄 Refresh</button>
                     </div>
-                    <div id="claude-conversation" style="max-height:500px;overflow-y:auto;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;padding:16px;">
-                        <div style="text-align:center;padding:20px;color:var(--text-2);">Loading conversation...</div>
+                    <div id="claude-sessions-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">
+                        <div style="padding:20px;text-align:center;color:var(--text-2);">Loading sessions...</div>
+                    </div>
+                </div>
+
+                <!-- Chat View -->
+                <div id="claude-chat-view" style="display:none;">
+                    <div class="claude-chat-header">
+                        <button onclick="showClaudeSessions()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.85rem;">← Back</button>
+                        <div>
+                            <span id="claude-chat-title" style="font-weight:600;color:var(--text-0);font-size:0.9rem;"></span>
+                            <span id="claude-chat-subtitle" style="font-size:0.7rem;color:var(--text-3);margin-left:8px;"></span>
+                        </div>
+                    </div>
+                    <div class="claude-chat-container">
+                        <div id="claude-chat-messages"></div>
+                        <div class="claude-input-row">
+                            <textarea id="claude-chat-input" placeholder="Send a message to Claude..." rows="1"></textarea>
+                            <button id="claude-send-btn" onclick="sendClaudeMessage()">Send</button>
+                        </div>
                     </div>
                 </div>
             </div>
