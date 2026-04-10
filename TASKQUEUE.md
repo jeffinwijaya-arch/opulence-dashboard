@@ -28,6 +28,7 @@
 - [ ] Unrealized P&L trend — weekly sparkline showing portfolio value over time (store snapshots in localStorage)
 
 ### WS4: Posting & Sales (ws4-posting.js)
+- [x] Photo intelligence layer — token-based filename classifier (dial/caseback/movement/bracelet/card/box/serial/wrist/…), doc coverage matrix + card on Photos page, auto-match library watches to inventory SKUs via ref+bracelet+dial+card_date scoring, brand-aware serial extractor/validator (Rolex/AP/Patek/RM), auto-fill missing serials from filenames/notes, `window.MKPhoto` public API (2026-04-10)
 - [ ] Auto-caption generator — from inventory data build: "BNIB Full Set {ref} {bracelet} {dial} {card_month}/{card_year} {condition} with WT ${price} + label"
 - [ ] Smart price recommendation — suggested sale price = US low from refs data - $100, with "competitive" / "aggressive" / "premium" tiers
 
@@ -64,9 +65,10 @@
 - [ ] WS7: Seasonal price patterns — monthly average prices per ref to identify buy/sell windows
 - [ ] WS8: Offline mode — cache last lookup results in service worker for subway use
 - [ ] WS9: Tax export — generate CSV of all sold watches with cost basis + proceeds for accountant
-- [ ] WS10: Smart photo tagging — match uploaded photos to refs based on filename/EXIF
+- [x] WS10: Smart photo tagging — match uploaded photos to refs based on filename/EXIF (moved into ws4-posting.js photo intelligence layer, 2026-04-10)
 
 ## COMPLETED
+- **2026-04-10** WS4 Photo Intelligence (ws4-posting.js): token-based filename classifier (dial/caseback/movement/bracelet/card/box/serial/wrist/crown/lugs/macro/overall), documentation coverage matrix + summary card injected on Photos page, SKU auto-matching (ref+bracelet+dial+card_date scoring, high/med confidence badges on library cards), brand-aware serial extractor/validator (Rolex/AP/Patek/RM), auto-fill missing serials from filenames and notes, `window.MKPhoto` public API for other modules
 - **2026-04-10** WS1 Price Intelligence (ws1-price-intel.js): deal scoring (0-100, 4 components), price confidence indicator (HIGH/MEDIUM/LOW), price trend arrows (localStorage 30-day b25 tracking)
 - **2026-04-10** WS3 Deal Flow (ws3-deal-flow.js): enhanced arbitrage calculator (true net = sell − buy − shipping $150 − insurance 1.5% − wire $40 − label $35, injected "True Net" column + cost banner), snipe alert badge (pulsing gold border + ★ SNIPE tag for deals >10% below B25)
 - **2026-04-10** WS2 Inventory P&L (ws2-inventory-pnl.js): portfolio heat map (colored tiles on Summary tab, green >5%, yellow 0-5%, red <0%, size proportional to capital deployed)
