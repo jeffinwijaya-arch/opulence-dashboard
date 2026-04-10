@@ -11571,9 +11571,13 @@ async function loadPayments() {
     }
     
     function updatePhotoStats(stats) {
-        $('#photo-count').textContent = stats.total_photos || 49;
-        $('#model-count').textContent = Object.keys(stats.models || {}).length || 30;
-        $('#grail-count').textContent = (stats.models?.['126509'] || 0) + (stats.models?.['126515LN'] || 0) || 2;
+        // Count from actual loaded data (excludes watches with 0 photos)
+        const withPhotos = photoLibraryData.filter(w => w.photo_count > 0);
+        const totalPhotos = withPhotos.reduce((sum, w) => sum + (w.photo_count || 0), 0);
+        $('#photo-count').textContent = totalPhotos || stats.total_photos || 0;
+        const uniqueModels = new Set(withPhotos.map(w => w.model).filter(Boolean));
+        $('#model-count').textContent = uniqueModels.size || Object.keys(stats.models || {}).length || 0;
+        $('#grail-count').textContent = (stats.models?.['126509'] || 0) + (stats.models?.['126515LN'] || 0) || 0;
     }
     
     function filterPhotoLibrary() {
