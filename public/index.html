@@ -15983,6 +15983,7 @@ function renderJamFeed(type) {
                 const buyerName = grp.buyer || 'Unknown buyer';
                 const watchCount = grp.items.length;
                 const pkgLabel = grp.label || (isLogistics ? 'Package ' + _logisticsPkgSeq : 'Package ' + _logisticsPkgSeq);
+                const grpPkgId = grp.items[0]?.package_id || 0;
                 let pkgLabelBtn = '';
                 if (grp.hasLabel && grp.labelFile) {
                     pkgLabelBtn = '<div style="display:flex;gap:6px;align-items:center;">'
@@ -15995,7 +15996,6 @@ function renderJamFeed(type) {
                         + '<button onclick="event.stopPropagation();jamAttachLabelToPackage(' + grpPkgId + ')" style="cursor:pointer;padding:8px 14px;border:none;border-radius:8px;background:var(--accent);color:var(--bg-1);font-weight:700;font-size:0.78rem;min-height:36px;">ATTACH LABEL</button>'
                         + '</div>';
                 }
-                const grpPkgId = grp.items[0]?.package_id || 0;
                 html += '<div class="pkg-drop-zone" data-pkg-id="' + grpPkgId + '" data-recipient="' + buyerName.replace(/"/g,'&quot;') + '" style="border:2px solid ' + pColor + ';border-radius:12px;padding:4px;margin:8px 0;background:var(--bg-1);transition:background 0.15s,border-color 0.15s;" ondragover="event.preventDefault();this.style.borderColor=\'var(--accent)\';this.style.background=\'var(--accent-dim)\'" ondragleave="this.style.borderColor=\'' + pColor + '\';this.style.background=\'var(--bg-1)\'" ondrop="event.preventDefault();this.style.borderColor=\'' + pColor + '\';this.style.background=\'var(--bg-1)\';handlePkgDrop(event,' + grpPkgId + ')">'
                     + '<div style="padding:8px 14px;border-radius:8px 8px 0 0;background:var(--accent-dim);display:flex;align-items:center;justify-content:space-between;">'
                     + '<span style="font-size:0.8rem;font-weight:700;color:' + pColor + ';">' + pkgLabel + ' — ' + buyerName.replace(/</g,'&lt;') + ' (' + watchCount + (watchCount === 1 ? ' watch' : ' watches') + ')</span>'
