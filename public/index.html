@@ -1442,7 +1442,13 @@
     </div>
     <div style="margin-top:16px;font-family:'Inter',sans-serif;font-size:0.7rem;color:var(--text-2,#5c5b57);letter-spacing:2px;text-transform:uppercase;">Market Intelligence</div>
 </div>
-<style>@keyframes splashLoad{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}</style>
+<style>@keyframes splashLoad{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+#splash-screen.hide{opacity:0!important;visibility:hidden!important;pointer-events:none!important;}
+</style>
+<script>
+// Failsafe: force-dismiss splash after 6s even if JS hasn't loaded yet
+setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.classList.add('hide');setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s);},500);}},6000);
+</script>
 <div class="app">
     <a href="#page-dashboard" class="skip-link" tabindex="1">Skip to content</a>
     <!-- TOP BAR -->
