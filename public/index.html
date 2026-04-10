@@ -11618,7 +11618,7 @@ async function loadPayments() {
         
         let html = '';
         watches.forEach(watch => {
-            const model = watch.model || 'Unknown';
+            const model = watch.model || watch.description || watch.ref || 'Unknown';
             const dial = watch.dial || '';
             const bracelet = watch.bracelet || '';
             const condition = watch.condition || '';
