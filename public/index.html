@@ -3691,10 +3691,20 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
             <div class="kb-row"><span class="kb-desc">Prices / Lookup</span><span class="kb-keys"><kbd>2</kbd></span></div>
             <div class="kb-row"><span class="kb-desc">Portfolio</span><span class="kb-keys"><kbd>3</kbd></span></div>
             <div class="kb-row"><span class="kb-desc">Deals</span><span class="kb-keys"><kbd>4</kbd></span></div>
+            <div class="kb-row"><span class="kb-desc">Arbitrage</span><span class="kb-keys"><kbd>5</kbd></span></div>
+            <div class="kb-row"><span class="kb-desc">Browse</span><span class="kb-keys"><kbd>6</kbd></span></div>
+            <div class="kb-row"><span class="kb-desc">Inventory</span><span class="kb-keys"><kbd>7</kbd> or <kbd>I</kbd></span></div>
+            <div class="kb-row"><span class="kb-desc">Shipping</span><span class="kb-keys"><kbd>8</kbd></span></div>
+            <div class="kb-row"><span class="kb-desc">Payments</span><span class="kb-keys"><kbd>9</kbd></span></div>
+            <div class="kb-row"><span class="kb-desc">Photos</span><span class="kb-keys"><kbd>0</kbd></span></div>
+            <div class="kb-row"><span class="kb-desc">Postings</span><span class="kb-keys"><kbd>P</kbd></span></div>
+            <div class="kb-row"><span class="kb-desc">Operations</span><span class="kb-keys"><kbd>O</kbd></span></div>
         </div>
         <div class="kb-group">
             <div class="kb-group-title">Actions</div>
             <div class="kb-row"><span class="kb-desc">Search</span><span class="kb-keys"><kbd>/</kbd> or <kbd>S</kbd></span></div>
+            <div class="kb-row"><span class="kb-desc">New Watch (Buy)</span><span class="kb-keys"><kbd>N</kbd></span></div>
+            <div class="kb-row"><span class="kb-desc">Sell Watch</span><span class="kb-keys"><kbd>X</kbd></span></div>
             <div class="kb-row"><span class="kb-desc">Quick Commands</span><span class="kb-keys"><kbd>&#8984;</kbd><kbd>K</kbd></span></div>
             <div class="kb-row"><span class="kb-desc">Unified Search</span><span class="kb-keys"><kbd>Ctrl</kbd><kbd>K</kbd></span></div>
             <div class="kb-row"><span class="kb-desc">Refresh Data</span><span class="kb-keys"><kbd>R</kbd></span></div>
@@ -6974,10 +6984,15 @@ document.addEventListener('keydown',e=>{
     if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT'||e.target.tagName==='TEXTAREA')return;
     // Don't fire shortcuts when Mission Control terminal is active
     if(e.target.closest && e.target.closest('#mc-terminal'))return;
-    const map={'1':'dashboard','2':'lookup','3':'portfolio','4':'deals','5':'arbitrage','6':'browse'};
+    const map={'1':'dashboard','2':'lookup','3':'portfolio','4':'deals','5':'arbitrage','6':'browse','7':'inventory','8':'shipping','9':'payments','0':'photos'};
     if(map[e.key])showPage(map[e.key]);
     if(e.key==='/'||e.key==='s'){e.preventDefault();showPage('lookup');$('#ref-search').focus();}
+    if(e.key==='n'){e.preventDefault();openQuickCmd('bought ');}
+    if(e.key==='x'){e.preventDefault();openQuickCmd('sold ');}
     if(e.key==='r')refreshData();
+    if(e.key==='i'){showPage('inventory');}
+    if(e.key==='p'){showPage('postings');}
+    if(e.key==='o'){showPage('jam');}
     if(e.key==='?'){e.preventDefault();const h=document.getElementById('kb-help-overlay');if(h)h.classList.toggle('show');}
     if(e.key==='Escape'){const h=document.getElementById('kb-help-overlay');if(h&&h.classList.contains('show')){h.classList.remove('show');return;}}
 });
