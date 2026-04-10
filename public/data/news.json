@@ -1,6 +1,16 @@
 {
   "articles": [
     {
+      "id": "9a6b0a8c1f10",
+      "title": "Hands-On: Dominique Renaud Pulse60 Balancier Ultra Amplitude",
+      "link": "https://www.hodinkee.com/articles/dominique-renaud-pulse60-balancier-ultra-amplitude",
+      "desc": "A radical rethink of amplitude from one of modern watchmaking's most influential minds.",
+      "date": "2026-04-09T17:30:26-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/cb17e621-134c-4799-a1db-7665466b33fe/dr-hero.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "relevance": 0
+    },
+    {
       "id": "8c0a9b2bd9b9",
       "title": "First Look \u2013 Bianchet Teams Up with Maserati for a Limited-Edition UltraFino Maserati",
       "link": "https://monochrome-watches.com/bianchet-ultrafino-maserati-flying-tourbillon-carbon-review/",
@@ -311,16 +321,6 @@
       "relevance": 0
     },
     {
-      "id": "a178618d9b95",
-      "title": "Coming Soon: TIMEX \u00d7 Hodinkee",
-      "link": "https://www.hodinkee.com/articles/timex-hodinkee-2026",
-      "desc": "On April 9th, we go back to basics to celebrate four decades of TIMEX.",
-      "date": "2026-04-07T11:00:28-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/a4099a08-4a17-4bd7-a895-960d2930f0f8/TeaserArticleHeroImage.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
-    },
-    {
       "id": "5eb35e89f227",
       "title": "Watches and Wonders 2026: Complete Brand Coverage and Novelties",
       "link": "https://revolutionwatch.com/watches-and-wonders-2026-complete-brand-coverage-and-novelties/",
@@ -361,7 +361,7 @@
       "relevance": 0
     }
   ],
-  "fetched_at": "2026-04-09T19:00:03.552733+00:00",
+  "fetched_at": "2026-04-10T01:00:03.490487+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
