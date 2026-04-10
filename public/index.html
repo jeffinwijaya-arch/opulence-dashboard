@@ -15983,9 +15983,18 @@ function renderJamFeed(type) {
                 const buyerName = grp.buyer || 'Unknown buyer';
                 const watchCount = grp.items.length;
                 const pkgLabel = grp.label || (isLogistics ? 'Package ' + _logisticsPkgSeq : 'Package ' + _logisticsPkgSeq);
-                const pkgLabelBtn = grp.hasLabel && grp.labelFile
-                    ? '<button onclick="event.stopPropagation();window.open(\'/api/jam/label/' + grp.labelFile + '\',\'_blank\')" style="cursor:pointer;padding:8px 14px;border:none;border-radius:8px;background:var(--green);color:#000;font-weight:700;font-size:0.78rem;min-height:36px;">VIEW LABEL</button>'
-                    : '';
+                let pkgLabelBtn = '';
+                if (grp.hasLabel && grp.labelFile) {
+                    pkgLabelBtn = '<div style="display:flex;gap:6px;align-items:center;">'
+                        + '<button onclick="event.stopPropagation();window.open(\'/api/jam/label/' + grp.labelFile + '\',\'_blank\')" style="cursor:pointer;padding:8px 14px;border:none;border-radius:8px;background:var(--green);color:#000;font-weight:700;font-size:0.78rem;min-height:36px;">VIEW LABEL</button>'
+                        + '<button onclick="event.stopPropagation();jamPrintLabel(\'' + grp.labelFile + '\')" style="cursor:pointer;padding:8px 10px;border:none;border-radius:8px;background:var(--accent-dim);color:var(--accent);font-weight:700;font-size:0.7rem;">PRINT</button>'
+                        + '<button onclick="event.stopPropagation();jamChangeLabel(' + grp.items[0].id + ')" style="cursor:pointer;padding:8px 10px;border:none;border-radius:8px;background:var(--orange);color:#000;font-weight:700;font-size:0.7rem;">CHANGE</button>'
+                        + '</div>';
+                } else if (grpPkgId && !isLogistics) {
+                    pkgLabelBtn = '<div style="display:flex;gap:6px;align-items:center;">'
+                        + '<button onclick="event.stopPropagation();jamAttachLabelToPackage(' + grpPkgId + ')" style="cursor:pointer;padding:8px 14px;border:none;border-radius:8px;background:var(--accent);color:var(--bg-1);font-weight:700;font-size:0.78rem;min-height:36px;">ATTACH LABEL</button>'
+                        + '</div>';
+                }
                 const grpPkgId = grp.items[0]?.package_id || 0;
                 html += '<div class="pkg-drop-zone" data-pkg-id="' + grpPkgId + '" data-recipient="' + buyerName.replace(/"/g,'&quot;') + '" style="border:2px solid ' + pColor + ';border-radius:12px;padding:4px;margin:8px 0;background:var(--bg-1);transition:background 0.15s,border-color 0.15s;" ondragover="event.preventDefault();this.style.borderColor=\'var(--accent)\';this.style.background=\'var(--accent-dim)\'" ondragleave="this.style.borderColor=\'' + pColor + '\';this.style.background=\'var(--bg-1)\'" ondrop="event.preventDefault();this.style.borderColor=\'' + pColor + '\';this.style.background=\'var(--bg-1)\';handlePkgDrop(event,' + grpPkgId + ')">'
                     + '<div style="padding:8px 14px;border-radius:8px 8px 0 0;background:var(--accent-dim);display:flex;align-items:center;justify-content:space-between;">'
@@ -16945,6 +16954,55 @@ function jamDoAttachLabel(watchId) {
             const r = await fetch('/api/jam/upload-label', { method: 'POST', body: fd });
             const data = await r.json();
             if (data.ok) {
+                loadJamFeed(_jamState.tab);
+            } else {
+                alert('Upload failed: ' + (data.error || 'unknown'));
+            }
+        } catch(e) { alert('Upload error: ' + e.message); }
+    };
+    input.click();
+}
+
+function jamAttachLabelToPackage(packageId) {
+    const now = new Date();
+    const today = _localDate(0);
+    const tomorrow = _localDate(1);
+    const defaultDate = now.getHours() >= 18 ? tomorrow : today;
+
+    const modal = document.createElement('div');
+    modal.id = 'jam-label-modal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:16px;';
+    modal.innerHTML = `
+        <div style="background:var(--bg-1);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:360px;width:100%;">
+            <div style="font-size:0.9rem;font-weight:700;color:var(--text-0);margin-bottom:16px;">Attach Label to Package #${packageId}</div>
+            <div style="margin-bottom:12px;">
+                <label style="font-size:0.75rem;color:var(--text-2);">Ship by date:</label>
+                <input type="date" id="jam-pkg-label-date" value="${defaultDate}" min="${today}" style="width:100%;padding:10px;margin-top:4px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.85rem;">
+            </div>
+            <button onclick="jamDoAttachLabelToPackage(${packageId})" style="width:100%;padding:12px;background:var(--accent);color:#000;border:none;border-radius:var(--radius);font-weight:600;cursor:pointer;">Select PDF</button>
+            <button onclick="document.getElementById('jam-label-modal').remove()" style="margin-top:8px;width:100%;padding:8px;background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--text-2);cursor:pointer;">Cancel</button>
+        </div>`;
+    document.body.appendChild(modal);
+}
+
+function jamDoAttachLabelToPackage(packageId) {
+    const shipDate = document.getElementById('jam-pkg-label-date')?.value || '';
+    document.getElementById('jam-label-modal')?.remove();
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,application/pdf';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append('pdfs', file);
+        if (shipDate) fd.append('ship_by_date', shipDate);
+        try {
+            const r = await fetch('/api/shipping/packages/' + packageId + '/attach-label', { method: 'POST', body: fd });
+            const data = await r.json();
+            if (data.ok) {
+                if (typeof showToast === 'function') showToast('Label attached to package');
                 loadJamFeed(_jamState.tab);
             } else {
                 alert('Upload failed: ' + (data.error || 'unknown'));
