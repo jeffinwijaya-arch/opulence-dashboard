@@ -4162,6 +4162,7 @@ function renderDashboard() {
         <div class="metric"><div class="label">References</div><div class="val counter-val" data-target="${refsNum}" data-format="num">${refsNum}</div><div class="sub">${Object.entries(s.regions||{}).map(([k,v])=>k+':'+v).join(' · ')||'—'}</div><div class="sparkline-wrap"><canvas class="metric-spark" data-key="refs"></canvas></div></div>
         <div class="metric"><div class="label">Deals</div><div class="val counter-val" style="color:var(--green)" data-target="${nDeals}" data-format="num">${nDeals}</div><div class="sub">below market</div><div class="sparkline-wrap"><canvas class="metric-spark" data-key="deals"></canvas></div></div>
         <div class="metric"><div class="label">Arb Potential</div><div class="val counter-val" style="color:var(--accent)" data-target="${totalProfit}" data-format="dollar">${fmt(totalProfit)}</div><div class="sub">${nArb} opportunities</div><div class="sparkline-wrap"><canvas class="metric-spark" data-key="arb"></canvas></div></div>
+        <div class="metric" id="dash-pnl-metric" style="display:none;"><div class="label">Realized P&L</div><div class="val" id="dash-pnl-val">--</div><div class="sub" id="dash-pnl-sub"></div></div>
     `;
     // Market heat gauge
     const heatScore = Math.min(100, Math.round(
@@ -4221,7 +4222,20 @@ function renderDashboard() {
         if (stale) fxEl.style.color = 'var(--red)';
     }
 
-    if (DATA.portfolio) renderPortfolioSnapshot();
+    if (DATA.portfolio) {
+        renderPortfolioSnapshot();
+        // Show realized P&L in top metrics
+        const pnlMetric = document.getElementById('dash-pnl-metric');
+        const pnlVal = document.getElementById('dash-pnl-val');
+        const pnlSub = document.getElementById('dash-pnl-sub');
+        if (pnlMetric && DATA.portfolio.total_pnl != null) {
+            const pnl = DATA.portfolio.total_pnl;
+            const cls = pnl >= 0 ? 'green' : 'red';
+            pnlVal.innerHTML = `<span class="${cls}">${pnl>=0?'+':''}${fmt(pnl)}</span>`;
+            pnlSub.textContent = `${DATA.portfolio.roi_pct||0}% ROI · ${DATA.portfolio.total_pieces||0} positions`;
+            pnlMetric.style.display = '';
+        }
+    }
     loadDashInventory();
     loadActionItems();
     loadReadyToPost();
