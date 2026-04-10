@@ -17549,3 +17549,52 @@ if (_userRole.allowedPages) {
 
 </body>
 </html>
+<!-- Column Visibility Preferences (injected) -->
+<script>
+// ── Persistent column preferences ──
+(function(){
+    const STORAGE_KEY = 'mk-inv-columns';
+    const DEFAULT_COLS = {description:true,bought_from:true,sold_to:true,cost_price:true,sold_price:true,pnl:true,arrived:true,posted:true,sold:true,shipped:true,paid:true,actions:true};
+    
+    function getColPrefs() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {...DEFAULT_COLS}; }
+        catch(e) { return {...DEFAULT_COLS}; }
+    }
+    
+    function saveColPrefs(prefs) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+    }
+    
+    // Apply column visibility to inventory table
+    function applyColumnVisibility() {
+        const prefs = getColPrefs();
+        const table = document.getElementById('im-table-wrap');
+        if (!table) return;
+        
+        const colMap = {
+            1: 'description', 2: 'bought_from', 3: 'sold_to',
+            4: 'cost_price', 5: 'sold_price', 6: 'pnl',
+            7: 'arrived', 8: 'posted', 9: 'sold', 10: 'shipped', 11: 'paid'
+        };
+        
+        table.querySelectorAll('tr').forEach(row => {
+            row.querySelectorAll('th, td').forEach((cell, idx) => {
+                const colName = colMap[idx];
+                if (colName && prefs[colName] === false) {
+                    cell.style.display = 'none';
+                }
+            });
+        });
+    }
+    
+    // Expose globally
+    window._applyColumnVisibility = applyColumnVisibility;
+    window._getColPrefs = getColPrefs;
+    window._saveColPrefs = saveColPrefs;
+    
+    // Apply on table render
+    const observer = new MutationObserver(applyColumnVisibility);
+    const target = document.getElementById('im-table-wrap');
+    if (target) observer.observe(target, {childList: true, subtree: true});
+})();
+</script>
