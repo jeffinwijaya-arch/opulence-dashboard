@@ -23,7 +23,7 @@
 ## Priority: HIGH
 
 ### WS2: Inventory P&L (ws2-inventory-pnl.js)
-- [ ] Portfolio heat map — inject colored squares into portfolio page: green (>5% profit), yellow (0-5%), red (loss), size = capital deployed
+- [x] Portfolio heat map — inject colored squares into portfolio page: green (>5% profit), yellow (0-5%), red (loss), size = capital deployed (2026-04-10)
 - [ ] Days-in-inventory aging bar — show color-coded bar on each inventory row: green <14d, yellow 14-30d, red >30d
 - [ ] Unrealized P&L trend — weekly sparkline showing portfolio value over time (store snapshots in localStorage)
 
@@ -69,6 +69,7 @@
 ## COMPLETED
 - **2026-04-10** WS1 Price Intelligence (ws1-price-intel.js): deal scoring (0-100, 4 components), price confidence indicator (HIGH/MEDIUM/LOW), price trend arrows (localStorage 30-day b25 tracking)
 - **2026-04-10** WS3 Deal Flow (ws3-deal-flow.js): enhanced arbitrage calculator (true net = sell − buy − shipping $150 − insurance 1.5% − wire $40 − label $35, injected "True Net" column + cost banner), snipe alert badge (pulsing gold border + ★ SNIPE tag for deals >10% below B25)
+- **2026-04-10** WS2 Inventory P&L (ws2-inventory-pnl.js): portfolio heat map (colored tiles on Summary tab, green >5%, yellow 0-5%, red <0%, size proportional to capital deployed)
 
 ## RULES FOR AGENTS
 1. Pick ONE task from the highest unchecked priority level
