@@ -30,6 +30,16 @@
     let _swipeState = null;
     let _keyboardOpen = false;
     let _boundHandlers = {};
+    let _kbShortcutsActive = false;
+    let _kbCheatEl = null;
+    let _offlineBannerEl = null;
+    let _originalFetch = null;
+
+    // ── Offline Cache Constants ──
+
+    const OFFLINE_LOOKUP_KEY = 'mk_offline_lookups';
+    const OFFLINE_DEALS_KEY = 'mk_offline_deals';
+    const OFFLINE_MAX_LOOKUPS = 50;
 
     // ── Helpers ──
 
@@ -165,6 +175,100 @@
             }
             .mk-slide-out-right {
                 animation: mkSlideOutRight 0.3s ease forwards;
+            }
+
+            /* Offline banner */
+            #mk-offline-banner {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 99999;
+                background: rgba(30,30,30,0.92);
+                color: var(--text-2, #aaa);
+                font-size: 0.72rem;
+                text-align: center;
+                padding: 6px 16px;
+                backdrop-filter: blur(8px);
+                -webkit-backdrop-filter: blur(8px);
+                border-bottom: 1px solid var(--border, #333);
+                animation: mkBannerSlideIn 0.3s ease;
+            }
+            @keyframes mkBannerSlideIn {
+                from { transform: translateY(-100%); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+
+            /* Keyboard shortcuts help icon */
+            #mk-kb-help {
+                display: none;
+                position: fixed;
+                bottom: 16px;
+                left: 16px;
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                background: var(--bg-2, #222);
+                color: var(--text-3, #666);
+                border: 1px solid var(--border, #333);
+                font-size: 0.75rem;
+                font-weight: 700;
+                cursor: pointer;
+                z-index: 9990;
+                align-items: center;
+                justify-content: center;
+                transition: color 0.15s, border-color 0.15s;
+            }
+            #mk-kb-help:hover {
+                color: var(--accent, #C9A84C);
+                border-color: var(--accent, #C9A84C);
+            }
+            @media (min-width: 769px) {
+                #mk-kb-help {
+                    display: flex;
+                }
+            }
+
+            /* Keyboard cheat sheet */
+            #mk-kb-cheatsheet {
+                position: fixed;
+                bottom: 52px;
+                left: 16px;
+                background: var(--bg-1, #1a1a1a);
+                border: 1px solid var(--border, #333);
+                border-radius: 10px;
+                padding: 12px 16px;
+                z-index: 99999;
+                font-size: 0.72rem;
+                color: var(--text-1, #ccc);
+                box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+                min-width: 200px;
+                animation: mkCheatIn 0.15s ease;
+            }
+            @keyframes mkCheatIn {
+                from { opacity: 0; transform: translateY(8px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .mk-kb-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 3px 0;
+                gap: 12px;
+            }
+            .mk-kb-row kbd {
+                background: var(--bg-3, #2a2a2a);
+                border: 1px solid var(--border, #444);
+                border-radius: 4px;
+                padding: 1px 6px;
+                font-family: var(--mono, monospace);
+                font-size: 0.68rem;
+                color: var(--text-0, #eee);
+                white-space: nowrap;
+            }
+            .mk-kb-row span {
+                color: var(--text-2, #999);
+                font-size: 0.68rem;
             }
 
             /* Deal card swipe wrapper */
@@ -526,6 +630,330 @@
         }
     }
 
+    // ── Offline Cache ──
+
+    function getOfflineLookups() {
+        try { return JSON.parse(localStorage.getItem(OFFLINE_LOOKUP_KEY) || '[]'); }
+        catch(e) { return []; }
+    }
+
+    function saveOfflineLookup(ref, data) {
+        var lookups = getOfflineLookups();
+        // Remove existing entry for same ref
+        lookups = lookups.filter(function(l) { return l.ref !== ref; });
+        lookups.unshift({ ref: ref, data: data, timestamp: Date.now() });
+        // Cap at max
+        if (lookups.length > OFFLINE_MAX_LOOKUPS) {
+            lookups = lookups.slice(0, OFFLINE_MAX_LOOKUPS);
+        }
+        try { localStorage.setItem(OFFLINE_LOOKUP_KEY, JSON.stringify(lookups)); }
+        catch(e) { /* storage full — evict half */
+            lookups = lookups.slice(0, Math.floor(OFFLINE_MAX_LOOKUPS / 2));
+            try { localStorage.setItem(OFFLINE_LOOKUP_KEY, JSON.stringify(lookups)); } catch(e2) {}
+        }
+    }
+
+    function findOfflineLookup(ref) {
+        var lookups = getOfflineLookups();
+        return lookups.find(function(l) { return l.ref === ref; }) || null;
+    }
+
+    function getOfflineDeals() {
+        try { return JSON.parse(localStorage.getItem(OFFLINE_DEALS_KEY) || 'null'); }
+        catch(e) { return null; }
+    }
+
+    function saveOfflineDeals(data) {
+        try {
+            localStorage.setItem(OFFLINE_DEALS_KEY, JSON.stringify({
+                deals: data,
+                timestamp: Date.now()
+            }));
+        } catch(e) { /* storage full */ }
+    }
+
+    function formatTimeAgo(ts) {
+        var diff = Date.now() - ts;
+        var mins = Math.floor(diff / 60000);
+        if (mins < 1) return 'just now';
+        if (mins < 60) return mins + 'm ago';
+        var hrs = Math.floor(mins / 60);
+        if (hrs < 24) return hrs + 'h ago';
+        return Math.floor(hrs / 24) + 'd ago';
+    }
+
+    function showOfflineBanner(timestamp) {
+        removeOfflineBanner();
+        _offlineBannerEl = document.createElement('div');
+        _offlineBannerEl.id = 'mk-offline-banner';
+        _offlineBannerEl.textContent = 'Offline -- using cached data from ' + formatTimeAgo(timestamp);
+        document.body.appendChild(_offlineBannerEl);
+        // Auto-dismiss after 8 seconds
+        setTimeout(function() { removeOfflineBanner(); }, 8000);
+    }
+
+    function removeOfflineBanner() {
+        if (_offlineBannerEl && _offlineBannerEl.parentNode) {
+            _offlineBannerEl.parentNode.removeChild(_offlineBannerEl);
+        }
+        _offlineBannerEl = null;
+    }
+
+    function setupOfflineCache() {
+        if (_originalFetch) return; // already wrapped
+        _originalFetch = window.fetch;
+
+        window.fetch = function(url, opts) {
+            var urlStr = typeof url === 'string' ? url : (url && url.url ? url.url : String(url));
+
+            // Intercept /api/smart_search calls (lookup)
+            if (urlStr.indexOf('/api/smart_search') !== -1) {
+                var qMatch = urlStr.match(/[?&]q=([^&]+)/);
+                var queryRef = qMatch ? decodeURIComponent(qMatch[1]).trim().toLowerCase() : '';
+
+                return _originalFetch.call(window, url, opts).then(function(response) {
+                    // Clone response so we can read it and still return it
+                    var cloned = response.clone();
+                    if (response.ok && queryRef) {
+                        cloned.json().then(function(data) {
+                            saveOfflineLookup(queryRef, data);
+                        }).catch(function() {});
+                    }
+                    removeOfflineBanner();
+                    return response;
+                }).catch(function(err) {
+                    // Network failed — try cache
+                    if (queryRef) {
+                        var cached = findOfflineLookup(queryRef);
+                        if (cached) {
+                            showOfflineBanner(cached.timestamp);
+                            return new Response(JSON.stringify(cached.data), {
+                                status: 200,
+                                headers: { 'Content-Type': 'application/json' }
+                            });
+                        }
+                    }
+                    throw err;
+                });
+            }
+
+            // Intercept /api/deals calls
+            if (urlStr.indexOf('/api/deals') !== -1 && urlStr.indexOf('/api/deals/') === -1) {
+                return _originalFetch.call(window, url, opts).then(function(response) {
+                    var cloned = response.clone();
+                    if (response.ok) {
+                        cloned.json().then(function(data) {
+                            saveOfflineDeals(data);
+                        }).catch(function() {});
+                    }
+                    removeOfflineBanner();
+                    return response;
+                }).catch(function(err) {
+                    var cached = getOfflineDeals();
+                    if (cached) {
+                        showOfflineBanner(cached.timestamp);
+                        return new Response(JSON.stringify(cached.deals), {
+                            status: 200,
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                    }
+                    throw err;
+                });
+            }
+
+            // All other requests pass through
+            return _originalFetch.call(window, url, opts);
+        };
+    }
+
+    // ── Keyboard Shortcuts (desktop only) ──
+
+    function isDesktop() {
+        return window.innerWidth > MOBILE_BP;
+    }
+
+    function isTyping() {
+        var el = document.activeElement;
+        if (!el) return false;
+        var tag = el.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+        if (el.isContentEditable) return true;
+        return false;
+    }
+
+    function findSearchInput() {
+        var page = getActivePage();
+        var map = {
+            'lookup': 'ref-search',
+            'deals': 'deals-search',
+            'inventory': 'im-search',
+            'browse': 'browse-search',
+            'postings': 'postings-search',
+            'invoices': 'inv-search',
+            'shipping': 'ship-contact-search',
+            'photos': 'library-search'
+        };
+        var id = map[page];
+        if (id) {
+            var el = document.getElementById(id);
+            if (el) return el;
+        }
+        // Fallback: find first visible input on the active page
+        var pageEl = document.querySelector('.page.active');
+        if (pageEl) {
+            var inputs = pageEl.querySelectorAll('input[type="text"], input:not([type])');
+            for (var i = 0; i < inputs.length; i++) {
+                if (inputs[i].offsetParent !== null) return inputs[i];
+            }
+        }
+        return null;
+    }
+
+    function onKeyboardShortcut(e) {
+        if (!isDesktop()) return;
+        if (isTyping()) {
+            // Only handle Escape when typing
+            if (e.key === 'Escape') {
+                document.activeElement.blur();
+            }
+            return;
+        }
+
+        // Cmd+K / Ctrl+K — focus search
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            var si = findSearchInput();
+            if (si) { si.focus(); si.select(); }
+            return;
+        }
+
+        // Don't handle shortcuts with modifier keys (except Cmd+K above)
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+        switch (e.key) {
+            case '/':
+                e.preventDefault();
+                var si2 = findSearchInput();
+                if (si2) { si2.focus(); si2.select(); }
+                break;
+            case 'n':
+                if (getActivePage() === 'inventory' && typeof showAddWatchModal === 'function') {
+                    e.preventDefault();
+                    showAddWatchModal();
+                }
+                break;
+            case 'd':
+                e.preventDefault();
+                if (typeof showPage === 'function') showPage('deals');
+                break;
+            case 'p':
+                e.preventDefault();
+                if (typeof showPage === 'function') showPage('lookup');
+                break;
+            case 'i':
+                e.preventDefault();
+                if (typeof showPage === 'function') showPage('inventory');
+                break;
+            case 'Escape':
+                // Close any open modal
+                closeAnyModal();
+                break;
+            case '?':
+                toggleCheatSheet();
+                break;
+        }
+    }
+
+    function closeAnyModal() {
+        // Close modals by looking for common patterns
+        var modals = document.querySelectorAll('.modal-overlay, .modal-backdrop, [id$="-modal"]');
+        modals.forEach(function(m) {
+            if (m.style.display !== 'none' && m.offsetParent !== null) {
+                // Try clicking close button first
+                var closeBtn = m.querySelector('.modal-close, [onclick*="close"], .btn-close');
+                if (closeBtn) {
+                    closeBtn.click();
+                } else {
+                    m.style.display = 'none';
+                }
+            }
+        });
+        // Also try known close functions
+        if (typeof closeWatchDetail === 'function') {
+            try { closeWatchDetail(); } catch(e) {}
+        }
+        if (typeof closeUnifiedSearch === 'function') {
+            try { closeUnifiedSearch(); } catch(e) {}
+        }
+    }
+
+    function createCheatSheetIcon() {
+        if (!isDesktop()) return;
+        if (document.getElementById('mk-kb-help')) return;
+
+        var btn = document.createElement('button');
+        btn.id = 'mk-kb-help';
+        btn.textContent = '?';
+        btn.setAttribute('aria-label', 'Keyboard shortcuts');
+        btn.addEventListener('mouseenter', function() { showCheatSheet(); });
+        btn.addEventListener('mouseleave', function() { hideCheatSheet(); });
+        btn.addEventListener('click', function() { toggleCheatSheet(); });
+        document.body.appendChild(btn);
+    }
+
+    function removeCheatSheetIcon() {
+        var btn = document.getElementById('mk-kb-help');
+        if (btn && btn.parentNode) btn.parentNode.removeChild(btn);
+    }
+
+    function showCheatSheet() {
+        if (_kbCheatEl) return;
+        _kbCheatEl = document.createElement('div');
+        _kbCheatEl.id = 'mk-kb-cheatsheet';
+        _kbCheatEl.innerHTML = [
+            '<div style="font-weight:700;margin-bottom:8px;color:var(--accent,#C9A84C);font-size:0.8rem;">Keyboard Shortcuts</div>',
+            '<div class="mk-kb-row"><kbd>/</kbd> or <kbd>Cmd+K</kbd><span>Focus search</span></div>',
+            '<div class="mk-kb-row"><kbd>d</kbd><span>Deals</span></div>',
+            '<div class="mk-kb-row"><kbd>p</kbd><span>Prices / Lookup</span></div>',
+            '<div class="mk-kb-row"><kbd>i</kbd><span>Inventory</span></div>',
+            '<div class="mk-kb-row"><kbd>n</kbd><span>Add watch (on Inventory)</span></div>',
+            '<div class="mk-kb-row"><kbd>Esc</kbd><span>Close modal</span></div>',
+            '<div class="mk-kb-row"><kbd>?</kbd><span>Toggle this sheet</span></div>'
+        ].join('');
+        document.body.appendChild(_kbCheatEl);
+    }
+
+    function hideCheatSheet() {
+        if (_kbCheatEl && _kbCheatEl.parentNode) {
+            _kbCheatEl.parentNode.removeChild(_kbCheatEl);
+        }
+        _kbCheatEl = null;
+    }
+
+    function toggleCheatSheet() {
+        if (_kbCheatEl) { hideCheatSheet(); }
+        else { showCheatSheet(); }
+    }
+
+    function setupKeyboardShortcuts() {
+        if (_kbShortcutsActive) return;
+        if (!isDesktop()) return;
+
+        _boundHandlers.keyboardShortcut = onKeyboardShortcut;
+        document.addEventListener('keydown', _boundHandlers.keyboardShortcut);
+        _kbShortcutsActive = true;
+        createCheatSheetIcon();
+    }
+
+    function teardownKeyboardShortcuts() {
+        if (_boundHandlers.keyboardShortcut) {
+            document.removeEventListener('keydown', _boundHandlers.keyboardShortcut);
+        }
+        _kbShortcutsActive = false;
+        hideCheatSheet();
+        removeCheatSheetIcon();
+    }
+
     // ── Init / Render / Cleanup ──
 
     function init() {
@@ -536,6 +964,21 @@
         createFAB();
         setupKeyboardDetection();
         setupPageChangeListener();
+        setupOfflineCache();
+
+        // Desktop keyboard shortcuts
+        if (isDesktop()) {
+            setupKeyboardShortcuts();
+        }
+        // Re-evaluate on resize
+        _boundHandlers.resizeKb = function() {
+            if (isDesktop() && !_kbShortcutsActive) {
+                setupKeyboardShortcuts();
+            } else if (!isDesktop() && _kbShortcutsActive) {
+                teardownKeyboardShortcuts();
+            }
+        };
+        window.addEventListener('resize', _boundHandlers.resizeKb);
 
         // Initial FAB state
         updateFAB();
@@ -566,6 +1009,16 @@
         }
         if (window.visualViewport && _boundHandlers.viewportResize) {
             window.visualViewport.removeEventListener('resize', _boundHandlers.viewportResize);
+        }
+        if (_boundHandlers.resizeKb) {
+            window.removeEventListener('resize', _boundHandlers.resizeKb);
+        }
+        teardownKeyboardShortcuts();
+        removeOfflineBanner();
+        // Restore original fetch
+        if (_originalFetch) {
+            window.fetch = _originalFetch;
+            _originalFetch = null;
         }
         _boundHandlers = {};
         _swipeState = null;

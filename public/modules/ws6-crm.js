@@ -72,6 +72,211 @@
         };
     }
 
+    // ── Referral Tracking (localStorage-based) ───────────────────────
+    const REFERRAL_KEY = 'mk_referrals';
+
+    function loadReferrals() {
+        try {
+            var raw = localStorage.getItem(REFERRAL_KEY);
+            return raw ? JSON.parse(raw) : {};
+        } catch (e) { return {}; }
+    }
+
+    function saveReferrals(map) {
+        try { localStorage.setItem(REFERRAL_KEY, JSON.stringify(map)); } catch (e) {}
+    }
+
+    function setReferral(buyerName, referrerName) {
+        if (!buyerName) return;
+        var map = loadReferrals();
+        if (referrerName && referrerName.trim()) {
+            map[buyerName.toLowerCase().trim()] = referrerName.trim();
+        } else {
+            delete map[buyerName.toLowerCase().trim()];
+        }
+        saveReferrals(map);
+    }
+
+    function getReferral(buyerName) {
+        if (!buyerName) return '';
+        var map = loadReferrals();
+        return map[buyerName.toLowerCase().trim()] || '';
+    }
+
+    function getReferralChain(buyerName) {
+        var chain = [];
+        var seen = {};
+        var current = buyerName;
+        var map = loadReferrals();
+        while (current) {
+            var key = current.toLowerCase().trim();
+            if (seen[key]) break; // avoid cycles
+            seen[key] = true;
+            var referrer = map[key];
+            if (referrer) {
+                chain.push(referrer);
+                current = referrer;
+            } else {
+                break;
+            }
+        }
+        return chain;
+    }
+
+    /** Build "Top Referrers" data from referral map + inventory */
+    function computeTopReferrers(inventory) {
+        var map = loadReferrals();
+        var referrerStats = {}; // referrer_name -> { count, totalValue, buyers[] }
+
+        Object.entries(map).forEach(function(entry) {
+            var buyerKey = entry[0];
+            var referrer = entry[1];
+            var refKey = referrer.toLowerCase().trim();
+
+            if (!referrerStats[refKey]) {
+                referrerStats[refKey] = { name: referrer, count: 0, totalValue: 0, buyers: [] };
+            }
+            referrerStats[refKey].count += 1;
+            referrerStats[refKey].buyers.push(buyerKey);
+
+            // Sum the referred buyer's purchases
+            if (inventory && inventory.length) {
+                inventory.forEach(function(w) {
+                    if (w.sold_to && w.sold_to.toLowerCase().trim() === buyerKey) {
+                        var price = parseFloat(String(w.sold_price || w.sale_price || 0).replace(/[$,]/g, ''));
+                        if (!isNaN(price)) referrerStats[refKey].totalValue += price;
+                    }
+                });
+            }
+        });
+
+        return Object.values(referrerStats).sort(function(a, b) { return b.count - a.count; });
+    }
+
+    // ── Render referral input on watch detail ──────────────────────
+    function renderReferralInput(buyerName) {
+        var existing = document.getElementById('ws6-referral-input');
+        if (existing) existing.remove();
+        if (!buyerName) return;
+
+        var overlay = document.getElementById('watch-detail-overlay');
+        if (!overlay) return;
+
+        var currentReferrer = getReferral(buyerName);
+        var chain = getReferralChain(buyerName);
+
+        var chainHtml = '';
+        if (chain.length > 0) {
+            chainHtml = '<div style="margin-top:4px;font-size:0.65rem;color:var(--text-2);">'
+                + 'Chain: ' + buyerName + ' <span style="color:var(--text-3);">&larr;</span> '
+                + chain.map(function(r) { return '<span style="color:var(--accent);">' + r + '</span>'; }).join(' <span style="color:var(--text-3);">&larr;</span> ')
+                + '</div>';
+        }
+
+        // Get all known buyers for the datalist
+        var allBuyers = [];
+        if (_inventoryCache && _inventoryCache.length) {
+            var seen = {};
+            _inventoryCache.forEach(function(w) {
+                if (w.sold_to && !seen[w.sold_to.toLowerCase()]) {
+                    seen[w.sold_to.toLowerCase()] = true;
+                    allBuyers.push(w.sold_to);
+                }
+            });
+            allBuyers.sort();
+        }
+
+        var datalistOpts = allBuyers.map(function(b) {
+            return '<option value="' + b.replace(/"/g, '&quot;') + '">';
+        }).join('');
+
+        var wrapper = document.createElement('div');
+        wrapper.id = 'ws6-referral-input';
+        wrapper.style.cssText = 'margin-top:8px;padding:8px 12px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);';
+        wrapper.innerHTML = '<div style="display:flex;align-items:center;gap:8px;">'
+            + '<span style="font-size:0.72rem;color:var(--text-2);white-space:nowrap;">Referred by:</span>'
+            + '<input list="ws6-referrer-list" id="ws6-referrer-value" class="input" value="' + (currentReferrer || '').replace(/"/g, '&quot;') + '" placeholder="Enter referrer name..." style="flex:1;font-size:0.75rem;padding:4px 8px;height:28px;">'
+            + '<datalist id="ws6-referrer-list">' + datalistOpts + '</datalist>'
+            + '<button class="btn" id="ws6-save-referral" style="font-size:0.68rem;padding:4px 10px;height:28px;">Save</button>'
+            + '</div>'
+            + chainHtml;
+
+        // Insert after the buyer history panel or after the invoice section
+        var historyPanel = document.getElementById(HISTORY_PANEL_ID);
+        var invoiceSection = document.getElementById('wd-invoice-section');
+        var insertTarget = historyPanel || invoiceSection;
+        if (insertTarget) {
+            insertTarget.parentElement.insertBefore(wrapper, insertTarget.nextSibling);
+        } else {
+            // Fallback: insert before buttons
+            var content = overlay.querySelector('div > div');
+            if (content) {
+                var buttons = content.querySelector('div:last-child');
+                if (buttons) content.insertBefore(wrapper, buttons);
+            }
+        }
+
+        // Attach save handler
+        var saveBtn = document.getElementById('ws6-save-referral');
+        var input = document.getElementById('ws6-referrer-value');
+        if (saveBtn && input) {
+            saveBtn.onclick = function() {
+                setReferral(buyerName, input.value);
+                if (typeof showToast === 'function') {
+                    showToast(input.value ? 'Referral saved: ' + buyerName + ' <- ' + input.value : 'Referral cleared', 'ok');
+                }
+                // Re-render to update chain
+                renderReferralInput(buyerName);
+            };
+            input.onkeydown = function(e) {
+                if (e.key === 'Enter') saveBtn.click();
+            };
+        }
+    }
+
+    // ── Top Referrers Card (injected on CRM page) ──────────────────
+    function renderTopReferrersCard(inventory) {
+        var old = document.getElementById('ws6-top-referrers');
+        if (old) old.remove();
+
+        var topReferrers = computeTopReferrers(inventory);
+        if (!topReferrers.length) return;
+
+        var crmPage = document.getElementById('page-ad-crm');
+        if (!crmPage) return;
+
+        var rows = topReferrers.slice(0, 10).map(function(r, idx) {
+            return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">'
+                + '<span style="font-size:0.72rem;font-weight:700;color:var(--text-2);min-width:20px;">' + (idx + 1) + '</span>'
+                + '<div style="flex:1;min-width:0;">'
+                + '<div style="font-size:0.78rem;font-weight:600;color:var(--text-0);">' + r.name + '</div>'
+                + '<div style="font-size:0.65rem;color:var(--text-2);">' + r.count + ' referral' + (r.count !== 1 ? 's' : '') + ' -- ' + r.buyers.map(function(b) { return b; }).join(', ') + '</div>'
+                + '</div>'
+                + '<span style="font-family:var(--mono);font-size:0.78rem;font-weight:700;color:var(--green);">' + fmt(r.totalValue) + '</span>'
+                + '</div>';
+        }).join('');
+
+        var totalReferred = topReferrers.reduce(function(s, r) { return s + r.count; }, 0);
+        var totalValue = topReferrers.reduce(function(s, r) { return s + r.totalValue; }, 0);
+
+        var card = document.createElement('div');
+        card.id = 'ws6-top-referrers';
+        card.className = 'card';
+        card.style.marginTop = '12px';
+        card.innerHTML = '<div class="card-head"><span>Top Referrers</span>'
+            + '<span style="font-size:0.6rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px;">'
+            + totalReferred + ' referrals -- ' + fmt(totalValue) + ' total value</span></div>'
+            + '<div style="padding:8px 14px;">' + rows + '</div>';
+
+        // Insert at the top of the CRM page content area (after page header)
+        var pageHead = crmPage.querySelector('.page-head');
+        if (pageHead) {
+            pageHead.parentElement.insertBefore(card, pageHead.nextSibling);
+        } else {
+            crmPage.insertBefore(card, crmPage.firstChild);
+        }
+    }
+
     // ── Render buyer history panel ──────────────────────────────────
     const HISTORY_PANEL_ID = 'ws6-buyer-history';
 
@@ -176,6 +381,8 @@
                 if (history) {
                     renderBuyerHistoryPanel(history);
                 }
+                // Render referral input below buyer history
+                renderReferralInput(item.sold_to);
             }
         };
         window.showWatchDetail._ws6Hooked = true;
@@ -375,12 +582,19 @@
         setTimeout(() => injectSellerBadges(), 500);
     }
 
-    function render() {
+    async function render() {
         // Recompute seller scores (data may have changed)
         _sellerScores = computeSellerScores();
 
         // Re-inject badges
         setTimeout(() => injectSellerBadges(), 200);
+
+        // Render Top Referrers card on CRM page
+        var crmPage = document.getElementById('page-ad-crm');
+        if (crmPage && crmPage.offsetParent !== null) {
+            var inv = await getInventory();
+            renderTopReferrersCard(inv);
+        }
     }
 
     function cleanup() {
