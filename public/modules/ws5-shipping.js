@@ -111,6 +111,37 @@
         var pageHead = document.querySelector('#page-shipping .page-head');
         if (!pageHead || document.getElementById(BATCH_BTN_ID)) return;
 
+        // Select All toggle button
+        var selAllBtn = document.createElement('button');
+        selAllBtn.id = 'ws5-select-all-btn';
+        selAllBtn.className = 'btn';
+        selAllBtn.style.cssText = 'background:var(--bg-3);color:var(--text-1);font-weight:500;white-space:nowrap;margin-left:8px;font-size:0.72rem;';
+        selAllBtn.textContent = 'Select All';
+        selAllBtn.onclick = function() {
+            var rows = getUnshippedOutboundRows();
+            if (rows.length === 0) {
+                if (typeof showToast === 'function') showToast('No unshipped packages to select', 'info');
+                return;
+            }
+            var allSelected = rows.length > 0 && _batchSelected.size >= rows.length;
+            if (allSelected) {
+                _batchSelected.clear();
+                selAllBtn.textContent = 'Select All';
+            } else {
+                rows.forEach(function(tr) {
+                    var trackingCell = tr.cells[1];
+                    var trackingLink = trackingCell ? trackingCell.querySelector('a') : null;
+                    var trackingNum = trackingLink ? trackingLink.textContent.trim() : '';
+                    if (!trackingNum && trackingCell) trackingNum = trackingCell.textContent.trim();
+                    var rowKey = trackingNum || ('row-' + Array.prototype.indexOf.call(tr.parentElement.children, tr));
+                    _batchSelected.add(rowKey);
+                });
+                selAllBtn.textContent = 'Deselect All';
+            }
+            injectCheckboxes();
+            updateBatchButton();
+        };
+
         var btn = document.createElement('button');
         btn.id = BATCH_BTN_ID;
         btn.className = 'btn';
@@ -120,7 +151,8 @@
         // Insert next to the Add Tracking button
         var addBtn = pageHead.querySelector('button');
         if (addBtn && addBtn.parentElement) {
-            addBtn.parentElement.insertBefore(btn, addBtn.nextSibling);
+            addBtn.parentElement.insertBefore(selAllBtn, addBtn.nextSibling);
+            addBtn.parentElement.insertBefore(btn, selAllBtn.nextSibling);
         }
     }
 
@@ -268,13 +300,18 @@
     }
 
     function openBatchModal() {
-        if (_batchSelected.size === 0) return;
+        if (_batchSelected.size === 0) {
+            if (typeof showToast === 'function') showToast('No packages selected -- use checkboxes to select', 'info');
+            return;
+        }
 
         var items = getSelectedItems();
         if (items.length === 0) {
             if (typeof showToast === 'function') {
-                showToast('No valid packages selected', 'warn');
+                showToast('Selected packages no longer available (already shipped?)', 'warn');
             }
+            _batchSelected.clear();
+            updateBatchButton();
             return;
         }
 

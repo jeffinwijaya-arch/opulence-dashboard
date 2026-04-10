@@ -15940,9 +15940,10 @@ function renderJamFeed(type) {
                 else _looseCount++;
             }
             const _packageCount = _pkgIds.size + _looseCount;
-            html += `<div style="padding:16px;margin-bottom:12px;background:var(--bg-2);border:2px solid var(--orange);border-radius:var(--radius-lg);text-align:center;">
+            html += `<div style="padding:16px;margin-bottom:12px;background:var(--bg-2);border:2px solid var(--orange);border-radius:var(--radius-lg);text-align:center;position:relative;">
                 <div style="font-size:2.2rem;font-weight:700;color:var(--orange);line-height:1.2;">${_packageCount}</div>
                 <div style="font-size:1rem;font-weight:600;color:var(--text-0);text-transform:uppercase;letter-spacing:1px;">${_t('pending')}</div>
+                ${!isLogistics ? `<button onclick="event.stopPropagation();showNewPackageModal()" style="position:absolute;top:10px;right:10px;cursor:pointer;padding:6px 14px;border-radius:20px;font-size:0.72rem;font-weight:700;border:1px solid var(--accent);background:var(--accent-dim);color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;">+ NEW PACKAGE</button>` : ''}
             </div>`;
             // Group ALL watches into visual packages
             // Priority: package_id > auto-group by buyer+date
@@ -15985,7 +15986,8 @@ function renderJamFeed(type) {
                 const pkgLabelBtn = grp.hasLabel && grp.labelFile
                     ? '<button onclick="event.stopPropagation();window.open(\'/api/jam/label/' + grp.labelFile + '\',\'_blank\')" style="cursor:pointer;padding:8px 14px;border:none;border-radius:8px;background:var(--green);color:#000;font-weight:700;font-size:0.78rem;min-height:36px;">VIEW LABEL</button>'
                     : '';
-                html += '<div style="border:2px solid ' + pColor + ';border-radius:12px;padding:4px;margin:8px 0;background:var(--bg-1);">'
+                const grpPkgId = grp.items[0]?.package_id || 0;
+                html += '<div class="pkg-drop-zone" data-pkg-id="' + grpPkgId + '" data-recipient="' + buyerName.replace(/"/g,'&quot;') + '" style="border:2px solid ' + pColor + ';border-radius:12px;padding:4px;margin:8px 0;background:var(--bg-1);transition:background 0.15s,border-color 0.15s;" ondragover="event.preventDefault();this.style.borderColor=\'var(--accent)\';this.style.background=\'var(--accent-dim)\'" ondragleave="this.style.borderColor=\'' + pColor + '\';this.style.background=\'var(--bg-1)\'" ondrop="event.preventDefault();this.style.borderColor=\'' + pColor + '\';this.style.background=\'var(--bg-1)\';handlePkgDrop(event,' + grpPkgId + ')">'
                     + '<div style="padding:8px 14px;border-radius:8px 8px 0 0;background:var(--accent-dim);display:flex;align-items:center;justify-content:space-between;">'
                     + '<span style="font-size:0.8rem;font-weight:700;color:' + pColor + ';">' + pkgLabel + ' — ' + buyerName.replace(/</g,'&lt;') + ' (' + watchCount + (watchCount === 1 ? ' watch' : ' watches') + ')</span>'
                     + pkgLabelBtn
@@ -16096,7 +16098,15 @@ function _jamCard(type, item) {
     } else if (type === 'keluar') {
         const toName = (item.to || '').split('\n')[0];
         const parts = [];
-        if (item.package_num) parts.push(`<span style="font-weight:700;color:var(--accent);">Pkg #${item.package_num}</span>`);
+        if (item.package_num) {
+            let pkgPart = `<span style="font-weight:700;color:var(--accent);">Pkg #${item.package_num}</span>`;
+            if (!isLogistics && item.status === 'pending') {
+                pkgPart += `<button onclick="event.stopPropagation();showMoveWatchMenu(${item.id},${item.package_id||'null'},'${(item.to||'').split('\\n')[0].replace(/'/g,"\\'")}')" style="cursor:pointer;margin-left:4px;padding:2px 8px;border-radius:10px;font-size:0.6rem;font-weight:700;border:1px solid var(--border);background:var(--bg-2);color:var(--text-1);vertical-align:middle;">MOVE</button>`;
+            }
+            parts.push(pkgPart);
+        } else if (!isLogistics && item.status === 'pending') {
+            parts.push(`<button onclick="event.stopPropagation();showMoveWatchMenu(${item.id},null,'${(item.to||'').split('\\n')[0].replace(/'/g,"\\'")}')" style="cursor:pointer;padding:2px 8px;border-radius:10px;font-size:0.6rem;font-weight:700;border:1px solid var(--accent);background:var(--accent-dim);color:var(--accent);vertical-align:middle;">ADD TO PKG</button>`);
+        }
         if (toName) parts.push(`<span>To:</span> ${toName}`);
         if (item.sold_price && !isLogistics) parts.push(`<span>Price:</span> ${_jamFmt(item.sold_price)}`);
         detailLine = parts.join('  •  ');
@@ -16231,7 +16241,8 @@ function _jamCard(type, item) {
     if (item.card_date) sp.push(`<span>Card:</span> ${item.card_date}`);
     if (sp.length) serialLine = `<div class="jam-card-detail">${sp.join('  •  ')}</div>`;
     
-    return `<div class="jam-card type-${type}">
+    const _isDraggable = type === 'keluar' && item.status === 'pending' && !isLogistics;
+    return `<div class="jam-card type-${type}" ${_isDraggable ? `draggable="true" ondragstart="event.dataTransfer.setData('text/plain',JSON.stringify({watch_id:${item.id},from_package_id:${item.package_id||'null'}}))" style="cursor:grab;"` : ''}>
         <div class="jam-card-head">
             <div class="jam-card-title">${ref} <span style="font-weight:400;color:var(--text-1);font-size:0.78rem;">${restDesc}</span></div>
             <div style="display:flex;align-items:center;gap:8px;">
@@ -16250,9 +16261,242 @@ function _jamCard(type, item) {
 }
 
 function _jp(val, label) {
-    return val 
+    return val
         ? `<span class="jam-pill jam-pill-yes"> ${label}</span>`
         : `<span class="jam-pill jam-pill-no">○ ${label}</span>`;
+}
+
+// ═══ PACKAGE MANAGEMENT ═══
+
+async function showNewPackageModal() {
+    // Fetch unpackaged watches and recipient list
+    let watches = [], recipients = [];
+    try {
+        const r = await fetch('/api/shipping/packages/unpackaged-watches');
+        if (r.ok) {
+            const data = await r.json();
+            watches = data.watches || [];
+            recipients = data.recipients || [];
+        }
+    } catch(e) { console.error('Fetch unpackaged:', e); }
+
+    const today = _localDate(0);
+    const modal = document.createElement('div');
+    modal.id = 'pkg-modal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:16px;';
+
+    // Group watches by buyer for easier selection
+    const byBuyer = {};
+    for (const w of watches) {
+        const buyer = (w.sold_to || 'Unknown').split('\n')[0];
+        if (!byBuyer[buyer]) byBuyer[buyer] = [];
+        byBuyer[buyer].push(w);
+    }
+
+    let watchListHtml = '';
+    for (const [buyer, bWatches] of Object.entries(byBuyer)) {
+        watchListHtml += `<div style="margin-top:8px;margin-bottom:4px;font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;">${buyer.replace(/</g,'&lt;')}</div>`;
+        for (const w of bWatches) {
+            const desc = (w.description || '').substring(0, 50);
+            watchListHtml += `<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;margin-bottom:4px;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+                <input type="checkbox" class="pkg-watch-cb" value="${w.id}" data-buyer="${buyer.replace(/"/g,'&quot;')}" style="width:18px;height:18px;accent-color:var(--accent);" onchange="pkgWatchToggle()">
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:0.78rem;font-weight:600;color:var(--text-0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${desc}</div>
+                    <div style="font-size:0.65rem;color:var(--text-2);">#${w.id}${w.serial ? ' - ' + w.serial : ''}${w.sold_price ? ' - $' + Number(w.sold_price).toLocaleString() : ''}</div>
+                </div>
+            </label>`;
+        }
+    }
+
+    if (!watches.length) {
+        watchListHtml = '<div style="text-align:center;color:var(--text-2);padding:24px;font-size:0.8rem;">No unpackaged watches available</div>';
+    }
+
+    const recipientOptions = recipients.map(r => `<option value="${r.replace(/"/g,'&quot;')}">`).join('');
+
+    modal.innerHTML = `
+        <div style="background:var(--bg-1);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:520px;width:100%;max-height:85vh;display:flex;flex-direction:column;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <div style="font-size:0.95rem;font-weight:700;color:var(--text-0);">NEW PACKAGE</div>
+                <button onclick="document.getElementById('pkg-modal').remove()" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:1.4rem;line-height:1;">X</button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+                <div>
+                    <label style="font-size:0.68rem;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Recipient</label>
+                    <input type="text" id="pkg-recipient" list="pkg-recipients-list" placeholder="Buyer name..." style="width:100%;padding:10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.82rem;outline:none;margin-top:4px;box-sizing:border-box;" oninput="pkgRecipientChange()">
+                    <datalist id="pkg-recipients-list">${recipientOptions}</datalist>
+                </div>
+                <div style="display:flex;gap:10px;">
+                    <div style="flex:1;">
+                        <label style="font-size:0.68rem;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Carrier</label>
+                        <select id="pkg-carrier" style="width:100%;padding:10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.82rem;outline:none;margin-top:4px;">
+                            <option value="FedEx">FedEx</option>
+                            <option value="UPS">UPS</option>
+                            <option value="Local Delivery">Local Delivery</option>
+                        </select>
+                    </div>
+                    <div style="flex:1;">
+                        <label style="font-size:0.68rem;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Ship By</label>
+                        <input type="date" id="pkg-ship-date" value="${today}" style="width:100%;padding:10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.82rem;outline:none;margin-top:4px;box-sizing:border-box;">
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size:0.68rem;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Package Name</label>
+                    <input type="text" id="pkg-name" placeholder="Auto-generated..." style="width:100%;padding:10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.82rem;outline:none;margin-top:4px;box-sizing:border-box;">
+                </div>
+            </div>
+            <div style="font-size:0.72rem;font-weight:700;color:var(--text-1);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Select Watches <span id="pkg-watch-count" style="color:var(--accent);">(0 selected)</span></div>
+            <div style="overflow-y:auto;flex:1;min-height:120px;max-height:40vh;padding-right:4px;">
+                ${watchListHtml}
+            </div>
+            <button id="pkg-create-btn" onclick="createNewPackage()" disabled style="margin-top:14px;width:100%;padding:14px;border:none;border-radius:var(--radius);background:var(--accent);color:#000;font-size:0.85rem;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:0.5px;opacity:0.4;transition:opacity 0.15s;">CREATE PACKAGE</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+}
+
+function pkgWatchToggle() {
+    const checked = document.querySelectorAll('.pkg-watch-cb:checked');
+    const countEl = document.getElementById('pkg-watch-count');
+    const btn = document.getElementById('pkg-create-btn');
+    if (countEl) countEl.textContent = `(${checked.length} selected)`;
+    if (btn) {
+        btn.disabled = checked.length === 0;
+        btn.style.opacity = checked.length > 0 ? '1' : '0.4';
+    }
+    // Auto-fill recipient from first selected watch's buyer
+    if (checked.length === 1 && !document.getElementById('pkg-recipient').value) {
+        document.getElementById('pkg-recipient').value = checked[0].dataset.buyer || '';
+        pkgRecipientChange();
+    }
+}
+
+function pkgRecipientChange() {
+    const recipient = document.getElementById('pkg-recipient')?.value || '';
+    const nameInput = document.getElementById('pkg-name');
+    if (nameInput && !nameInput._userEdited) {
+        const checked = document.querySelectorAll('.pkg-watch-cb:checked');
+        nameInput.value = recipient ? `Package - ${recipient}` : '';
+    }
+}
+
+async function createNewPackage() {
+    const btn = document.getElementById('pkg-create-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'CREATING...'; }
+
+    const watchIds = Array.from(document.querySelectorAll('.pkg-watch-cb:checked')).map(cb => Number(cb.value));
+    const recipient = document.getElementById('pkg-recipient')?.value || '';
+    const carrier = document.getElementById('pkg-carrier')?.value || 'FedEx';
+    const shipDate = document.getElementById('pkg-ship-date')?.value || '';
+
+    if (!watchIds.length) {
+        alert('Select at least one watch');
+        if (btn) { btn.disabled = false; btn.textContent = 'CREATE PACKAGE'; }
+        return;
+    }
+
+    try {
+        const r = await fetch('/api/shipping/packages', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ watch_ids: watchIds, recipient, carrier, ship_by_date: shipDate })
+        });
+        const data = await r.json();
+        if (data.ok) {
+            document.getElementById('pkg-modal')?.remove();
+            loadJamFeed('keluar');
+        } else {
+            alert('Error: ' + (data.error || 'Unknown'));
+            if (btn) { btn.disabled = false; btn.textContent = 'CREATE PACKAGE'; }
+        }
+    } catch(e) {
+        alert('Failed: ' + e.message);
+        if (btn) { btn.disabled = false; btn.textContent = 'CREATE PACKAGE'; }
+    }
+}
+
+async function showMoveWatchMenu(watchId, fromPkgId, recipientName) {
+    // Get all pending packages for this or any recipient
+    const items = _jamState.feeds['keluar'] || [];
+    const pending = items.filter(i => i.status === 'pending');
+
+    // Collect unique packages
+    const pkgMap = {};
+    for (const i of pending) {
+        if (i.package_id && i.package_id !== fromPkgId) {
+            if (!pkgMap[i.package_id]) {
+                pkgMap[i.package_id] = {
+                    id: i.package_id,
+                    name: i.package_name || 'Package',
+                    buyer: (i.sold_to || i.to || '').split('\n')[0]
+                };
+            }
+        }
+    }
+    const packages = Object.values(pkgMap);
+
+    const modal = document.createElement('div');
+    modal.id = 'move-watch-modal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:16px;';
+
+    let optionsHtml = '';
+    if (packages.length === 0) {
+        optionsHtml = '<div style="text-align:center;color:var(--text-2);padding:16px;font-size:0.8rem;">No other packages available</div>';
+    } else {
+        for (const pkg of packages) {
+            optionsHtml += `<button onclick="moveWatchToPackage(${watchId},${fromPkgId||'null'},${pkg.id})" style="display:block;width:100%;text-align:left;padding:12px 14px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;color:var(--text-0);font-size:0.8rem;font-weight:600;margin-bottom:6px;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">${pkg.name.replace(/</g,'&lt;')} <span style="color:var(--text-2);font-weight:400;">- ${pkg.buyer.replace(/</g,'&lt;')}</span></button>`;
+        }
+    }
+
+    modal.innerHTML = `
+        <div style="background:var(--bg-1);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:420px;width:100%;max-height:70vh;display:flex;flex-direction:column;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <div style="font-size:0.9rem;font-weight:700;color:var(--text-0);">MOVE WATCH #${watchId}</div>
+                <button onclick="document.getElementById('move-watch-modal').remove()" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:1.4rem;line-height:1;">X</button>
+            </div>
+            <div style="font-size:0.72rem;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:8px;">Move to existing package:</div>
+            <div style="overflow-y:auto;flex:1;min-height:60px;">${optionsHtml}</div>
+            <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px;">
+                <button onclick="document.getElementById('move-watch-modal').remove();showNewPackageModal()" style="width:100%;padding:12px;border:1px solid var(--accent);border-radius:var(--radius);background:var(--accent-dim);color:var(--accent);font-size:0.82rem;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:0.5px;">+ CREATE NEW PACKAGE</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+}
+
+async function moveWatchToPackage(watchId, fromPkgId, toPkgId) {
+    document.getElementById('move-watch-modal')?.remove();
+    try {
+        const r = await fetch('/api/shipping/packages/move-watch', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ watch_id: watchId, from_package_id: fromPkgId, to_package_id: toPkgId })
+        });
+        const data = await r.json();
+        if (data.ok) {
+            loadJamFeed('keluar');
+        } else {
+            alert('Move failed: ' + (data.error || 'Unknown'));
+        }
+    } catch(e) {
+        alert('Move failed: ' + e.message);
+    }
+}
+
+function handlePkgDrop(event, toPkgId) {
+    try {
+        const raw = event.dataTransfer.getData('text/plain');
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (data.watch_id && toPkgId) {
+            if (data.from_package_id === toPkgId) return; // same package, no-op
+            moveWatchToPackage(data.watch_id, data.from_package_id, toPkgId);
+        }
+    } catch(e) {
+        console.error('Drop parse error:', e);
+    }
 }
 
 // ═══ JAM UPLOADS ═══

@@ -1,6 +1,16 @@
 {
   "articles": [
     {
+      "id": "b856df314d9f",
+      "title": "Introducing \u2013 The New Chronoswiss Delphis Art Deco",
+      "link": "https://monochrome-watches.com/chronoswiss-delphis-art-deco-jumping-hours-retrograde-minutes-introducing-price/",
+      "desc": "Chronoswiss, now in the hands of the Ebstein family, has not forgotten the legacy of the brand\u2019s founder, Gerd-R\u00fcdiger Lang, who pioneered the modern mechanical regulator dial in wristwatches. Adaptin",
+      "date": "2026-04-10T16:00:56+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/chronoswiss-delphis-art-deco-jumping-hours-retrograde-minutes-introducing-1-600x237.jpg",
+      "relevance": 0
+    },
+    {
       "id": "cf23ec4c9206",
       "title": "Abraham-Louis Breguet: The Founder of Modern Horology",
       "link": "https://revolutionwatch.com/abraham-louis-breguet-the-founder-of-modern-horology/",
@@ -9,6 +19,16 @@
       "source": "REVOLUTION",
       "image": "",
       "relevance": 0
+    },
+    {
+      "id": "1a716223362d",
+      "title": "Auctions: Sotheby's To Offer A Massive 300+ Piece Cartier Collection Across Sales This Year",
+      "link": "https://www.hodinkee.com/articles/auctions-sothebys-cartier-collection",
+      "desc": "Starting in Hong Kong on April 24th and running into December, the house will offer pieces from Cartier Paris, London, and New York \u2014 plus a lot of insanely impressive other watches from Rolex, Patek,",
+      "date": "2026-04-10T13:34:55-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/c8bcb064-f4a1-4962-99de-d4f5b17d99d3/Untitled-1.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "relevance": 30
     },
     {
       "id": "2c9fecd99610",
@@ -271,16 +291,6 @@
       "relevance": 10
     },
     {
-      "id": "36c3e304cc41",
-      "title": "Introducing \u2013 The Updated Hamilton Khaki Field King Collection",
-      "link": "https://monochrome-watches.com/the-updated-hamilton-khaki-field-king-collection/",
-      "desc": "Hamilton is an American-born Swiss watch brand whose Khaki Field collection draws on its military heritage, featuring a clean, highly legible field watch design inspired by watches made for soldiers a",
-      "date": "2026-04-09T06:00:48+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/04/2026-Updated-Hamilton-Khaki-Field-King-Collection-1-600x237.jpg",
-      "relevance": 0
-    },
-    {
       "id": "37cfe4244276",
       "title": "Fratello Talks: How Much Does Chronometer Certification Matter?",
       "link": "https://www.fratellowatches.com/fratello-talks-how-much-does-chronometer-certification-matter/",
@@ -349,19 +359,9 @@
       "source": "HODINKEE",
       "image": "https://hodinkee.imgix.net/uploads/images/6ef6c6af-4c3e-4def-8330-01d96c54f048/Hero_UG.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
       "relevance": 0
-    },
-    {
-      "id": "4e41e0c80fb5",
-      "title": "Introducing: The Universal Gen\u00e8ve Cabriolet",
-      "link": "https://www.hodinkee.com/articles/the-universal-geneve-cabriolet",
-      "desc": "Five new models to celebrate the return of an original 1930s classic.",
-      "date": "2026-04-08T08:00:32-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/50fbf9f3-63a9-42c7-843d-a0bb5628f960/cabriolet-hero.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
     }
   ],
-  "fetched_at": "2026-04-10T16:00:03.243574+00:00",
+  "fetched_at": "2026-04-10T19:00:05.033416+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
