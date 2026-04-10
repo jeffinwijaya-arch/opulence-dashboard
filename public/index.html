@@ -4080,7 +4080,7 @@ async function refreshData() {
 }
 
 // ── RENDER ──
-function renderAll() { renderTicker(); renderDashboard(); renderDeals(); renderArbitrage(); loadActivityFeed(); }
+function renderAll() { renderTicker(); renderDashboard(); renderDeals(); renderArbitrage(); loadActivityFeed(); document.dispatchEvent(new CustomEvent('mk:data-loaded')); if (window.MKModules) window.MKModules.renderAll(); }
 
 
 
@@ -17813,6 +17813,9 @@ if (_userRole.allowedPages) {
     setTimeout(updatePageTitle, 5000);
 })();
 </script>
+
+<!-- Module System: each workstream owns its own file for parallel development -->
+<script src="/modules/module-loader.js"></script>
 
 </body>
 </html>
