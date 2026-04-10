@@ -17549,3 +17549,53 @@ if (_userRole.allowedPages) {
 
 </body>
 </html>
+
+<!-- Watchlist/Favorites -->
+<script>
+(function(){
+    const STORAGE_KEY = 'mk-watchlist';
+    
+    function getWatchlist() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+        catch(e) { return []; }
+    }
+    
+    function saveWatchlist(wl) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(wl));
+    }
+    
+    window.toggleWatchlist = function(ref, model, price) {
+        let wl = getWatchlist();
+        const idx = wl.findIndex(w => w.ref === ref);
+        if (idx >= 0) {
+            wl.splice(idx, 1);
+            showToast(ref + ' removed from watchlist');
+        } else {
+            wl.push({ref, model: model || '', price: price || 0, added: Date.now()});
+            showToast(ref + ' added to watchlist');
+        }
+        saveWatchlist(wl);
+        updateWatchlistBadges();
+    };
+    
+    window.isInWatchlist = function(ref) {
+        return getWatchlist().some(w => w.ref === ref);
+    };
+    
+    window.getWatchlistRefs = function() {
+        return getWatchlist();
+    };
+    
+    function updateWatchlistBadges() {
+        document.querySelectorAll('.wl-star').forEach(star => {
+            const ref = star.dataset.ref;
+            star.textContent = isInWatchlist(ref) ? '\u2605' : '\u2606';
+            star.style.color = isInWatchlist(ref) ? 'var(--accent)' : 'var(--text-3)';
+        });
+    }
+    
+    // Update badges when DOM changes
+    const observer = new MutationObserver(updateWatchlistBadges);
+    observer.observe(document.body, {childList: true, subtree: true});
+})();
+</script>
