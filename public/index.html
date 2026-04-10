@@ -6156,6 +6156,7 @@ async function doLookup() {
                 <h2 style="font-size:1.1rem;margin-bottom:2px;">${ref} <span style="color:var(--text-2);font-size:0.85rem;font-weight:400;">${model}</span></h2>
                 <p style="margin-bottom:4px;">${condTags} <span style="color:var(--text-2);font-size:0.72rem;margin-left:6px;">${count} listings${dials.length?' | '+dials.length+' dials':''}</span></p>
                 ${condBar}
+                <div id="lookup-histogram" style="margin:10px 0;height:48px;position:relative;"></div>
                 <div class="metrics" style="margin-bottom:10px;">
                     <div class="metric"><div class="label">Low</div><div class="val green">${fmt(low)}</div></div>
                     <div class="metric"><div class="label">Avg B25</div><div class="val" style="color:var(--accent)">${fmt(b25)}</div></div>
@@ -6178,6 +6179,32 @@ async function doLookup() {
                 <div class="card"><div class="card-head"><span>🇭🇰 HK Listings (${_allListingsData.filter(l=>(l.region||'').toUpperCase()==='HK').length})</span></div><div class="card-body" style="max-height:400px;overflow-y:auto;"><div id="cheapest-hk">${(()=>{const hkL=_allListingsData.filter(l=>(l.region||'').toUpperCase()==='HK');if(!hkL.length)return'<div style="color:var(--text-2);padding:8px;">No HK listings</div>';return hkL.map((l,i)=>{const srcText=String(l.source_text||'').replace(/\+?\s*label\s+gambar tidak disertakan/gi,'').replace(/gambar tidak disertakan/gi,'').replace(/\(file terlampir\)/gi,'').trim().split('<').join('&lt;').split('>').join('&gt;');const phoneClean=(l.phone||'').replace(/[^0-9]/g,'');const waBtn=phoneClean?' <a href="https://wa.me/'+phoneClean+'" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);text-decoration:none;font-weight:700;">WA</a>':'';const ts=l.ts||'';let card='<div class="listing-card">';card+='<div style="display:flex;justify-content:space-between;align-items:center;">';card+='<span style="font-family:var(--mono);font-weight:700;color:var(--green)">'+fmt(l.price_usd||l.price)+'</span>';card+='<span><span class="tag '+condTag(l.condition)+'">'+(l.condition||'\u2014')+'</span></span>';card+='</div>';card+='<div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">'+(l.dial||'')+' '+(l.bracelet||'')+' '+(l.year?'('+l.year+')':'')+' · '+(l.seller||'?')+waBtn+'</div>';if(ts)card+='<div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">'+ts+'</div>';if(srcText)card+='<div style="font-size:0.70rem;color:var(--text-1);margin-top:4px;padding:6px 8px;background:rgba(255,255,255,0.04);border-radius:4px;border-left:2px solid var(--orange);font-family:var(--mono);white-space:pre-wrap;word-break:break-all;line-height:1.4;">'+srcText+'</div>';card+='</div>';return card;}).join('');})()}</div></div></div>
             </div>
         </div>`;
+        // Render price distribution histogram
+        setTimeout(() => {
+            const histEl = document.getElementById('lookup-histogram');
+            const prices = _allListingsData.map(l => l.price_usd || l.price).filter(p => p > 0).sort((a,b) => a-b);
+            if (histEl && prices.length >= 3) {
+                const buckets = 20;
+                const min = prices[0], max = prices[prices.length-1];
+                const range = max - min || 1;
+                const step = range / buckets;
+                const counts = new Array(buckets).fill(0);
+                prices.forEach(p => { const i = Math.min(Math.floor((p-min)/step), buckets-1); counts[i]++; });
+                const maxC = Math.max(...counts, 1);
+                const barW = 100/buckets;
+                let barsHtml = counts.map((c, i) => {
+                    const h = Math.max(2, (c/maxC)*100);
+                    const price = min + i*step;
+                    const isB25 = b25 >= price && b25 < price+step;
+                    const bg = isB25 ? 'var(--accent)' : 'rgba(212,175,55,0.25)';
+                    return `<div title="${fmt(price)}-${fmt(price+step)}: ${c} listings" style="position:absolute;bottom:0;left:${i*barW}%;width:${barW-0.5}%;height:${h}%;background:${bg};border-radius:2px 2px 0 0;transition:height 0.3s;cursor:crosshair;" onmouseenter="this.style.background='var(--accent)'" onmouseleave="this.style.background='${bg}'"></div>`;
+                }).join('');
+                histEl.innerHTML = `<div style="font-size:0.6rem;color:var(--text-3);margin-bottom:2px;font-family:var(--mono);display:flex;justify-content:space-between;"><span>${fmt(min)}</span><span>Price Distribution</span><span>${fmt(max)}</span></div><div style="position:relative;height:36px;background:var(--bg-3);border-radius:4px;overflow:hidden;">${barsHtml}</div>`;
+            } else if (histEl) {
+                histEl.innerHTML = '';
+            }
+        }, 100);
+
         // Load price history chart
         try {
             const hr = await fetch(`/api/price_history/${encodeURIComponent(ref)}`);
