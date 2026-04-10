@@ -16462,17 +16462,17 @@ async function showMoveWatchMenu(watchId, fromPkgId, recipientName) {
 async function moveWatchToPackage(watchId, fromPkgId, toPkgId) {
     document.getElementById('move-watch-modal')?.remove();
     try {
-        console.log('Moving watch', watchId, 'from pkg', fromPkgId, 'to pkg', toPkgId);
         if (typeof showToast === 'function') showToast('Moving watch...');
         const r = await fetch('/api/shipping/packages/move-watch', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ watch_id: Number(watchId), from_package_id: fromPkgId ? Number(fromPkgId) : null, to_package_id: Number(toPkgId) })
+            body: JSON.stringify({ watch_id: Number(watchId), to_package_id: Number(toPkgId) })
         });
         const data = await r.json();
         if (data.ok) {
-            if (typeof showToast === 'function') showToast('Watch moved successfully');
-            loadJamFeed('keluar');
+            if (typeof showToast === 'function') showToast('Watch moved');
+            // Reload the entire keluar feed to get fresh package assignments
+            await loadJamFeed('keluar');
         } else {
             alert('Move failed: ' + (data.error || 'Unknown'));
         }
