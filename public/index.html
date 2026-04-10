@@ -7617,7 +7617,24 @@ async function initLookupPage() {
     }
 
     // Build cards with whatever data we have
-    let html = '<div style="margin-top:16px;">';
+    let html = '';
+
+    // Recently Viewed section
+    const recentViews = getRecentViews();
+    if (recentViews.length) {
+        html += '<div style="margin-top:12px;margin-bottom:16px;">';
+        html += '<div style="font-size:0.65rem;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;font-family:var(--mono);">Recently Viewed</div>';
+        html += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
+        recentViews.forEach(v => {
+            html += `<div style="background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);padding:6px 12px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:8px;" onclick="$('#ref-search').value='${v.ref}';doLookup();" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
+                <span style="color:var(--accent);font-weight:700;font-family:var(--mono);font-size:0.78rem;">${v.ref}</span>
+                ${v.price ? '<span style="font-family:var(--mono);font-size:0.7rem;color:var(--text-2);">' + fmt(v.price) + '</span>' : ''}
+            </div>`;
+        });
+        html += '</div></div>';
+    }
+
+    html += '<div style="margin-top:16px;">';
     html += '<div style="font-size:0.72rem;color:var(--text-2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:12px;font-family:var(--mono);">Popular References</div>';
     html += '<div class="popular-grid">';
     for (const ref of popularRefs) {
