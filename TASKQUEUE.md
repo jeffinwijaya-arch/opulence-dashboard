@@ -17,8 +17,8 @@
 - [x] Price trend arrows on lookup results — localStorage-based 30-day b25 tracking, ▲/▼ arrow on repeat lookups (2026-04-10)
 
 ### WS3: Deal Flow & Arbitrage (ws3-deal-flow.js)
-- [ ] Enhanced arbitrage calculator — add real costs: shipping $150, insurance 1.5% of value, wire fee $40, FedEx label $35 → show true net margin
-- [ ] Snipe alert badge on deals page — flag any listing priced >10% below b25 with pulsing gold border
+- [x] Enhanced arbitrage calculator — add real costs: shipping $150, insurance 1.5% of value, wire fee $40, FedEx label $35 → show true net margin (2026-04-10)
+- [x] Snipe alert badge on deals page — flag any listing priced >10% below b25 with pulsing gold border (2026-04-10)
 
 ## Priority: HIGH
 
@@ -68,6 +68,7 @@
 
 ## COMPLETED
 - **2026-04-10** WS1 Price Intelligence (ws1-price-intel.js): deal scoring (0-100, 4 components), price confidence indicator (HIGH/MEDIUM/LOW), price trend arrows (localStorage 30-day b25 tracking)
+- **2026-04-10** WS3 Deal Flow (ws3-deal-flow.js): enhanced arbitrage calculator (true net = sell − buy − shipping $150 − insurance 1.5% − wire $40 − label $35, injected "True Net" column + cost banner), snipe alert badge (pulsing gold border + ★ SNIPE tag for deals >10% below B25)
 
 ## RULES FOR AGENTS
 1. Pick ONE task from the highest unchecked priority level
