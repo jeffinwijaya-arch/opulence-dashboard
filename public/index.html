@@ -1446,6 +1446,7 @@
 #splash-screen.hide{opacity:0!important;visibility:hidden!important;pointer-events:none!important;}
 </style>
 <script>
+window.__V = '20260410-1740';
 // Failsafe: force-dismiss splash after 6s even if JS hasn't loaded yet
 setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.classList.add('hide');setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s);},500);}},6000);
 </script>
@@ -15823,9 +15824,10 @@ async function loadJamFeed(type, append = false) {
     // If we have cached data and not appending, render from cache instantly
     if (!append && _jamState.feeds[type]?.length) {
         renderJamFeed(type);
-        // Still refresh in background
+        // Refresh in background (only once, don't re-render if tab changed)
+        const tabAtStart = _jamState.tab;
         fetch(`/api/jam/feed?type=${type}&limit=50&offset=0`).then(r=>r.ok?r.json():null).then(data=>{
-            if(!data)return;
+            if(!data || _jamState.tab !== tabAtStart)return;
             _jamState.feeds[type]=data.items;_jamState.totals[type]=data.total;_jamState.offsets[type]=data.items.length;
             renderJamFeed(type);
         }).catch(()=>{});

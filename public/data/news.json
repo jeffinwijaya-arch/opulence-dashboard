@@ -1,6 +1,26 @@
 {
   "articles": [
     {
+      "id": "5ac2f0c20c5a",
+      "title": "Rado: Master of Materials",
+      "link": "https://revolutionwatch.com/rado-master-of-materials-2/",
+      "desc": "The post Rado: Master of Materials appeared first on Revolution Watch.",
+      "date": "2026-04-10T21:00:02+00:00",
+      "source": "REVOLUTION",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "b65eeef1ded7",
+      "title": "Interview \u2013 Adrian Bosshard, CEO of Rado, About the Mastery of Ceramics and the New Integral Collection",
+      "link": "https://monochrome-watches.com/interview-adrian-bosshard-ceo-of-rado-about-the-mastery-of-ceramics-and-the-new-integral-collection/",
+      "desc": "When it comes to ceramics, Rado is the brand that comes to mind. Rado presented its first ceramic watch in 1986, just 40 years ago\u2026 This anniversary marks not only a technological breakthrough, but al",
+      "date": "2026-04-10T20:00:44+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2026/04/Rado-Integral-2026-40th-anniversary-600x237.jpg",
+      "relevance": 0
+    },
+    {
       "id": "b856df314d9f",
       "title": "Introducing \u2013 The New Chronoswiss Delphis Art Deco",
       "link": "https://monochrome-watches.com/chronoswiss-delphis-art-deco-jumping-hours-retrograde-minutes-introducing-price/",
@@ -261,16 +281,6 @@
       "relevance": 10
     },
     {
-      "id": "6335603d0b06",
-      "title": "Introducing \u2013 The Moritz Grossmann Tremblage Gold, a Hand-Engraved Anniversary Edition in Precious Metal",
-      "link": "https://monochrome-watches.com/moritz-grossmann-tremblage-gold-a-hand-engraved-anniversary-edition-in-precious-metal-introducing-price/",
-      "desc": "Since its revival in 2008, the Moritz Grossmann manufacture has focused on making watches with traditional Saxon construction and meticulous hand-finishing, exemplifying the idea of Sch\u00f6nstes deutsche",
-      "date": "2026-04-09T09:01:49+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/04/2026-Moritz-Grossmann-Tremblage-Gold-hand-hammered-dial-1-600x237.jpg",
-      "relevance": 0
-    },
-    {
       "id": "f2ce3a0e7071",
       "title": "Introducing: The M.A.D.Editions M.A.D.2 R&B and REDemption: A Raffled Watch And A Second (Or Third) Chance",
       "link": "https://www.hodinkee.com/articles/introducing-mad-2-randb",
@@ -321,16 +331,6 @@
       "relevance": 10
     },
     {
-      "id": "2ba2501e5c72",
-      "title": "The Glorious Universe of Universal Gen\u00e8ve",
-      "link": "https://revolutionwatch.com/universal-geneve-2026/",
-      "desc": "The post The Glorious Universe of Universal Gen\u00e8ve appeared first on Revolution Watch.",
-      "date": "2026-04-08T12:00:10+00:00",
-      "source": "REVOLUTION",
-      "image": "",
-      "relevance": 0
-    },
-    {
       "id": "f66e94ad2c46",
       "title": "The Business of Watches Podcast: Raymond Weil CEO Elie Bernheim (Plus: Ben Clymer On The New RRCHF)",
       "link": "https://www.hodinkee.com/articles/raymond-weil-ceo-elie-bernheim-plus-ben-clymer-on-the-new-rrchf",
@@ -361,7 +361,7 @@
       "relevance": 0
     }
   ],
-  "fetched_at": "2026-04-10T19:00:05.033416+00:00",
+  "fetched_at": "2026-04-10T22:00:03.690763+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
