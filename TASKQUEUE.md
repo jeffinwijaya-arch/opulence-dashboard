@@ -1,55 +1,80 @@
 # Opulence Dashboard Task Queue
-> Any Claude session should read this file, pick the highest-priority unfinished task, do it, mark it done, and add new tasks discovered during the work.
+> Any Claude session reads this, picks highest-priority unchecked task, does it, marks done, adds new tasks.
 
-## Priority: CRITICAL (do these first)
-- [ ] WS1: Implement enhanced deal scoring in ws1-price-intel.js — factor in days-on-market, condition, seller reliability
-- [ ] WS2: Add portfolio heat map to ws2-inventory-pnl.js — color-coded P&L by ref, red=losing, green=winning
-- [ ] WS3: Build cross-market arbitrage calculator in ws3-deal-flow.js — HK vs US with shipping($150), insurance(1.5%), wire($40)
-- [ ] WS8: Mobile-first price lookup in ws8-mobile-ux.js — large touch targets, swipe between results
+## Current State
+- **17,868 lines** in index.html — full SPA with 15 pages
+- **27K listings** across 564 refs, 8 brands, 1555 sellers, 74 WhatsApp groups
+- **55 inventory items** with full P&L tracking
+- **Data**: bundle.json (deals, arbitrage, refs, sellers), Flask API (inventory, portfolio, shipping, postings)
+- **Pages**: Overview, Prices/Lookup, Portfolio, Deals & Arbitrage, Inventory, Postings, Shipping, Invoices, Payments, Photos, Aging, AD CRM, Mission Control, Operations (Jam)
+- **Module system**: 10 independent JS files in public/modules/ for parallel development
+
+## Priority: CRITICAL
+
+### WS1: Price Intelligence (ws1-price-intel.js)
+- [ ] Add deal scoring algorithm — combine: discount_pct (weight 40%), days_on_market (20%), seller_reliability (20%), condition_premium (20%) → single 0-100 score
+- [ ] Price confidence indicator on lookups — "HIGH" (>20 comparables), "MEDIUM" (5-20), "LOW" (<5) with color coding
+- [ ] Price trend arrows on lookup results — compare current b25 vs 30-day-ago b25 from bundle.json history
+
+### WS3: Deal Flow & Arbitrage (ws3-deal-flow.js)
+- [ ] Enhanced arbitrage calculator — add real costs: shipping $150, insurance 1.5% of value, wire fee $40, FedEx label $35 → show true net margin
+- [ ] Snipe alert badge on deals page — flag any listing priced >10% below b25 with pulsing gold border
 
 ## Priority: HIGH
-- [ ] WS1: Add price trend arrows (up/down/flat) to lookup results based on 30-day history
-- [ ] WS1: Confidence score on price estimates — how many comparables, how recent, how similar
-- [ ] WS2: Days-in-inventory aging alerts — yellow >20 days, red >30 days, with suggested price drops
-- [ ] WS2: Weekly/monthly P&L trend mini-charts on portfolio page
-- [ ] WS3: "Snipe alert" system — watches priced 10%+ below B25 average
-- [ ] WS3: Seller pattern analysis — who consistently underprices, who's reliable
-- [ ] WS4: Auto-generate captions from inventory data (ref, dial, bracelet, condition, card date, price)
-- [ ] WS4: Price recommendation engine — suggested sale price based on market + days held
-- [ ] WS5: Batch label creation — select multiple sold watches, create labels for all
-- [ ] WS5: Delivery tracking dashboard with auto-status updates
-- [ ] WS7: Price history sparklines per ref on dashboard overview
-- [ ] WS7: Volume heatmap — which refs are trading most this week vs last
-- [ ] WS9: Monthly P&L summary report with export-to-PDF
+
+### WS2: Inventory P&L (ws2-inventory-pnl.js)
+- [ ] Portfolio heat map — inject colored squares into portfolio page: green (>5% profit), yellow (0-5%), red (loss), size = capital deployed
+- [ ] Days-in-inventory aging bar — show color-coded bar on each inventory row: green <14d, yellow 14-30d, red >30d
+- [ ] Unrealized P&L trend — weekly sparkline showing portfolio value over time (store snapshots in localStorage)
+
+### WS4: Posting & Sales (ws4-posting.js)
+- [ ] Auto-caption generator — from inventory data build: "BNIB Full Set {ref} {bracelet} {dial} {card_month}/{card_year} {condition} with WT ${price} + label"
+- [ ] Smart price recommendation — suggested sale price = US low from refs data - $100, with "competitive" / "aggressive" / "premium" tiers
+
+### WS7: Market Analytics (ws7-analytics.js)
+- [ ] Brand market share donut chart on overview page — Rolex 68%, AP 6%, Patek 10%, RM 9%, etc from summary.brands
+- [ ] Top movers widget — show refs with biggest price changes from movers data in bundle.json
+- [ ] HK vs US price gap chart — for top 20 refs, show side-by-side bars of HK b25 vs US b25
 
 ## Priority: MEDIUM
-- [ ] WS4: Repost scheduling with automatic price drops ($500 every 3 days)
-- [ ] WS6: Buyer preferences tracking — "John likes Datejust 41 Blue, budget $12-15K"
-- [ ] WS6: Seller reputation score — calculated from transaction history
-- [ ] WS6: "This buyer bought 3 DJs — recommend the new 126334 arrival" alerts
-- [ ] WS7: Seasonal pattern detection — identify best buy/sell months per ref
-- [ ] WS7: Currency impact dashboard — how USD/HKD moves affect margins
-- [ ] WS8: Offline price lookup cache — save last 50 lookups for subway use
-- [ ] WS8: Keyboard shortcuts for power users (/ to search, n for new watch, s for sell)
-- [ ] WS9: Tax lot tracking — cost basis per watch for Schedule D
-- [ ] WS9: Cash flow projection — upcoming expected payments and receivables
-- [ ] WS10: Auto-detect sold watches from WhatsApp messages ("sold 126334 to John 14500")
-- [ ] WS10: Auto-pricing new arrivals based on market data
 
-## Priority: LOW (nice to have)
-- [ ] WS4: A/B test different caption styles — track which gets more inquiries
-- [ ] WS6: Referral tracking — who referred which buyer
-- [ ] WS7: Competition price tracking — scrape competitor listings
-- [ ] WS8: Progressive web app with push notifications for deal alerts
-- [ ] WS9: Profit by channel analysis (WhatsApp groups, Instagram, direct)
-- [ ] WS10: Photo OCR for automatic serial/card date extraction from warranty card photos
+### WS5: Shipping (ws5-shipping.js)
+- [ ] Shipping cost estimator — based on declared value, calculate FedEx Priority cost + insurance premium before creating label
+- [ ] Batch ship selector — checkbox column on sold/unshipped watches, "Create Labels for Selected" button
+
+### WS6: CRM (ws6-crm.js)
+- [ ] Buyer purchase history panel — when viewing a sold watch, show "John also bought: [list]" from inventory data
+- [ ] Seller reliability score — count of transactions, average discount vs market, response pattern
+
+### WS8: Mobile UX (ws8-mobile-ux.js)
+- [ ] Quick-action floating buttons — context-aware: on inventory page show "Add Watch", on lookup show "Search", on portfolio show "Refresh"
+- [ ] Swipe-to-action on deal cards — swipe right = save to watchlist, swipe left = dismiss
+
+### WS9: Financial Reporting (ws9-reporting.js)
+- [ ] Weekly P&L summary card on overview — total realized P&L this week, unrealized change, capital deployed vs available
+- [ ] Profit by ref analysis — which ref models are most profitable? Average margin per ref from sold watches
+
+### WS10: Automation (ws10-automation.js)
+- [ ] Auto-price new watches — when a watch is added without sale_price, auto-fill from refs data: US low or b25 - $100
+- [ ] Stale listing detector — watches posted >7 days with no activity → suggest price drop amount
+
+## Priority: LOW
+- [ ] WS4: A/B caption testing — track view counts per caption style
+- [ ] WS6: Referral tracking — "referred by" field on buyer records
+- [ ] WS7: Seasonal price patterns — monthly average prices per ref to identify buy/sell windows
+- [ ] WS8: Offline mode — cache last lookup results in service worker for subway use
+- [ ] WS9: Tax export — generate CSV of all sold watches with cost basis + proceeds for accountant
+- [ ] WS10: Smart photo tagging — match uploaded photos to refs based on filename/EXIF
 
 ## COMPLETED
-<!-- Move completed tasks here with date -->
+<!-- Move completed tasks here with date and commit hash -->
 
 ## RULES FOR AGENTS
-1. Pick ONE task, do it well, mark it [x], add the date
-2. If you discover new tasks during work, add them to the appropriate priority
-3. Don't pick a task another session might be working on (check git log for recent commits)
-4. After completing a task, push TASKQUEUE.md update along with your code changes
-5. If a task is too big, break it into subtasks
+1. Pick ONE task from the highest unchecked priority level
+2. Edit only the workstream's module file (ws1-price-intel.js, ws2-inventory-pnl.js, etc.)
+3. Read the relevant index.html sections to understand existing DOM structure and data flow
+4. Register module via window.MKModules.register(id, {init, render, cleanup})
+5. Access data through window.DATA (refs, deals, arbitrage, portfolio, etc.)
+6. After completing, mark [x] with date, push both code + updated TASKQUEUE.md
+7. If you discover new tasks, add them at the right priority level
+8. Check git log first — don't duplicate work another session just did
