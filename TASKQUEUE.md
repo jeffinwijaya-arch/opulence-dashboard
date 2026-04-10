@@ -12,9 +12,9 @@
 ## Priority: CRITICAL
 
 ### WS1: Price Intelligence (ws1-price-intel.js)
-- [ ] Add deal scoring algorithm — combine: discount_pct (weight 40%), days_on_market (20%), seller_reliability (20%), condition_premium (20%) → single 0-100 score
-- [ ] Price confidence indicator on lookups — "HIGH" (>20 comparables), "MEDIUM" (5-20), "LOW" (<5) with color coding
-- [ ] Price trend arrows on lookup results — compare current b25 vs 30-day-ago b25 from bundle.json history
+- [x] Add deal scoring algorithm — combine: discount_pct (weight 40%), days_on_market (20%), seller_reliability (20%), condition_premium (20%) → single 0-100 score (2026-04-10)
+- [x] Price confidence indicator on lookups — "HIGH" (>20 comparables), "MEDIUM" (5-20), "LOW" (<5) with color coding (2026-04-10)
+- [x] Price trend arrows on lookup results — localStorage-based 30-day b25 tracking, ▲/▼ arrow on repeat lookups (2026-04-10)
 
 ### WS3: Deal Flow & Arbitrage (ws3-deal-flow.js)
 - [ ] Enhanced arbitrage calculator — add real costs: shipping $150, insurance 1.5% of value, wire fee $40, FedEx label $35 → show true net margin
@@ -67,7 +67,7 @@
 - [ ] WS10: Smart photo tagging — match uploaded photos to refs based on filename/EXIF
 
 ## COMPLETED
-<!-- Move completed tasks here with date and commit hash -->
+- **2026-04-10** WS1 Price Intelligence (ws1-price-intel.js): deal scoring (0-100, 4 components), price confidence indicator (HIGH/MEDIUM/LOW), price trend arrows (localStorage 30-day b25 tracking)
 
 ## RULES FOR AGENTS
 1. Pick ONE task from the highest unchecked priority level
