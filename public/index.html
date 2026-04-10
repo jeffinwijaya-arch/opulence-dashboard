@@ -2278,13 +2278,12 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                     <!-- Photo Upload -->
                     <div id="wm-photos-section" style="display:none;">
                         <label style="font-size:0.68rem;color:var(--text-2);">Photos</label>
-                        <div id="wm-photos-grid" style="display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px;"></div>
-                        <div style="display:flex;gap:6px;align-items:center;">
-                            <label class="btn" style="cursor:pointer;font-size:0.7rem;background:var(--bg-3);padding:6px 12px;">
-                                Upload Photo
-                                <input type="file" id="wm-photo-input" accept="image/*,.heic,.heif" style="display:none;" onchange="uploadWatchPhoto(this)">
-                            </label>
-                            <span id="wm-photo-status" style="font-size:0.68rem;color:var(--text-2);"></span>
+                        <div id="wm-photos-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin:6px 0 10px;"></div>
+                        <div id="wm-photo-dropzone" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:2px dashed var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;min-height:64px;transition:border-color 0.15s,background 0.15s;" onclick="document.getElementById('wm-photo-input').click()">
+                            <div style="font-size:1.5rem;color:var(--text-2);line-height:1;">+</div>
+                            <div style="font-size:0.78rem;color:var(--text-2);">Tap to upload or drag photos here</div>
+                            <input type="file" id="wm-photo-input" accept="image/*,.heic,.heif" multiple style="display:none;" onchange="uploadWatchPhotos(this)">
+                            <span id="wm-photo-status" style="font-size:0.72rem;color:var(--text-2);"></span>
                         </div>
                     </div>
                     <div style="display:flex;gap:12px;flex-wrap:wrap;">
@@ -8421,8 +8420,10 @@ function renderInventoryTable(rows) {
     const actions = r => {
         let html = '';
         if (r.arrived!=='Yes') html += `<a onclick="quickAction(${r.row},'arrived')" style="cursor:pointer;color:var(--accent);margin-right:6px;padding:4px 8px;border:1px solid var(--accent);border-radius:4px;font-size:0.7rem;">Arr</a>`;
-        if (r.arrived==='Yes'&&r.posted!=='Yes'&&r.sold!=='Yes') html += `<a onclick="showPostModal(${r.row})" style="cursor:pointer;color:#f0c040;margin-right:6px;padding:4px 8px;border:1px solid #f0c040;border-radius:4px;font-size:0.7rem;">Post</a>`;
-        if (r.posted==='Yes'&&r.sold!=='Yes') html += `<a onclick="repostWatch(${r.row})" style="cursor:pointer;color:#e9a445;margin-right:6px;padding:4px 8px;border:1px solid #e9a445;border-radius:4px;font-size:0.7rem;">Repost</a>`;
+        if (r.arrived==='Yes'&&!r.at_store&&r.sold!=='Yes') html += `<a onclick="quickAction(${r.row},'to-store')" style="cursor:pointer;color:var(--orange);margin-right:6px;padding:4px 8px;border:1px solid var(--orange);border-radius:4px;font-size:0.7rem;">Store</a>`;
+        if (r.at_store) html += `<a onclick="quickAction(${r.row},'from-store')" style="cursor:pointer;color:var(--blue);margin-right:6px;padding:4px 8px;border:1px solid var(--blue);border-radius:4px;font-size:0.7rem;">Pull</a>`;
+        if (r.arrived==='Yes'&&!r.at_store&&r.posted!=='Yes'&&r.sold!=='Yes') html += `<a onclick="showPostModal(${r.row})" style="cursor:pointer;color:#f0c040;margin-right:6px;padding:4px 8px;border:1px solid #f0c040;border-radius:4px;font-size:0.7rem;">Post</a>`;
+        if (r.posted==='Yes'&&!r.at_store&&r.sold!=='Yes') html += `<a onclick="repostWatch(${r.row})" style="cursor:pointer;color:#e9a445;margin-right:6px;padding:4px 8px;border:1px solid #e9a445;border-radius:4px;font-size:0.7rem;">Repost</a>`;
         if (r.sold!=='Yes') html += `<a onclick="showSellModal(${r.row})" style="cursor:pointer;color:var(--green);margin-right:6px;padding:4px 8px;border:1px solid var(--green);border-radius:4px;font-size:0.7rem;">Sell</a>`;
         if (r.sold==='Yes'&&r.shipped!=='Yes') html += `<a onclick="showShipModal(${r.row})" style="cursor:pointer;color:var(--accent);margin-right:6px;padding:4px 8px;border:1px solid var(--accent);border-radius:4px;font-size:0.7rem;">Ship</a>`;
         if (r.sold==='Yes'&&r.paid_after_sold!=='Yes') html += `<a onclick="quickAction(${r.row},'paid')" style="cursor:pointer;color:var(--green);margin-right:6px;padding:4px 8px;border:1px solid var(--green);border-radius:4px;font-size:0.7rem;">Paid</a>`;
@@ -8485,6 +8486,8 @@ function renderInventoryTable(rows) {
         const swipeActionsHtml = r => {
             let html = '';
             if (r.arrived!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--accent);color:var(--bg-0);" onclick="event.stopPropagation();quickAction(${r.row},'arrived')"><span class="isa-icon">Arrive</div>`;
+            if (r.arrived==='Yes'&&!r.at_store&&r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--orange);color:var(--bg-0);" onclick="event.stopPropagation();quickAction(${r.row},'to-store')">Store</div>`;
+            if (r.at_store) html += `<div class="inv-swipe-action" style="background:var(--blue);color:var(--bg-0);" onclick="event.stopPropagation();quickAction(${r.row},'from-store')">Pull</div>`;
             if (r.posted==='Yes'&&r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:#e9a445;color:var(--bg-0);" onclick="event.stopPropagation();repostWatch(${r.row})"><span class="isa-icon">Repost</div>`;
             html += `<div class="inv-swipe-action" style="background:#a855f7;color:var(--bg-0);" onclick="event.stopPropagation();shareWatchCard(${r.row},'${(r.description||'').replace(/'/g,"\\'")}')">Share</div>`;
             html += `<div class="inv-swipe-action" style="background:#06b6d4;color:var(--bg-0);" onclick="event.stopPropagation();viewWatchPhotos('${r.description}', ${r.row})">Photos</div>`;
@@ -8590,31 +8593,94 @@ async function submitPost() {
 }
 
 // ── Photo Upload ──
-async function uploadWatchPhoto(input) {
-    const file = input.files[0];
-    if (!file) return;
+async function uploadWatchPhotos(input) {
+    const files = Array.from(input.files);
+    if (!files.length) return;
     const row = document.getElementById('wm-row').value;
     if (!row) { alert('Save the watch first before uploading photos.'); return; }
     const statusEl = document.getElementById('wm-photo-status');
-    statusEl.textContent = 'Uploading...';
-    const fd = new FormData();
-    fd.append('photo', file);
-    try {
-        const r = await fetch(`/api/inventory/${row}/photo`, {method:'POST', body: fd});
-        const d = await r.json();
-        if (d.ok) { statusEl.textContent = ' Uploaded!'; loadWatchPhotos(row); }
-        else { statusEl.textContent = ' ' + (d.error||'Failed'); }
-    } catch(e) { statusEl.textContent = ' ' + e.message; }
+    let done = 0, failed = 0;
+    statusEl.textContent = `Uploading ${files.length} photo${files.length>1?'s':''}...`;
+    for (const file of files) {
+        const fd = new FormData();
+        fd.append('photo', file);
+        try {
+            const r = await fetch(`/api/inventory/${row}/photo`, {method:'POST', body: fd});
+            const d = await r.json();
+            if (d.ok) done++; else failed++;
+        } catch(e) { failed++; }
+        statusEl.textContent = `Uploaded ${done}/${files.length}${failed?' ('+failed+' failed)':''}`;
+    }
+    statusEl.textContent = done ? `${done} photo${done>1?'s':''} uploaded` : 'Upload failed';
+    setTimeout(() => { statusEl.textContent = ''; }, 2500);
+    loadWatchPhotos(row);
     input.value = '';
 }
+// Legacy alias
+function uploadWatchPhoto(input) { uploadWatchPhotos(input); }
+
+function viewWatchPhoto(url, allUrls, startIdx) {
+    const existing = document.getElementById('photo-lightbox');
+    if (existing) existing.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'photo-lightbox';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;background:rgba(0,0,0,0.95);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+    overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+    let idx = startIdx || 0;
+    const render = () => {
+        overlay.innerHTML = `
+            <div onclick="document.getElementById('photo-lightbox').remove()" style="position:fixed;top:12px;right:16px;color:#fff;font-size:2rem;cursor:pointer;z-index:100000;line-height:1;padding:12px;-webkit-tap-highlight-color:transparent;">&#x2715;</div>
+            ${allUrls.length>1?`<div style="color:#aaa;font-size:0.8rem;margin-bottom:10px;">${idx+1} / ${allUrls.length}</div>`:''}
+            <img src="${allUrls[idx]}" style="max-width:calc(100vw - 32px);max-height:calc(100vh - 120px);border-radius:8px;object-fit:contain;">
+            ${allUrls.length>1?`<div style="margin-top:16px;display:flex;gap:16px;">
+                <button onclick="event.stopPropagation();window._wmPhotoNav(-1)" style="background:#222;color:white;border:1px solid #444;padding:12px 28px;border-radius:8px;cursor:pointer;font-size:1rem;min-width:48px;-webkit-tap-highlight-color:transparent;">&#9664;</button>
+                <button onclick="event.stopPropagation();window._wmPhotoNav(1)" style="background:#222;color:white;border:1px solid #444;padding:12px 28px;border-radius:8px;cursor:pointer;font-size:1rem;min-width:48px;-webkit-tap-highlight-color:transparent;">&#9654;</button>
+            </div>`:''}`;
+    };
+    window._wmPhotoNav = dir => { idx = (idx + dir + allUrls.length) % allUrls.length; render(); };
+    render();
+    document.body.appendChild(overlay);
+}
+
+async function deleteWatchPhoto(row, filename) {
+    if (!confirm('Delete this photo?')) return;
+    try {
+        const r = await fetch(`/api/inventory/${row}/photo/${encodeURIComponent(filename)}`, {method:'DELETE'});
+        const d = await r.json();
+        if (d.ok) loadWatchPhotos(row);
+        else alert(d.error || 'Failed to delete photo');
+    } catch(e) { alert('Error: ' + e.message); }
+}
+
+// Drag-and-drop for photo upload zone
+(function() {
+    document.addEventListener('DOMContentLoaded', () => {
+        const dz = document.getElementById('wm-photo-dropzone');
+        if (!dz) return;
+        const highlight = () => { dz.style.borderColor = 'var(--accent)'; dz.style.background = 'var(--bg-3)'; };
+        const unhighlight = () => { dz.style.borderColor = ''; dz.style.background = ''; };
+        ['dragenter','dragover'].forEach(e => dz.addEventListener(e, ev => { ev.preventDefault(); highlight(); }));
+        ['dragleave','drop'].forEach(e => dz.addEventListener(e, ev => { ev.preventDefault(); unhighlight(); }));
+        dz.addEventListener('drop', ev => {
+            const input = document.getElementById('wm-photo-input');
+            if (ev.dataTransfer.files.length) {
+                input.files = ev.dataTransfer.files;
+                uploadWatchPhotos(input);
+            }
+        });
+    });
+})();
 async function loadWatchPhotos(row) {
     const grid = document.getElementById('wm-photos-grid');
     try {
         const r = await fetch(`/api/inventory/${row}/photos`);
         const d = await r.json();
         if (d.ok && d.photos.length) {
-            grid.innerHTML = d.photos.map(p => `<img src="${p.url}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--border);">`).join('');
-        } else { grid.innerHTML = '<span style="font-size:0.68rem;color:var(--text-2);">No photos yet</span>'; }
+            grid.innerHTML = d.photos.map((p, i) => `<div style="position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--bg-3);">
+                <img src="${p.url}" style="width:100%;height:100%;object-fit:cover;display:block;cursor:pointer;" onclick="viewWatchPhoto('${p.url}', ${JSON.stringify(d.photos.map(x=>x.url)).replace(/'/g,'\\\'')}, ${i})">
+                <button onclick="event.stopPropagation();deleteWatchPhoto(${row},'${p.filename}')" style="position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,0.65);color:#fff;border:none;font-size:0.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;-webkit-tap-highlight-color:transparent;">&#x2715;</button>
+            </div>`).join('');
+        } else { grid.innerHTML = ''; }
     } catch(e) { grid.innerHTML = ''; }
 }
 
