@@ -16417,24 +16417,17 @@ async function createNewPackage() {
 }
 
 async function showMoveWatchMenu(watchId, fromPkgId, recipientName) {
-    // Get all pending packages for this or any recipient
-    const items = _jamState.feeds['keluar'] || [];
-    const pending = items.filter(i => i.status === 'pending');
-
-    // Collect unique packages
-    const pkgMap = {};
-    for (const i of pending) {
-        if (i.package_id && i.package_id !== fromPkgId) {
-            if (!pkgMap[i.package_id]) {
-                pkgMap[i.package_id] = {
-                    id: i.package_id,
-                    name: i.package_name || 'Package',
-                    buyer: (i.sold_to || i.to || '').split('\n')[0]
-                };
-            }
-        }
+    // Fetch ALL pending packages from API (not just visible ones)
+    let packages = [];
+    try {
+        const r = await fetch('/api/shipping/packages');
+        const allPkgs = await r.json();
+        packages = allPkgs
+            .filter(p => !p.shipped && p.id !== fromPkgId)
+            .map(p => ({ id: p.id, name: p.package_name || 'Package ' + p.id, buyer: p.recipient || '' }));
+    } catch(e) {
+        console.error('Failed to load packages:', e);
     }
-    const packages = Object.values(pkgMap);
 
     const modal = document.createElement('div');
     modal.id = 'move-watch-modal';
