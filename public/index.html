@@ -3895,7 +3895,15 @@ document.addEventListener('mouseout',function(e){
 });
 })();
 
-const DIAL_ALIASES = {'azzuro':'blue','azzurro':'blue','tiffany':'turquoise blue','pistachio':'green','candy pink':'pink','rhodium':'slate','mop':'mother of pearl'};
+const DIAL_ALIASES = {
+    'azzuro':'blue','azzurro':'blue','tiffany':'turquoise blue','pistachio':'green','mint':'mint green',
+    'candy pink':'pink','rhodium':'slate','rhodium':'grey','mop':'mother of pearl',
+    'noir':'black','blk':'black','wht':'white','bleu':'blue','vert':'green',
+    'champagne':'gold','sundust':'pink','cacao':'chocolate','tobacco':'chocolate',
+    'salmon':'pink','argent':'silver','opaline':'silver','glacier':'ice blue',
+    'nero':'black','bianco':'white','verde':'green','sliver':'silver','bule':'blue',
+    'anthracite':'grey','ruthenium':'grey','steel':'grey','havana':'chocolate',
+};
 function searchTerms(q) {
     if (!q) return [];
     const ql = q.toLowerCase().trim(), terms = [ql];
