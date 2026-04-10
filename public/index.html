@@ -16418,6 +16418,9 @@ async function createNewPackage() {
 }
 
 async function showMoveWatchMenu(watchId, fromPkgId, recipientName) {
+    // Remove any existing move menu
+    document.getElementById('move-pkg-dropdown')?.remove();
+
     // Fetch ALL pending packages
     let packages = [];
     try {
@@ -16425,32 +16428,45 @@ async function showMoveWatchMenu(watchId, fromPkgId, recipientName) {
         const allPkgs = await r.json();
         packages = allPkgs.filter(p => !p.shipped && p.id !== fromPkgId);
     } catch(e) {
-        alert('Failed to load packages');
+        if (typeof showToast === 'function') showToast('Failed to load packages', 'error');
         return;
     }
 
     if (packages.length === 0) {
-        alert('No other packages available. Create a new package first.');
+        if (typeof showToast === 'function') showToast('No other packages available', 'error');
         return;
     }
 
-    // Build simple prompt with package options
-    let msg = 'Move Watch #' + watchId + ' to which package?\n\n';
-    packages.forEach((p, i) => {
-        const watchCount = (p.watches || []).length;
-        msg += (i + 1) + '. ' + (p.package_name || 'Package ' + p.id) + ' (' + watchCount + ' watches)\n';
-    });
-    msg += '\nEnter number (1-' + packages.length + '):';
+    // Build inline dropdown right below the button
+    const btn = event?.target;
+    const card = btn?.closest('.jam-card');
+    if (!card) return;
 
-    const choice = prompt(msg);
-    if (!choice) return;
-    const idx = parseInt(choice) - 1;
-    if (isNaN(idx) || idx < 0 || idx >= packages.length) {
-        alert('Invalid choice');
-        return;
+    const dropdown = document.createElement('div');
+    dropdown.id = 'move-pkg-dropdown';
+    dropdown.style.cssText = 'margin:8px 0;padding:8px;background:var(--bg-1);border:2px solid var(--accent);border-radius:8px;';
+
+    let html = '<div style="font-size:0.7rem;font-weight:700;color:var(--accent);margin-bottom:6px;">MOVE W#' + watchId + ' TO:</div>';
+    for (const pkg of packages) {
+        const wCount = (pkg.watches || []).length;
+        const name = (pkg.package_name || 'Package ' + pkg.id).replace(/</g, '&lt;');
+        html += '<button onclick="moveWatchToPackage(' + watchId + ',' + (fromPkgId || 'null') + ',' + pkg.id + ');document.getElementById(\'move-pkg-dropdown\')?.remove();" style="display:block;width:100%;text-align:left;padding:10px;margin-bottom:4px;background:var(--bg-2);border:1px solid var(--border);border-radius:6px;color:var(--text-0);font-size:0.78rem;font-weight:600;cursor:pointer;">' + name + ' <span style="color:var(--text-2);font-weight:400;">(' + wCount + ' watches)</span></button>';
     }
+    html += '<button onclick="document.getElementById(\'move-pkg-dropdown\')?.remove();" style="display:block;width:100%;padding:8px;margin-top:4px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-2);font-size:0.72rem;cursor:pointer;">Cancel</button>';
 
-    await moveWatchToPackage(watchId, fromPkgId, packages[idx].id);
+    dropdown.innerHTML = html;
+    card.appendChild(dropdown);
+    dropdown.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // Close on outside click
+    setTimeout(() => {
+        document.addEventListener('click', function _close(e) {
+            if (!dropdown.contains(e.target) && e.target !== btn) {
+                dropdown.remove();
+                document.removeEventListener('click', _close);
+            }
+        });
+    }, 100);
 }
 
 async function moveWatchToPackage(watchId, fromPkgId, toPkgId) {
