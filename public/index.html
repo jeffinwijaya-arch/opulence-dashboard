@@ -658,6 +658,16 @@
         .market-dot.closed { background:var(--red); opacity:0.5; }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
 
+        /* ── BREADCRUMB STATS BAR ── */
+        .quick-stats {
+            display:flex; gap:16px; align-items:center; padding:4px 0 8px;
+            font-family:var(--mono); font-size:0.62rem; color:var(--text-3);
+            letter-spacing:0.3px; overflow-x:auto; white-space:nowrap;
+        }
+        .quick-stats .qs-item { display:flex; align-items:center; gap:4px; }
+        .quick-stats .qs-val { color:var(--text-1); font-weight:600; }
+        .quick-stats .qs-dot { width:4px; height:4px; border-radius:50%; }
+
         /* ── ACCESSIBILITY ── */
         :focus-visible {
             outline:2px solid var(--accent); outline-offset:2px;
@@ -6090,6 +6100,16 @@ async function runCompare(){
     }catch(e){c.innerHTML='<div style="color:var(--red);padding:12px;text-align:center;">'+e.message+'</div>';}
 }
 
+// ── Recently viewed watches ──
+function getRecentViews(){try{return JSON.parse(localStorage.getItem('mk-recent-views')||'[]');}catch(e){return [];}}
+function addRecentView(ref,model,price){
+    let views=getRecentViews();
+    views=views.filter(v=>v.ref!==ref);
+    views.unshift({ref,model:model||'',price:price||0,ts:Date.now()});
+    if(views.length>10)views.length=10;
+    localStorage.setItem('mk-recent-views',JSON.stringify(views));
+}
+
 // ── Recent searches ──
 function getRecentSearches(){try{return JSON.parse(localStorage.getItem('mk-recent-searches')||'[]');}catch(e){return [];}}
 function saveRecentSearch(q){if(!q)return;let r=getRecentSearches();r=r.filter(x=>x.toLowerCase()!==q.toLowerCase());r.unshift(q);if(r.length>8)r.length=8;localStorage.setItem('mk-recent-searches',JSON.stringify(r));renderRecentSearches();}
@@ -6257,6 +6277,9 @@ async function doLookup() {
                 histEl.innerHTML = '';
             }
         }, 100);
+
+        // Track recently viewed
+        addRecentView(ref, model, b25);
 
         // Load price history chart
         try {
@@ -6914,6 +6937,29 @@ function toggleSource(el) {
 }
 function filterBrowse(){browseOffset=0;renderBrowse();}
 function loadMoreBrowse(){renderBrowse(true);}
+// Infinite scroll for browse table
+(function(){
+    let _browseObserver;
+    const _setupBrowseInfiniteScroll = () => {
+        const btn = document.getElementById('browse-more');
+        if (!btn || _browseObserver) return;
+        _browseObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && btn.style.display !== 'none') {
+                    loadMoreBrowse();
+                }
+            });
+        }, {rootMargin: '200px'});
+        _browseObserver.observe(btn);
+    };
+    // Setup when browse page becomes visible
+    const _origShowPage = window.showPage;
+    if (_origShowPage) {
+        // Defer setup to after browse tab is shown
+        document.addEventListener('click', () => setTimeout(_setupBrowseInfiniteScroll, 500));
+    }
+    setTimeout(_setupBrowseInfiniteScroll, 2000);
+})();
 
 // ── KEYBOARD ──
 document.addEventListener('keydown',e=>{
