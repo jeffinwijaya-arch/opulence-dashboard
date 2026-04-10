@@ -3363,7 +3363,10 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                 <div id="claude-sessions-list">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
                         <h3 style="margin:0;font-size:0.9rem;color:var(--text-1);">Claude Code Sessions</h3>
-                        <button class="mc-btn" onclick="refreshClaudeSessions()">Refresh</button>
+                        <div>
+                            <button class="mc-btn" onclick="createNewClaudeSession()">New Session</button>
+                            <button class="mc-btn" onclick="refreshClaudeSessions()">Refresh</button>
+                        </div>
                     </div>
                     <div id="claude-sessions-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">
                         <div style="padding:20px;text-align:center;color:var(--text-2);">Loading sessions...</div>
@@ -16951,45 +16954,15 @@ async function sendClaudeMessage() {
                 project_path: _currentClaudeProject
             })
         });
-        const startData = await r.json();
-        if (!r.ok || !startData.task_id) {
-            hideClaudeThinking();
-            appendChatMessage('assistant', `Error: ${startData.error || 'Failed to start'}`);
-            return;
-        }
-        // Poll for result with live streaming
-        const taskId = startData.task_id;
-        let elapsed = 0;
-        let lastPartialLen = 0;
-        while (elapsed < 300000) {
-            await new Promise(ok => setTimeout(ok, 1500));
-            elapsed += 1500;
-            try {
-                const pr = await fetch('/api/mission-control/claude-code/poll/' + taskId);
-                const pd = await pr.json();
-                if (pd.status === 'done') {
-                    hideClaudeThinking();
-                    appendChatMessage('assistant', pd.response);
-                    return;
-                } else if (pd.status === 'error') {
-                    hideClaudeThinking();
-                    appendChatMessage('assistant', `Error: ${pd.error}`);
-                    return;
-                }
-                // Show partial output while running
-                if (pd.partial && pd.partial.length > lastPartialLen) {
-                    lastPartialLen = pd.partial.length;
-                    const thinkEl = document.getElementById('claude-thinking');
-                    if (thinkEl) {
-                        thinkEl.innerHTML = '<div style="white-space:pre-wrap;word-break:break-word;">' + pd.partial.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div><div style="margin-top:6px;"><em style="color:var(--text-3);font-size:0.75rem;">Claude is still working...</em></div>';
-                        const messagesEl = document.getElementById('claude-chat-messages');
-                        if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight;
-                    }
-                }
-            } catch(pe) { /* poll failed, keep trying */ }
-        }
+        const data = await r.json();
+        
         hideClaudeThinking();
-        appendChatMessage('assistant', 'Timed out waiting for response');
+        
+        if (r.ok && data.response) {
+            appendChatMessage('assistant', data.response);
+        } else {
+            appendChatMessage('assistant', `Error: ${data.error || 'Failed to get response'}`);
+        }
     } catch (e) {
         hideClaudeThinking();
         appendChatMessage('assistant', `Error: ${e.message}`);
