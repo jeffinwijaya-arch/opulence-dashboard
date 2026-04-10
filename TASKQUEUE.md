@@ -11,63 +11,73 @@
 
 ## Priority: CRITICAL
 
-### WS1: Price Intelligence (ws1-price-intel.js)
-- [ ] Add deal scoring algorithm — combine: discount_pct (weight 40%), days_on_market (20%), seller_reliability (20%), condition_premium (20%) → single 0-100 score
-- [ ] Price confidence indicator on lookups — "HIGH" (>20 comparables), "MEDIUM" (5-20), "LOW" (<5) with color coding
-- [ ] Price trend arrows on lookup results — compare current b25 vs 30-day-ago b25 from bundle.json history
-
-### WS3: Deal Flow & Arbitrage (ws3-deal-flow.js)
-- [ ] Enhanced arbitrage calculator — add real costs: shipping $150, insurance 1.5% of value, wire fee $40, FedEx label $35 → show true net margin
-- [ ] Snipe alert badge on deals page — flag any listing priced >10% below b25 with pulsing gold border
+All critical tasks completed 2026-04-10.
 
 ## Priority: HIGH
 
-### WS2: Inventory P&L (ws2-inventory-pnl.js)
-- [ ] Portfolio heat map — inject colored squares into portfolio page: green (>5% profit), yellow (0-5%), red (loss), size = capital deployed
-- [ ] Days-in-inventory aging bar — show color-coded bar on each inventory row: green <14d, yellow 14-30d, red >30d
-- [ ] Unrealized P&L trend — weekly sparkline showing portfolio value over time (store snapshots in localStorage)
-
-### WS4: Posting & Sales (ws4-posting.js)
-- [ ] Auto-caption generator — from inventory data build: "BNIB Full Set {ref} {bracelet} {dial} {card_month}/{card_year} {condition} with WT ${price} + label"
-- [ ] Smart price recommendation — suggested sale price = US low from refs data - $100, with "competitive" / "aggressive" / "premium" tiers
-
-### WS7: Market Analytics (ws7-analytics.js)
-- [ ] Brand market share donut chart on overview page — Rolex 68%, AP 6%, Patek 10%, RM 9%, etc from summary.brands
-- [ ] Top movers widget — show refs with biggest price changes from movers data in bundle.json
-- [ ] HK vs US price gap chart — for top 20 refs, show side-by-side bars of HK b25 vs US b25
+All high tasks completed 2026-04-10.
 
 ## Priority: MEDIUM
 
 ### WS5: Shipping (ws5-shipping.js)
-- [ ] Shipping cost estimator — based on declared value, calculate FedEx Priority cost + insurance premium before creating label
-- [ ] Batch ship selector — checkbox column on sold/unshipped watches, "Create Labels for Selected" button
+- [ ] Batch ship UX polish — test the checkbox selector end-to-end, handle edge cases (no packages, all shipped)
 
 ### WS6: CRM (ws6-crm.js)
-- [ ] Buyer purchase history panel — when viewing a sold watch, show "John also bought: [list]" from inventory data
-- [ ] Seller reliability score — count of transactions, average discount vs market, response pattern
+- [ ] Referral tracking — "referred by" field on buyer records, track referral chains
 
 ### WS8: Mobile UX (ws8-mobile-ux.js)
-- [ ] Quick-action floating buttons — context-aware: on inventory page show "Add Watch", on lookup show "Search", on portfolio show "Refresh"
-- [ ] Swipe-to-action on deal cards — swipe right = save to watchlist, swipe left = dismiss
+- [ ] Offline mode — cache last lookup results + deals in service worker for subway use
+- [ ] Keyboard shortcuts for desktop power users (/ to search, n for new watch, s for sell)
 
 ### WS9: Financial Reporting (ws9-reporting.js)
-- [ ] Weekly P&L summary card on overview — total realized P&L this week, unrealized change, capital deployed vs available
-- [ ] Profit by ref analysis — which ref models are most profitable? Average margin per ref from sold watches
+- [ ] Tax export — generate CSV of all sold watches with cost basis + proceeds for accountant
+- [ ] Monthly P&L PDF export with charts
 
 ### WS10: Automation (ws10-automation.js)
-- [ ] Auto-price new watches — when a watch is added without sale_price, auto-fill from refs data: US low or b25 - $100
-- [ ] Stale listing detector — watches posted >7 days with no activity → suggest price drop amount
+- [ ] Smart photo tagging — match uploaded photos to refs based on filename/EXIF
+- [ ] Auto-detect sold watches from WhatsApp messages ("sold 126334 to John 14500")
+
+### General
+- [ ] Test all 10 modules on mobile Safari — fix any layout/interaction bugs
+- [ ] Performance audit — measure module load time, optimize if >500ms
+- [ ] Add module error boundary — if one module crashes, others keep working
 
 ## Priority: LOW
 - [ ] WS4: A/B caption testing — track view counts per caption style
-- [ ] WS6: Referral tracking — "referred by" field on buyer records
 - [ ] WS7: Seasonal price patterns — monthly average prices per ref to identify buy/sell windows
-- [ ] WS8: Offline mode — cache last lookup results in service worker for subway use
-- [ ] WS9: Tax export — generate CSV of all sold watches with cost basis + proceeds for accountant
-- [ ] WS10: Smart photo tagging — match uploaded photos to refs based on filename/EXIF
+- [ ] WS7: Currency impact dashboard — how USD/HKD moves affect margins
+- [ ] WS9: Profit by channel analysis (WhatsApp groups, Instagram, direct)
+- [ ] WS10: Competition price tracking — monitor Chrono24 prices for key refs
 
-## COMPLETED
-<!-- Move completed tasks here with date and commit hash -->
+## COMPLETED (2026-04-10)
+- [x] WS1: Deal scoring algorithm (0-100 composite score) — ws1-price-intel.js
+- [x] WS1: Price confidence indicator (HIGH/MEDIUM/LOW) — ws1-price-intel.js
+- [x] WS1: Price trend arrows (up/down/flat) — ws1-price-intel.js
+- [x] WS2: Portfolio heat map (green/yellow/red squares) — ws2-inventory-pnl.js
+- [x] WS2: Days-in-inventory aging bars — ws2-inventory-pnl.js
+- [x] WS2: Unrealized P&L trend sparkline — ws2-inventory-pnl.js
+- [x] WS3: Enhanced arbitrage calculator (real costs: $150+1.5%+$40+$35) — ws3-deal-flow.js
+- [x] WS3: Snipe alert badges (>10% below b25, pulsing gold) — ws3-deal-flow.js
+- [x] WS4: Auto-caption generator — ws4-posting.js
+- [x] WS4: Smart price recommendation (competitive/market/premium) — ws4-posting.js
+- [x] WS5: Shipping cost estimator — ws5-shipping.js
+- [x] WS6: Buyer purchase history panel — ws6-crm.js
+- [x] WS6: Seller reliability score — ws6-crm.js
+- [x] WS7: Brand market share donut chart — ws7-analytics.js
+- [x] WS7: Top movers widget — ws7-analytics.js
+- [x] WS7: HK vs US price gap chart — ws7-analytics.js
+- [x] WS8: Quick-action floating button (FAB) — ws8-mobile-ux.js
+- [x] WS8: Swipe-to-action on deal cards — ws8-mobile-ux.js
+- [x] WS9: Weekly P&L summary card — ws9-reporting.js
+- [x] WS9: Profit by ref analysis — ws9-reporting.js
+- [x] WS10: Auto-price new watches — ws10-automation.js
+- [x] WS10: Stale listing detector — ws10-automation.js
+- [x] Price analyzer: Rolex dial options expanded 74→271 refs
+- [x] Price analyzer: AP 18→56 refs, Patek 15→80 refs, RM 0→59 refs with dials
+- [x] Price analyzer: FIXED_DIAL expanded 71→126 entries
+- [x] Price analyzer: 13 new dealer shorthand patterns in extract_dial()
+- [x] Price analyzer: Phone number extraction improved (33 seller mappings)
+- [x] Price analyzer: Dial synonyms expanded to 30 entries
 
 ## RULES FOR AGENTS
 1. Pick ONE task from the highest unchecked priority level
