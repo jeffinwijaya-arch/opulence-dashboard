@@ -1,6 +1,26 @@
 {
   "articles": [
     {
+      "id": "cf23ec4c9206",
+      "title": "Abraham-Louis Breguet: The Founder of Modern Horology",
+      "link": "https://revolutionwatch.com/abraham-louis-breguet-the-founder-of-modern-horology/",
+      "desc": "The post Abraham-Louis Breguet: The Founder of Modern Horology appeared first on Revolution Watch.",
+      "date": "2026-04-10T15:10:34+00:00",
+      "source": "REVOLUTION",
+      "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "2c9fecd99610",
+      "title": "Furlan Marri Introduces The New Meteorite Octa \u2014 A Cosmic Twist On An Old Favorite",
+      "link": "https://www.fratellowatches.com/furlan-marri-introduces-the-new-meteorite-octa-a-cosmic-twist-on-an-old-favorite/",
+      "desc": "Furlan Marri has built its reputation by offering faithful mid-century design with exceptional detail. The price remains approachable for most watch enthusiasts. If not handled carefully, this could s",
+      "date": "2026-04-10T13:00:06+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 10
+    },
+    {
       "id": "69242fc28cb4",
       "title": "In Conversation with Patrik Hoffmann, CEO and Chairman of Favre Leuba",
       "link": "https://revolutionwatch.com/in-conversation-with-patrik-hoffmann-ceo-and-chairman-of-favre-leuba/",
@@ -38,6 +58,16 @@
       "date": "2026-04-10T11:00:15+00:00",
       "source": "FRATELLO",
       "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "0094e2dbf4b1",
+      "title": "Bring a Loupe: An 18k Chaumet Jump Hour, A Blancpain 3H Bund, A Juvenia Arithmo, And More",
+      "link": "https://www.hodinkee.com/articles/an-18k-chaumet-jump-hour-a-blancpain-3h-bund-a-juvenia-arithmo-and-more",
+      "desc": "All that and more in this week's edition of Hodinkee's What's Selling Where column.",
+      "date": "2026-04-10T11:00:07-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/ec64f60b-802b-4f45-9bfa-be4f8ebf1af9/bal-hero.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
       "relevance": 0
     },
     {
@@ -79,6 +109,16 @@
       "source": "MONOCHROME",
       "image": "https://monochrome-watches.com/app/uploads/2026/04/czapek-revisits-its-antarctique-dark-sector-revelation-and-tourbillon-in-titanium-and-cosmic-blue-review-1-600x237.jpg",
       "relevance": 0
+    },
+    {
+      "id": "82b6ee0865f7",
+      "title": "Introducing: Furlan Marri's Awesome Mechaquartz Chronograph Returns With A Meteorite Twist",
+      "link": "https://www.hodinkee.com/articles/intro-furlan-marri-meteorite",
+      "desc": "The new \"Meteorite Octa\" isn't a part of the brand's permanent collection, so you've only got a few days to decide if you love it. And I think you just might.",
+      "date": "2026-04-10T09:00:51-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/c097ca43-af18-46f6-bccc-30ac1034a975/Meteorite_Octa_Lifestyle_7.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
+      "relevance": 10
     },
     {
       "id": "7426b2bbc876",
@@ -261,16 +301,6 @@
       "relevance": 0
     },
     {
-      "id": "b35856efcea6",
-      "title": "The New Bianchet UltraFino Maserati \u2014 One Of The Better Car-Watch Collaborations I\u2019ve Seen In A While",
-      "link": "https://www.fratellowatches.com/the-new-bianchet-ultrafino-maserati-might-be-one-of-the-better-car-watch-collaborations-ive-seen-in-a-while/",
-      "desc": "Honestly, I usually take car-watch collaborations with a pinch of salt. Too often, they feel like the easy and somewhat lazy option. Add a logo, pull in a color, mention \u201cperformance\u201d a few times, and",
-      "date": "2026-04-08T15:00:10+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 0
-    },
-    {
       "id": "8a9ed2328529",
       "title": "Introducing: Sinn Announces The 308 Hunting Watch, The 544, And The 936 S",
       "link": "https://www.hodinkee.com/articles/sinns-announces-the-308-hunting-watch-the-544-and-the-936-s",
@@ -329,39 +359,9 @@
       "source": "HODINKEE",
       "image": "https://hodinkee.imgix.net/uploads/images/50fbf9f3-63a9-42c7-843d-a0bb5628f960/cabriolet-hero.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
       "relevance": 0
-    },
-    {
-      "id": "c108a253d49e",
-      "title": "Introducing: The Universal Gen\u00e8ve Relaunch Brings Back The Iconic Polerouter In Eleven Variants",
-      "link": "https://www.hodinkee.com/articles/the-universal-geneve-relaunch-brings-back-the-iconic-polerouter-in-eleven-variants",
-      "desc": "The new Polerouter is offered in two sizes, with a new microrotor movement and a distinctly modern sensibility.",
-      "date": "2026-04-08T08:00:31-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/fe5b23d2-51b5-433a-a3ac-8f1d2143a591/08_UniversalGenevePolerouterHardstone_RGB2.jpeg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
-    },
-    {
-      "id": "7e7f1d96eed0",
-      "title": "Introducing: The Iconic Universal Gen\u00e8ve Compax Returns, With The 'Nina Rindt' And Five Other Versions",
-      "link": "https://www.hodinkee.com/articles/introducing-universal-geneve-compax",
-      "desc": "With two vintage-inspired relaunches and four new models, the Compax is back in a bold way.",
-      "date": "2026-04-08T08:00:00-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/e2895f06-0060-4b6d-9406-d855fc6f5e8f/01_UniversalGeneveCompax_Ref.UGCO001_RGB.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
-    },
-    {
-      "id": "5eb35e89f227",
-      "title": "Watches and Wonders 2026: Complete Brand Coverage and Novelties",
-      "link": "https://revolutionwatch.com/watches-and-wonders-2026-complete-brand-coverage-and-novelties/",
-      "desc": "The post Watches and Wonders 2026: Complete Brand Coverage and Novelties appeared first on Revolution Watch.",
-      "date": "2026-04-07T09:21:37+00:00",
-      "source": "REVOLUTION",
-      "image": "",
-      "relevance": 10
     }
   ],
-  "fetched_at": "2026-04-10T13:00:03.291472+00:00",
+  "fetched_at": "2026-04-10T16:00:03.243574+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
