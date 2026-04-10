@@ -1,0 +1,85 @@
+name: Claude Code synthetic monitor
+
+# ──────────────────────────────────────────────────────────────
+# INSTALLATION
+# ──────────────────────────────────────────────────────────────
+# Copy this file to `.github/workflows/claude-code-monitor.yml` in
+# the repo. The easiest way is via the GitHub web UI:
+#   1. github.com/<owner>/<repo>/new/main/.github/workflows
+#   2. Name the file claude-code-monitor.yml
+#   3. Paste the contents of this file
+#   4. Commit
+# (It lives here as .example instead of the real path because the
+# PAT Claude uses to push doesn't carry `workflow` scope, and GitHub
+# blocks any push under .github/workflows/ from tokens that don't.)
+#
+# Then add two repository secrets under Settings → Secrets:
+#   CC_MONITOR_BASE_URL   — e.g. https://dashboard.your-domain.com
+#   CC_MONITOR_COOKIE     — (optional) auth cookie if the API is gated
+#
+# ──────────────────────────────────────────────────────────────
+# Every 10 minutes, hit the full Claude Code round-trip and fail the
+# workflow if anything is broken. Also runnable on demand via the
+# "Run workflow" button on the Actions tab.
+#
+# Required repository secrets:
+#   CC_MONITOR_BASE_URL   — e.g. https://dashboard.your-domain.com
+#   CC_MONITOR_COOKIE     — (optional) auth cookie if the API is gated
+#
+# The monitor script lives at scripts/claude-code-monitor.js and has
+# no npm dependencies — pure Node 18 built-in fetch.
+#
+# On failure, the workflow step exits 1, which surfaces a red ✗ on the
+# Actions tab and (if you enable notifications) emails you.
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+    inputs:
+      session_id:
+        description: 'Specific session_id to test against (optional)'
+        required: false
+        default: ''
+      timeout_seconds:
+        description: 'Poll budget in seconds'
+        required: false
+        default: '60'
+
+permissions:
+  contents: read
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run Claude Code synthetic monitor
+        env:
+          BASE_URL: ${{ secrets.CC_MONITOR_BASE_URL }}
+          CC_COOKIE: ${{ secrets.CC_MONITOR_COOKIE }}
+          CC_SESSION: ${{ github.event.inputs.session_id }}
+        run: |
+          if [ -z "$BASE_URL" ]; then
+            echo "::error::CC_MONITOR_BASE_URL secret is not set"
+            exit 2
+          fi
+          timeout_arg="${{ github.event.inputs.timeout_seconds || '60' }}"
+          node scripts/claude-code-monitor.js \
+            --base "$BASE_URL" \
+            --timeout "$timeout_arg" \
+            --json
+
+      - name: Summarize on failure
+        if: failure()
+        run: |
+          echo "Claude Code monitor failed. See the logs above for the"
+          echo "failing step + error message + latency breakdown. This"
+          echo "means the dashboard's Claude Code tab is also broken for"
+          echo "users right now — investigate before your next coffee."
