@@ -15819,17 +15819,22 @@ function switchJamTab(type) {
     loadJamFeed(type);
 }
 
+var _jamFeedLoading = false;
 async function loadJamFeed(type, append = false) {
+    if (_jamFeedLoading && !append) return; // prevent re-entrant calls
+    _jamFeedLoading = true;
     const feed = $('#jam-feed');
     // If we have cached data and not appending, render from cache instantly
     if (!append && _jamState.feeds[type]?.length) {
         renderJamFeed(type);
-        // Refresh in background (only once, don't re-render if tab changed)
+        _jamFeedLoading = false;
+        // Refresh in background ONCE
         const tabAtStart = _jamState.tab;
         fetch(`/api/jam/feed?type=${type}&limit=50&offset=0`).then(r=>r.ok?r.json():null).then(data=>{
             if(!data || _jamState.tab !== tabAtStart)return;
+            const oldLen = (_jamState.feeds[type]||[]).length;
             _jamState.feeds[type]=data.items;_jamState.totals[type]=data.total;_jamState.offsets[type]=data.items.length;
-            renderJamFeed(type);
+            if(data.items.length !== oldLen) renderJamFeed(type); // only re-render if data actually changed
         }).catch(()=>{});
         return;
     }
@@ -15857,6 +15862,8 @@ async function loadJamFeed(type, append = false) {
     } catch(e) {
         console.error('Jam feed:', e);
         feed.innerHTML = '<div style="text-align:center;color:var(--red);padding:24px;">Failed to load feed<br><small style="color:var(--text-2);">' + (e.message||e) + '</small></div>';
+    } finally {
+        _jamFeedLoading = false;
     }
 }
 

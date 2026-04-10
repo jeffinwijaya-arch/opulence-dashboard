@@ -1,6 +1,7 @@
 /**
  * MK Opulence — ws2-inventory-pnl
- * Inventory P&L enhancements: portfolio heat map, aging bars, unrealized P&L trend.
+ * Inventory P&L enhancements: portfolio heat map, aging alerts, weekly P&L trend,
+ * capital efficiency metrics.
  *
  * Available globals:
  *   window.DATA          — shared app data (refs, deals, portfolio, etc.)
@@ -9,7 +10,7 @@
  *   showPage(name)       — navigate to page
  *
  * Rules:
- *   - Register via MKModules.register('ws2-inventory-pnl', { init, render })
+ *   - Register via MKModules.register('ws2-inventory-pnl', { init, render, cleanup })
  *   - Use MKModules.emit() / MKModules.on() for cross-module communication
  *   - Never use MutationObserver or setInterval for DOM updates
  *   - Use CSS variables for theming (--bg-0, --accent, --text-0, etc.)
@@ -20,7 +21,8 @@
 
     const MOD_ID = 'ws2-inventory-pnl';
     const PNL_STORAGE_KEY = 'mk_pnl_history';
-    const MAX_HISTORY_DAYS = 30;
+    const MAX_SNAPSHOTS = 30;
+    const SPARKLINE_POINTS = 7;
 
     // ── CSS injection (once) ──
     let styleInjected = false;
@@ -28,6 +30,7 @@
         if (styleInjected) return;
         styleInjected = true;
         const style = document.createElement('style');
+        style.id = 'ws2-styles';
         style.textContent = `
             /* Portfolio Heat Map */
             .ws2-heatmap-wrap {
@@ -90,6 +93,63 @@
                 opacity: 0.85;
             }
 
+            /* Aging Summary Alert */
+            .ws2-aging-summary {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 14px;
+                background: rgba(255,59,48,0.08);
+                border: 1px solid rgba(255,59,48,0.2);
+                border-radius: var(--radius);
+                margin-bottom: 10px;
+                font-size: 0.75rem;
+                color: var(--text-1);
+                font-family: var(--mono);
+            }
+            .ws2-aging-summary-icon {
+                font-size: 1.1rem;
+                flex-shrink: 0;
+            }
+            .ws2-aging-summary .ws2-aging-count {
+                color: var(--red);
+                font-weight: 700;
+            }
+            .ws2-aging-summary .ws2-aging-capital {
+                color: var(--red);
+                font-weight: 700;
+            }
+            .ws2-aging-badges {
+                display: flex;
+                gap: 6px;
+                margin-left: auto;
+            }
+            .ws2-aging-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 3px;
+                padding: 2px 8px;
+                border-radius: 4px;
+                font-size: 0.65rem;
+                font-weight: 700;
+                font-family: var(--mono);
+            }
+            .ws2-aging-badge-green {
+                background: rgba(0,230,118,0.12);
+                color: var(--green);
+                border: 1px solid rgba(0,230,118,0.2);
+            }
+            .ws2-aging-badge-yellow {
+                background: rgba(255,202,40,0.12);
+                color: #ffca28;
+                border: 1px solid rgba(255,202,40,0.2);
+            }
+            .ws2-aging-badge-red {
+                background: rgba(255,59,48,0.10);
+                color: var(--red);
+                border: 1px solid rgba(255,59,48,0.2);
+            }
+
             /* P&L Trend Sparkline */
             .ws2-pnl-trend-wrap {
                 padding: 14px 16px;
@@ -128,6 +188,45 @@
                 color: var(--text-2);
                 margin-top: 4px;
                 font-family: var(--mono);
+            }
+
+            /* Capital Efficiency Metrics */
+            .ws2-capital-wrap {
+                padding: 14px 16px;
+                background: var(--bg-2);
+                border-radius: var(--radius);
+                border: 1px solid var(--border);
+                margin-bottom: 12px;
+            }
+            .ws2-capital-title {
+                font-size: 0.7rem;
+                color: var(--text-2);
+                text-transform: uppercase;
+                letter-spacing: 0.8px;
+                font-weight: 600;
+                font-family: var(--mono);
+                margin-bottom: 10px;
+            }
+            .ws2-capital-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+                gap: 10px;
+            }
+            .ws2-capital-stat {
+                text-align: center;
+            }
+            .ws2-capital-val {
+                font-size: 0.95rem;
+                font-weight: 700;
+                font-family: var(--mono);
+                line-height: 1.3;
+            }
+            .ws2-capital-label {
+                font-size: 0.6rem;
+                color: var(--text-2);
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-top: 2px;
             }
 
             /* Tooltip for heatmap */
@@ -171,28 +270,35 @@
         return Math.floor((now - d) / (1000 * 60 * 60 * 24));
     }
 
-    // ── 1. PORTFOLIO HEAT MAP ──
-    // Renders a grid of colored squares into #portfolio-content, below existing content.
-    function renderHeatMap() {
-        const p = window.DATA && window.DATA.portfolio;
-        if (!p) return;
-
-        // Get unsold inventory items from inventoryItems or invMgmtData
+    // Get inventory items from either source
+    function getInventoryItems() {
         let items = window.inventoryItems || [];
         if (!items.length && window.invMgmtData) {
-            // Adapt invMgmtData format
-            items = window.invMgmtData.filter(r => r.sold !== 'Yes').map(r => ({
+            items = window.invMgmtData.map(r => ({
                 description: r.description || '',
                 ref: r.ref || (r.description || '').match(/\b(\d{5,6}[A-Z]*)\b/)?.[1] || '',
                 cost_price: parsePrice(r.cost_price),
                 sale_price: parsePrice(r.sale_price || r.sold_price),
-                sold: false,
+                sold_price: parsePrice(r.sold_price),
+                market_value: parsePrice(r.market_value || r.sale_price),
+                sold: r.sold === 'Yes',
+                shipped: r.shipped === 'Yes',
+                paid_buyer: r.paid_buyer === 'Yes',
+                days_held: r.days_held || null,
+                bought_date: r.bought_date || '',
+                sale_date: r.sale_date || '',
                 row: r.row
             }));
-        } else {
-            items = items.filter(i => !i.sold);
         }
+        return items;
+    }
 
+    // ── 1. PORTFOLIO HEAT MAP ──
+    function renderHeatMap() {
+        const p = window.DATA && window.DATA.portfolio;
+        if (!p) return;
+
+        let items = getInventoryItems().filter(i => !i.sold);
         if (!items.length) return;
 
         // Remove old heatmap if exists
@@ -208,18 +314,16 @@
             const market = item.market_value || item.sale_price || cost;
             const margin = cost > 0 ? ((market - cost) / cost) * 100 : 0;
             return { item, cost, market, margin };
-        }).sort((a, b) => b.cost - a.cost); // Sort by capital deployed (largest first)
+        }).sort((a, b) => b.cost - a.cost);
 
         const maxCost = Math.max(...positions.map(p => p.cost), 1);
 
-        // Build grid cells
-        const cellsHtml = positions.map((pos, idx) => {
+        const cellsHtml = positions.map(pos => {
             let color;
-            if (pos.margin > 5) color = 'rgba(0,230,118,0.7)';       // green: >5% profit
-            else if (pos.margin >= 0) color = 'rgba(255,202,40,0.7)'; // yellow: 0-5%
-            else color = 'rgba(255,59,48,0.7)';                       // red: loss
+            if (pos.margin > 5) color = 'rgba(0,230,118,0.7)';
+            else if (pos.margin >= 0) color = 'rgba(255,202,40,0.7)';
+            else color = 'rgba(255,59,48,0.7)';
 
-            // Size proportional to capital deployed (min 28px, max 56px)
             const sizeRatio = pos.cost / maxCost;
             const size = Math.max(28, Math.round(28 + sizeRatio * 28));
 
@@ -230,7 +334,7 @@
             return `<div class="ws2-heatmap-cell"
                 style="background:${color};width:${size}px;height:${size}px;"
                 data-ws2-tip="${desc}\nCost: ${fmtPrice(pos.cost)}\nMarket: ${fmtPrice(pos.market)}\nMargin: ${marginStr}"
-                ${pos.item.ref ? `onclick="if(typeof lookupRef==='function')lookupRef('${ref}')"` : ''}
+                ${ref ? `onclick="if(typeof lookupRef==='function')lookupRef('${ref}')"` : ''}
             ></div>`;
         }).join('');
 
@@ -245,10 +349,8 @@
             </div>
         </div>`;
 
-        // Insert after the first child (metrics row) of portfolio-content
         const firstChild = container.querySelector('.fade-in');
         if (firstChild) {
-            // Insert after the metrics div inside .fade-in
             const metricsDiv = firstChild.querySelector('.metrics');
             if (metricsDiv) {
                 metricsDiv.insertAdjacentHTML('afterend', heatmapHtml);
@@ -259,11 +361,9 @@
             container.insertAdjacentHTML('afterbegin', heatmapHtml);
         }
 
-        // Attach tooltip behavior
         attachHeatmapTooltips();
     }
 
-    // Tooltip for heatmap cells
     function attachHeatmapTooltips() {
         let tooltip = document.getElementById('ws2-tooltip');
         if (!tooltip) {
@@ -276,8 +376,7 @@
         const cells = document.querySelectorAll('.ws2-heatmap-cell[data-ws2-tip]');
         cells.forEach(cell => {
             cell.addEventListener('mouseenter', function(e) {
-                const text = this.getAttribute('data-ws2-tip') || '';
-                tooltip.innerHTML = text.replace(/\n/g, '<br>');
+                tooltip.innerHTML = (this.getAttribute('data-ws2-tip') || '').replace(/\n/g, '<br>');
                 tooltip.style.display = 'block';
                 positionTooltip(e, tooltip);
             });
@@ -287,10 +386,8 @@
             cell.addEventListener('mouseleave', function() {
                 tooltip.style.display = 'none';
             });
-            // Touch support for mobile
             cell.addEventListener('touchstart', function(e) {
-                const text = this.getAttribute('data-ws2-tip') || '';
-                tooltip.innerHTML = text.replace(/\n/g, '<br>');
+                tooltip.innerHTML = (this.getAttribute('data-ws2-tip') || '').replace(/\n/g, '<br>');
                 tooltip.style.display = 'block';
                 const touch = e.touches[0];
                 tooltip.style.left = Math.min(touch.clientX + 10, window.innerWidth - 230) + 'px';
@@ -301,14 +398,11 @@
     }
 
     function positionTooltip(e, tooltip) {
-        const x = Math.min(e.clientX + 12, window.innerWidth - 230);
-        const y = Math.max(e.clientY - 60, 10);
-        tooltip.style.left = x + 'px';
-        tooltip.style.top = y + 'px';
+        tooltip.style.left = Math.min(e.clientX + 12, window.innerWidth - 230) + 'px';
+        tooltip.style.top = Math.max(e.clientY - 60, 10) + 'px';
     }
 
-    // ── 2. DAYS-IN-INVENTORY AGING BAR ──
-    // After inventory table renders, append a colored bar to each description cell.
+    // ── 2. DAYS-IN-INVENTORY AGING ALERTS ──
     function renderAgingBars() {
         const tbody = document.getElementById('im-tbody');
         if (!tbody) return;
@@ -320,34 +414,28 @@
         const invData = window.invMgmtData || [];
 
         rows.forEach(tr => {
-            // Find the row data via the checkbox data-row attribute
             const checkbox = tr.querySelector('.im-row-check');
             if (!checkbox) return;
             const rowId = parseInt(checkbox.getAttribute('data-row'));
             const watchRow = invData.find(r => r.row === rowId);
             if (!watchRow) return;
 
-            // Use bought_date (inventory/rows format)
             const buyDate = watchRow.bought_date || '';
             const days = daysBetween(buyDate, now);
 
-            // Get the description cell (2nd td)
             const descCell = tr.children[1];
             if (!descCell) return;
 
-            // Remove existing aging bar if present
             const existingBar = descCell.querySelector('.ws2-aging-bar');
             if (existingBar) existingBar.remove();
 
             if (days === null) return;
 
-            // Color: green <14d, yellow 14-30d, red >30d
             let color;
             if (days < 14) color = 'var(--green)';
             else if (days <= 30) color = '#ffca28';
             else color = 'var(--red)';
 
-            // Width proportional to days (max 60d = full width)
             const widthPct = Math.min(days / 60, 1) * 100;
 
             const bar = document.createElement('span');
@@ -359,8 +447,59 @@
         });
     }
 
-    // ── 3. UNREALIZED P&L TREND ──
-    // Stores daily snapshot in localStorage, draws sparkline canvas.
+    // Aging summary alert — injected above inventory table
+    function renderAgingSummary() {
+        const existing = document.getElementById('ws2-aging-summary');
+        if (existing) existing.remove();
+
+        const items = getInventoryItems();
+        const unsold = items.filter(i => !i.sold);
+        if (!unsold.length) return;
+
+        const now = new Date();
+        let greenCount = 0, yellowCount = 0, redCount = 0;
+        let redCapital = 0;
+
+        unsold.forEach(item => {
+            let days = item.days_held;
+            if (days == null && item.bought_date) {
+                days = daysBetween(item.bought_date, now);
+            }
+            if (days == null) days = 0;
+
+            if (days < 14) {
+                greenCount++;
+            } else if (days <= 30) {
+                yellowCount++;
+            } else {
+                redCount++;
+                redCapital += (item.cost_price || 0);
+            }
+        });
+
+        // Only show alert if there are aging items
+        if (redCount === 0 && yellowCount === 0) return;
+
+        const summaryEl = document.getElementById('inv-summary');
+        if (!summaryEl) return;
+
+        const alertHtml = `<div id="ws2-aging-summary" class="ws2-aging-summary">
+            <span class="ws2-aging-summary-icon">&#9888;</span>
+            <span>
+                <span class="ws2-aging-count">${redCount}</span> watch${redCount !== 1 ? 'es' : ''} aging &gt;30 days,
+                <span class="ws2-aging-capital">${fmtPrice(redCapital)}</span> capital at risk
+            </span>
+            <span class="ws2-aging-badges">
+                <span class="ws2-aging-badge ws2-aging-badge-green">&lt;14d: ${greenCount}</span>
+                <span class="ws2-aging-badge ws2-aging-badge-yellow">14-30d: ${yellowCount}</span>
+                <span class="ws2-aging-badge ws2-aging-badge-red">&gt;30d: ${redCount}</span>
+            </span>
+        </div>`;
+
+        summaryEl.insertAdjacentHTML('afterend', alertHtml);
+    }
+
+    // ── 3. WEEKLY P&L TREND ──
     function loadPnlHistory() {
         try {
             const raw = localStorage.getItem(PNL_STORAGE_KEY);
@@ -373,9 +512,7 @@
     function savePnlHistory(history) {
         try {
             localStorage.setItem(PNL_STORAGE_KEY, JSON.stringify(history));
-        } catch(e) {
-            // localStorage full or unavailable
-        }
+        } catch(e) {}
     }
 
     function snapshotPnl() {
@@ -385,14 +522,24 @@
         const today = todayStr();
         let history = loadPnlHistory();
 
+        // Compute realized P&L from sold watches
+        const items = getInventoryItems();
+        const soldItems = items.filter(i => i.sold);
+        const realizedPnl = soldItems.reduce((sum, i) => {
+            const cost = i.cost_price || 0;
+            const sold = i.sold_price || i.sale_price || 0;
+            return sum + (cost > 0 ? sold - cost : 0);
+        }, 0);
+
         const snapshot = {
             date: today,
             total_cost: p.total_invested || 0,
             total_market_value: p.total_market_value || 0,
-            unrealized_pnl: p.total_pnl || 0
+            unrealized_pnl: p.total_pnl || 0,
+            realized_pnl: realizedPnl,
+            total_value: (p.total_market_value || 0) + realizedPnl
         };
 
-        // Update today's entry or append
         const todayIdx = history.findIndex(h => h.date === today);
         if (todayIdx >= 0) {
             history[todayIdx] = snapshot;
@@ -400,14 +547,11 @@
             history.push(snapshot);
         }
 
-        // Keep only last MAX_HISTORY_DAYS entries
-        if (history.length > MAX_HISTORY_DAYS) {
-            history = history.slice(-MAX_HISTORY_DAYS);
+        if (history.length > MAX_SNAPSHOTS) {
+            history = history.slice(-MAX_SNAPSHOTS);
         }
 
-        // Sort by date
         history.sort((a, b) => a.date.localeCompare(b.date));
-
         savePnlHistory(history);
         return history;
     }
@@ -419,33 +563,34 @@
         const history = snapshotPnl();
         if (!history || history.length < 1) return;
 
-        // Remove old trend if exists
         const existing = document.getElementById('ws2-pnl-trend');
         if (existing) existing.remove();
 
         const container = document.getElementById('portfolio-content');
         if (!container) return;
 
-        const latest = history[history.length - 1];
+        // Use last 7 snapshots for the sparkline
+        const recent = history.slice(-SPARKLINE_POINTS);
+        const latest = recent[recent.length - 1];
+        const totalValue = latest.total_value || (latest.total_market_value || 0);
         const pnlColor = latest.unrealized_pnl >= 0 ? 'var(--green)' : 'var(--red)';
         const pnlSign = latest.unrealized_pnl >= 0 ? '+' : '';
-        const firstDate = history[0].date.slice(5); // MM-DD
-        const lastDate = history[history.length - 1].date.slice(5);
+        const firstDate = recent[0].date.slice(5);
+        const lastDate = recent[recent.length - 1].date.slice(5);
 
-        // Calculate change from first to last
         let changeHtml = '';
-        if (history.length >= 2) {
-            const firstPnl = history[0].unrealized_pnl;
-            const lastPnl = latest.unrealized_pnl;
-            const diff = lastPnl - firstPnl;
+        if (recent.length >= 2) {
+            const firstVal = recent[0].total_value || recent[0].total_market_value || 0;
+            const lastVal = totalValue;
+            const diff = lastVal - firstVal;
             const diffColor = diff >= 0 ? 'var(--green)' : 'var(--red)';
             const diffSign = diff >= 0 ? '+' : '';
-            changeHtml = `<span style="font-size:0.65rem;color:${diffColor};margin-left:8px;">${diffSign}${fmtPrice(diff)} (${history.length}d)</span>`;
+            changeHtml = `<span style="font-size:0.65rem;color:${diffColor};margin-left:8px;">${diffSign}${fmtPrice(diff)} over ${recent.length} snapshots</span>`;
         }
 
         const trendHtml = `<div id="ws2-pnl-trend" class="ws2-pnl-trend-wrap">
             <div class="ws2-pnl-trend-header">
-                <span class="ws2-pnl-trend-title">Unrealized P&L Trend</span>
+                <span class="ws2-pnl-trend-title">Portfolio Value Trend (last ${recent.length} snapshots)</span>
                 <span>
                     <span class="ws2-pnl-trend-value" style="color:${pnlColor};">${pnlSign}${fmtPrice(latest.unrealized_pnl)}</span>
                     ${changeHtml}
@@ -458,10 +603,8 @@
             </div>
         </div>`;
 
-        // Insert at the top of portfolio-content, before the first child
         const firstChild = container.querySelector('.fade-in');
         if (firstChild) {
-            // Insert before the metrics div
             const metricsDiv = firstChild.querySelector('.metrics');
             if (metricsDiv) {
                 metricsDiv.insertAdjacentHTML('beforebegin', trendHtml);
@@ -472,8 +615,7 @@
             container.insertAdjacentHTML('afterbegin', trendHtml);
         }
 
-        // Draw sparkline on canvas
-        drawPnlSparkline(history);
+        drawPnlSparkline(recent);
     }
 
     function drawPnlSparkline(history) {
@@ -483,7 +625,6 @@
         const ctx = canvas.getContext('2d');
         const dpr = window.devicePixelRatio || 1;
 
-        // Set canvas size from CSS layout
         const rect = canvas.getBoundingClientRect();
         canvas.width = rect.width * dpr;
         canvas.height = rect.height * dpr;
@@ -493,9 +634,8 @@
         const h = rect.height;
         const pad = 4;
 
-        const values = history.map(h => h.unrealized_pnl);
+        const values = history.map(s => s.total_value || s.total_market_value || 0);
         if (values.length < 2) {
-            // Single point - draw a dot
             const cy = h / 2;
             ctx.fillStyle = values[0] >= 0 ? '#00e676' : '#ff3b30';
             ctx.beginPath();
@@ -508,7 +648,6 @@
         const max = Math.max(...values);
         const range = max - min || 1;
 
-        // Build points
         const points = values.map((v, i) => ({
             x: pad + (i / (values.length - 1)) * (w - pad * 2),
             y: pad + (1 - (v - min) / range) * (h - pad * 2)
@@ -527,11 +666,11 @@
             ctx.setLineDash([]);
         }
 
-        // Gradient fill
         const lastVal = values[values.length - 1];
-        const lineColor = lastVal >= 0 ? '#00e676' : '#ff3b30';
+        const firstVal = values[0];
+        const lineColor = lastVal >= firstVal ? '#00e676' : '#ff3b30';
         const gradient = ctx.createLinearGradient(0, 0, 0, h);
-        if (lastVal >= 0) {
+        if (lastVal >= firstVal) {
             gradient.addColorStop(0, 'rgba(0,230,118,0.25)');
             gradient.addColorStop(1, 'rgba(0,230,118,0.02)');
         } else {
@@ -560,12 +699,117 @@
         ctx.lineCap = 'round';
         ctx.stroke();
 
-        // Draw endpoint dot
+        // Endpoint dot
         const last = points[points.length - 1];
         ctx.beginPath();
         ctx.arc(last.x, last.y, 3, 0, Math.PI * 2);
         ctx.fillStyle = lineColor;
         ctx.fill();
+    }
+
+    // ── 4. CAPITAL EFFICIENCY METRICS ──
+    function renderCapitalEfficiency() {
+        const p = window.DATA && window.DATA.portfolio;
+        if (!p) return;
+
+        const existing = document.getElementById('ws2-capital-efficiency');
+        if (existing) existing.remove();
+
+        const container = document.getElementById('portfolio-content');
+        if (!container) return;
+
+        const items = getInventoryItems();
+        const unsold = items.filter(i => !i.sold);
+        const sold = items.filter(i => i.sold);
+
+        // Total deployed capital (unsold inventory cost)
+        const totalDeployed = p.total_invested || unsold.reduce((s, i) => s + (i.cost_price || 0), 0);
+
+        // Unrealized P&L
+        const unrealizedPnl = p.total_pnl || 0;
+
+        // Realized P&L from sold watches
+        const realizedPnl = sold.reduce((sum, i) => {
+            const cost = i.cost_price || 0;
+            const soldPrice = i.sold_price || i.sale_price || 0;
+            return sum + (cost > 0 ? soldPrice - cost : 0);
+        }, 0);
+
+        // Total P&L
+        const totalPnl = unrealizedPnl + realizedPnl;
+
+        // ROI % on total capital ever deployed
+        const totalEverDeployed = totalDeployed + sold.reduce((s, i) => s + (i.cost_price || 0), 0);
+        const roiPct = totalEverDeployed > 0 ? ((totalPnl / totalEverDeployed) * 100).toFixed(1) : '0.0';
+
+        // Average hold time
+        const now = new Date();
+        let totalDays = 0, countDays = 0;
+        unsold.forEach(i => {
+            let days = i.days_held;
+            if (days == null && i.bought_date) {
+                days = daysBetween(i.bought_date, now);
+            }
+            if (days != null) { totalDays += days; countDays++; }
+        });
+        const avgHold = countDays > 0 ? Math.round(totalDays / countDays) : (p.avg_days_held || 0);
+
+        // Capital turnover (sold cost / avg deployed)
+        const soldCost = sold.reduce((s, i) => s + (i.cost_price || 0), 0);
+        const turnover = totalDeployed > 0 ? (soldCost / totalDeployed).toFixed(1) : '0.0';
+
+        const unrealizedCls = unrealizedPnl >= 0 ? 'var(--green)' : 'var(--red)';
+        const realizedCls = realizedPnl >= 0 ? 'var(--green)' : 'var(--red)';
+        const totalPnlCls = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
+        const roiCls = parseFloat(roiPct) >= 0 ? 'var(--green)' : 'var(--red)';
+
+        const html = `<div id="ws2-capital-efficiency" class="ws2-capital-wrap">
+            <div class="ws2-capital-title">Capital Efficiency</div>
+            <div class="ws2-capital-grid">
+                <div class="ws2-capital-stat">
+                    <div class="ws2-capital-val" style="color:var(--accent);">${fmtPrice(totalDeployed)}</div>
+                    <div class="ws2-capital-label">Deployed Capital</div>
+                </div>
+                <div class="ws2-capital-stat">
+                    <div class="ws2-capital-val" style="color:${unrealizedCls};">${(unrealizedPnl >= 0 ? '+' : '') + fmtPrice(unrealizedPnl)}</div>
+                    <div class="ws2-capital-label">Unrealized P&L</div>
+                </div>
+                <div class="ws2-capital-stat">
+                    <div class="ws2-capital-val" style="color:${realizedCls};">${(realizedPnl >= 0 ? '+' : '') + fmtPrice(realizedPnl)}</div>
+                    <div class="ws2-capital-label">Realized P&L</div>
+                </div>
+                <div class="ws2-capital-stat">
+                    <div class="ws2-capital-val" style="color:${totalPnlCls};">${(totalPnl >= 0 ? '+' : '') + fmtPrice(totalPnl)}</div>
+                    <div class="ws2-capital-label">Total P&L</div>
+                </div>
+                <div class="ws2-capital-stat">
+                    <div class="ws2-capital-val" style="color:${roiCls};">${roiPct}%</div>
+                    <div class="ws2-capital-label">ROI</div>
+                </div>
+                <div class="ws2-capital-stat">
+                    <div class="ws2-capital-val">${avgHold}d</div>
+                    <div class="ws2-capital-label">Avg Hold Time</div>
+                </div>
+            </div>
+        </div>`;
+
+        // Insert after heatmap or after metrics
+        const heatmap = document.getElementById('ws2-heatmap');
+        if (heatmap) {
+            heatmap.insertAdjacentHTML('afterend', html);
+        } else {
+            const firstChild = container.querySelector('.fade-in');
+            if (firstChild) {
+                const metricsDiv = firstChild.querySelector('.metrics');
+                if (metricsDiv) {
+                    metricsDiv.insertAdjacentHTML('afterend', html);
+                } else {
+                    firstChild.insertAdjacentHTML('beforeend', html);
+                }
+            } else {
+                container.insertAdjacentHTML('beforeend', html);
+            }
+        }
     }
 
     // ── LIFECYCLE ──
@@ -574,7 +818,6 @@
         console.log('[' + MOD_ID + '] Initializing...');
         injectStyles();
 
-        // Listen for portfolio renders to inject heatmap + trend
         window.MKModules.on('modules-ready', function() {
             render();
         });
@@ -584,45 +827,59 @@
         if (typeof origRenderPortfolio === 'function') {
             window.renderPortfolio = async function() {
                 await origRenderPortfolio.apply(this, arguments);
-                // Only inject on summary view
                 setTimeout(function() {
                     renderPnlTrend();
                     renderHeatMap();
+                    renderCapitalEfficiency();
                 }, 150);
             };
         }
 
-        // Hook into renderInventoryTable to inject aging bars
+        // Hook into renderInventoryTable to inject aging bars + summary
         const origRenderInventoryTable = window.renderInventoryTable;
         if (typeof origRenderInventoryTable === 'function') {
             window.renderInventoryTable = function() {
                 origRenderInventoryTable.apply(this, arguments);
-                setTimeout(renderAgingBars, 50);
+                setTimeout(function() {
+                    renderAgingBars();
+                    renderAgingSummary();
+                }, 50);
+            };
+        }
+
+        // Hook into updateInventorySummary for aging summary on inventory page
+        const origUpdateInventorySummary = window.updateInventorySummary;
+        if (typeof origUpdateInventorySummary === 'function') {
+            window.updateInventorySummary = function() {
+                origUpdateInventorySummary.apply(this, arguments);
+                setTimeout(renderAgingSummary, 50);
             };
         }
     }
 
     function render() {
-        // Called on data refresh
         const portfolioContent = document.getElementById('portfolio-content');
         if (portfolioContent && portfolioContent.querySelector('.metrics')) {
             renderPnlTrend();
             renderHeatMap();
+            renderCapitalEfficiency();
         }
-        // Aging bars injected via renderInventoryTable hook
         const tbody = document.getElementById('im-tbody');
         if (tbody && tbody.children.length > 0) {
             renderAgingBars();
+            renderAgingSummary();
         }
     }
 
     function cleanup() {
-        const heatmap = document.getElementById('ws2-heatmap');
-        if (heatmap) heatmap.remove();
-        const trend = document.getElementById('ws2-pnl-trend');
-        if (trend) trend.remove();
-        const tooltip = document.getElementById('ws2-tooltip');
-        if (tooltip) tooltip.remove();
+        const ids = ['ws2-heatmap', 'ws2-pnl-trend', 'ws2-tooltip', 'ws2-capital-efficiency', 'ws2-aging-summary'];
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        });
+        const styleEl = document.getElementById('ws2-styles');
+        if (styleEl) styleEl.remove();
+        styleInjected = false;
     }
 
     // Register with the module system
