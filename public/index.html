@@ -16418,6 +16418,10 @@ async function createNewPackage() {
 }
 
 async function showMoveWatchMenu(watchId, fromPkgId, recipientName) {
+    // Capture DOM references BEFORE any await (event object dies after async)
+    const btn = event?.target?.closest('button') || event?.target;
+    const card = btn?.closest('.jam-card');
+
     // Remove any existing move menu
     document.getElementById('move-pkg-dropdown')?.remove();
 
@@ -16436,11 +16440,28 @@ async function showMoveWatchMenu(watchId, fromPkgId, recipientName) {
         if (typeof showToast === 'function') showToast('No other packages available', 'error');
         return;
     }
-
-    // Build inline dropdown right below the button
-    const btn = event?.target;
-    const card = btn?.closest('.jam-card');
-    if (!card) return;
+    // Fallback: find card by watch ID if event reference lost
+    const targetCard = card || document.querySelector('.jam-card #notes-input-' + watchId)?.closest('.jam-card')
+                            || document.querySelector('.jam-card .jam-card-id')?.closest('.jam-card');
+    if (!targetCard) {
+        // Last resort: append to keluar container
+        const container = document.getElementById('jam-feed-keluar') || document.querySelector('.jam-feed');
+        if (!container) { if (typeof showToast === 'function') showToast('Could not find card', 'error'); return; }
+        // Create as fixed overlay instead
+        const overlay = document.createElement('div');
+        overlay.id = 'move-pkg-dropdown';
+        overlay.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:99999;background:var(--bg-1);border-top:2px solid var(--accent);padding:16px;max-height:50vh;overflow-y:auto;box-shadow:0 -4px 20px rgba(0,0,0,0.3);';
+        let html = '<div style="font-size:0.8rem;font-weight:700;color:var(--accent);margin-bottom:8px;">MOVE WATCH #' + watchId + ' TO:</div>';
+        for (const pkg of packages) {
+            const wCount = (pkg.watches || []).length;
+            const name = (pkg.package_name || 'Package ' + pkg.id).replace(/</g, '&lt;');
+            html += '<button onclick="moveWatchToPackage(' + watchId + ',' + (fromPkgId || 'null') + ',' + pkg.id + ');document.getElementById(\'move-pkg-dropdown\')?.remove();" style="display:block;width:100%;text-align:left;padding:14px;margin-bottom:6px;background:var(--bg-2);border:1px solid var(--border);border-radius:8px;color:var(--text-0);font-size:0.85rem;font-weight:600;cursor:pointer;">' + name + ' (' + wCount + ' watches)</button>';
+        }
+        html += '<button onclick="document.getElementById(\'move-pkg-dropdown\')?.remove();" style="display:block;width:100%;padding:14px;margin-top:6px;background:var(--red-dim,rgba(255,0,0,0.1));border:1px solid var(--red,#e74c3c);border-radius:8px;color:var(--red,#e74c3c);font-size:0.85rem;font-weight:700;cursor:pointer;">CANCEL</button>';
+        overlay.innerHTML = html;
+        document.body.appendChild(overlay);
+        return;
+    }
 
     const dropdown = document.createElement('div');
     dropdown.id = 'move-pkg-dropdown';
