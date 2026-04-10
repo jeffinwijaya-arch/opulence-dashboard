@@ -20,7 +20,7 @@
 
     const MOD_ID = 'ws8-mobile-ux';
     const MOBILE_BP = 768;
-    const SWIPE_THRESHOLD = 80;
+    const SWIPE_THRESHOLD = 100;
     const FAB_ID = 'mk-fab';
     const WATCHLIST_KEY = 'mk-deal-watchlist';
 
@@ -86,7 +86,7 @@
             #${FAB_ID} {
                 display: none;
                 position: fixed;
-                bottom: 80px;
+                bottom: 90px;
                 right: 16px;
                 width: 56px;
                 height: 56px;

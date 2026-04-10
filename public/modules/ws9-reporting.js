@@ -492,9 +492,9 @@
                         <select id="ws9-tax-year" style="background:var(--card-2);color:var(--text-0);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:0.85rem;">
                             ${sortedYears.map(y => '<option value="' + y + '"' + (y === currentYear ? ' selected' : '') + '>' + y + '</option>').join('')}
                         </select>
-                        <button id="ws9-tax-export-btn" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:0.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                            Export Tax CSV
+                        <button id="ws9-tax-export-btn" style="background:var(--green, #00e676);color:var(--bg-0, #0d0d12);border:none;border-radius:8px;padding:10px 20px;font-size:0.85rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:opacity 0.15s;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Download Tax CSV
                         </button>
                     </div>
                     <div id="ws9-tax-preview" style="margin-top:16px;"></div>
@@ -762,7 +762,7 @@
         const padding = { top: 20, bottom: 40, left: 10, right: 10 };
         const chartW = W - padding.left - padding.right;
         const chartH = H - padding.top - padding.bottom;
-        const barW = Math.max(chartW / data.length - 4, 6);
+        const barW = Math.max(chartW / data.length * 0.7, 12);
         const gap = (chartW - barW * data.length) / (data.length + 1);
         const zeroY = padding.top + chartH / 2;
 

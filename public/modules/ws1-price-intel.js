@@ -28,16 +28,16 @@
         style.textContent = [
             '.ws1-score-badge {',
             '  display:inline-flex; align-items:center; justify-content:center;',
-            '  min-width:32px; padding:2px 6px; border-radius:4px;',
-            '  font-size:0.68rem; font-weight:700; font-family:var(--mono); letter-spacing:0.3px;',
+            '  min-width:36px; padding:3px 8px; border-radius:6px;',
+            '  font-size:0.72rem; font-weight:700; font-family:var(--mono); letter-spacing:0.3px;',
             '}',
             '.ws1-score-green { background:rgba(0,230,118,0.12); color:var(--green); border:1px solid rgba(0,230,118,0.25); }',
             '.ws1-score-yellow { background:rgba(255,193,7,0.12); color:var(--orange); border:1px solid rgba(255,193,7,0.25); }',
             '.ws1-score-red { background:rgba(255,23,68,0.10); color:var(--red); border:1px solid rgba(255,23,68,0.2); }',
             '.ws1-confidence-badge {',
-            '  display:inline-flex; align-items:center; gap:3px; padding:2px 8px; border-radius:4px;',
-            '  font-size:0.65rem; font-weight:700; font-family:var(--mono); letter-spacing:0.5px;',
-            '  margin-left:6px; vertical-align:middle;',
+            '  display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:6px;',
+            '  font-size:0.72rem; font-weight:700; font-family:var(--mono); letter-spacing:0.5px;',
+            '  margin-left:8px; vertical-align:middle;',
             '}',
             '.ws1-conf-high { background:rgba(0,230,118,0.12); color:var(--green); border:1px solid rgba(0,230,118,0.25); }',
             '.ws1-conf-medium { background:rgba(255,193,7,0.12); color:var(--orange); border:1px solid rgba(255,193,7,0.25); }',
@@ -267,9 +267,9 @@
 
     function trendArrowHtml(trend) {
         if (!trend) return '';
-        if (trend === 'up') return '<span class="ws1-trend ws1-trend-up" title="Trending up (median > avg +2%)">&#9650;</span>';
-        if (trend === 'down') return '<span class="ws1-trend ws1-trend-down" title="Trending down (median < avg)">&#9660;</span>';
-        return '<span class="ws1-trend ws1-trend-flat" title="Stable (median ~ avg)">&#9654;</span>';
+        if (trend === 'up') return '<span class="ws1-trend ws1-trend-up" title="Trending up vs 30d avg: current median exceeds 30-day average by >2%">&#9650;</span>';
+        if (trend === 'down') return '<span class="ws1-trend ws1-trend-down" title="Trending down vs 30d avg: current median is below the 30-day average">&#9660;</span>';
+        return '<span class="ws1-trend ws1-trend-flat" title="Stable vs 30d avg: current median is within 2% of the 30-day average">&#9654;</span>';
     }
 
     function injectLookupTrend() {

@@ -142,6 +142,7 @@
                 <span style="font-size:0.65rem;color:var(--text-2);margin-left:8px;">Market-based suggestions ready</span>
             </div>
             <button id="ws10-autoprice-btn" style="background:var(--accent);color:var(--bg-1);border:none;border-radius:6px;padding:6px 14px;font-size:0.72rem;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--mono);">Auto-Fill Prices</button>
+            <button id="ws10-autoprice-dismiss" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:1rem;padding:4px 8px;line-height:1;" title="Dismiss">&#x2715;</button>
         `;
 
         // Insert at top of inventory page, after page-head
@@ -152,9 +153,12 @@
             invPage.prepend(banner);
         }
 
-        // Attach click handler
+        // Attach click handlers
         document.getElementById('ws10-autoprice-btn').onclick = async function() {
             await applyAutoPrice(unpriced);
+        };
+        document.getElementById('ws10-autoprice-dismiss').onclick = function() {
+            banner.remove();
         };
     }
 
@@ -212,7 +216,7 @@
         const old = document.getElementById('ws10-stale-banner');
         if (old) old.remove();
 
-        // Find stale postings
+        // Find stale postings and classify urgency
         const stale = postings.filter(p => {
             const posted = p.posted_at || p.posted_date || '';
             if (!posted) return false;
@@ -221,10 +225,18 @@
 
         if (stale.length === 0) return;
 
-        // Calculate average suggested drop
+        // Classify urgency levels
+        let urgencyCritical = 0; // >21 days
+        let urgencyHigh = 0;     // >14 days
+        let urgencyMedium = 0;   // >7 days
         let totalDrop = 0;
         let dropCount = 0;
         stale.forEach(p => {
+            const posted = p.posted_at || p.posted_date || '';
+            const age = daysSince(posted.slice(0, 10));
+            if (age > 21) urgencyCritical++;
+            else if (age > 14) urgencyHigh++;
+            else urgencyMedium++;
             const price = parseNum(p.price);
             if (price > 0) {
                 const dropPct = STALE_DROP_MIN + Math.random() * (STALE_DROP_MAX - STALE_DROP_MIN);
@@ -234,15 +246,24 @@
         });
         const avgDrop = dropCount > 0 ? Math.round(totalDrop / dropCount) : 0;
 
+        const urgencyBadges = [
+            urgencyCritical > 0 ? '<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:4px;font-size:0.62rem;font-weight:700;font-family:var(--mono);background:rgba(255,59,48,0.15);color:var(--red);border:1px solid rgba(255,59,48,0.3);">' + urgencyCritical + ' CRITICAL (&gt;21d)</span>' : '',
+            urgencyHigh > 0 ? '<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:4px;font-size:0.62rem;font-weight:700;font-family:var(--mono);background:rgba(255,149,0,0.12);color:rgb(255,149,0);border:1px solid rgba(255,149,0,0.25);">' + urgencyHigh + ' HIGH (&gt;14d)</span>' : '',
+            urgencyMedium > 0 ? '<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:4px;font-size:0.62rem;font-weight:700;font-family:var(--mono);background:rgba(255,202,40,0.12);color:#ffca28;border:1px solid rgba(255,202,40,0.25);">' + urgencyMedium + ' MEDIUM (&gt;7d)</span>' : ''
+        ].filter(Boolean).join(' ');
+
         const banner = document.createElement('div');
         banner.id = 'ws10-stale-banner';
-        banner.style.cssText = 'background:rgba(255,59,48,0.06);border:1px solid rgba(255,59,48,0.18);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;';
+        banner.style.cssText = 'background:rgba(255,59,48,0.06);border:1px solid rgba(255,59,48,0.18);border-radius:8px;padding:10px 14px;margin-bottom:10px;';
         banner.innerHTML = `
-            <div style="flex:1;min-width:0;">
-                <span style="font-size:0.78rem;color:var(--red);font-weight:600;">${stale.length} listing${stale.length !== 1 ? 's' : ''} stale >${STALE_DAYS} days</span>
-                ${avgDrop > 0 ? `<span style="font-size:0.65rem;color:var(--text-2);margin-left:8px;">Avg suggested drop: ${fmt(avgDrop)}</span>` : ''}
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                <div style="flex:1;min-width:0;">
+                    <span style="font-size:0.78rem;color:var(--red);font-weight:600;">${stale.length} listing${stale.length !== 1 ? 's' : ''} stale >${STALE_DAYS} days</span>
+                    ${avgDrop > 0 ? `<span style="font-size:0.65rem;color:var(--text-2);margin-left:8px;">Avg suggested drop: ${fmt(avgDrop)}</span>` : ''}
+                </div>
+                <button id="ws10-stale-review-btn" style="background:var(--red);color:white;border:none;border-radius:6px;padding:6px 14px;font-size:0.72rem;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--mono);">Review Stale</button>
             </div>
-            <button id="ws10-stale-review-btn" style="background:var(--red);color:white;border:none;border-radius:6px;padding:6px 14px;font-size:0.72rem;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--mono);">Review Stale</button>
+            <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">${urgencyBadges}</div>
         `;
 
         // Insert at top of postings page, after page-head

@@ -171,10 +171,15 @@ window.MKModules = {
 
         const el = document.createElement('div');
         el.id = 'mk-module-errors';
-        el.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:rgba(231,76,60,0.9);' +
-            'color:#fff;font-size:11px;padding:4px 12px;z-index:9999;text-align:center;' +
-            'font-family:monospace;pointer-events:none;';
-        el.textContent = 'Module ' + names + ' failed to load';
+        el.style.cssText = 'position:fixed;bottom:8px;left:8px;background:rgba(231,76,60,0.85);' +
+            'color:#fff;font-size:9px;padding:3px 8px;z-index:9999;' +
+            'font-family:monospace;pointer-events:auto;cursor:pointer;border-radius:4px;' +
+            'opacity:0.6;transition:opacity 0.2s;';
+        el.textContent = names + ' err';
+        el.title = 'Module(s) ' + names + ' failed to load. Click to dismiss.';
+        el.onmouseenter = function() { el.style.opacity = '1'; };
+        el.onmouseleave = function() { el.style.opacity = '0.6'; };
+        el.onclick = function() { el.remove(); };
         document.body.appendChild(el);
     },
 
@@ -249,8 +254,14 @@ window.MKModules = {
 
     /**
      * Inject Module Performance section into Mission Control health tab.
+     * Hidden by default -- only renders when the Mission Control page is active
+     * and can also be triggered via console: MKModules.showPerfPanel()
      */
-    _injectMissionControlPerf() {
+    showPerfPanel() {
+        this._injectMissionControlPerf(true);
+    },
+
+    _injectMissionControlPerf(force) {
         // Look for Mission Control health container — try common selectors
         const tryInject = () => {
             const target = document.getElementById('mission-health') ||
@@ -259,6 +270,9 @@ window.MKModules = {
                            document.querySelector('.mission-control-health');
 
             if (!target) return false;
+
+            // Only inject if Mission Control page is actually active/visible, unless forced
+            if (!force && target.offsetParent === null) return false;
 
             // Don't inject twice
             if (document.getElementById('mk-perf-section')) return true;

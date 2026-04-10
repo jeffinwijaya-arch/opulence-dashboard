@@ -465,19 +465,43 @@
             .ws4-gen-btn {
                 display: inline-flex;
                 align-items: center;
-                gap: 4px;
-                padding: 4px 10px;
-                font-size: 0.65rem;
-                font-weight: 600;
+                gap: 5px;
+                padding: 6px 14px;
+                font-size: 0.72rem;
+                font-weight: 700;
                 border-radius: 6px;
-                border: 1px solid var(--accent-border, rgba(201,168,76,0.3));
-                background: var(--accent-dim, rgba(201,168,76,0.1));
-                color: var(--accent, #C9A84C);
+                border: 1px solid var(--accent, #C9A84C);
+                background: var(--accent, #C9A84C);
+                color: var(--bg-0, #0d0d12);
                 cursor: pointer;
                 white-space: nowrap;
-                transition: opacity 0.15s;
+                transition: opacity 0.15s, transform 0.1s;
+                letter-spacing: 0.3px;
             }
-            .ws4-gen-btn:active { opacity: 0.7; }
+            .ws4-gen-btn:hover { opacity: 0.9; }
+            .ws4-gen-btn:active { opacity: 0.7; transform: scale(0.97); }
+
+            .ws4-caption-preview {
+                margin-top: 6px;
+                padding: 8px 10px;
+                background: var(--bg-3, #1a1a1a);
+                border: 1px solid var(--border, #333);
+                border-radius: 6px;
+                font-size: 0.7rem;
+                font-family: var(--mono, monospace);
+                color: var(--text-1, #ccc);
+                white-space: pre-wrap;
+                word-break: break-word;
+                line-height: 1.5;
+                max-height: 120px;
+                overflow-y: auto;
+            }
+
+            .ws4-price-badge.ws4-badge-selected {
+                outline: 2px solid var(--accent, #C9A84C);
+                outline-offset: 1px;
+                background: rgba(201,168,76,0.12);
+            }
 
             .ws4-price-badges {
                 display: flex;
@@ -612,17 +636,29 @@
         }
 
         const caption = buildCaption(item, price);
+
+        // Show preview before copying
+        var existingPreview = btnEl ? btnEl.parentElement.querySelector('.ws4-caption-preview') : null;
+        if (!existingPreview && btnEl && btnEl.parentElement) {
+            existingPreview = document.createElement('div');
+            existingPreview.className = 'ws4-caption-preview';
+            btnEl.parentElement.appendChild(existingPreview);
+        }
+        if (existingPreview) {
+            existingPreview.textContent = caption;
+        }
+
         navigator.clipboard.writeText(caption).then(() => {
             if (typeof showToast === 'function') showToast('Caption copied to clipboard');
             if (btnEl) {
                 const origText = btnEl.textContent;
                 btnEl.textContent = 'Copied!';
+                btnEl.style.background = 'var(--green)';
                 btnEl.style.borderColor = 'var(--green)';
-                btnEl.style.color = 'var(--green)';
                 setTimeout(() => {
                     btnEl.textContent = origText;
+                    btnEl.style.background = '';
                     btnEl.style.borderColor = '';
-                    btnEl.style.color = '';
                 }, 1500);
             }
         }).catch(() => {
@@ -752,12 +788,22 @@
                     priceInput.dispatchEvent(new Event('input', { bubbles: true }));
                     updateCaptionPrice(t.value);
                     if (typeof showToast === 'function') showToast(t.label + ' price: ' + fmtPrice(t.value));
-                    badgesDiv.querySelectorAll('.ws4-price-badge').forEach(b => b.style.outline = 'none');
-                    badge.style.outline = '2px solid ' + getComputedStyle(badge.querySelector('.ws4-price-badge-val')).color;
-                    badge.style.outlineOffset = '1px';
+                    badgesDiv.querySelectorAll('.ws4-price-badge').forEach(b => b.classList.remove('ws4-badge-selected'));
+                    badge.classList.add('ws4-badge-selected');
                 };
                 badgesDiv.appendChild(badge);
             });
+
+            // Pre-select the tier matching current price input value
+            var currentVal = parseInt(priceInput.value);
+            if (currentVal > 0) {
+                tierDefs.forEach(function(t) {
+                    if (Math.abs(t.value - currentVal) < 50) {
+                        var matchBadge = badgesDiv.querySelector('.ws4-badge-' + t.key);
+                        if (matchBadge) matchBadge.classList.add('ws4-badge-selected');
+                    }
+                });
+            }
 
             container.appendChild(badgesDiv);
         }
@@ -878,9 +924,8 @@
                     priceInput.value = t.value;
                     priceInput.dispatchEvent(new Event('input', { bubbles: true }));
                     if (typeof showToast === 'function') showToast(t.label + ' price: ' + fmtPrice(t.value));
-                    badgesDiv.querySelectorAll('.ws4-price-badge').forEach(b => b.style.outline = 'none');
-                    badge.style.outline = '2px solid ' + getComputedStyle(badge.querySelector('.ws4-price-badge-val')).color;
-                    badge.style.outlineOffset = '1px';
+                    badgesDiv.querySelectorAll('.ws4-price-badge').forEach(b => b.classList.remove('ws4-badge-selected'));
+                    badge.classList.add('ws4-badge-selected');
                 };
                 badgesDiv.appendChild(badge);
             });

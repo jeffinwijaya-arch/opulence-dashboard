@@ -21,13 +21,13 @@
 
     // ── Brand palette ──
     var BRAND_COLORS = {
-        Rolex:   '#C9A84C',
+        Rolex:   '#006039',
         AP:      '#1a73e8',
-        Patek:   '#4a90d9',
+        Patek:   '#C9A84C',
         RM:      '#e74c3c',
         Tudor:   '#c0392b',
-        VC:      '#7c3aed',
-        Cartier: '#e67e22',
+        VC:      '#1e3a5f',
+        Cartier: '#8b0000',
         IWC:     '#1abc9c'
     };
     var OTHER_COLOR = '#555';
@@ -52,12 +52,32 @@
                 padding: 14px 16px;
                 flex-wrap: wrap;
             }
+            @media (max-width: 768px) {
+                .ws7-donut-wrap {
+                    flex-direction: column;
+                    align-items: center;
+                }
+            }
             .ws7-donut {
                 width: 150px;
                 height: 150px;
                 border-radius: 50%;
                 position: relative;
                 flex-shrink: 0;
+            }
+            .ws7-donut-tooltip {
+                position: fixed;
+                background: var(--bg-1, #111);
+                border: 1px solid var(--border, #333);
+                border-radius: 6px;
+                padding: 6px 10px;
+                font-size: 0.72rem;
+                color: var(--text-0);
+                pointer-events: none;
+                z-index: 9999;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+                display: none;
+                font-family: var(--mono);
             }
             .ws7-donut-hole {
                 position: absolute;
@@ -240,6 +260,21 @@
                 min-width: 58px;
                 text-align: right;
             }
+            @media (max-width: 768px) {
+                .ws7-region-row {
+                    flex-direction: column;
+                    align-items: stretch;
+                    gap: 4px;
+                }
+                .ws7-region-label {
+                    min-width: unset;
+                }
+                .ws7-region-count {
+                    text-align: left;
+                    min-width: unset;
+                    font-size: 0.65rem;
+                }
+            }
         `;
         document.head.appendChild(style);
     }
@@ -318,6 +353,46 @@
             + '</div>';
 
         metricsGrid.parentNode.insertBefore(card, metricsGrid.nextSibling);
+
+        // Add donut hover tooltip
+        var donutEl = card.querySelector('.ws7-donut');
+        if (donutEl) {
+            var tooltip = document.getElementById('ws7-donut-tooltip');
+            if (!tooltip) {
+                tooltip = document.createElement('div');
+                tooltip.id = 'ws7-donut-tooltip';
+                tooltip.className = 'ws7-donut-tooltip';
+                document.body.appendChild(tooltip);
+            }
+            donutEl.addEventListener('mousemove', function(e) {
+                // Calculate which segment the mouse is over based on angle from center
+                var rect = donutEl.getBoundingClientRect();
+                var cx = rect.left + rect.width / 2;
+                var cy = rect.top + rect.height / 2;
+                var angle = Math.atan2(e.clientY - cy, e.clientX - cx);
+                var degrees = ((angle * 180 / Math.PI) + 90 + 360) % 360;
+                var cumDeg = 0;
+                var hoverSeg = null;
+                for (var si = 0; si < segments.length; si++) {
+                    var segDeg = (segments[si].value / total) * 360;
+                    if (degrees >= cumDeg && degrees < cumDeg + segDeg) {
+                        hoverSeg = segments[si];
+                        break;
+                    }
+                    cumDeg += segDeg;
+                }
+                if (hoverSeg) {
+                    var pctVal = ((hoverSeg.value / total) * 100).toFixed(1);
+                    tooltip.innerHTML = '<span style="color:' + hoverSeg.color + ';font-weight:700;">' + hoverSeg.label + '</span>: ' + hoverSeg.value.toLocaleString() + ' (' + pctVal + '%)';
+                    tooltip.style.display = 'block';
+                    tooltip.style.left = Math.min(e.clientX + 12, window.innerWidth - 200) + 'px';
+                    tooltip.style.top = (e.clientY - 36) + 'px';
+                }
+            });
+            donutEl.addEventListener('mouseleave', function() {
+                tooltip.style.display = 'none';
+            });
+        }
     }
 
     // ═══════════════════════════════════════════════════
@@ -593,7 +668,7 @@
     }
 
     function cleanup() {
-        var ids = ['ws7-brand-donut-card', 'ws7-movers-card', 'ws7-price-gap-card', 'ws7-region-bar-card', 'ws7-styles'];
+        var ids = ['ws7-brand-donut-card', 'ws7-movers-card', 'ws7-price-gap-card', 'ws7-region-bar-card', 'ws7-styles', 'ws7-donut-tooltip'];
         ids.forEach(function(id) {
             var el = document.getElementById(id);
             if (el) el.remove();

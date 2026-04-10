@@ -52,10 +52,10 @@
             .ws2-heatmap-grid {
                 display: grid;
                 grid-template-columns: repeat(auto-fill, minmax(28px, 1fr));
-                gap: 3px;
+                gap: 6px;
             }
             .ws2-heatmap-cell {
-                border-radius: 3px;
+                border-radius: 6px;
                 cursor: pointer;
                 transition: transform 0.1s, box-shadow 0.1s;
                 position: relative;
@@ -91,6 +91,26 @@
                 margin-top: 3px;
                 min-width: 2px;
                 opacity: 0.85;
+            }
+            .ws2-aging-legend {
+                display: flex;
+                gap: 14px;
+                padding: 6px 10px;
+                font-size: 0.62rem;
+                color: var(--text-2);
+                font-family: var(--mono);
+                align-items: center;
+            }
+            .ws2-aging-legend-item {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+            }
+            .ws2-aging-legend-bar {
+                display: inline-block;
+                width: 18px;
+                height: 3px;
+                border-radius: 2px;
             }
 
             /* Aging Summary Alert */
@@ -497,6 +517,21 @@
         </div>`;
 
         summaryEl.insertAdjacentHTML('afterend', alertHtml);
+
+        // Inject aging bar legend below summary if not present
+        if (!document.getElementById('ws2-aging-legend')) {
+            var legendHtml = '<div id="ws2-aging-legend" class="ws2-aging-legend">' +
+                '<span style="font-weight:600;letter-spacing:0.5px;text-transform:uppercase;">Aging:</span>' +
+                '<span class="ws2-aging-legend-item"><span class="ws2-aging-legend-bar" style="background:var(--green);"></span> &lt;14 days</span>' +
+                '<span class="ws2-aging-legend-item"><span class="ws2-aging-legend-bar" style="background:#ffca28;"></span> 14-30 days</span>' +
+                '<span class="ws2-aging-legend-item"><span class="ws2-aging-legend-bar" style="background:var(--red);"></span> &gt;30 days</span>' +
+                '<span style="color:var(--text-3);">Bar width = days / 60</span>' +
+            '</div>';
+            var agingSummary = document.getElementById('ws2-aging-summary');
+            if (agingSummary) {
+                agingSummary.insertAdjacentHTML('afterend', legendHtml);
+            }
+        }
     }
 
     // ── 3. WEEKLY P&L TREND ──
@@ -596,10 +631,18 @@
                     ${changeHtml}
                 </span>
             </div>
-            <canvas id="ws2-pnl-canvas" class="ws2-pnl-trend-canvas"></canvas>
-            <div class="ws2-pnl-trend-labels">
-                <span>${firstDate}</span>
-                <span>${lastDate}</span>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                <div style="display:flex;flex-direction:column;justify-content:space-between;height:48px;font-size:0.55rem;color:var(--text-3);font-family:var(--mono);text-align:right;padding-right:4px;min-width:44px;">
+                    <span>${fmtPrice(Math.max(...recent.map(s => s.total_value || s.total_market_value || 0)))}</span>
+                    <span>${fmtPrice(Math.min(...recent.map(s => s.total_value || s.total_market_value || 0)))}</span>
+                </div>
+                <div style="flex:1;min-width:0;">
+                    <canvas id="ws2-pnl-canvas" class="ws2-pnl-trend-canvas"></canvas>
+                    <div class="ws2-pnl-trend-labels">
+                        <span>${firstDate}</span>
+                        <span>${lastDate}</span>
+                    </div>
+                </div>
             </div>
         </div>`;
 
@@ -872,7 +915,7 @@
     }
 
     function cleanup() {
-        const ids = ['ws2-heatmap', 'ws2-pnl-trend', 'ws2-tooltip', 'ws2-capital-efficiency', 'ws2-aging-summary'];
+        const ids = ['ws2-heatmap', 'ws2-pnl-trend', 'ws2-tooltip', 'ws2-capital-efficiency', 'ws2-aging-summary', 'ws2-aging-legend'];
         ids.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.remove();

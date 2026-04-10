@@ -310,7 +310,7 @@
         var key = sellerName.toLowerCase();
         var score = _sellerScores[key];
         if (!score) return '';
-        return '<span class="ws6-seller-badge" style="display:inline-block;font-size:0.58rem;font-weight:700;padding:1px 5px;border-radius:3px;border:1px solid ' + score.color + ';color:' + score.color + ';text-transform:uppercase;letter-spacing:0.3px;margin-left:4px;vertical-align:middle;line-height:1.4;" title="Score: ' + score.score + '/100 | ' + score.transactions + ' transactions">' + score.label + '</span>';
+        return '<span class="ws6-seller-badge" style="display:inline-block;font-size:0.58rem;font-weight:700;padding:2px 6px;border-radius:3px;border:1px solid ' + score.color + ';color:' + score.color + ';text-transform:uppercase;letter-spacing:0.3px;margin-left:4px;vertical-align:middle;line-height:1.4;min-width:48px;text-align:center;box-sizing:border-box;" title="Score: ' + score.score + '/100 | ' + score.transactions + ' transactions">' + score.label + '</span>';
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -879,6 +879,26 @@
             origShowWatchDetail.call(this, row);
 
             await new Promise(function(resolve) { setTimeout(resolve, 50); });
+
+            // Show skeleton placeholder while buyer history loads
+            var overlay = document.getElementById('watch-detail-overlay');
+            if (overlay) {
+                var existingPanel = document.getElementById(HISTORY_PANEL_ID);
+                if (!existingPanel) {
+                    var skeleton = document.createElement('div');
+                    skeleton.id = HISTORY_PANEL_ID;
+                    skeleton.style.cssText = 'margin-top:12px;border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);overflow:hidden;padding:14px;';
+                    skeleton.innerHTML = '<div style="display:flex;align-items:center;gap:8px;">'
+                        + '<div style="width:100px;height:12px;background:var(--bg-3);border-radius:4px;animation:pulse 1.5s ease-in-out infinite;"></div>'
+                        + '<div style="width:60px;height:12px;background:var(--bg-3);border-radius:4px;animation:pulse 1.5s ease-in-out infinite;animation-delay:0.2s;"></div>'
+                        + '</div>'
+                        + '<style>@keyframes pulse{0%,100%{opacity:0.4}50%{opacity:0.8}}</style>';
+                    var invoiceSection = document.getElementById('wd-invoice-section');
+                    if (invoiceSection) {
+                        invoiceSection.parentElement.insertBefore(skeleton, invoiceSection.nextSibling);
+                    }
+                }
+            }
 
             var item = null;
             if (typeof row === 'object') {

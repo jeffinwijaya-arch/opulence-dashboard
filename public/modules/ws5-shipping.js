@@ -41,10 +41,16 @@
         if (!preview) {
             preview = document.createElement('div');
             preview.id = PREVIEW_ID;
-            // Insert after the ship-value row (its grandparent grid)
-            var shipSubmitRow = document.getElementById('ship-submit-btn');
-            if (shipSubmitRow && shipSubmitRow.parentElement) {
-                shipSubmitRow.parentElement.parentElement.insertBefore(preview, shipSubmitRow.parentElement);
+            // Insert ABOVE the shipping form (before the form grid)
+            var shipForm = valueInput.closest('form') || valueInput.closest('.card-body') || valueInput.closest('.card');
+            if (shipForm) {
+                shipForm.parentElement.insertBefore(preview, shipForm);
+            } else {
+                var shipSubmitRow = document.getElementById('ship-submit-btn');
+                if (shipSubmitRow && shipSubmitRow.parentElement) {
+                    var formContainer = shipSubmitRow.parentElement.parentElement;
+                    formContainer.parentElement.insertBefore(preview, formContainer);
+                }
             }
         }
 
@@ -214,7 +220,7 @@
             var chk = document.createElement('input');
             chk.type = 'checkbox';
             chk.className = 'ws5-chk';
-            chk.style.cssText = 'margin-right:6px;cursor:pointer;accent-color:var(--accent);vertical-align:middle;';
+            chk.style.cssText = 'margin-right:6px;cursor:pointer;accent-color:var(--accent);vertical-align:middle;width:20px;height:20px;min-width:20px;';
             chk.dataset.key = rowKey;
             chk.checked = _batchSelected.has(rowKey);
             chk.addEventListener('change', (function(key) {

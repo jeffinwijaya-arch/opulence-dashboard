@@ -48,16 +48,8 @@
             /* Snipe badge */
             .deal-card.snipe-card {
                 border-color: var(--accent) !important;
-                animation: snipe-pulse 2s ease-in-out infinite;
+                box-shadow: 0 0 6px rgba(212,175,55,0.15), 0 0 14px rgba(212,175,55,0.06);
                 position: relative;
-            }
-            @keyframes snipe-pulse {
-                0%, 100% {
-                    box-shadow: 0 0 4px rgba(212,175,55,0.15), 0 0 12px rgba(212,175,55,0.05);
-                }
-                50% {
-                    box-shadow: 0 0 8px rgba(212,175,55,0.4), 0 0 24px rgba(212,175,55,0.15), 0 0 40px rgba(212,175,55,0.06);
-                }
             }
             .snipe-badge {
                 display: inline-block;
@@ -72,11 +64,6 @@
                 margin-left: 6px;
                 font-family: var(--mono);
                 vertical-align: middle;
-                animation: snipe-badge-flash 2s ease-in-out infinite;
-            }
-            @keyframes snipe-badge-flash {
-                0%, 100% { opacity: 1; }
-                50% { opacity: 0.7; }
             }
 
             /* Snipes Only filter button */
@@ -111,6 +98,12 @@
                 font-weight: 700;
                 font-family: var(--mono);
                 font-variant-numeric: tabular-nums;
+            }
+            .true-margin-cell.tm-positive {
+                color: var(--green, #00e676);
+            }
+            .true-margin-cell.tm-negative {
+                color: var(--red, #ff1744);
             }
 
             /* Cost breakdown tooltip */
@@ -262,9 +255,8 @@
             // Insert True Margin cell if not already there
             if (!row.querySelector('.ws3-true-margin-td')) {
                 const trueMarginTd = document.createElement('td');
-                trueMarginTd.className = 'right ws3-true-margin-td true-margin-cell';
-                const tmCls = costs.trueMargin > 0 ? 'pos' : 'neg';
-                trueMarginTd.innerHTML = `<span class="pill ${tmCls}">${costs.trueMargin.toFixed(1)}%</span>`;
+                trueMarginTd.className = 'right ws3-true-margin-td true-margin-cell ' + (costs.trueMargin > 0 ? 'tm-positive' : 'tm-negative');
+                trueMarginTd.innerHTML = `<span>${costs.trueMargin > 0 ? '+' : ''}${costs.trueMargin.toFixed(1)}%</span>`;
                 // Insert after Margin cell (index 6)
                 if (row.cells[7]) {
                     row.insertBefore(trueMarginTd, row.cells[7]);
