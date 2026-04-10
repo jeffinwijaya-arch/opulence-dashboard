@@ -16468,11 +16468,15 @@ async function showMoveWatchMenu(watchId, fromPkgId, recipientName) {
     dropdown.style.cssText = 'margin:8px 0;padding:8px;background:var(--bg-1);border:2px solid var(--accent);border-radius:8px;';
 
     let html = '<div style="font-size:0.7rem;font-weight:700;color:var(--accent);margin-bottom:6px;">MOVE W#' + watchId + ' TO:</div>';
+    if (packages.length === 0) {
+        html += '<div style="padding:8px;color:var(--text-2);font-size:0.75rem;">No other packages yet</div>';
+    }
     for (const pkg of packages) {
         const wCount = (pkg.watches || []).length;
         const name = (pkg.package_name || 'Package ' + pkg.id).replace(/</g, '&lt;');
         html += '<button onclick="moveWatchToPackage(' + watchId + ',' + (fromPkgId || 'null') + ',' + pkg.id + ');document.getElementById(\'move-pkg-dropdown\')?.remove();" style="display:block;width:100%;text-align:left;padding:10px;margin-bottom:4px;background:var(--bg-2);border:1px solid var(--border);border-radius:6px;color:var(--text-0);font-size:0.78rem;font-weight:600;cursor:pointer;">' + name + ' <span style="color:var(--text-2);font-weight:400;">(' + wCount + ' watches)</span></button>';
     }
+    html += '<button onclick="document.getElementById(\'move-pkg-dropdown\')?.remove();showNewPackageModal();" style="display:block;width:100%;text-align:left;padding:10px;margin-bottom:4px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-size:0.78rem;font-weight:700;cursor:pointer;">+ NEW PACKAGE</button>';
     html += '<button onclick="document.getElementById(\'move-pkg-dropdown\')?.remove();" style="display:block;width:100%;padding:8px;margin-top:4px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-2);font-size:0.72rem;cursor:pointer;">Cancel</button>';
 
     dropdown.innerHTML = html;
