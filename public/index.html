@@ -16150,9 +16150,10 @@ function _jamCard(type, item) {
             pills += `<span class="jam-pill jam-pill-no">No Label</span>`;
         }
         
-        // For pending items: schedule (admin only) + force-ship (admin only)
+        // For pending items: schedule (admin only) + force-ship (admin only) + move
         if (isPending) {
             if (_userRole.role !== 'logistics') {
+                pills += `<button class="jam-pill" onclick="event.stopPropagation();showMoveWatchMenu(${item.id},${item.package_id||'null'},'${(item.to||'').split('\\n')[0].replace(/'/g,"\\'")}')" style="cursor:pointer;border:1px solid var(--blue,#4A90D9);background:rgba(74,144,217,0.15);color:var(--blue,#4A90D9);font-weight:600;">MOVE PKG</button>`;
                 pills += `<button class="jam-pill" onclick="event.stopPropagation();jamSetShipDate(${item.id})" style="cursor:pointer;border:1px solid var(--orange);background:var(--orange);color:#000;font-weight:600;">SCHEDULE</button>`;
                 pills += `<button class="jam-pill" onclick="event.stopPropagation();jamMarkShipped(${item.id})" style="cursor:pointer;border:1px solid var(--green);background:var(--green);color:#000;font-weight:600;">SHIP</button>`;
             }
