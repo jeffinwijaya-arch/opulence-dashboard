@@ -11583,16 +11583,19 @@ async function loadPayments() {
         const sortOrder = $('#sort-order').value;
         
         let filtered = photoLibraryData.filter(watch => {
+            // Hide watches with no photos
+            if (!watch.photo_count || watch.photo_count === 0) return false;
+
             if (search && !(
                 (watch.model || '').toLowerCase().includes(search) ||
                 (watch.dial || '').toLowerCase().includes(search) ||
                 (watch.bracelet || '').toLowerCase().includes(search) ||
                 (watch.card_date || '').toLowerCase().includes(search)
             )) return false;
-            
+
             if (modelFilter && watch.model !== modelFilter) return false;
             if (conditionFilter && watch.condition !== conditionFilter) return false;
-            
+
             return true;
         });
         
