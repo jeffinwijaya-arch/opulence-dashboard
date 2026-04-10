@@ -10813,7 +10813,32 @@ function popOutWidget(id, title) {
             body{background:var(--bg-0);color:var(--text-0);font-family:var(--font);padding:16px;}
             .card{border:none;background:transparent;box-shadow:none;}
             .card-head{display:none;}.tbl-wrap{max-height:none!important;}
-            </style></head><body></body></html>`);
+            </style></head><body>
+<!-- Global Market Stats Updater -->
+<script>
+(function(){
+    // Update page context bar with live stats when portfolio loads
+    const _origRenderPortfolioSnapshot = window.renderPortfolioSnapshot;
+    if (typeof renderPortfolioSnapshot === 'function') {
+        // Will be called when portfolio data loads
+    }
+    
+    // Add total inventory value to the page title
+    function updatePageTitle() {
+        const p = window.DATA?.portfolio;
+        if (p && p.total_invested) {
+            const val = Math.round(p.total_invested).toLocaleString();
+            document.title = 'MK Opulence — $' + val + ' deployed';
+        }
+    }
+    
+    // Update title periodically
+    setInterval(updatePageTitle, 30000);
+    setTimeout(updatePageTitle, 5000);
+})();
+</script>
+
+</body></html>`);
         win.document.close();
         const c2 = clone.cloneNode(true);
         win.document.body.appendChild(c2);
@@ -17660,6 +17685,31 @@ if (_userRole.allowedPages) {
         if (!s) return '';
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
+})();
+</script>
+
+
+<!-- Global Market Stats Updater -->
+<script>
+(function(){
+    // Update page context bar with live stats when portfolio loads
+    const _origRenderPortfolioSnapshot = window.renderPortfolioSnapshot;
+    if (typeof renderPortfolioSnapshot === 'function') {
+        // Will be called when portfolio data loads
+    }
+    
+    // Add total inventory value to the page title
+    function updatePageTitle() {
+        const p = window.DATA?.portfolio;
+        if (p && p.total_invested) {
+            const val = Math.round(p.total_invested).toLocaleString();
+            document.title = 'MK Opulence — $' + val + ' deployed';
+        }
+    }
+    
+    // Update title periodically
+    setInterval(updatePageTitle, 30000);
+    setTimeout(updatePageTitle, 5000);
 })();
 </script>
 
