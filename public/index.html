@@ -12867,12 +12867,12 @@ async function loadPayments() {
 
     // ── PRICE EDIT MODAL ──
     let _epmPhotoFile = null;
-    let _epmCurrentPhoto = '';
+    let _epmCurrentPhoto = ''; window._epmCurrentPhoto = '';
     let _epmCurrentRow = null;
     function openPriceEditModal(messageId, currentPrice, caption, photo, row) {
         _epmPhotoFile = null;
-        _epmCurrentPhoto = photo || '';
-        _epmCurrentRow = row || null;
+        _epmCurrentPhoto = photo || ''; window._epmCurrentPhoto = _epmCurrentPhoto;
+        _epmCurrentRow = row || null; window._epmCurrentRow = _epmCurrentRow;
         document.getElementById('epm-message-id').value = messageId;
         document.getElementById('epm-caption').value = (caption || '').replace(/&apos;/g, "'");
         document.getElementById('epm-new-price').value = currentPrice || '';
