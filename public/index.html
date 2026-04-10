@@ -10821,28 +10821,20 @@ function popOutWidget(id, title) {
             .card-head{display:none;}.tbl-wrap{max-height:none!important;}
             </style></head><body>
 <!-- Global Market Stats Updater -->
-<script>
+<scr` + `ipt>
 (function(){
-    // Update page context bar with live stats when portfolio loads
-    const _origRenderPortfolioSnapshot = window.renderPortfolioSnapshot;
-    if (typeof renderPortfolioSnapshot === 'function') {
-        // Will be called when portfolio data loads
-    }
-    
-    // Add total inventory value to the page title
+    var _origRenderPortfolioSnapshot = window.renderPortfolioSnapshot;
     function updatePageTitle() {
-        const p = window.DATA?.portfolio;
+        var p = window.DATA && window.DATA.portfolio;
         if (p && p.total_invested) {
-            const val = Math.round(p.total_invested).toLocaleString();
+            var val = Math.round(p.total_invested).toLocaleString();
             document.title = 'MK Opulence — $' + val + ' deployed';
         }
     }
-    
-    // Update title periodically
     setInterval(updatePageTitle, 30000);
     setTimeout(updatePageTitle, 5000);
 })();
-</script>
+</scr` + `ipt>
 
 </body></html>`);
         win.document.close();
