@@ -283,15 +283,10 @@
         @keyframes modalFadeIn { from { opacity:0; } to { opacity:1; } }
         @keyframes modalSlideUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
 
-        /* ── UX: Toast notifications ── */
-        .toast {
-            position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
-            background:var(--bg-3); color:var(--text-0); border:1px solid var(--accent-border);
-            border-radius:8px; padding:10px 20px; font-size:0.78rem; font-family:var(--mono);
-            box-shadow:var(--shadow-lg); z-index:20000; opacity:0;
-            transition: opacity 0.2s ease, transform 0.2s ease; pointer-events:none;
-        }
-        .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+        /* (Legacy .toast / .toast.show rules removed — they collided with
+           the container-based toast system at .toast-container below and
+           pinned every toast visible via `animation: toastIn ... forwards`,
+           causing toasts like "Data synced ✓" to never fade out.) */
 
         /* ── UX: Skeleton loading ── */
         .skeleton { background: linear-gradient(90deg, var(--bg-3) 25%, var(--bg-4) 50%, var(--bg-3) 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; border-radius:var(--radius); }
@@ -3357,6 +3352,18 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                     #claude-chat-input:focus{outline:none;border-color:var(--accent);}
                     #claude-send-btn{background:var(--accent);color:var(--bg-1);border:none;border-radius:8px;padding:10px 16px;font-weight:600;cursor:pointer;font-size:0.8rem;}
                     #claude-send-btn:disabled{opacity:0.5;cursor:not-allowed;}
+                    /* Hide the floating "+" FAB while the Claude chat view
+                       is open — otherwise it sits on top of the Send button
+                       at bottom-right on mobile and intercepts taps. */
+                    body.claude-chat-active .fab-menu { display: none !important; }
+                    /* Retry button that appears on failed sends. */
+                    .chat-msg.assistant .claude-retry-btn {
+                        display:inline-block; margin-top:8px; padding:4px 10px;
+                        background:var(--accent); color:var(--bg-1); border:none;
+                        border-radius:6px; font-size:0.7rem; font-weight:600;
+                        cursor:pointer;
+                    }
+                    .chat-msg.assistant.chat-error { border-left:3px solid var(--red); }
                 </style>
 
                 <!-- Sessions List -->
@@ -16776,25 +16783,40 @@ function jamUploadShipPhoto(watchId, photoType) {
 }
 
 // ── CLAUDE CODE INTERACTIVE CHAT ──
+// Session + project are persisted to localStorage so a page refresh
+// (or iOS Safari dropping the tab from memory) doesn't lose the chat
+// you had open. The hardcoded macOS default path was removed — the
+// backend should return the real project_path with each session and
+// we fall back to '' when we genuinely don't know it.
+const _CC_LS_SESSION = 'mk.claude.session_id';
+const _CC_LS_PROJECT = 'mk.claude.project_path';
+const _CC_LS_PROJECT_NAME = 'mk.claude.project_name';
 let _currentClaudeSessionId = null;
-let _currentClaudeProject = '/Users/jeffin/.openclaw/workspace';
+let _currentClaudeProject = (() => {
+    try { return localStorage.getItem(_CC_LS_PROJECT) || ''; }
+    catch(e) { return ''; }
+})();
 
 async function loadClaudeSessions() {
     const el = document.getElementById('claude-sessions-grid');
     el.innerHTML = skelCards(3);
     try {
-        const r = await fetch('/api/mission-control/claude-sessions');
+        const r = await fetch('/api/mission-control/claude-sessions', { credentials: 'same-origin' });
         const data = await r.json();
         const sessions = data.sessions || [];
-        if (!sessions.length) { 
-            el.innerHTML = '<div class="mc-empty">No Claude Code sessions found<br/><span style="font-size:0.7rem;color:var(--text-3);">Start a new session to get started</span></div>'; 
-            return; 
+        if (!sessions.length) {
+            el.innerHTML = '<div class="mc-empty">No Claude Code sessions found<br/><span style="font-size:0.7rem;color:var(--text-3);">Start a new session to get started</span></div>';
+            return;
         }
         el.innerHTML = sessions.map(s => {
             const ago = timeAgo(s.last_activity);
             const statusColor = s.status === 'active' ? '#4ADE80' : '#6B7280';
             const preview = s.last_message_preview ? s.last_message_preview.substring(0,100) + (s.last_message_preview.length > 100 ? '...' : '') : 'No recent activity';
-            return `<div class="claude-session-card" onclick="openClaudeSession('${s.session_id}', '${s.project_name}', '${s.project_path || ''}')">
+            // Escape any quotes in projectName / projectPath before inlining
+            // them into the onclick attribute, otherwise a project name
+            // like "Jeff's dash" breaks the handler.
+            const esc = v => String(v || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+            return `<div class="claude-session-card" onclick="openClaudeSession('${esc(s.session_id)}', '${esc(s.project_name)}', '${esc(s.project_path || '')}')">
                 <div class="claude-session-header">
                     <div class="claude-session-id">${s.session_id_short}</div>
                     <span style="width:8px;height:8px;border-radius:50%;background:${statusColor};"></span>
@@ -16804,8 +16826,29 @@ async function loadClaudeSessions() {
                 <div class="claude-session-preview">${preview}</div>
             </div>`;
         }).join('');
-    } catch(e) { 
-        el.innerHTML = `<div class="mc-empty">Error loading sessions: ${e.message}</div>`; 
+
+        // Auto-resume the last-open session if the user had one. We
+        // only resume when the session still exists server-side, so a
+        // deleted session doesn't leave the UI stuck on a dead chat.
+        try {
+            const lastId = localStorage.getItem(_CC_LS_SESSION);
+            if (lastId && !_currentClaudeSessionId) {
+                const match = sessions.find(s => s.session_id === lastId);
+                if (match) {
+                    openClaudeSession(
+                        match.session_id,
+                        match.project_name,
+                        match.project_path || localStorage.getItem(_CC_LS_PROJECT) || ''
+                    );
+                } else {
+                    // Stale — clean it up so next page-load starts fresh.
+                    localStorage.removeItem(_CC_LS_SESSION);
+                    localStorage.removeItem(_CC_LS_PROJECT_NAME);
+                }
+            }
+        } catch(e) { /* localStorage may be unavailable — non-fatal */ }
+    } catch(e) {
+        el.innerHTML = `<div class="mc-empty">Error loading sessions: ${e.message}</div>`;
     }
 }
 
@@ -16815,20 +16858,39 @@ function showClaudeSessions() {
     document.getElementById('claude-sessions-list').style.display = 'block';
     document.getElementById('claude-chat-view').style.display = 'none';
     _currentClaudeSessionId = null;
+    // Release the FAB so it can show again on other pages.
+    document.body.classList.remove('claude-chat-active');
+    // Forget the "last open" session so we don't auto-reopen on next load.
+    try {
+        localStorage.removeItem(_CC_LS_SESSION);
+        localStorage.removeItem(_CC_LS_PROJECT_NAME);
+    } catch(e) {}
 }
 
 async function openClaudeSession(sessionId, projectName, projectPath) {
     _currentClaudeSessionId = sessionId;
-    _currentClaudeProject = projectPath || '/Users/jeffin/.openclaw/workspace';
-    
+    // Only overwrite the project path if the caller actually supplied
+    // one — createNewClaudeSession used to pass nothing, which blew
+    // away the context. Fall back to whatever we already had.
+    if (projectPath) _currentClaudeProject = projectPath;
+
+    // Persist so a refresh / Safari tab-eviction restores the session.
+    try {
+        localStorage.setItem(_CC_LS_SESSION, sessionId);
+        if (_currentClaudeProject) localStorage.setItem(_CC_LS_PROJECT, _currentClaudeProject);
+        if (projectName) localStorage.setItem(_CC_LS_PROJECT_NAME, projectName);
+    } catch(e) {}
+
     document.getElementById('claude-sessions-list').style.display = 'none';
     document.getElementById('claude-chat-view').style.display = 'block';
-    
-    document.getElementById('claude-chat-title').textContent = projectName;
+    // Hide the FAB "+" so it stops eating taps on the Send button.
+    document.body.classList.add('claude-chat-active');
+
+    document.getElementById('claude-chat-title').textContent = projectName || 'Claude Code';
     document.getElementById('claude-chat-subtitle').textContent = sessionId.substring(0,8) + '...';
-    
+
     await loadClaudeConversation(sessionId);
-    
+
     const input = document.getElementById('claude-chat-input');
     if (input) input.focus();
 }
@@ -16889,44 +16951,125 @@ function hideClaudeThinking() {
     if (thinkingEl) thinkingEl.remove();
 }
 
+// POST with timeout + retry. iOS Safari fails slow fetches with a
+// generic `TypeError: Load failed`, so wrapping in AbortController
+// gives us a real error to surface and a chance to retry once.
+async function _ccPostWithRetry(url, body, { timeout = 15000, retries = 1 } = {}) {
+    let lastErr = null;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), timeout);
+        try {
+            const r = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify(body),
+                signal: ctrl.signal
+            });
+            clearTimeout(timer);
+            return r;
+        } catch (e) {
+            clearTimeout(timer);
+            lastErr = e;
+            // Retry only on network-level errors (TypeError / AbortError),
+            // never on successfully-received HTTP failures (those throw
+            // in r.json() or are handled by the caller).
+            const msg = String(e && e.message || e);
+            const retriable = e && (e.name === 'AbortError' || e.name === 'TypeError' || /load failed|network|fetch/i.test(msg));
+            if (!retriable || attempt === retries) throw e;
+            // Small backoff before the retry.
+            await new Promise(ok => setTimeout(ok, 500 * (attempt + 1)));
+        }
+    }
+    throw lastErr || new Error('Request failed');
+}
+
+function _ccAppendErrorWithRetry(userMessage, serverError) {
+    const messagesEl = document.getElementById('claude-chat-messages');
+    if (!messagesEl) return;
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'chat-msg assistant chat-error';
+    msgDiv.innerHTML =
+        '<div style="color:var(--red);font-weight:600;margin-bottom:4px;">Send failed</div>' +
+        '<div style="font-size:0.72rem;color:var(--text-2);white-space:pre-wrap;word-break:break-word;">' +
+            String(serverError || 'Unknown error').replace(/</g,'&lt;').replace(/>/g,'&gt;') +
+        '</div>' +
+        '<button class="claude-retry-btn" type="button">Retry</button>';
+    const retryBtn = msgDiv.querySelector('.claude-retry-btn');
+    retryBtn.addEventListener('click', () => {
+        // Remove this error bubble and put the message back in the input,
+        // then re-send. The user doesn't have to retype anything.
+        msgDiv.remove();
+        const input = document.getElementById('claude-chat-input');
+        if (input) { input.value = userMessage; input.focus(); }
+        sendClaudeMessage();
+    });
+    messagesEl.appendChild(msgDiv);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
 async function sendClaudeMessage() {
     const input = document.getElementById('claude-chat-input');
     const sendBtn = document.getElementById('claude-send-btn');
-    
+
     const message = input.value.trim();
     if (!message) return;
-    
+
     if (!_currentClaudeSessionId) {
-        alert('No session selected');
+        if (typeof showToast === 'function') showToast('No session selected', 'error');
+        else alert('No session selected');
         return;
     }
-    
+
+    // Lock the UI but DO NOT clear the input yet — if the fetch fails
+    // we want to restore the user's text instead of silently losing it.
     input.disabled = true;
     sendBtn.disabled = true;
     sendBtn.textContent = 'Sending...';
-    
+
     appendChatMessage('user', message);
-    input.value = '';
-    
     showClaudeThinking();
-    
+
+    let startData = null;
     try {
-        const r = await fetch('/api/mission-control/claude-code/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                session_id: _currentClaudeSessionId,
-                message: message,
-                project_path: _currentClaudeProject
-            })
-        });
-        const startData = await r.json();
-        if (!r.ok || !startData.task_id) {
+        const r = await _ccPostWithRetry('/api/mission-control/claude-code/send', {
+            session_id: _currentClaudeSessionId,
+            message: message,
+            project_path: _currentClaudeProject
+        }, { timeout: 20000, retries: 1 });
+
+        // Some backends return non-JSON on error (HTML error pages),
+        // so guard the json() call explicitly.
+        let parsed = null;
+        try { parsed = await r.json(); } catch(je) { parsed = null; }
+
+        if (!r.ok || !parsed || !parsed.task_id) {
             hideClaudeThinking();
-            appendChatMessage('assistant', `Error: ${startData.error || 'Failed to start'}`);
+            const err = (parsed && parsed.error) || ('HTTP ' + r.status + ' ' + r.statusText);
+            _ccAppendErrorWithRetry(message, err);
+            // Restore the user's message so they can tweak & retry.
+            input.value = message;
             return;
         }
-        // Poll for result with live streaming
+        startData = parsed;
+    } catch (e) {
+        hideClaudeThinking();
+        const friendly = (e && e.name === 'AbortError')
+            ? 'Request timed out. The server may be busy — tap Retry to try again.'
+            : (e && e.message) || 'Network error';
+        _ccAppendErrorWithRetry(message, friendly);
+        input.value = message;
+        input.disabled = false;
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send';
+        return;
+    }
+
+    // Past the initial POST — now it's safe to clear the input.
+    input.value = '';
+
+    try {
         const taskId = startData.task_id;
         let elapsed = 0;
         let lastPartialLen = 0;
@@ -16934,7 +17077,7 @@ async function sendClaudeMessage() {
             await new Promise(ok => setTimeout(ok, 1500));
             elapsed += 1500;
             try {
-                const pr = await fetch('/api/mission-control/claude-code/poll/' + taskId);
+                const pr = await fetch('/api/mission-control/claude-code/poll/' + taskId, { credentials: 'same-origin' });
                 const pd = await pr.json();
                 if (pd.status === 'done') {
                     hideClaudeThinking();
@@ -16942,7 +17085,7 @@ async function sendClaudeMessage() {
                     return;
                 } else if (pd.status === 'error') {
                     hideClaudeThinking();
-                    appendChatMessage('assistant', `Error: ${pd.error}`);
+                    _ccAppendErrorWithRetry(message, pd.error || 'Task error');
                     return;
                 }
                 // Show partial output while running
@@ -16955,13 +17098,13 @@ async function sendClaudeMessage() {
                         if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight;
                     }
                 }
-            } catch(pe) { /* poll failed, keep trying */ }
+            } catch(pe) { /* poll failed, keep trying — transient network blips are normal */ }
         }
         hideClaudeThinking();
-        appendChatMessage('assistant', 'Timed out waiting for response');
+        _ccAppendErrorWithRetry(message, 'Timed out waiting for response after 5 minutes');
     } catch (e) {
         hideClaudeThinking();
-        appendChatMessage('assistant', `Error: ${e.message}`);
+        _ccAppendErrorWithRetry(message, (e && e.message) || 'Poll failed');
     } finally {
         input.disabled = false;
         sendBtn.disabled = false;
@@ -16973,31 +17116,38 @@ async function sendClaudeMessage() {
 async function createNewClaudeSession() {
     const message = prompt('Enter your first message to Claude:');
     if (!message) return;
-    
+
     try {
-        const response = await fetch('/api/mission-control/claude-code/new-session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                message: message,
-                project_path: _currentClaudeProject
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok && data.session_id) {
-            await openClaudeSession(data.session_id, 'New Session');
-            appendChatMessage('user', message);
-            if (data.response) {
-                appendChatMessage('assistant', data.response);
-            }
+        const response = await _ccPostWithRetry('/api/mission-control/claude-code/new-session', {
+            message: message,
+            project_path: _currentClaudeProject
+        }, { timeout: 30000, retries: 1 });
+
+        let data = null;
+        try { data = await response.json(); } catch(je) { data = null; }
+
+        if (response.ok && data && data.session_id) {
+            // Open the session. openClaudeSession will call
+            // loadClaudeConversation which fetches the server's
+            // copy of the messages — we don't re-append locally,
+            // otherwise the first turn shows up twice.
+            await openClaudeSession(
+                data.session_id,
+                data.project_name || 'New Session',
+                data.project_path || _currentClaudeProject
+            );
             loadClaudeSessions();
         } else {
-            alert(`Error creating session: ${data.error || 'Unknown error'}`);
+            const err = (data && data.error) || ('HTTP ' + response.status + ' ' + response.statusText);
+            if (typeof showToast === 'function') showToast('Error creating session: ' + err, 'error');
+            else alert('Error creating session: ' + err);
         }
     } catch (e) {
-        alert(`Error: ${e.message}`);
+        const friendly = (e && e.name === 'AbortError')
+            ? 'Timed out creating session'
+            : (e && e.message) || 'Network error';
+        if (typeof showToast === 'function') showToast('Error: ' + friendly, 'error');
+        else alert('Error: ' + friendly);
     }
 }
 
@@ -17259,15 +17409,11 @@ if (_userRole.allowedPages) {
 
     // ═══════════════════════════════════════════════════════════════
 
-    // ── UX: Toast notification ──
-    function showToast(msg, duration=2000) {
-        let t = document.getElementById('ux-toast');
-        if (!t) { t=document.createElement('div'); t.id='ux-toast'; t.className='toast'; document.body.appendChild(t); }
-        t.textContent = msg;
-        t.classList.add('show');
-        clearTimeout(t._timer);
-        t._timer = setTimeout(()=>t.classList.remove('show'), duration);
-    }
+    // (Duplicate showToast removed — the canonical implementation lives
+    // at the "TOAST SYSTEM" block above, using #toast-container. Having
+    // two definitions meant this one won by declaration order and its
+    // `.toast.show` class-toggle was overridden by the container-based
+    // CSS animation, leaving toasts like "Data synced ✓" pinned visible.)
 
     // ── UX: Skeleton loading for sections ──
     function showSkeleton(el, rows=4) {
