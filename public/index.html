@@ -8167,7 +8167,7 @@ async function loadInventoryPage() {
         invMgmtData = d.rows || [];
         invMgmtLoaded = true;
         // Auto-reload if server HTML has changed
-        if (d._v && window.__V && d._v !== window.__V) { location.reload(true); return; }
+        // Version check disabled — was causing infinite reload loops during active development
         buildInventoryTabs();
         updateInventorySummary();
         updateInventoryStats(getTabFilteredData());
@@ -17190,7 +17190,7 @@ async function loadClaudeSessions() {
         el.innerHTML = sessions.map(s => {
             const ago = timeAgo(s.last_activity);
             const statusColor = s.status === 'active' ? '#4ADE80' : '#6B7280';
-            const preview = s.last_message_preview ? s.last_message_preview.substring(0,100) + (s.last_message_preview.length > 100 ? '...' : '') : 'No recent activity';
+            const preview = (s.last_message_preview || '').substring(0,100) + ((s.last_message_preview||'').length > 100 ? '...' : '') || 'No recent activity';
             return `<div class="claude-session-card" onclick="openClaudeSession('${s.session_id}', '${s.project_name}', '${s.project_path || ''}')">
                 <div class="claude-session-header">
                     <div class="claude-session-id">${s.session_id_short}</div>
