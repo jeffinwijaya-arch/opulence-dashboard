@@ -1586,15 +1586,16 @@
             </div>
             <div class="metrics" id="metrics-grid"></div>
 
-            <div id="devotion-card" style="background:linear-gradient(135deg,var(--bg-2) 0%,rgba(212,175,55,0.03) 100%);border:1px solid rgba(212,175,55,0.1);border-radius:var(--radius-lg);padding:10px 16px;margin-bottom:12px;cursor:pointer;display:flex;align-items:center;gap:14px;" >
+            <div id="devotion-card" style="background:linear-gradient(135deg,var(--bg-2) 0%,rgba(212,175,55,0.03) 100%);border:1px solid rgba(212,175,55,0.1);border-radius:var(--radius-lg);padding:10px 16px;margin-bottom:12px;display:flex;align-items:center;gap:14px;" >
                 <div style="flex:1;min-width:0;">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
                         <span style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-2);font-family:var(--mono);">Devotion</span>
                         <span id="devotion-time" style="font-size:0.58rem;color:var(--text-3);font-family:var(--mono);"></span>
                         <span id="devotion-ref" style="font-size:0.62rem;color:var(--accent);font-weight:600;letter-spacing:0.3px;font-family:var(--mono);margin-left:auto;"></span>
+                        <button onclick="event.stopPropagation();const v=document.getElementById('devotion-verse').textContent;const r=document.getElementById('devotion-ref').textContent;navigator.clipboard.writeText(v+' — '+r).then(()=>showToast('Verse copied!'));" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;color:var(--text-2);font-size:0.58rem;font-family:var(--mono);transition:all 0.15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text-2)'">Copy</button>
                     </div>
-                    <div id="devotion-verse" style="font-size:1.05rem;line-height:1.7;color:var(--text-1);font-style:italic;white-space:normal;"></div>
-                    <div class="devotion-full" style="display:none;"></div>
+                    <div id="devotion-verse" style="font-size:1.05rem;line-height:1.7;color:var(--text-1);font-style:italic;white-space:normal;cursor:pointer;" onclick="const f=this.nextElementSibling;f.style.display=f.style.display==='none'?'block':'none';"></div>
+                    <div class="devotion-full" style="display:none;padding-top:8px;font-size:0.78rem;color:var(--text-2);line-height:1.6;border-top:1px solid var(--border);margin-top:8px;">Click to expand for reflection</div>
                 </div>
             </div>
 
@@ -1740,6 +1741,8 @@
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Compare
                 </button>
             </div>
+            <!-- Autocomplete Dropdown -->
+            <div id="ref-autocomplete" style="display:none;position:absolute;z-index:200;background:var(--bg-1);border:1px solid var(--accent-border);border-radius:var(--radius);box-shadow:var(--shadow-lg);max-height:240px;overflow-y:auto;width:100%;max-width:480px;"></div>
             <!-- Recent Searches -->
             <div id="recent-searches" style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;"></div>
             <!-- Compare Mode -->
@@ -5979,7 +5982,35 @@ function expandCheapest() {
     var btn = document.getElementById('cheapest-more');
     if(btn) btn.style.display = 'none';
 }
-function debounceSearch() { clearTimeout(searchTimeout); searchTimeout=setTimeout(doLookup,300); }
+function debounceSearch() {
+    clearTimeout(searchTimeout);
+    // Show autocomplete suggestions while typing
+    const q = ($('#ref-search')?.value||'').trim().toLowerCase();
+    const ac = document.getElementById('ref-autocomplete');
+    if (ac && q.length >= 2 && DATA.refs) {
+        const matches = Object.entries(DATA.refs).filter(([ref,info]) => {
+            const label = (info.model||info.label||'').toLowerCase();
+            return ref.toLowerCase().includes(q) || label.includes(q);
+        }).slice(0,8);
+        if (matches.length) {
+            ac.innerHTML = matches.map(([ref,info]) => {
+                const label = info.model||info.label||'';
+                const price = info.median||info.b25||0;
+                return `<div style="padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);transition:background 0.1s;" onmouseenter="this.style.background='var(--bg-hover)'" onmouseleave="this.style.background=''" onmousedown="event.preventDefault();$('#ref-search').value='${ref}';document.getElementById('ref-autocomplete').style.display='none';doLookup();">
+                    <div><span style="color:var(--accent);font-weight:700;font-family:var(--mono);">${ref}</span> <span style="color:var(--text-2);font-size:0.72rem;">${label}</span></div>
+                    <span style="font-family:var(--mono);font-size:0.72rem;color:var(--text-1);">${price?fmt(price):''}</span>
+                </div>`;
+            }).join('');
+            ac.style.display = 'block';
+        } else { ac.style.display = 'none'; }
+    } else if (ac) { ac.style.display = 'none'; }
+    searchTimeout=setTimeout(doLookup,400);
+}
+// Hide autocomplete on blur
+document.addEventListener('click', e => {
+    const ac = document.getElementById('ref-autocomplete');
+    if (ac && !e.target.closest('#ref-search') && !ac.contains(e.target)) ac.style.display = 'none';
+});
 function lookupRef(ref,dial) { showPage('lookup'); $('#ref-search').value=dial?ref+' '+dial:ref; doLookup(); }
 
 function toggleCompareMode(){
@@ -6786,7 +6817,7 @@ function renderPfAging(c, p, items) {
                 <td class="right">${fmt(i.cost_price)}</td>
                 <td class="right">${i.market_value?fmt(i.market_value):'<span class="dim">—</span>'}</td>
                 <td class="right ${pnlCls}">${pnl?(pnl>0?'+':'')+fmt(pnl):'—'}</td>
-                <td class="right" style="color:var(--red);font-weight:600;">${i.days_held||0}d</td>
+                <td class="right" style="color:${(i.days_held||0)<=7?'var(--green)':(i.days_held||0)<=14?'var(--text-0)':(i.days_held||0)<=30?'var(--accent)':(i.days_held||0)<=60?'var(--orange)':'var(--red)'};font-weight:600;">${i.days_held||0}d</td>
                 <td>${statusTag(getStatus(i))}</td>
             </tr>`;
         }
