@@ -15862,12 +15862,13 @@ function renderJamFeed(type) {
     const feed = $('#jam-feed');
     const items = _jamState.feeds[type] || [];
     const total = _jamState.totals[type] || 0;
-    
+
     if (!items.length) {
         feed.innerHTML = '<div style="text-align:center;color:var(--text-2);padding:24px;">No items</div>';
         return;
     }
-    
+
+    try {
     let html = '';
     if (type === 'keluar') {
         const today = _localDate(0);
@@ -15992,8 +15993,8 @@ function renderJamFeed(type) {
                         + '<button onclick="event.stopPropagation();jamChangeLabel(' + grp.items[0].id + ')" style="cursor:pointer;padding:8px 10px;border:none;border-radius:8px;background:var(--orange);color:#000;font-weight:700;font-size:0.7rem;">CHANGE</button>'
                         + '</div>';
                 } else if (grpPkgId && !isLogistics) {
-                    pkgLabelBtn = '<div style="display:flex;gap:6px;align-items:center;">'
-                        + '<button onclick="event.stopPropagation();jamAttachLabelToPackage(' + grpPkgId + ')" style="cursor:pointer;padding:8px 14px;border:none;border-radius:8px;background:var(--accent);color:var(--bg-1);font-weight:700;font-size:0.78rem;min-height:36px;">ATTACH LABEL</button>'
+                    pkgLabelBtn = '<div ondragover="event.preventDefault();event.stopPropagation();this.style.outline=\'3px solid var(--accent)\';this.style.background=\'var(--accent-dim)\'" ondragleave="this.style.outline=\'none\';this.style.background=\'none\'" ondrop="event.preventDefault();event.stopPropagation();this.style.outline=\'none\';this.style.background=\'none\';jamDropLabelOnPackage(event,' + grpPkgId + ')" style="display:flex;gap:6px;align-items:center;border-radius:8px;transition:all 0.15s;">'
+                        + '<button onclick="event.stopPropagation();jamAttachLabelToPackage(' + grpPkgId + ')" style="cursor:pointer;padding:8px 14px;border:2px dashed var(--accent);border-radius:8px;background:var(--accent-dim);color:var(--accent);font-weight:700;font-size:0.78rem;min-height:36px;">ATTACH LABEL</button>'
                         + '</div>';
                 }
                 html += '<div class="pkg-drop-zone" data-pkg-id="' + grpPkgId + '" data-recipient="' + buyerName.replace(/"/g,'&quot;') + '" style="border:2px solid ' + pColor + ';border-radius:12px;padding:4px;margin:8px 0;background:var(--bg-1);transition:background 0.15s,border-color 0.15s;" ondragover="event.preventDefault();this.style.borderColor=\'var(--accent)\';this.style.background=\'var(--accent-dim)\'" ondragleave="this.style.borderColor=\'' + pColor + '\';this.style.background=\'var(--bg-1)\'" ondrop="event.preventDefault();this.style.borderColor=\'' + pColor + '\';this.style.background=\'var(--bg-1)\';handlePkgDrop(event,' + grpPkgId + ')">'
@@ -16063,6 +16064,10 @@ function renderJamFeed(type) {
     }
     
     feed.innerHTML = html;
+    } catch(e) {
+        console.error('renderJamFeed error:', e);
+        feed.innerHTML = '<div style="text-align:center;color:var(--red);padding:24px;">Render error: ' + (e.message||e) + '<br><button onclick="loadJamFeed(\'' + type + '\')" style="margin-top:8px;padding:8px 16px;border:1px solid var(--accent);border-radius:6px;background:none;color:var(--accent);cursor:pointer;">Retry</button></div>';
+    }
 }
 
 function _jamCard(type, item) {
@@ -16961,6 +16966,30 @@ function jamDoAttachLabel(watchId) {
         } catch(e) { alert('Upload error: ' + e.message); }
     };
     input.click();
+}
+
+async function jamDropLabelOnPackage(event, packageId) {
+    const files = event.dataTransfer?.files;
+    if (!files || !files.length) return;
+    const file = files[0];
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+        if (typeof showToast === 'function') showToast('Only PDF files accepted', 'error');
+        return;
+    }
+    if (typeof showToast === 'function') showToast('Uploading label...');
+    const fd = new FormData();
+    fd.append('pdfs', file);
+    fd.append('ship_by_date', _localDate(0));
+    try {
+        const r = await fetch('/api/shipping/packages/' + packageId + '/attach-label', { method: 'POST', body: fd });
+        const data = await r.json();
+        if (data.ok) {
+            if (typeof showToast === 'function') showToast('Label attached');
+            loadJamFeed(_jamState.tab);
+        } else {
+            alert('Upload failed: ' + (data.error || 'unknown'));
+        }
+    } catch(e) { alert('Upload error: ' + e.message); }
 }
 
 function jamAttachLabelToPackage(packageId) {
