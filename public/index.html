@@ -1531,99 +1531,123 @@
             #im-table td:nth-child(2) { font-size:0.85rem!important; font-weight:600; }
             #im-table td:nth-child(2) span[onclick] { color:var(--accent); text-decoration:underline; text-decoration-style:dotted; }
         }
-        /* ══════════════════════════════════════════════
-           CEO MOBILE FIX — iPhone 390px / Safari
-           ALL inside @media(max-width:768px) only
-           ══════════════════════════════════════════════ */
 
-        /* Fix 1: Bottom content hidden behind nav */
+        /* ══════════════════════════════════════════════════
+           MOBILE UX FIXES — iPhone 390px Safari
+           ══════════════════════════════════════════════════ */
+
+        /* 1. Bottom content hidden behind nav — ensure padding-bottom */
         @media(max-width:768px) {
-            .main { padding-bottom:calc(80px + env(safe-area-inset-bottom))!important; }
+            .main { padding-bottom:80px!important; }
         }
-        /* 480px rule uses padding shorthand which resets padding-bottom — restore it */
+
+        /* 2. ALL tables get horizontal scroll with momentum */
+        @media(max-width:768px) {
+            .card-body { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+            table { max-width:100%; }
+            .tbl { min-width:600px; }
+        }
+
+        /* 3. Deal cards stacked at 390px — readable prices, min-width badges */
         @media(max-width:480px) {
-            .main { padding:6px!important; padding-bottom:calc(80px + env(safe-area-inset-bottom))!important; }
+            .deal-card { padding:12px; }
+            .deal-card > div:first-child { flex-direction:column!important; align-items:flex-start!important; gap:6px!important; }
+            .deal-discount { font-size:1.1rem; }
+            .deal-stats { grid-template-columns:1fr 1fr!important; gap:6px; }
+            .deal-stat .ds-val { font-size:0.9rem; }
+            .seller-badge { min-width:40px; text-align:center; }
+            .profit-badge { font-size:0.68rem; min-width:50px; text-align:center; }
         }
 
-        /* Fix 3: Deal cards — stacked layout, readable prices, min-width badges */
-        @media(max-width:390px) {
-            .deal-card { padding:10px 12px!important; }
-            .deal-discount { font-size:1.1rem!important; }
-            .deal-stats { grid-template-columns:1fr!important; gap:6px!important; }
-            .seller-badge, .profit-badge { min-width:64px!important; }
-            .deal-stat .ds-val { font-size:1.1rem!important; }
-            .deal-card-row { flex-direction:column!important; }
-        }
-
-        /* Fix 4: ALL modals full-screen — generic catch-all for dynamic modals */
+        /* 4. ALL modals full-screen on mobile — catch generics */
         @media(max-width:768px) {
-            [id$="-modal"] > div { max-width:100vw!important; width:100%!important; border-radius:0!important; margin:0!important; }
-            [id$="-overlay"] > div { max-width:100vw!important; width:100%!important; border-radius:0!important; margin:0!important; }
-            [id$="-modal"] { padding:0!important; }
-        }
-
-        /* Fix 5: Filter bars — column layout, full-width inputs */
-        @media(max-width:768px) {
-            /* Deal flow filter row */
-            #deals-market-section > div:first-child { flex-direction:column!important; }
-            #deals-search, #deals-tier { width:100%!important; flex:none!important; }
-            /* Browse filter row */
-            #page-browse > div:not(.page-head):not(.card):not([id]) { flex-direction:column!important; }
-            #browse-search, #browse-region, #browse-cond, #browse-sort { width:100%!important; flex:none!important; }
-            /* Shipping contact search */
-            #ship-contact-search { width:100%!important; flex:none!important; }
-        }
-
-        /* Fix 6: Edit Posting modal — photo 120px, textarea 150px, 44px buttons */
-        @media(max-width:768px) {
-            #epm-photo-img { max-height:120px!important; object-fit:contain!important; width:auto!important; }
-            #epm-caption { min-height:150px!important; font-size:16px!important; }
-            #posting-price-edit-modal .btn, #epm-confirm { min-height:44px!important; font-size:0.85rem!important; }
-            #epm-new-price { min-height:44px!important; font-size:16px!important; }
-        }
-
-        /* Fix 7: Canvas charts — constrain to viewport width, no overflow */
-        @media(max-width:768px) {
-            canvas { max-width:100%!important; }
-            #editor-canvas { width:100%!important; height:auto!important; }
-        }
-
-        /* Fix 8: Photo upload slots — 60x60px minimum enforced */
-        @media(max-width:768px) {
-            .posting-card img { min-width:60px!important; min-height:60px!important; width:60px!important; height:60px!important; }
-        }
-
-        /* Fix 9: Ticker — clear separation from page title */
-        @media(max-width:768px) {
-            .ticker-bar { border-bottom:1px solid var(--border-strong)!important; }
-            .page-context { border-bottom:1px solid var(--border)!important; }
-            .page-head { margin-top:8px!important; }
-        }
-
-        /* Fix 10: Mobile nav — equal spacing, 44px tap height, visible active state */
-        @media(max-width:768px) {
-            .mobile-nav { justify-content:space-around!important; }
-            .mobile-nav a { flex:1!important; min-height:44px!important; justify-content:center!important; }
-            .mobile-nav a.active { border-top:2px solid var(--accent)!important; }
-        }
-
-        /* Fix 11: Operations cards — MOVE PKG, SHIP, SCHEDULE 44px tap targets */
-        @media(max-width:768px) {
-            .jam-pills button.jam-pill, .jam-card-footer .jam-pill[onclick] {
-                min-height:44px!important; padding:10px 14px!important; font-size:0.75rem!important;
+            div[style*="position:fixed"][style*="z-index"] > div[style*="max-width"] {
+                max-width:100%!important; width:100%!important; max-height:100vh!important;
+                height:100%!important; border-radius:0!important; margin:0!important;
+                overflow-y:auto!important;
             }
-            .jam-card-footer { flex-wrap:wrap!important; gap:8px!important; }
-        }
-
-        /* Fix 12: Package header ATTACH LABEL — full-width, 44px tap target */
-        @media(max-width:768px) {
-            button[onclick*="jamAttachLabelToPackage"] {
-                min-height:44px!important; width:100%!important;
-                padding:10px 16px!important; font-size:0.8rem!important;
-                box-sizing:border-box!important;
+            #posting-modal > div, #ul-paste-modal > div, #ul-manage-modal > div,
+            #photo-modal > div, #posting-redact-modal > div {
+                max-width:100%!important; width:100%!important; border-radius:0!important; margin:0!important;
             }
         }
 
+        /* 5. Filter bars — stack vertically on mobile */
+        @media(max-width:768px) {
+            .page-head + div[style*="display:flex"],
+            div[style*="display:flex"][style*="gap"] > select,
+            div[style*="display:flex"][style*="gap"] > input {
+                width:100%!important;
+            }
+            #page-browse > div[style*="display:flex"],
+            #page-shipping > div[style*="display:flex"],
+            #page-payments > div[style*="display:flex"],
+            #page-crm > div[style*="display:flex"] {
+                flex-direction:column!important;
+            }
+            .tabs { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+            .tab { white-space:nowrap; flex-shrink:0; padding:10px 14px; }
+        }
+
+        /* 6. Edit Posting modal — usable on mobile */
+        @media(max-width:768px) {
+            #posting-price-edit-modal > div { padding:16px!important; }
+            #epm-photo-img { max-height:120px!important; }
+            #epm-caption { min-height:150px!important; font-size:0.8rem!important; }
+            #posting-price-edit-modal .btn,
+            #posting-price-edit-modal button { min-height:44px!important; font-size:0.8rem!important; }
+            #posting-modal textarea { min-height:150px!important; }
+            #posting-modal .btn, #posting-modal button { min-height:44px!important; }
+        }
+
+        /* 7. Canvas charts — responsive width */
+        @media(max-width:768px) {
+            canvas { max-width:100%!important; height:auto!important; }
+            .sparkline-wrap canvas { height:28px!important; }
+            .metric .sparkline-wrap { overflow:hidden; }
+        }
+
+        /* 8. Photo upload slots — 60x60px minimum */
+        @media(max-width:768px) {
+            #wm-photos-grid { grid-template-columns:repeat(auto-fill,minmax(60px,1fr))!important; gap:6px!important; }
+            #wm-photos-grid img, #wm-photos-grid > div { min-width:60px!important; min-height:60px!important; }
+            #posting-photo-preview img { min-width:60px; min-height:60px; object-fit:cover; }
+            #epm-suggested-list img { min-width:50px; min-height:50px; }
+        }
+
+        /* 9. Ticker — clear separation from page title */
+        @media(max-width:768px) {
+            .ticker-bar { border-bottom:2px solid var(--border-strong); margin-bottom:0; }
+            .page-context { border-bottom:1px solid var(--border); padding:10px 16px; }
+        }
+
+        /* 10. Mobile nav — equal spacing, clear active state */
+        @media(max-width:768px) {
+            .mobile-nav { display:flex!important; justify-content:space-around; padding:4px 4px; min-height:44px; gap:0; }
+            .mobile-nav a { flex:1; text-align:center; min-width:0; padding:6px 2px; font-size:0.6rem; min-height:44px; }
+            .mobile-nav a.active { background:var(--accent-dim); color:var(--accent); border-radius:var(--radius); box-shadow:0 0 8px rgba(212,175,55,0.1); }
+        }
+
+        /* 11. Operations cards — MOVE PKG, SHIP, SCHEDULE buttons 44px */
+        @media(max-width:768px) {
+            .jam-card-footer { flex-wrap:wrap; }
+            .jam-card-footer .btn, .jam-card-footer button {
+                min-height:44px!important; padding:10px 14px!important;
+                font-size:0.75rem!important; flex:1; min-width:80px;
+            }
+            .jam-card { padding:12px; }
+            .jam-card-title { font-size:0.82rem; }
+        }
+
+        /* 12. Package header ATTACH LABEL — mobile-friendly */
+        @media(max-width:768px) {
+            .pkg-drop-zone { flex-direction:column!important; }
+            .pkg-drop-zone button, button[onclick*="jamAttachLabel"],
+            button[onclick*="jamPrintLabel"], button[onclick*="jamChangeLabel"] {
+                min-height:44px!important; width:100%!important; padding:10px 14px!important;
+                font-size:0.78rem!important;
+            }
+        }
     </style>
 </head>
 <body>
