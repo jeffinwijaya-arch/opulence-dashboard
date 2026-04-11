@@ -23,31 +23,29 @@ All high tasks completed 2026-04-10.
 - [ ] Batch ship UX polish — test the checkbox selector end-to-end, handle edge cases (no packages, all shipped)
 
 ### WS6: CRM (ws6-crm.js)
-- [ ] Referral tracking — "referred by" field on buyer records, track referral chains
+- [x] Referral tracking — "referred by" field on buyer records, track referral chains (2026-04-10)
 
 ### WS8: Mobile UX (ws8-mobile-ux.js)
-- [ ] Offline mode — cache last lookup results + deals in service worker for subway use
-- [ ] Keyboard shortcuts for desktop power users (/ to search, n for new watch, s for sell)
+- [x] Offline mode — localStorage-based cache for /api/smart_search + /api/deals; offline banner shown with timestamp (2026-04-10)
+- [x] Keyboard shortcuts for desktop power users: `/` focus search, `d` deals, `p` lookup, `i` inventory, `n` add watch, `Esc` close modal, `?` cheat sheet (2026-04-10)
 
 ### WS9: Financial Reporting (ws9-reporting.js)
-- [ ] Tax export — generate CSV of all sold watches with cost basis + proceeds for accountant
-- [ ] Monthly P&L PDF export with charts
-
-### WS10: Automation (ws10-automation.js)
-- [ ] Smart photo tagging — match uploaded photos to refs based on filename/EXIF
-- [ ] Auto-detect sold watches from WhatsApp messages ("sold 126334 to John 14500")
+- [x] Tax export — CSV with cost basis + sale price + holding period per sold watch, year selector, preview summary (2026-04-10)
+- [x] Monthly P&L summary — last 12 months table + bar chart on Portfolio page (2026-04-10)
 
 ### General
 - [ ] Test all 10 modules on mobile Safari — fix any layout/interaction bugs
 - [ ] Performance audit — measure module load time, optimize if >500ms
-- [ ] Add module error boundary — if one module crashes, others keep working
+- [x] Add module error boundary — error boundaries already in module-loader.js: try/catch in _initOne() + renderAll(), failed-module Map, auto-retry after 5s, admin footer indicator (2026-04-11)
 
 ## Priority: LOW
 - [ ] WS4: A/B caption testing — track view counts per caption style
 - [ ] WS7: Seasonal price patterns — monthly average prices per ref to identify buy/sell windows
-- [ ] WS7: Currency impact dashboard — how USD/HKD moves affect margins
+- [x] WS7: Currency impact dashboard — HKD/USD slider (6.50–8.50) shows per-ref arb profit & break-even FX rate, total pool delta vs baseline; added to ws7-analytics.js section 5 (2026-04-11)
 - [ ] WS9: Profit by channel analysis (WhatsApp groups, Instagram, direct)
 - [ ] WS10: Competition price tracking — monitor Chrono24 prices for key refs
+- [ ] Multi-channel listing sync — generate Chrono24-compatible XML feed from inventory (competitive with WatchTraderHub)
+- [ ] Performance badges — Fast Shipper, Top Seller badges on seller profiles (competitive with Chrono24)
 
 ## COMPLETED (2026-04-10)
 - [x] WS1: Deal scoring algorithm (0-100 composite score) — ws1-price-intel.js
@@ -63,13 +61,18 @@ All high tasks completed 2026-04-10.
 - [x] WS5: Shipping cost estimator — ws5-shipping.js
 - [x] WS6: Buyer purchase history panel — ws6-crm.js
 - [x] WS6: Seller reliability score — ws6-crm.js
+- [x] WS6: Referral tracking — "referred by" input on watch detail, referral chain display, top-referrers card on CRM page (2026-04-10)
 - [x] WS7: Brand market share donut chart — ws7-analytics.js
 - [x] WS7: Top movers widget — ws7-analytics.js
 - [x] WS7: HK vs US price gap chart — ws7-analytics.js
 - [x] WS8: Quick-action floating button (FAB) — ws8-mobile-ux.js
 - [x] WS8: Swipe-to-action on deal cards — ws8-mobile-ux.js
+- [x] WS8: Offline cache — localStorage wraps /api/smart_search + /api/deals with timestamp banner (2026-04-10)
+- [x] WS8: Desktop keyboard shortcuts — /, Cmd+K, d, p, i, n, Esc, ? with cheat sheet overlay (2026-04-10)
 - [x] WS9: Weekly P&L summary card — ws9-reporting.js
 - [x] WS9: Profit by ref analysis — ws9-reporting.js
+- [x] WS9: Tax export CSV — year selector, cost basis + proceeds + holding period, TOTALS row (2026-04-10)
+- [x] WS9: Monthly P&L — last 12 months table + canvas bar chart (2026-04-10)
 - [x] WS10: Auto-price new watches — ws10-automation.js
 - [x] WS10: Stale listing detector — ws10-automation.js
 - [x] Price analyzer: Rolex dial options expanded 74→271 refs
@@ -78,6 +81,7 @@ All high tasks completed 2026-04-10.
 - [x] Price analyzer: 13 new dealer shorthand patterns in extract_dial()
 - [x] Price analyzer: Phone number extraction improved (33 seller mappings)
 - [x] Price analyzer: Dial synonyms expanded to 30 entries
+- [x] Price analyzer: rolex_dial_options.json expanded ~98→165 refs; added 69 prev-gen refs (116xxx, 118xxx, 326xxx, 114xxx, 50xxx) covering Submariner/GMT/Day-Date/Datejust/Daytona/Milgauss/Cellini/Explorer/YM/YM-II/Sky-Dweller prev-gen (2026-04-10)
 
 ## RULES FOR AGENTS
 1. Pick ONE task from the highest unchecked priority level

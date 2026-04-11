@@ -1,0 +1,54 @@
+# Cloudflare Pages cache headers
+# https://developers.cloudflare.com/pages/configuration/headers/
+#
+# This file is the whole reason iPhone Safari kept serving stale
+# HTML after deploys: without explicit Cache-Control, Pages + the
+# browser would happily hang on to an old index.html for hours.
+# Every deploy now goes live immediately because the shell is
+# revalidated on every load (the 304 path is cheap).
+#
+# Strategy:
+#   - HTML shell + service worker + manifest: no-cache, must-revalidate
+#   - Hashed/versioned static assets (icons, fonts): long-lived immutable
+#   - JS/CSS modules: short cache so a hotfix propagates quickly but
+#     we don't hammer the origin on every navigation
+#   - API: never cache (belt and suspenders — the backend sets this too)
+
+/
+  Cache-Control: no-cache, must-revalidate
+
+/index.html
+  Cache-Control: no-cache, must-revalidate
+
+/sw.js
+  Cache-Control: no-cache, must-revalidate
+
+/manifest.json
+  Cache-Control: no-cache, must-revalidate
+
+/modules/*
+  Cache-Control: public, max-age=60, must-revalidate
+
+/*.js
+  Cache-Control: public, max-age=60, must-revalidate
+
+/*.css
+  Cache-Control: public, max-age=60, must-revalidate
+
+/*.png
+  Cache-Control: public, max-age=604800
+
+/*.jpg
+  Cache-Control: public, max-age=604800
+
+/*.svg
+  Cache-Control: public, max-age=604800
+
+/*.webp
+  Cache-Control: public, max-age=604800
+
+/*.woff2
+  Cache-Control: public, max-age=31536000, immutable
+
+/api/*
+  Cache-Control: no-store

@@ -283,15 +283,10 @@
         @keyframes modalFadeIn { from { opacity:0; } to { opacity:1; } }
         @keyframes modalSlideUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
 
-        /* ── UX: Toast notifications ── */
-        .toast {
-            position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
-            background:var(--bg-3); color:var(--text-0); border:1px solid var(--accent-border);
-            border-radius:8px; padding:10px 20px; font-size:0.78rem; font-family:var(--mono);
-            box-shadow:var(--shadow-lg); z-index:20000; opacity:0;
-            transition: opacity 0.2s ease, transform 0.2s ease; pointer-events:none;
-        }
-        .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+        /* (Legacy .toast / .toast.show rules removed — they collided with
+           the container-based toast system at .toast-container below and
+           pinned every toast visible via `animation: toastIn ... forwards`,
+           causing toasts like "Data synced ✓" to never fade out.) */
 
         /* ── UX: Skeleton loading ── */
         .skeleton { background: linear-gradient(90deg, var(--bg-3) 25%, var(--bg-4) 50%, var(--bg-3) 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; border-radius:var(--radius); }
@@ -3462,6 +3457,18 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                     #claude-chat-input:focus{outline:none;border-color:var(--accent);}
                     #claude-send-btn{background:var(--accent);color:var(--bg-1);border:none;border-radius:8px;padding:10px 16px;font-weight:600;cursor:pointer;font-size:0.8rem;}
                     #claude-send-btn:disabled{opacity:0.5;cursor:not-allowed;}
+                    /* Hide the floating "+" FAB while the Claude chat view
+                       is open — otherwise it sits on top of the Send button
+                       at bottom-right on mobile and intercepts taps. */
+                    body.claude-chat-active .fab-menu { display: none !important; }
+                    /* Retry button that appears on failed sends. */
+                    .chat-msg.assistant .claude-retry-btn {
+                        display:inline-block; margin-top:8px; padding:4px 10px;
+                        background:var(--accent); color:var(--bg-1); border:none;
+                        border-radius:6px; font-size:0.7rem; font-weight:600;
+                        cursor:pointer;
+                    }
+                    .chat-msg.assistant.chat-error { border-left:3px solid var(--red); }
                 </style>
 
                 <!-- Sessions List -->
@@ -3832,6 +3839,20 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
 </button>
 
 <script>
+// ── Build stamp ──
+// Set at deploy time (or inlined here when the branch is pushed) so
+// every loaded page self-identifies which commit it's running. Shows
+// up in the Claude Code self-test report and in every error bubble's
+// diagnostics payload — if the user sends a screenshot or pastes a
+// report, you can tell in one glance whether they're on the latest
+// code or a stale cached copy. Update this on every commit that
+// touches user-visible behavior.
+window.__BUILD__ = {
+    commit: '03a5e7c',                        // updated per commit
+    built_at: '2026-04-11T01:00:00Z',         // approximate build time
+    version: 'mission-control-v5-lookup-fallback'
+};
+try { console.info('%c[MK build]', 'color:#d4af37;font-weight:700', window.__BUILD__); } catch(e) {}
 // ── Force clear stale service workers + cache on version mismatch ──
 (function(){const V='v3';if(navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(regs=>{regs.forEach(r=>{r.unregister();});});caches.keys().then(ks=>ks.forEach(k=>{if(!k.includes(V))caches.delete(k);}));}})();
 // ── Skeleton loader helpers ──
@@ -6484,7 +6505,102 @@ async function doLookup() {
                 }
             }
         } catch(e3) {}
-    } catch(e) { c.innerHTML = emptyState('search',e.message||'No data found','No listings found for "'+q+'". Try a different reference number or search term.','doLookup()'); }
+    } catch(e) {
+        // The backend /api/smart_search is the price parser, which
+        // sometimes lags behind what's in bundle.json — a ref can be
+        // present in DATA.refs but "not found" by the parser because
+        // its index was built with a count >= 5 filter, or its ref
+        // whitelist doesn't include newer variants, or it just hasn't
+        // been re-run since the data landed. Instead of showing an
+        // opaque "No data for X" and leaving the user to wonder, fall
+        // back to whatever DATA.refs has and render a minimal view
+        // with an explicit "limited data" warning. Strictly additive:
+        // if the bundle doesn't have the ref either, we show the same
+        // error as before.
+        try {
+            const refKey = (q || '').split(/\s+/)[0];
+            const bundleRec = DATA && DATA.refs && DATA.refs[refKey];
+            if (bundleRec && (bundleRec.count || 0) > 0) {
+                _renderFallbackLookup(c, refKey, bundleRec, e && e.message);
+                return;
+            }
+        } catch(_) { /* fallback itself failed — show the original error */ }
+        c.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-2);">${e.message||'No data for "'+q+'"'}</div>`;
+    }
+}
+
+// Minimal lookup renderer that pulls from bundle.json when the
+// backend parser can't find a ref. Shows the same core metrics
+// (b25, median, low, high, US/HK split, dial breakdown) plus an
+// explicit warning about data quality so the user knows why
+// numbers that look "impossible" (e.g. 3 identical listings) are
+// what they are.
+function _renderFallbackLookup(container, ref, rec, backendErr) {
+    const count = rec.count || 0;
+    const b25   = rec.b25 || rec.median || 0;
+    const low   = rec.low || 0;
+    const high  = rec.high || 0;
+    const model = rec.model || rec.label || '';
+    const usCount = rec.us_count || 0;
+    const hkCount = rec.hk_count || 0;
+    const hkB25   = rec.hk_b25 || rec.hk_median || 0;
+    const usB25   = rec.us_b25 || rec.us_median || 0;
+
+    // Quality signals the user will want to see at a glance.
+    const singleRegion   = (usCount === 0) !== (hkCount === 0);
+    const tightSpread    = count >= 2 && high > 0 && low > 0 && ((high - low) / (b25 || 1)) < 0.01;
+    const lowSampleWarn  = count < 5;
+    const warnings = [];
+    if (lowSampleWarn) warnings.push(`only ${count} listing${count === 1 ? '' : 's'} (LOW confidence)`);
+    if (tightSpread)   warnings.push('all listings within 1% — probable single-dealer dupes');
+    if (singleRegion)  warnings.push(`${usCount === 0 ? 'HK' : 'US'}-only market`);
+
+    // Dial breakdown if the bundle has it
+    let dialRows = '';
+    if (rec.dials && typeof rec.dials === 'object') {
+        const entries = Object.entries(rec.dials).sort((a,b) => (b[1].count||0) - (a[1].count||0));
+        if (entries.length) {
+            dialRows = '<div style="margin-top:12px;"><div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:6px;">Dial breakdown</div><table class="tbl" style="font-size:0.75rem;"><thead><tr><th>Dial</th><th class="right">B25</th><th class="right">Low</th><th class="right">High</th><th class="right">N</th></tr></thead><tbody>' +
+                entries.map(([name, d]) => `<tr><td style="color:var(--accent);">${name}</td><td class="right">${fmt(d.b25 || d.median || 0)}</td><td class="right green">${fmt(d.low || 0)}</td><td class="right">${fmt(d.high || 0)}</td><td class="right dim">${d.count || 0}</td></tr>`).join('') +
+                '</tbody></table></div>';
+        }
+    }
+
+    const regionalRow = (usB25 || hkB25) ? `
+        <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap;font-size:0.75rem;">
+            ${usB25 ? `<div><span class="dim">US b25 </span><span style="color:var(--accent);font-family:var(--mono);">${fmt(usB25)}</span> <span class="dim">(${usCount})</span></div>` : ''}
+            ${hkB25 ? `<div><span class="dim">HK b25 </span><span style="color:var(--accent);font-family:var(--mono);">${fmt(hkB25)}</span> <span class="dim">(${hkCount})</span></div>` : ''}
+        </div>` : '';
+
+    container.innerHTML = `
+        <div class="card" style="padding:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;">
+                <div>
+                    <div style="font-family:var(--mono);color:var(--accent);font-size:1.05rem;font-weight:700;">${ref}</div>
+                    <div style="font-size:0.82rem;color:var(--text-1);margin-top:2px;">${model}</div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-family:var(--mono);font-size:1.15rem;font-weight:700;color:var(--text-0);">${fmt(b25)}</div>
+                    <div style="font-size:0.65rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;">b25 · ${count} listing${count === 1 ? '' : 's'}</div>
+                </div>
+            </div>
+            <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap;font-size:0.75rem;">
+                <div><span class="dim">Low </span><span class="green" style="font-family:var(--mono);">${fmt(low)}</span></div>
+                <div><span class="dim">High </span><span style="font-family:var(--mono);">${fmt(high)}</span></div>
+                <div><span class="dim">Spread </span><span style="font-family:var(--mono);">${b25 > 0 && high > 0 ? (((high - low) / b25) * 100).toFixed(1) + '%' : '—'}</span></div>
+            </div>
+            ${regionalRow}
+            ${warnings.length ? `
+                <div style="margin-top:12px;padding:8px 10px;background:rgba(250,204,21,0.08);border:1px solid rgba(250,204,21,0.25);border-radius:6px;font-size:0.7rem;color:#facc15;">
+                    <div style="font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Limited data</div>
+                    ${warnings.map(w => '<div>· ' + w + '</div>').join('')}
+                </div>` : ''}
+            <div style="margin-top:10px;padding:6px 8px;background:var(--bg-1);border:1px solid var(--border);border-radius:4px;font-size:0.62rem;color:var(--text-3);font-family:var(--mono);">
+                source: bundle.json fallback · backend parser returned "${(backendErr || 'not found').replace(/[<>]/g,'')}" · re-run the indexer to sync
+            </div>
+            ${dialRows}
+        </div>
+    `;
 }
 
 // ── PORTFOLIO ──
@@ -10081,19 +10197,10 @@ async function shareWatchCard(watchId, desc) {
     } catch(e) {}
 }
 
-function showToast(msg) {
-    let t = document.getElementById('share-toast');
-    if (!t) {
-        t = document.createElement('div');
-        t.id = 'share-toast';
-        t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--bg-2);color:var(--text-0);border:1px solid var(--accent);padding:10px 20px;border-radius:8px;font-size:0.78rem;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,0.3);transition:opacity 0.3s;';
-        document.body.appendChild(t);
-    }
-    t.textContent = msg;
-    t.style.opacity = '1';
-    t.style.display = 'block';
-    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.style.display = 'none', 300); }, 2500);
-}
+// (Redundant showToast removed — the canonical implementation is in
+// the "TOAST SYSTEM" block further down and handles #toast-container
+// with proper enter/exit animations. Having a third definition here
+// meant a hoisting race every page load.)
 
 // ─── Modal Functions ─────────────────────────────────────────────
 function showAddWatchModal() {
@@ -17371,33 +17478,304 @@ function jamUploadShipPhoto(watchId, photoType) {
 }
 
 // ── CLAUDE CODE INTERACTIVE CHAT ──
+// Session + project are persisted to localStorage so a page refresh
+// (or iOS Safari dropping the tab from memory) doesn't lose the chat
+// you had open. The hardcoded macOS default path was removed — the
+// backend should return the real project_path with each session and
+// we fall back to '' when we genuinely don't know it.
+const _CC_LS_SESSION      = 'mk.claude.session_id';
+const _CC_LS_PROJECT      = 'mk.claude.project_path';
+const _CC_LS_PROJECT_NAME = 'mk.claude.project_name';
+const _CC_LS_TELEMETRY    = 'mk.claude.telemetry';   // ring buffer of recent outcomes
+const _CC_TELEMETRY_CAP   = 50;
+// Flag any in-flight request so the cancel button in the thinking bubble
+// can bail out of the poll loop without leaving the UI stuck.
+let _ccCurrentAbort = null;
+let _ccCancelled = false;
 let _currentClaudeSessionId = null;
-let _currentClaudeProject = '/Users/jeffin/.openclaw/workspace';
+let _currentClaudeProject = (() => {
+    try { return localStorage.getItem(_CC_LS_PROJECT) || ''; }
+    catch(e) { return ''; }
+})();
+
+// =========================================================
+// § 1. SELF-DIAGNOSING ERROR TELEMETRY
+// =========================================================
+// Every request the Claude Code tab makes pushes a record into a
+// localStorage ring buffer. The health pill + self-test + rich error
+// bubble all read from the same buffer. Nothing leaves the device
+// until the user taps "Copy details" on an error bubble.
+
+function _ccReqId() {
+    try {
+        if (crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+    } catch(e) {}
+    // Fallback: timestamp + random suffix, good enough for correlation.
+    return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+}
+
+function _ccReadTelemetry() {
+    try {
+        const raw = localStorage.getItem(_CC_LS_TELEMETRY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch(e) { return []; }
+}
+
+function _ccRecordOutcome(rec) {
+    try {
+        const buf = _ccReadTelemetry();
+        buf.push(Object.assign({ ts: Date.now() }, rec));
+        while (buf.length > _CC_TELEMETRY_CAP) buf.shift();
+        localStorage.setItem(_CC_LS_TELEMETRY, JSON.stringify(buf));
+    } catch(e) { /* storage full / disabled — non-fatal */ }
+    // Fire a DOM event so the health pill can update without a poll loop.
+    try { document.dispatchEvent(new CustomEvent('mk:claude-outcome', { detail: rec })); } catch(e) {}
+}
+
+function _ccComputeHealth() {
+    const buf = _ccReadTelemetry();
+    const tenMinAgo = Date.now() - 10 * 60 * 1000;
+    const recent = buf.filter(r => r.ts >= tenMinAgo && /send|new-session|poll/.test(r.endpoint || ''));
+    if (!recent.length) {
+        return { state: 'unknown', label: 'no recent activity', recent: 0, errors: 0, p95: null };
+    }
+    const errors = recent.filter(r => !r.ok).length;
+    const latencies = recent.filter(r => typeof r.latency_ms === 'number').map(r => r.latency_ms).sort((a,b)=>a-b);
+    const p95 = latencies.length ? latencies[Math.floor(latencies.length * 0.95)] || latencies[latencies.length-1] : null;
+    const errorRate = errors / recent.length;
+    const last3 = recent.slice(-3);
+    const last3allErr = last3.length === 3 && last3.every(r => !r.ok);
+    let state, label;
+    if (last3allErr || errorRate >= 0.5) {
+        state = 'red';
+        label = `degraded — ${errors}/${recent.length} errors in last 10 min`;
+    } else if (errorRate > 0.1 || (p95 !== null && p95 > 30000)) {
+        state = 'yellow';
+        label = `slow — p95 ${Math.round(p95/1000)}s, ${errors} errors`;
+    } else {
+        state = 'green';
+        label = `healthy — ${recent.length} ok, p95 ${p95 != null ? Math.round(p95/1000)+'s' : '—'}`;
+    }
+    return { state, label, recent: recent.length, errors, p95 };
+}
+
+// Collects everything worth knowing for a failing request. This is what
+// gets dumped into the error bubble's "Copy details" payload so you can
+// tell at a glance whether it was the network, the server, or the app.
+function _ccCollectDiagnostics(extra) {
+    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection || null;
+    const diag = {
+        ts: new Date().toISOString(),
+        build: (typeof window !== 'undefined' && window.__BUILD__) ? window.__BUILD__ : null,
+        url: (typeof location !== 'undefined' ? location.href : ''),
+        online: (typeof navigator !== 'undefined' ? !!navigator.onLine : null),
+        connection: conn ? {
+            effectiveType: conn.effectiveType || null,
+            downlink: conn.downlink || null,
+            rtt: conn.rtt || null,
+            saveData: conn.saveData || null
+        } : null,
+        userAgent: (typeof navigator !== 'undefined' ? navigator.userAgent : '').slice(0, 200),
+        session_id: _currentClaudeSessionId,
+        project_path: _currentClaudeProject,
+        viewport: (typeof window !== 'undefined' ? (window.innerWidth + 'x' + window.innerHeight) : null)
+    };
+    if (extra && typeof extra === 'object') Object.assign(diag, extra);
+    return diag;
+}
+
+// =========================================================
+// § 3. HEALTH PILL (rendered next to the Claude Code tab title)
+// =========================================================
+// Keeps a colored dot next to the "Claude Code" tab button so you can
+// see at a glance whether the integration is healthy before even
+// opening the tab. Reads the same telemetry buffer as the error
+// bubble — no new server round-trips.
+
+function _ccFindClaudeCodeTab() {
+    // The tab button is plain text; locate it by its onclick attribute.
+    const btns = document.querySelectorAll('.mc-tab-btn');
+    for (const b of btns) {
+        if ((b.getAttribute('onclick') || '').indexOf("'claude-code'") !== -1) return b;
+    }
+    return null;
+}
+
+function _ccUpdateHealthPill() {
+    const tab = _ccFindClaudeCodeTab();
+    if (!tab) return;
+    const health = _ccComputeHealth();
+    const colorMap = { green: '#22c55e', yellow: '#facc15', red: '#ef4444', unknown: '#6b7280' };
+    const color = colorMap[health.state] || colorMap.unknown;
+    let pill = tab.querySelector('.cc-health-pill');
+    if (!pill) {
+        pill = document.createElement('span');
+        pill.className = 'cc-health-pill';
+        pill.style.cssText = 'display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:6px;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,0.3);transition:background 0.2s;';
+        tab.appendChild(pill);
+    }
+    pill.style.background = color;
+    pill.title = 'Claude Code: ' + health.label;
+}
+
+// =========================================================
+// § 2. SELF-TEST RUNNER
+// =========================================================
+// Runs the full round-trip (list sessions → send → poll) and reports
+// pass/fail + latency for each step. Available from the "Self-test"
+// button the Claude Code tab header and from the JS console as
+// window.runClaudeSelfTest() so it can be invoked from anywhere.
+
+async function _ccRunSelfTest() {
+    const results = [];
+    const record = (step, ok, ms, err) => { results.push({ step, ok, ms, err: err || null }); };
+
+    // Step 1 — list sessions
+    let t0 = Date.now();
+    let sessions = [];
+    try {
+        const r = await fetch('/api/mission-control/claude-sessions', { credentials: 'same-origin' });
+        const d = await r.json();
+        sessions = d.sessions || [];
+        record('list sessions', r.ok && Array.isArray(sessions), Date.now() - t0, r.ok ? null : ('HTTP ' + r.status));
+    } catch (e) {
+        record('list sessions', false, Date.now() - t0, (e && e.message) || 'fetch failed');
+        return _ccRenderSelfTestResults(results);
+    }
+
+    if (!sessions.length) {
+        record('pick session', false, 0, 'No sessions available to test with');
+        return _ccRenderSelfTestResults(results);
+    }
+    const target = sessions.find(s => s.session_id === _currentClaudeSessionId) || sessions[0];
+
+    // Step 2 — load conversation (resume check)
+    t0 = Date.now();
+    try {
+        const r = await fetch('/api/mission-control/claude-sessions/' + target.session_id, { credentials: 'same-origin' });
+        const d = await r.json();
+        record('load conversation', r.ok && Array.isArray(d.messages), Date.now() - t0, r.ok ? null : ('HTTP ' + r.status));
+    } catch (e) {
+        record('load conversation', false, Date.now() - t0, (e && e.message) || 'fetch failed');
+    }
+
+    // Step 3 — send "ping" (sync endpoint — returns the response
+    // in the same round-trip, no task_id / no polling).
+    t0 = Date.now();
+    try {
+        const r = await _ccPostWithRetry('/api/mission-control/claude-code/send', {
+            session_id: target.session_id,
+            message: 'ping (automated self-test — please reply with "pong")',
+            project_path: target.project_path || _currentClaudeProject || ''
+        }, { timeout: 120000, retries: 0, reqId: _ccReqId() });
+        const d = await r.json().catch(() => null);
+        const ok = r.ok && d && typeof d.response === 'string' && d.response.length > 0;
+        record('send + response', ok, Date.now() - t0, ok ? null : ((d && d.error) || ('HTTP ' + r.status)));
+        if (!ok) return _ccRenderSelfTestResults(results);
+    } catch (e) {
+        const friendly = (e && e.name === 'AbortError') ? 'timed out after 120s' : (e && e.message) || 'fetch failed';
+        record('send + response', false, Date.now() - t0, friendly);
+        return _ccRenderSelfTestResults(results);
+    }
+
+    return _ccRenderSelfTestResults(results);
+}
+// Expose it on window so you can run it from the console even if the
+// button isn't visible (e.g. during debugging on desktop).
+window.runClaudeSelfTest = _ccRunSelfTest;
+
+function _ccRenderSelfTestResults(results) {
+    const pass = results.every(r => r.ok);
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;';
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--bg-2);border:1px solid var(--border-strong);border-radius:12px;padding:18px;max-width:480px;width:100%;box-shadow:0 12px 48px rgba(0,0,0,0.5);';
+    const rows = results.map(r => `
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.78rem;">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${r.ok ? '#22c55e' : '#ef4444'};flex-shrink:0;"></span>
+            <span style="flex:1;color:var(--text-0);font-weight:500;">${r.step}</span>
+            <span style="color:var(--text-2);font-family:var(--mono);font-size:0.7rem;">${r.ms}ms</span>
+        </div>
+        ${r.err ? `<div style="font-size:0.68rem;color:var(--red);padding:2px 0 6px 18px;word-break:break-word;">${String(r.err).replace(/</g,'&lt;')}</div>` : ''}
+    `).join('');
+    const build = (window.__BUILD__ || {});
+    const buildLine = build.commit
+        ? `build ${build.commit} · ${build.version || ''}`
+        : 'build: unknown (stale page?)';
+    card.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <div style="font-size:0.95rem;font-weight:700;color:var(--text-0);">
+                ${pass ? 'Self-test passed' : 'Self-test failed'}
+            </div>
+            <button class="mc-btn" type="button" data-close style="padding:4px 10px;font-size:0.7rem;">Close</button>
+        </div>
+        <div style="font-size:0.62rem;color:var(--text-3);font-family:var(--mono);margin-bottom:8px;">${buildLine}</div>
+        <div style="font-size:0.7rem;color:var(--text-2);margin-bottom:10px;">
+            Runs list → load → send "ping" → poll. Tests the full Claude Code round-trip end to end.
+        </div>
+        ${rows}
+        <button type="button" class="mc-btn" data-copy style="margin-top:12px;padding:6px 12px;font-size:0.72rem;">Copy report</button>
+    `;
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+    card.querySelector('[data-close]').onclick = () => overlay.remove();
+    card.querySelector('[data-copy]').onclick = async () => {
+        const payload = { pass, results, diagnostics: _ccCollectDiagnostics({ source: 'self-test' }) };
+        try {
+            await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+            if (typeof showToast === 'function') showToast('Report copied', 'success');
+        } catch (e) {
+            if (typeof showToast === 'function') showToast('Copy failed: ' + e.message, 'error');
+        }
+    };
+    // Also record the overall outcome into telemetry so the health pill
+    // reflects the test result.
+    _ccRecordOutcome({
+        endpoint: 'self-test',
+        ok: pass,
+        latency_ms: results.reduce((s, r) => s + (r.ms || 0), 0)
+    });
+    return { pass, results };
+}
+
+// Wire up the health pill to update whenever a new outcome lands.
+document.addEventListener('mk:claude-outcome', () => _ccUpdateHealthPill());
 
 async function loadClaudeSessions() {
+    _ccInjectToolbar();            // Self-test button + diagnostics
+    _ccUpdateHealthPill();          // Repaint health pill on every enter
     const el = document.getElementById('claude-sessions-grid');
     el.innerHTML = skelCards(3);
+    const startedAt = Date.now();
     try {
-        const r = await fetch('/api/mission-control/claude-sessions');
+        const r = await fetch('/api/mission-control/claude-sessions', { credentials: 'same-origin' });
+        _ccRecordOutcome({
+            endpoint: '/api/mission-control/claude-sessions',
+            method: 'GET',
+            ok: r.ok,
+            status: r.status,
+            latency_ms: Date.now() - startedAt
+        });
         const data = await r.json();
         const sessions = data.sessions || [];
-        if (!sessions.length) { 
-            el.innerHTML = '<div class="mc-empty">No Claude Code sessions found<br/><span style="font-size:0.7rem;color:var(--text-3);">Start a new session to get started</span></div>'; 
-            return; 
+        if (!sessions.length) {
+            el.innerHTML = '<div class="mc-empty">No Claude Code sessions found<br/><span style="font-size:0.7rem;color:var(--text-3);">Start a new session to get started</span></div>';
+            return;
         }
         // Sort: idle sessions first (resumable), active last (locked)
         sessions.sort((a,b) => (a.status === 'active' ? 1 : 0) - (b.status === 'active' ? 1 : 0));
         el.innerHTML = sessions.map(s => {
             const ago = timeAgo(s.last_activity);
-            const isActive = s.status === 'active';
-            const statusColor = isActive ? '#4ADE80' : '#6B7280';
-            const statusLabel = isActive ? '<span style="font-size:0.6rem;color:#4ADE80;margin-left:4px;">IN USE</span>' : '';
-            const preview = (s.last_message_preview || '').substring(0,100) + ((s.last_message_preview||'').length > 100 ? '...' : '') || 'No recent activity';
-            const opacity = isActive ? 'opacity:0.5;' : '';
-            const click = isActive
-                ? `onclick="alert('This session is currently active in another terminal. Pick an idle session or create a new one.')"`
-                : `onclick="openClaudeSession('${s.session_id}', '${s.project_name}', '${s.project_path || ''}')"`;
-            return `<div class="claude-session-card" ${click} style="${opacity}">
+            const statusColor = s.status === 'active' ? '#4ADE80' : '#6B7280';
+            const preview = s.last_message_preview ? s.last_message_preview.substring(0,100) + (s.last_message_preview.length > 100 ? '...' : '') : 'No recent activity';
+            // Escape any quotes in projectName / projectPath before inlining
+            // them into the onclick attribute, otherwise a project name
+            // like "Jeff's dash" breaks the handler.
+            const esc = v => String(v || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+            return `<div class="claude-session-card" onclick="openClaudeSession('${esc(s.session_id)}', '${esc(s.project_name)}', '${esc(s.project_path || '')}')">
                 <div class="claude-session-header">
                     <div class="claude-session-id">${s.session_id_short}${statusLabel}</div>
                     <span style="width:8px;height:8px;border-radius:50%;background:${statusColor};"></span>
@@ -17407,31 +17785,337 @@ async function loadClaudeSessions() {
                 <div class="claude-session-preview">${preview}</div>
             </div>`;
         }).join('');
-    } catch(e) { 
-        el.innerHTML = `<div class="mc-empty">Error loading sessions: ${e.message}</div>`; 
+
+        // Auto-resume the last-open session if the user had one. We
+        // only resume when the session still exists server-side, so a
+        // deleted session doesn't leave the UI stuck on a dead chat.
+        try {
+            const lastId = localStorage.getItem(_CC_LS_SESSION);
+            if (lastId && !_currentClaudeSessionId) {
+                const match = sessions.find(s => s.session_id === lastId);
+                if (match) {
+                    openClaudeSession(
+                        match.session_id,
+                        match.project_name,
+                        match.project_path || localStorage.getItem(_CC_LS_PROJECT) || ''
+                    );
+                } else {
+                    // Stale — clean it up so next page-load starts fresh.
+                    localStorage.removeItem(_CC_LS_SESSION);
+                    localStorage.removeItem(_CC_LS_PROJECT_NAME);
+                }
+            }
+        } catch(e) { /* localStorage may be unavailable — non-fatal */ }
+    } catch(e) {
+        _ccRecordOutcome({
+            endpoint: '/api/mission-control/claude-sessions',
+            method: 'GET',
+            ok: false,
+            status: 0,
+            latency_ms: Date.now() - startedAt,
+            error_name: e && e.name,
+            error_msg: String(e && e.message || e).slice(0, 200)
+        });
+        el.innerHTML = `<div class="mc-empty">Error loading sessions: ${e.message}</div>`;
     }
+}
+
+// Injects a small toolbar into the Claude Code sessions list with
+// Refresh, New session, Self-test and a health readout. We do this
+// in JS (instead of editing the page markup) so the toolbar survives
+// even on older cached HTML without touching the template.
+function _ccInjectToolbar() {
+    const host = document.getElementById('claude-sessions-list');
+    if (!host) return;
+    if (host.querySelector('.cc-toolbar')) return; // already injected
+    const bar = document.createElement('div');
+    bar.className = 'cc-toolbar';
+    bar.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;';
+    bar.innerHTML =
+        '<button type="button" class="mc-btn" data-role="refresh" style="padding:4px 10px;font-size:0.7rem;">Refresh</button>' +
+        '<button type="button" class="mc-btn" data-role="selftest" style="padding:4px 10px;font-size:0.7rem;background:rgba(212,175,55,0.15);border-color:var(--accent-border);color:var(--accent);">Self-test</button>' +
+        '<button type="button" class="mc-btn" data-role="clear-telemetry" style="padding:4px 10px;font-size:0.7rem;">Clear diag</button>' +
+        '<span data-role="health-text" style="margin-left:auto;font-size:0.66rem;color:var(--text-2);font-family:var(--mono);"></span>';
+    host.insertBefore(bar, host.firstChild);
+    bar.querySelector('[data-role="refresh"]').onclick = loadClaudeSessions;
+    bar.querySelector('[data-role="selftest"]').onclick = _ccRunSelfTest;
+    bar.querySelector('[data-role="clear-telemetry"]').onclick = () => {
+        try { localStorage.removeItem(_CC_LS_TELEMETRY); } catch(e) {}
+        _ccUpdateHealthPill();
+        const ht = bar.querySelector('[data-role="health-text"]');
+        if (ht) ht.textContent = 'cleared';
+        if (typeof showToast === 'function') showToast('Diagnostics cleared', 'info');
+    };
+    // Repaint health text on every outcome.
+    const refreshHealthText = () => {
+        const h = _ccComputeHealth();
+        const ht = bar.querySelector('[data-role="health-text"]');
+        if (ht) ht.textContent = h.label;
+    };
+    refreshHealthText();
+    document.addEventListener('mk:claude-outcome', refreshHealthText);
 }
 
 const refreshClaudeSessions = loadClaudeSessions;
 
+// =========================================================
+// § LIVE MIRROR (Server-Sent Events from /stream/<session_id>)
+// =========================================================
+// Subscribes to a long-lived SSE stream on the backend that tails
+// the Claude session's JSONL file (~/.claude/projects/<p>/<id>.jsonl)
+// and emits each new message as it lands. This lets the dashboard
+// mirror an ACTIVE Claude session that another process (another
+// terminal, a local CLI, the Flask /send handler) is driving, which
+// is the one thing the old POST-only architecture fundamentally
+// couldn't do because /send would fight the session lock.
+//
+// Wire protocol expected from the backend:
+//   GET /api/mission-control/claude-code/stream/<session_id>
+//   Accept: text/event-stream
+//   → streams SSE events forever, one per new message:
+//
+//     event: message
+//     data: {"role": "user"|"assistant", "content": "...", "ts": 123}
+//
+//     event: heartbeat
+//     data: {}
+//
+// Failure modes handled gracefully:
+//   - 404 (no backend stream endpoint yet): close, log, don't retry.
+//     The dashboard still works via the synchronous /send flow.
+//   - Network drop: reconnect with exponential backoff (1s, 2s, 4s,
+//     8s, 16s, cap at 30s).
+//   - Duplicate messages across reconnects: de-duplicate by message
+//     id or (role + content + ts) if no id is available.
+//
+// The mirror is strictly additive. If the backend never ships the
+// /stream endpoint, nothing breaks — you get the existing behavior.
+
+let _ccLiveSource = null;
+let _ccLiveSessionId = null;
+let _ccLiveSeenIds = new Set();
+let _ccLiveReconnectTimer = null;
+let _ccLiveReconnectDelay = 1000;
+let _ccLiveEverConnected = false;
+let _ccLiveGaveUp = false;
+
+function _ccSetLiveBadge(state) {
+    // state: 'connecting' | 'live' | 'offline' | null
+    const sub = document.getElementById('claude-chat-subtitle');
+    if (!sub) return;
+    let badge = document.getElementById('claude-live-badge');
+    if (!state) { if (badge) badge.remove(); return; }
+    if (!badge) {
+        badge = document.createElement('span');
+        badge.id = 'claude-live-badge';
+        badge.style.cssText = 'display:inline-block;margin-left:8px;padding:1px 6px;border-radius:3px;font-size:0.58rem;font-weight:700;letter-spacing:0.5px;vertical-align:middle;';
+        sub.appendChild(badge);
+    }
+    if (state === 'connecting') {
+        badge.textContent = '◌ CONNECTING';
+        badge.style.background = 'rgba(250,204,21,0.15)';
+        badge.style.color = '#facc15';
+    } else if (state === 'live') {
+        badge.textContent = '● LIVE';
+        badge.style.background = 'rgba(34,197,94,0.18)';
+        badge.style.color = '#22c55e';
+    } else {
+        badge.textContent = '○ OFFLINE';
+        badge.style.background = 'rgba(107,114,128,0.2)';
+        badge.style.color = '#9ca3af';
+    }
+}
+
+function _ccCloseLiveMirror() {
+    if (_ccLiveReconnectTimer) { clearTimeout(_ccLiveReconnectTimer); _ccLiveReconnectTimer = null; }
+    if (_ccLiveSource) {
+        try { _ccLiveSource.close(); } catch(e) {}
+        _ccLiveSource = null;
+    }
+    _ccLiveSessionId = null;
+    _ccLiveSeenIds = new Set();
+    _ccLiveReconnectDelay = 1000;
+    _ccLiveEverConnected = false;
+    _ccLiveGaveUp = false;
+    _ccSetLiveBadge(null);
+}
+
+function _ccOpenLiveMirror(sessionId) {
+    if (!sessionId) return;
+    if (typeof EventSource === 'undefined') {
+        // No SSE support — silently skip.
+        return;
+    }
+    _ccLiveSessionId = sessionId;
+    _ccLiveSeenIds = new Set();
+
+    // Seed the de-dupe set with whatever loadClaudeConversation just
+    // rendered, so we don't double-print history on the first connect.
+    try {
+        const messagesEl = document.getElementById('claude-chat-messages');
+        if (messagesEl) {
+            messagesEl.querySelectorAll('.chat-msg').forEach(el => {
+                const role = el.classList.contains('user') ? 'user' : 'assistant';
+                _ccLiveSeenIds.add(role + ':' + (el.textContent || '').trim().slice(0, 200));
+            });
+        }
+    } catch(e) {}
+
+    _ccConnectLiveMirror(sessionId);
+}
+
+function _ccConnectLiveMirror(sessionId) {
+    if (_ccLiveGaveUp) return;
+    _ccSetLiveBadge('connecting');
+    const url = '/api/mission-control/claude-code/stream/' + encodeURIComponent(sessionId);
+    let es;
+    try {
+        es = new EventSource(url, { withCredentials: true });
+    } catch(e) {
+        console.warn('[cc-mirror] EventSource construct failed:', e);
+        _ccSetLiveBadge('offline');
+        return;
+    }
+    _ccLiveSource = es;
+
+    es.addEventListener('open', () => {
+        _ccLiveEverConnected = true;
+        _ccLiveReconnectDelay = 1000; // reset backoff
+        _ccSetLiveBadge('live');
+        _ccRecordOutcome({
+            endpoint: '/api/mission-control/claude-code/stream',
+            method: 'GET',
+            ok: true,
+            status: 200,
+            req_id: 'stream-' + sessionId.slice(0, 8),
+            latency_ms: 0
+        });
+    });
+
+    es.addEventListener('message', (ev) => {
+        let payload = null;
+        try { payload = JSON.parse(ev.data); } catch(e) { return; }
+        if (!payload || typeof payload !== 'object') return;
+        _ccHandleLiveMessage(payload);
+    });
+
+    es.addEventListener('heartbeat', () => { /* keep-alive, no-op */ });
+
+    es.addEventListener('error', () => {
+        // EventSource auto-reconnects on transient errors, but it
+        // also fires 'error' on hard 404. If we never successfully
+        // opened the stream, assume the backend doesn't implement it
+        // and stop retrying — the sync /send flow still works fine.
+        if (!_ccLiveEverConnected) {
+            _ccLiveGaveUp = true;
+            _ccSetLiveBadge(null);
+            console.info('[cc-mirror] /stream endpoint unavailable, running without live mirror');
+            try { es.close(); } catch(e) {}
+            _ccLiveSource = null;
+            _ccRecordOutcome({
+                endpoint: '/api/mission-control/claude-code/stream',
+                method: 'GET',
+                ok: false,
+                status: 404,
+                error_msg: 'stream endpoint not implemented or unreachable',
+                latency_ms: 0
+            });
+            return;
+        }
+        // We were previously connected — reconnect with backoff.
+        _ccSetLiveBadge('offline');
+        try { es.close(); } catch(e) {}
+        _ccLiveSource = null;
+        if (_ccLiveReconnectTimer) clearTimeout(_ccLiveReconnectTimer);
+        _ccLiveReconnectTimer = setTimeout(() => {
+            if (_ccLiveSessionId === sessionId) {
+                _ccConnectLiveMirror(sessionId);
+            }
+        }, _ccLiveReconnectDelay);
+        _ccLiveReconnectDelay = Math.min(_ccLiveReconnectDelay * 2, 30000);
+    });
+}
+
+function _ccHandleLiveMessage(msg) {
+    // msg shape: { id?, role, content, ts? }
+    if (!msg.role || msg.content == null) return;
+    const id = msg.id
+        ? ('id:' + msg.id)
+        : (msg.role + ':' + String(msg.content).trim().slice(0, 200));
+    if (_ccLiveSeenIds.has(id)) return;
+    _ccLiveSeenIds.add(id);
+
+    // Render into the chat. If the role is 'assistant' and we're
+    // currently showing a thinking bubble (from a just-sent message),
+    // replace the bubble content instead of appending a new one.
+    if (msg.role === 'assistant') {
+        const thinkEl = document.getElementById('claude-thinking');
+        if (thinkEl) {
+            // Streaming partial — update the thinking bubble live.
+            thinkEl.innerHTML =
+                '<div style="white-space:pre-wrap;word-break:break-word;">' +
+                String(msg.content).replace(/</g,'&lt;').replace(/>/g,'&gt;') +
+                '</div>';
+            const messagesEl = document.getElementById('claude-chat-messages');
+            if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight;
+            // If this is the final chunk, convert thinking → permanent.
+            if (msg.done) {
+                thinkEl.id = '';
+                thinkEl.className = 'chat-msg assistant';
+            }
+            return;
+        }
+    }
+
+    appendChatMessage(msg.role, String(msg.content));
+}
+
 function showClaudeSessions() {
     document.getElementById('claude-sessions-list').style.display = 'block';
     document.getElementById('claude-chat-view').style.display = 'none';
+    _ccCloseLiveMirror();      // stop any active SSE subscription
     _currentClaudeSessionId = null;
+    // Release the FAB so it can show again on other pages.
+    document.body.classList.remove('claude-chat-active');
+    // Forget the "last open" session so we don't auto-reopen on next load.
+    try {
+        localStorage.removeItem(_CC_LS_SESSION);
+        localStorage.removeItem(_CC_LS_PROJECT_NAME);
+    } catch(e) {}
 }
 
 async function openClaudeSession(sessionId, projectName, projectPath) {
+    // If we're switching sessions, kill any prior mirror first so we
+    // don't end up with two EventSources racing to append messages.
+    _ccCloseLiveMirror();
+
     _currentClaudeSessionId = sessionId;
-    _currentClaudeProject = projectPath || '/Users/jeffin/.openclaw/workspace';
-    
+    // Only overwrite the project path if the caller actually supplied
+    // one — createNewClaudeSession used to pass nothing, which blew
+    // away the context. Fall back to whatever we already had.
+    if (projectPath) _currentClaudeProject = projectPath;
+
+    // Persist so a refresh / Safari tab-eviction restores the session.
+    try {
+        localStorage.setItem(_CC_LS_SESSION, sessionId);
+        if (_currentClaudeProject) localStorage.setItem(_CC_LS_PROJECT, _currentClaudeProject);
+        if (projectName) localStorage.setItem(_CC_LS_PROJECT_NAME, projectName);
+    } catch(e) {}
+
     document.getElementById('claude-sessions-list').style.display = 'none';
     document.getElementById('claude-chat-view').style.display = 'block';
-    
-    document.getElementById('claude-chat-title').textContent = projectName;
+    // Hide the FAB "+" so it stops eating taps on the Send button.
+    document.body.classList.add('claude-chat-active');
+
+    document.getElementById('claude-chat-title').textContent = projectName || 'Claude Code';
     document.getElementById('claude-chat-subtitle').textContent = sessionId.substring(0,8) + '...';
-    
+
     await loadClaudeConversation(sessionId);
-    
+
+    // Kick off the live mirror. This is a no-op on backends that
+    // don't implement the /stream endpoint (404 → silent degrade).
+    _ccOpenLiveMirror(sessionId);
+
     const input = document.getElementById('claude-chat-input');
     if (input) input.focus();
 }
@@ -17471,95 +18155,319 @@ function appendChatMessage(role, content) {
     messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
+// showClaudeThinking now tracks a "still connecting" banner that
+// fades in after 5s (so the user knows the network isn't dead during
+// a slow initial POST) and exposes a Cancel button that wires through
+// to `_ccCancelled` + `_ccCurrentAbort` for in-flight aborts.
+let _ccStillConnectingTimer = null;
 function showClaudeThinking() {
+    _ccCancelled = false;
     const statusEl = document.getElementById('claude-chat-status');
     if (statusEl) statusEl.className = 'chat-status thinking';
-    
+
     const messagesEl = document.getElementById('claude-chat-messages');
     const thinkingDiv = document.createElement('div');
     thinkingDiv.className = 'chat-msg assistant';
     thinkingDiv.id = 'claude-thinking';
-    thinkingDiv.innerHTML = '<em>Claude is thinking...</em>';
+    thinkingDiv.innerHTML =
+        '<div><em>Claude is thinking...</em></div>' +
+        '<div id="claude-connecting-banner" style="display:none;margin-top:6px;font-size:0.68rem;color:var(--accent);">Still connecting — the server may be warming up…</div>' +
+        '<button type="button" id="claude-cancel-btn" style="margin-top:8px;background:transparent;color:var(--text-2);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:0.68rem;cursor:pointer;">Cancel</button>';
     messagesEl.appendChild(thinkingDiv);
     messagesEl.scrollTop = messagesEl.scrollHeight;
+
+    // 5s "still connecting" nudge.
+    if (_ccStillConnectingTimer) clearTimeout(_ccStillConnectingTimer);
+    _ccStillConnectingTimer = setTimeout(() => {
+        const b = document.getElementById('claude-connecting-banner');
+        if (b) b.style.display = 'block';
+    }, 5000);
+
+    // Wire up cancel — aborts the in-flight fetch if any, and sets
+    // the _ccCancelled flag so the poll loop bails on its next tick.
+    const cancelBtn = document.getElementById('claude-cancel-btn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => {
+            _ccCancelled = true;
+            try { if (_ccCurrentAbort) _ccCurrentAbort.abort(); } catch(e) {}
+            hideClaudeThinking();
+            if (typeof showToast === 'function') showToast('Cancelled', 'info');
+        });
+    }
 }
 
 function hideClaudeThinking() {
+    if (_ccStillConnectingTimer) { clearTimeout(_ccStillConnectingTimer); _ccStillConnectingTimer = null; }
     const statusEl = document.getElementById('claude-chat-status');
     if (statusEl) statusEl.className = 'chat-status';
-    
+
     const thinkingEl = document.getElementById('claude-thinking');
     if (thinkingEl) thinkingEl.remove();
+}
+
+// POST with timeout + retry. iOS Safari fails slow fetches with a
+// generic `TypeError: Load failed`, so wrapping in AbortController
+// gives us a real error to surface and a chance to retry once. Every
+// request carries an X-Request-Id header so the same id can be
+// grepped out of server logs and also surfaces in the error bubble.
+async function _ccPostWithRetry(url, body, opts = {}) {
+    const timeout = opts.timeout != null ? opts.timeout : 15000;
+    const retries = opts.retries != null ? opts.retries : 1;
+    const reqId   = opts.reqId   != null ? opts.reqId   : _ccReqId();
+    let lastErr = null;
+    const startedAt = Date.now();
+
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), timeout);
+        // Publish so sendClaudeMessage's cancel button can abort us.
+        _ccCurrentAbort = ctrl;
+        const attemptStart = Date.now();
+        try {
+            const r = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Request-Id': reqId,
+                    'X-Attempt': String(attempt)
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify(body),
+                signal: ctrl.signal
+            });
+            clearTimeout(timer);
+            _ccCurrentAbort = null;
+            // HTTP errors don't throw — they resolve with ok=false. The
+            // caller is responsible for acting on r.ok, but we still
+            // record the outcome here so the health pill sees it.
+            _ccRecordOutcome({
+                endpoint: url,
+                method: 'POST',
+                ok: r.ok,
+                status: r.status,
+                req_id: reqId,
+                attempt,
+                latency_ms: Date.now() - attemptStart
+            });
+            // Attach the reqId to the response object so callers can
+            // read it when building error bubbles.
+            try { r._ccReqId = reqId; } catch(e) {}
+            return r;
+        } catch (e) {
+            clearTimeout(timer);
+            _ccCurrentAbort = null;
+            lastErr = e;
+            _ccRecordOutcome({
+                endpoint: url,
+                method: 'POST',
+                ok: false,
+                status: 0,
+                req_id: reqId,
+                attempt,
+                latency_ms: Date.now() - attemptStart,
+                error_name: e && e.name,
+                error_msg: String(e && e.message || e).slice(0, 200)
+            });
+            // Retry only on network-level errors (TypeError / AbortError),
+            // never on successfully-received HTTP failures (those throw
+            // in r.json() or are handled by the caller).
+            const msg = String(e && e.message || e);
+            const retriable = e && (e.name === 'AbortError' || e.name === 'TypeError' || /load failed|network|fetch/i.test(msg));
+            if (!retriable || attempt === retries) {
+                // Attach reqId + elapsed so the error bubble can surface them.
+                try {
+                    e._ccReqId = reqId;
+                    e._ccElapsed = Date.now() - startedAt;
+                } catch(_) {}
+                throw e;
+            }
+            // Small backoff before the retry.
+            await new Promise(ok => setTimeout(ok, 500 * (attempt + 1)));
+        }
+    }
+    throw lastErr || new Error('Request failed');
+}
+
+// Rich error bubble. Surfaces a human-readable headline, the full
+// diagnostic payload (status, request id, error name, online flag,
+// connection type, session id), and buttons to Retry and to Copy the
+// details as JSON. This is the main "self-diagnosing error" surface
+// proposed in §1 — when it reproduces, hand me whatever the Copy
+// button produces and I can tell in seconds whether it's client,
+// network or server.
+function _ccAppendErrorWithRetry(userMessage, serverError, extraDiag) {
+    const messagesEl = document.getElementById('claude-chat-messages');
+    if (!messagesEl) return;
+
+    // Assemble diagnostics. `extraDiag` is typically the HTTP status /
+    // req_id / error name the caller already knows about.
+    const diag = _ccCollectDiagnostics(Object.assign({
+        headline: String(serverError || 'Unknown error').slice(0, 500)
+    }, extraDiag || {}));
+
+    const esc = s => String(s == null ? '' : s).replace(/[&<>]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[c]));
+    const rowsHtml = [
+        ['status',      diag.status != null ? (diag.status + (diag.statusText ? ' ' + diag.statusText : '')) : null],
+        ['req id',      diag.req_id],
+        ['error',       diag.error_name ? diag.error_name + ': ' + (diag.error_msg || '') : null],
+        ['online',      diag.online == null ? null : (diag.online ? 'yes' : 'NO')],
+        ['network',     diag.connection ? [diag.connection.effectiveType, diag.connection.downlink ? diag.connection.downlink + ' Mbps' : null, diag.connection.rtt ? diag.connection.rtt + 'ms RTT' : null].filter(Boolean).join(' · ') : null],
+        ['session',     diag.session_id ? diag.session_id.slice(0, 12) + '…' : null],
+        ['elapsed',     diag.elapsed_ms != null ? diag.elapsed_ms + 'ms' : null]
+    ]
+    .filter(row => row[1] != null && row[1] !== '')
+    .map(row => `<div style="display:flex;gap:8px;font-size:0.66rem;font-family:var(--mono);color:var(--text-2);line-height:1.4;">
+        <span style="color:var(--text-3);min-width:54px;">${row[0]}</span>
+        <span style="color:var(--text-1);word-break:break-all;">${esc(row[1])}</span>
+    </div>`)
+    .join('');
+
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'chat-msg assistant chat-error';
+    msgDiv.innerHTML =
+        '<div style="color:var(--red);font-weight:600;margin-bottom:6px;">Send failed</div>' +
+        '<div style="font-size:0.74rem;color:var(--text-0);white-space:pre-wrap;word-break:break-word;margin-bottom:6px;">' +
+            esc(diag.headline) +
+        '</div>' +
+        (rowsHtml ? '<details style="margin:6px 0;"><summary style="font-size:0.66rem;color:var(--text-3);cursor:pointer;user-select:none;">Diagnostics</summary><div style="margin-top:4px;padding:6px 8px;background:var(--bg-1);border-radius:6px;border:1px solid var(--border);">' + rowsHtml + '</div></details>' : '') +
+        '<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">' +
+            '<button class="claude-retry-btn" type="button" data-role="retry">Retry</button>' +
+            '<button class="claude-retry-btn" type="button" data-role="copy" style="background:var(--bg-3);color:var(--text-0);border:1px solid var(--border);">Copy details</button>' +
+        '</div>';
+
+    msgDiv.querySelector('[data-role="retry"]').addEventListener('click', () => {
+        msgDiv.remove();
+        const input = document.getElementById('claude-chat-input');
+        if (input) { input.value = userMessage; input.focus(); }
+        sendClaudeMessage();
+    });
+    msgDiv.querySelector('[data-role="copy"]').addEventListener('click', async () => {
+        // Snapshot last 10 telemetry entries + the full diag blob.
+        const payload = {
+            diagnostics: diag,
+            user_message: userMessage,
+            recent_telemetry: _ccReadTelemetry().slice(-10)
+        };
+        const text = JSON.stringify(payload, null, 2);
+        try {
+            await navigator.clipboard.writeText(text);
+            if (typeof showToast === 'function') showToast('Error details copied', 'success');
+        } catch (e) {
+            // Fallback: drop into a textarea overlay for manual copy.
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;inset:10%;z-index:100000;padding:10px;background:var(--bg-1);color:var(--text-0);border:1px solid var(--accent);font-family:var(--mono);font-size:0.7rem;';
+            document.body.appendChild(ta);
+            ta.select();
+            setTimeout(() => ta.remove(), 15000);
+        }
+    });
+
+    messagesEl.appendChild(msgDiv);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
 async function sendClaudeMessage() {
     const input = document.getElementById('claude-chat-input');
     const sendBtn = document.getElementById('claude-send-btn');
+
     const message = input.value.trim();
     if (!message) return;
-    if (!_currentClaudeSessionId) { alert('No session selected'); return; }
 
+    if (!_currentClaudeSessionId) {
+        if (typeof showToast === 'function') showToast('No session selected', 'error');
+        else alert('No session selected');
+        return;
+    }
+
+    // Lock the UI but DO NOT clear the input yet — if the fetch fails
+    // we want to restore the user's text instead of silently losing it.
     input.disabled = true;
     sendBtn.disabled = true;
-    sendBtn.textContent = 'Streaming...';
+    sendBtn.textContent = 'Sending...';
+
     appendChatMessage('user', message);
-    input.value = '';
+    showClaudeThinking();
 
-    // Create streaming assistant message
-    const messagesEl = document.getElementById('claude-chat-messages');
-    const msgDiv = document.createElement('div');
-    msgDiv.className = 'chat-msg assistant';
-    msgDiv.style.whiteSpace = 'pre-wrap';
-    msgDiv.textContent = '';
-    messagesEl.appendChild(msgDiv);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
+    // One request id so the same id can be grepped out of the
+    // server log for this turn.
+    const reqId = _ccReqId();
+    const startedAt = Date.now();
 
+    let sendStatus = null, sendStatusText = null;
     try {
-        const r = await fetch('/api/mission-control/claude-code/stream', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ session_id: _currentClaudeSessionId, message, project_path: _currentClaudeProject })
-        });
+        // Main's /claude-code/send is a synchronous endpoint — it
+        // blocks until Claude produces a response, then returns it in
+        // one shot. No task_id / no polling. But we still want retry +
+        // AbortController + X-Request-Id + telemetry, so wrap it in
+        // _ccPostWithRetry. Timeout is long (120s) because a full
+        // Claude turn with tool use can easily take 30-60s, and an
+        // AbortError here is the ONLY way we detect a hung backend.
+        const r = await _ccPostWithRetry('/api/mission-control/claude-code/send', {
+            session_id: _currentClaudeSessionId,
+            message: message,
+            project_path: _currentClaudeProject
+        }, { timeout: 120000, retries: 1, reqId });
+        sendStatus = r.status;
+        sendStatusText = r.statusText;
 
-        if (!r.ok) {
-            const err = await r.json().catch(() => ({error:'Stream failed'}));
-            msgDiv.textContent = 'Error: ' + (err.error || 'Failed');
+        let data = null;
+        try { data = await r.json(); } catch(je) { data = null; }
+
+        if (_ccCancelled) {
+            input.value = message;
+            input.disabled = false;
+            sendBtn.disabled = false;
+            sendBtn.textContent = 'Send';
             return;
         }
 
-        const reader = r.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
+        hideClaudeThinking();
 
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop() || '';
-            for (const line of lines) {
-                if (!line.startsWith('data: ')) continue;
-                try {
-                    const chunk = JSON.parse(line.slice(6));
-                    if (chunk.text) { if(msgDiv.dataset.thinking){msgDiv.textContent='';delete msgDiv.dataset.thinking;} msgDiv.textContent += chunk.text; messagesEl.scrollTop = messagesEl.scrollHeight; }
-                    if (chunk.thinking) { msgDiv.textContent = 'Claude is working...'; msgDiv.dataset.thinking='1'; }
-                    if (chunk.tool) { msgDiv.textContent += '\n[' + chunk.tool + '] '; messagesEl.scrollTop = messagesEl.scrollHeight; }
-                    if (chunk.done) break;
-                } catch(e) {}
-            }
-        }
-
-        // Fallback if streaming returned nothing
-        if (!msgDiv.textContent.trim()) {
-            const r2 = await fetch('/api/mission-control/claude-code/send', {
-                method: 'POST', headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({ session_id: _currentClaudeSessionId, message, project_path: _currentClaudeProject })
+        if (r.ok && data && data.response) {
+            appendChatMessage('assistant', data.response);
+            _ccRecordOutcome({
+                endpoint: '/api/mission-control/claude-code/send',
+                method: 'POST',
+                ok: true,
+                status: r.status,
+                req_id: reqId,
+                latency_ms: Date.now() - startedAt
             });
-            const data = await r2.json();
-            msgDiv.textContent = data.response || data.error || 'No response';
+            // Past the success point — safe to clear the input now.
+            input.value = '';
+        } else {
+            const err = (data && data.error) || ('HTTP ' + r.status + ' ' + r.statusText);
+            _ccAppendErrorWithRetry(message, err, {
+                status: sendStatus,
+                statusText: sendStatusText,
+                req_id: reqId,
+                elapsed_ms: Date.now() - startedAt,
+                stage: 'send'
+            });
+            // Restore the message so the user can Retry without retyping.
+            input.value = message;
         }
     } catch (e) {
-        if (!msgDiv.textContent.trim()) msgDiv.textContent = 'Error: ' + e.message;
+        hideClaudeThinking();
+        if (_ccCancelled) {
+            input.value = message;
+            input.disabled = false;
+            sendBtn.disabled = false;
+            sendBtn.textContent = 'Send';
+            return;
+        }
+        const friendly = (e && e.name === 'AbortError')
+            ? 'Request timed out after 2 minutes. The server may be hung — tap Retry to try again.'
+            : (e && e.message) || 'Network error';
+        _ccAppendErrorWithRetry(message, friendly, {
+            error_name: e && e.name,
+            error_msg: e && e.message,
+            req_id: (e && e._ccReqId) || reqId,
+            elapsed_ms: (e && e._ccElapsed) != null ? e._ccElapsed : (Date.now() - startedAt),
+            stage: 'send'
+        });
+        input.value = message;
     } finally {
         input.disabled = false;
         sendBtn.disabled = false;
@@ -17571,31 +18479,38 @@ async function sendClaudeMessage() {
 async function createNewClaudeSession() {
     const message = prompt('Enter your first message to Claude:');
     if (!message) return;
-    
+
     try {
-        const response = await fetch('/api/mission-control/claude-code/new-session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                message: message,
-                project_path: _currentClaudeProject
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok && data.session_id) {
-            await openClaudeSession(data.session_id, 'New Session');
-            appendChatMessage('user', message);
-            if (data.response) {
-                appendChatMessage('assistant', data.response);
-            }
+        const response = await _ccPostWithRetry('/api/mission-control/claude-code/new-session', {
+            message: message,
+            project_path: _currentClaudeProject
+        }, { timeout: 30000, retries: 1 });
+
+        let data = null;
+        try { data = await response.json(); } catch(je) { data = null; }
+
+        if (response.ok && data && data.session_id) {
+            // Open the session. openClaudeSession will call
+            // loadClaudeConversation which fetches the server's
+            // copy of the messages — we don't re-append locally,
+            // otherwise the first turn shows up twice.
+            await openClaudeSession(
+                data.session_id,
+                data.project_name || 'New Session',
+                data.project_path || _currentClaudeProject
+            );
             loadClaudeSessions();
         } else {
-            alert(`Error creating session: ${data.error || 'Unknown error'}`);
+            const err = (data && data.error) || ('HTTP ' + response.status + ' ' + response.statusText);
+            if (typeof showToast === 'function') showToast('Error creating session: ' + err, 'error');
+            else alert('Error creating session: ' + err);
         }
     } catch (e) {
-        alert(`Error: ${e.message}`);
+        const friendly = (e && e.name === 'AbortError')
+            ? 'Timed out creating session'
+            : (e && e.message) || 'Network error';
+        if (typeof showToast === 'function') showToast('Error: ' + friendly, 'error');
+        else alert('Error: ' + friendly);
     }
 }
 
@@ -17610,7 +18525,7 @@ function timeAgo(ts) {
     return Math.floor(hrs/24) + 'd ago';
 }
 
-// Handle Enter key in Claude input
+// Handle Enter key in Claude input + iOS visualViewport scroll fix.
 if (typeof document !== 'undefined') {
     document.addEventListener('DOMContentLoaded', () => {
         const input = document.getElementById('claude-chat-input');
@@ -17621,14 +18536,63 @@ if (typeof document !== 'undefined') {
                     sendClaudeMessage();
                 }
             });
-            
+
             input.addEventListener('input', () => {
                 input.style.height = 'auto';
                 input.style.height = Math.min(input.scrollHeight, 120) + 'px';
             });
+
+            // On iOS Safari the native keyboard shrinks the visual
+            // viewport without firing a normal resize. The chat
+            // messages container ends up hidden behind the keyboard.
+            // visualViewport.resize gives us the actual visible area
+            // so we can keep the latest message in view.
+            if (window.visualViewport) {
+                const keepBottomVisible = () => {
+                    if (!document.body.classList.contains('claude-chat-active')) return;
+                    const msgs = document.getElementById('claude-chat-messages');
+                    if (msgs) msgs.scrollTop = msgs.scrollHeight;
+                };
+                window.visualViewport.addEventListener('resize', keepBottomVisible);
+                window.visualViewport.addEventListener('scroll', keepBottomVisible);
+                input.addEventListener('focus', () => setTimeout(keepBottomVisible, 200));
+            }
         }
+
+        // Prime the health pill on first page load so the tab shows
+        // its current state before the user even clicks it.
+        try { _ccUpdateHealthPill(); } catch(e) {}
     });
 }
+
+// ─────────────────────────────────────────────────────────────
+// MANUAL TEST PLAN (senior-engineer verification checklist)
+// ─────────────────────────────────────────────────────────────
+// After deploying changes to the Claude Code tab, run these on a
+// real iPhone (not just desktop) because Safari iOS has its own set
+// of fetch/viewport quirks that desktop misses.
+//
+//   1. Hard refresh the dashboard.
+//   2. Mission Control → Claude Code → tap "Self-test". Expect all
+//      4 steps green. If any step fails, tap "Copy report" and send
+//      the payload — it carries the failure + diagnostics.
+//   3. Open any session. Send "Remember the number 42".
+//   4. Hard refresh the page.
+//   5. Verify the same session auto-reopens (frontend resume).
+//   6. Send "What number did I tell you?". If Claude says "42",
+//      backend resume works. If Claude says "I don't know", backend
+//      is NOT passing session_id through to `claude --resume` and
+//      needs a fix in the Flask layer.
+//   7. While Claude is thinking, tap Cancel — the thinking bubble
+//      should vanish and the send button should come back alive.
+//   8. Disable Wi-Fi, send a message — the error bubble should show
+//      "status", "online: NO" and a Retry button. Re-enable Wi-Fi
+//      and tap Retry — the message should go through.
+//   9. Confirm the "+" FAB is gone inside the chat view and returns
+//      on every other page.
+//  10. Trigger a refresh on the dashboard — "Data synced ✓" should
+//      appear and disappear on its own within ~3s.
+// ─────────────────────────────────────────────────────────────
 
 // ── TERMINAL ──
 let _termInterval = null;
@@ -17857,15 +18821,11 @@ if (_userRole.allowedPages) {
 
     // ═══════════════════════════════════════════════════════════════
 
-    // ── UX: Toast notification ──
-    function showToast(msg, duration=2000) {
-        let t = document.getElementById('ux-toast');
-        if (!t) { t=document.createElement('div'); t.id='ux-toast'; t.className='toast'; document.body.appendChild(t); }
-        t.textContent = msg;
-        t.classList.add('show');
-        clearTimeout(t._timer);
-        t._timer = setTimeout(()=>t.classList.remove('show'), duration);
-    }
+    // (Duplicate showToast removed — the canonical implementation lives
+    // at the "TOAST SYSTEM" block above, using #toast-container. Having
+    // two definitions meant this one won by declaration order and its
+    // `.toast.show` class-toggle was overridden by the container-based
+    // CSS animation, leaving toasts like "Data synced ✓" pinned visible.)
 
     // ── UX: Skeleton loading for sections ──
     function showSkeleton(el, rows=4) {
