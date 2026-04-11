@@ -42,7 +42,7 @@ function flag(name, def) {
 
 const BASE    = flag('base', process.env.BASE_URL || '').replace(/\/$/, '');
 const SESSION = flag('session', process.env.CC_SESSION || null);
-const TIMEOUT = parseInt(flag('timeout', '60'), 10) * 1000;
+const TIMEOUT = parseInt(flag('timeout', '120'), 10) * 1000;
 const COOKIE  = flag('cookie', process.env.CC_COOKIE || null);
 const JSON_OUT = flag('json', false);
 const QUIET    = flag('quiet', false);
@@ -100,7 +100,10 @@ async function timed(step, fn) {
 async function fetchJson(method, path, body) {
     const url = BASE + path;
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 20000);
+    // The /send endpoint is synchronous and can take 30-60s for a real
+    // Claude turn with tool use, so give every monitor fetch the full
+    // TIMEOUT budget (default 60s, configurable via --timeout).
+    const timer = setTimeout(() => ctrl.abort(), TIMEOUT);
     try {
         const r = await fetch(url, {
             method,
@@ -157,37 +160,24 @@ async function run() {
         }));
     } catch (e) { return report(); }
 
-    // 3. Send ping
-    let taskId;
+    // 3. Send ping — the backend's /send is a synchronous endpoint
+    //    so we get the response back in the same round-trip. No
+    //    task_id, no polling. The TIMEOUT flag controls the fetch's
+    //    own AbortController inside fetchJson().
     try {
-        const d = await timed('send ping', async () => ({
+        const d = await timed('send + response', async () => ({
             value: await fetchJson('POST', '/api/mission-control/claude-code/send', {
                 session_id: target.session_id,
                 message: 'ping (synthetic monitor — reply with "pong")',
                 project_path: target.project_path || ''
             })
         }));
-        taskId = d && d.task_id;
-        if (!taskId) {
-            record('send ping', false, 0, 'no task_id in response');
+        if (!d || typeof d.response !== 'string' || d.response.length === 0) {
+            record('validate response', false, 0, 'empty or missing response field');
             return report();
         }
-    } catch (e) { return report(); }
-
-    // 4. Poll until done / error / timeout
-    const pollStart = Date.now();
-    let pollResult = null;
-    while (Date.now() - pollStart < TIMEOUT) {
-        await new Promise(ok => setTimeout(ok, 1500));
-        try {
-            const pd = await fetchJson('GET', '/api/mission-control/claude-code/poll/' + taskId);
-            if (pd && pd.status === 'done')  { pollResult = { ok: true,  response: pd.response };        break; }
-            if (pd && pd.status === 'error') { pollResult = { ok: false, err: pd.error || 'task error' }; break; }
-        } catch (_) { /* transient blips are tolerated inside the budget */ }
-    }
-    const pollMs = Date.now() - pollStart;
-    if (!pollResult) pollResult = { ok: false, err: `timed out after ${Math.round(TIMEOUT/1000)}s` };
-    record('poll response', pollResult.ok, pollMs, pollResult.err);
+        record('validate response', true, 0);
+    } catch (_) { return report(); }
 
     return report();
 }
