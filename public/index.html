@@ -2111,7 +2111,26 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;flex-wrap:wrap;">
                             <button class="btn" onclick="clearShipForm()" style="opacity:0.6;">Clear</button>
                             <button class="btn" onclick="saveCurrentAsContact()" style="background:var(--bg-3);color:var(--text-1);border-color:var(--border-strong);">&#9881; Save as Contact</button>
+                            <button class="btn" onclick="copyShipFormForIFS()" title="Copy address details to clipboard so you can paste them into IFS manually" style="background:var(--bg-3);color:var(--text-1);border-color:var(--border-strong);">Copy for IFS</button>
+                            <button class="btn" onclick="toggleManualTrackingForm()" title="Record a tracking number for a label you already created manually in IFS" style="background:var(--bg-3);color:var(--accent);border-color:var(--accent-border);" id="ship-manual-btn">Record Tracking</button>
                             <button class="btn" onclick="submitShipLabel()" style="background:var(--green);color:var(--bg-1);" id="ship-submit-btn">Create Label</button>
+                        </div>
+                        <div id="ship-manual-form" style="display:none;margin-top:8px;padding:12px;background:var(--bg-3);border:1px solid var(--accent-border);border-radius:var(--radius);">
+                            <div style="font-size:0.72rem;color:var(--text-0);font-weight:700;margin-bottom:4px;">Manual tracking entry</div>
+                            <div style="font-size:0.65rem;color:var(--text-2);margin-bottom:8px;">Use this when IFS automation is down (2FA/Gmail) and you created the label by hand. Pre-filled from the form above.</div>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end;">
+                                <div style="flex:1;min-width:180px;">
+                                    <label style="font-size:0.62rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Tracking #</label>
+                                    <input class="input" id="ship-manual-tracking" placeholder="e.g. 787123456789" style="width:100%;margin-top:2px;font-family:var(--mono);">
+                                </div>
+                                <div style="flex:0 0 120px;min-width:100px;">
+                                    <label style="font-size:0.62rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Inventory row</label>
+                                    <input class="input" id="ship-manual-row" placeholder="optional" style="width:100%;margin-top:2px;font-family:var(--mono);">
+                                </div>
+                                <button class="btn" onclick="submitManualTracking()" style="background:var(--green);color:var(--bg-1);">Save</button>
+                                <button class="btn" onclick="toggleManualTrackingForm(false)" style="opacity:0.6;">Cancel</button>
+                            </div>
+                            <div id="ship-manual-status" style="display:none;margin-top:6px;font-size:0.7rem;"></div>
                         </div>
                         <div id="ship-status" style="display:none;padding:10px;border-radius:var(--radius);margin-top:4px;"></div>
                     </div>
@@ -3848,9 +3867,9 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
 // code or a stale cached copy. Update this on every commit that
 // touches user-visible behavior.
 window.__BUILD__ = {
-    commit: '27a79a6',                        // updated per commit
-    built_at: '2026-04-11T03:00:00Z',         // approximate build time
-    version: 'mobile-v7-redact-swipe-fix'
+    commit: '123fb36',                        // updated per commit
+    built_at: '2026-04-11T03:30:00Z',         // approximate build time
+    version: 'shipping-v8-manual-label-fallback'
 };
 try { console.info('%c[MK build]', 'color:#d4af37;font-weight:700', window.__BUILD__); } catch(e) {}
 // ── Force clear stale service workers + cache on version mismatch ──
@@ -10547,6 +10566,212 @@ function clearShipForm(keepPreset) {
     document.getElementById('ship-status').style.display = 'none';
 }
 
+// ── Manual tracking fallback (for when IFS automation is down) ──
+// The IFS create-label endpoint depends on a Gmail-OTP retrieval step
+// that breaks whenever Google auth rolls or the mailbox gets rate
+// limited. When that happens the user still needs to ship — Mochi
+// Khai's guidance is "make the label by hand in IFS then tell the
+// dashboard". These helpers make that flow one-tap:
+//
+//   - copyShipFormForIFS(): copies the current form as a clipboard
+//     block you can paste straight into IFS or FedEx Ship Manager
+//     without retyping anything.
+//   - toggleManualTrackingForm(open?): opens/closes the inline
+//     manual tracking entry field pre-filled with the row number
+//     from the currently-selected inventory preset.
+//   - submitManualTracking(): POSTs the tracking number to the
+//     existing /api/inventory/{row}/shipped endpoint (which the
+//     modal ship flow already uses), marks the inventory row
+//     shipped, and refreshes the Recent Labels panel.
+//
+// Form state is also auto-persisted to localStorage so a failed
+// automation attempt never loses the user's inputs.
+
+const _SHIP_FORM_LS = 'mk.shipForm.draft.v1';
+const _SHIP_FORM_FIELDS = ['ship-contact','ship-company','ship-address','ship-apt','ship-city','ship-state','ship-zip','ship-value','ship-phone','ship-email','ship-weight','ship-service','ship-signature','ship-preset','hal-address','hal-city','hal-state','hal-zip'];
+
+function _shipFormSnapshot() {
+    const snap = {};
+    _SHIP_FORM_FIELDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) snap[id] = el.value || '';
+    });
+    const res = document.getElementById('ship-residential');
+    const hal = document.getElementById('ship-hal');
+    if (res) snap['ship-residential'] = !!res.checked;
+    if (hal) snap['ship-hal'] = !!hal.checked;
+    return snap;
+}
+
+function _persistShipForm() {
+    try { localStorage.setItem(_SHIP_FORM_LS, JSON.stringify(_shipFormSnapshot())); } catch(e) {}
+}
+
+function _restoreShipForm() {
+    try {
+        const raw = localStorage.getItem(_SHIP_FORM_LS);
+        if (!raw) return;
+        const snap = JSON.parse(raw);
+        Object.entries(snap).forEach(([id, val]) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (el.type === 'checkbox') el.checked = !!val;
+            else if (val) el.value = val;
+        });
+        // If HAL was checked, unhide the HAL fields.
+        if (snap['ship-hal'] && document.getElementById('hal-fields')) {
+            document.getElementById('hal-fields').style.display = '';
+        }
+    } catch(e) {}
+}
+
+function _clearShipFormDraft() {
+    try { localStorage.removeItem(_SHIP_FORM_LS); } catch(e) {}
+}
+
+// Wire autosave to every field on first render. Uses event delegation
+// on a common ancestor so we don't have to attach N listeners.
+document.addEventListener('DOMContentLoaded', () => {
+    const host = document.getElementById('ship-contact')?.closest('.page,.card,.ship-form') || document.body;
+    host.addEventListener('input',  e => {
+        if (e.target && e.target.id && e.target.id.startsWith('ship-')) _persistShipForm();
+    });
+    host.addEventListener('change', e => {
+        if (e.target && e.target.id && (e.target.id.startsWith('ship-') || e.target.id.startsWith('hal-'))) _persistShipForm();
+    });
+    _restoreShipForm();
+});
+
+async function copyShipFormForIFS() {
+    const g = id => document.getElementById(id)?.value?.trim() || '';
+    const lines = [];
+    const recipient = g('ship-contact');
+    const company   = g('ship-company');
+    if (recipient) lines.push('Recipient: ' + recipient);
+    if (company && company !== recipient) lines.push('Company:   ' + company);
+    const street = [g('ship-address'), g('ship-apt')].filter(Boolean).join(' ');
+    if (street) lines.push('Address:   ' + street);
+    const cityLine = [g('ship-city'), g('ship-state'), g('ship-zip')].filter(Boolean).join(', ');
+    if (cityLine) lines.push('City/ST/Z: ' + cityLine);
+    if (g('ship-phone')) lines.push('Phone:     ' + g('ship-phone'));
+    if (g('ship-email')) lines.push('Email:     ' + g('ship-email'));
+    if (g('ship-value')) lines.push('Value:     $' + g('ship-value'));
+    if (g('ship-weight')) lines.push('Weight:    ' + g('ship-weight') + ' lb');
+    if (g('ship-service')) lines.push('Service:   ' + g('ship-service'));
+    if (g('ship-signature')) lines.push('Signature: ' + g('ship-signature'));
+    const text = lines.join('\n');
+    if (!text) {
+        if (typeof showToast === 'function') showToast('Form is empty', 'error');
+        return;
+    }
+    try {
+        await navigator.clipboard.writeText(text);
+        if (typeof showToast === 'function') showToast('Address copied — paste into IFS', 'success');
+    } catch (e) {
+        // Fallback: drop a selectable textarea
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.cssText = 'position:fixed;inset:10%;z-index:100000;padding:12px;background:var(--bg-1);color:var(--text-0);border:1px solid var(--accent);font-family:var(--mono);font-size:0.75rem;white-space:pre;';
+        document.body.appendChild(ta);
+        ta.select();
+        setTimeout(() => ta.remove(), 15000);
+    }
+}
+
+function toggleManualTrackingForm(forceOpen) {
+    const wrap = document.getElementById('ship-manual-form');
+    if (!wrap) return;
+    const open = forceOpen === undefined ? (wrap.style.display === 'none' || !wrap.style.display) : forceOpen;
+    wrap.style.display = open ? 'block' : 'none';
+    if (open) {
+        // Pre-fill the row from ship-preset if set.
+        const presetRow = document.getElementById('ship-preset')?.value || '';
+        const rowInput = document.getElementById('ship-manual-row');
+        if (rowInput && !rowInput.value && presetRow) rowInput.value = presetRow;
+        setTimeout(() => document.getElementById('ship-manual-tracking')?.focus(), 100);
+    }
+}
+
+async function submitManualTracking() {
+    const trackingEl = document.getElementById('ship-manual-tracking');
+    const rowEl      = document.getElementById('ship-manual-row');
+    const statusEl   = document.getElementById('ship-manual-status');
+    const tracking = (trackingEl?.value || '').trim();
+    const row      = (rowEl?.value || '').trim();
+
+    const setStatus = (msg, color) => {
+        if (!statusEl) return;
+        statusEl.style.display = 'block';
+        statusEl.style.color   = color || 'var(--text-1)';
+        statusEl.textContent   = msg;
+    };
+
+    if (!tracking) {
+        setStatus('Enter a tracking number first', 'var(--red)');
+        trackingEl?.focus();
+        return;
+    }
+    if (tracking.replace(/\D/g, '').length < 10) {
+        setStatus('Tracking number looks too short — double check', 'var(--red)');
+        return;
+    }
+
+    setStatus('Saving…', 'var(--text-1)');
+
+    // If an inventory row was provided, mark it shipped via the
+    // existing endpoint the modal ship flow already uses. If not,
+    // just record the label locally so the user has a trail.
+    if (row) {
+        try {
+            const r = await fetch('/api/inventory/' + encodeURIComponent(row) + '/shipped', {
+                method:  'POST',
+                headers: {'Content-Type': 'application/json'},
+                body:    JSON.stringify({ tracking })
+            });
+            const d = await r.json().catch(() => ({}));
+            if (!r.ok || d.ok === false || d.error) {
+                setStatus('Saved locally but inventory update failed: ' + (d.error || 'HTTP ' + r.status), 'var(--red)');
+                _appendLocalManualLabel(tracking, row);
+                return;
+            }
+        } catch (e) {
+            setStatus('Saved locally but API request failed: ' + (e.message || 'network error'), 'var(--red)');
+            _appendLocalManualLabel(tracking, row);
+            return;
+        }
+    }
+
+    _appendLocalManualLabel(tracking, row);
+    setStatus('Saved — tracking ' + tracking + (row ? ' → row ' + row : ''), 'var(--green)');
+    _clearShipFormDraft();
+    if (typeof showToast === 'function') showToast('Tracking recorded', 'success');
+    // Refresh the Recent Labels panel so the new entry shows up.
+    try { if (typeof loadRecentLabels === 'function') loadRecentLabels(); } catch(e) {}
+    // Auto-close after a brief success flash.
+    setTimeout(() => {
+        toggleManualTrackingForm(false);
+        if (trackingEl) trackingEl.value = '';
+        if (rowEl)      rowEl.value = '';
+    }, 1800);
+}
+
+// Local audit trail for manual tracking entries so nothing is ever
+// truly lost, even if the API call fails. Capped at 50 entries.
+function _appendLocalManualLabel(tracking, row) {
+    try {
+        const key = 'mk.ship.manualLabels.v1';
+        const cur = JSON.parse(localStorage.getItem(key) || '[]');
+        cur.unshift({
+            tracking,
+            row: row || null,
+            form: _shipFormSnapshot(),
+            ts: Date.now()
+        });
+        while (cur.length > 50) cur.pop();
+        localStorage.setItem(key, JSON.stringify(cur));
+    } catch (e) {}
+}
+
 async function submitShipLabel() {
     const g = id => document.getElementById(id)?.value?.trim() || '';
     const data = {
@@ -10595,7 +10820,8 @@ async function submitShipLabel() {
         if (d.error) {
             status.style.background = 'rgba(255,59,48,0.15)';
             status.style.color = 'var(--red)';
-            status.innerHTML = `Error: ${d.error}`;
+            status.innerHTML = _ifsErrorHtml(d.error);
+            _showManualFallbackHint();
         } else {
             status.style.background = 'rgba(48,209,88,0.15)';
             status.style.color = 'var(--green)';
@@ -10606,10 +10832,44 @@ async function submitShipLabel() {
     } catch(e) {
         status.style.background = 'rgba(255,59,48,0.15)';
         status.style.color = 'var(--red)';
-        status.innerHTML = `Error: ${e.message}`;
+        status.innerHTML = _ifsErrorHtml(e.message);
+        _showManualFallbackHint();
     }
     btn.disabled = false;
     btn.textContent = 'Create Label';
+}
+
+// Render a friendly error block with automatic actions when the
+// failure is the known Gmail OTP / 2FA problem (which takes the
+// automation offline for hours at a time — the dashboard should be
+// useful anyway).
+function _ifsErrorHtml(rawError) {
+    const err = String(rawError || 'Unknown error');
+    const lo = err.toLowerCase();
+    const isOtp = /otp|2fa|two[\s\-]*factor|gmail|oauth|imap|unauthorized|401|403/.test(lo);
+    const hint = isOtp
+        ? 'Known issue: the IFS 2FA step reads the OTP from Gmail and that path is currently failing. Use the manual fallback below until the Gmail auth is refreshed on the backend.'
+        : '';
+    return (
+        '<div style="font-weight:700;margin-bottom:4px;">Label automation failed</div>' +
+        '<div style="font-size:0.72rem;margin-bottom:' + (hint ? '6px' : '8px') + ';white-space:pre-wrap;word-break:break-word;">' +
+            String(err).replace(/[<>]/g, c => ({'<':'&lt;','>':'&gt;'}[c])) +
+        '</div>' +
+        (hint ? '<div style="font-size:0.68rem;color:var(--accent);margin-bottom:8px;">' + hint + '</div>' : '') +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+            '<button class="btn" onclick="copyShipFormForIFS()" style="font-size:0.7rem;padding:4px 10px;">Copy address for IFS</button>' +
+            '<button class="btn" onclick="toggleManualTrackingForm(true)" style="font-size:0.7rem;padding:4px 10px;background:var(--accent);color:var(--bg-1);border-color:var(--accent);">Record tracking manually</button>' +
+        '</div>'
+    );
+}
+
+// Scroll the manual fallback form into view so the user sees it
+// immediately after a failure, and open it automatically.
+function _showManualFallbackHint() {
+    const wrap = document.getElementById('ship-manual-form');
+    if (!wrap) return;
+    toggleManualTrackingForm(true);
+    try { wrap.scrollIntoView({behavior: 'smooth', block: 'nearest'}); } catch(e) {}
 }
 
 async function pollLabelStatus(jobId) {
@@ -10625,12 +10885,14 @@ async function pollLabelStatus(jobId) {
                 status.style.background = 'rgba(48,209,88,0.15)';
                 status.style.color = 'var(--green)';
                 status.innerHTML = `Label created! Tracking: <strong style="font-family:var(--mono);">${job.tracking}</strong> <a onclick="downloadShipPdf('${job.tracking}')" style="cursor:pointer;color:var(--accent);margin-left:8px;">Download PDF</a>`;
+                _clearShipFormDraft();
                 loadRecentLabels();
             } else if (job.status === 'failed') {
                 clearInterval(poll);
                 status.style.background = 'rgba(255,59,48,0.15)';
                 status.style.color = 'var(--red)';
-                status.innerHTML = `Label creation failed: ${job.error||'Unknown error'}. Try creating manually via IFS.`;
+                status.innerHTML = _ifsErrorHtml(job.error || 'Unknown error');
+                _showManualFallbackHint();
             } else if (job.status === 'processing') {
                 status.innerHTML = `Creating label... automation running (${attempts * 3}s)`;
             }
