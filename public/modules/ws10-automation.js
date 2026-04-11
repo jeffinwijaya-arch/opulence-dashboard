@@ -743,11 +743,12 @@
     async function render() {
         if (!_initialized) return;
 
-        // Auto-price banner on inventory page
+        // Auto-price banner + Chrono24 export on inventory page
         const invPage = document.getElementById('page-inventory');
         if (invPage && (invPage.classList.contains('active') || invPage.offsetParent !== null)) {
             const items = await fetchInventoryRows();
             injectAutoPriceBanner(items);
+            injectChrono24ExportCard(items);
         }
 
         // Stale listing banner + sold detection on postings page
@@ -768,7 +769,209 @@
         }
     }
 
+
+    // ═══════════════════════════════════════════════════
+    // CHRONO24 XML FEED EXPORT
+    // Competitive with WatchTraderHub's paid Chrono24 integration.
+    // Generates Chrono24-compatible XML from live inventory.
+    // ═══════════════════════════════════════════════════
+
+    function _escXml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+    }
+
+    function _c24CondCode(condStr) {
+        var c = (condStr || '').toLowerCase();
+        if (/brand\s*new|new\s*unworn|unpolished\s*new/.test(c)) return 2;
+        if (/like\s*new|lnib|mint|unworn/.test(c)) return 3;
+        if (/very\s*good|vg|excellent|great/.test(c)) return 4;
+        if (/good|light\s*wear/.test(c)) return 4;
+        if (/fair|used|worn|marks/.test(c)) return 5;
+        return 4; // default: good
+    }
+
+    function _generateChrono24XML(items) {
+        var forSale = items.filter(function(r) {
+            if (r.sold === 'Yes' || r.sold === 1 || r.sold === true) return false;
+            var price = parseNum(r.selling_price || r.asking_price || r.list_price || '0');
+            return price > 0;
+        });
+
+        var xmlItems = forSale.map(function(r) {
+            var ref   = extractRef(r.description || '') || r.ref || '';
+            var price = parseNum(r.selling_price || r.asking_price || r.list_price || '0');
+            var cond  = _c24CondCode(r.condition || r.cond || '');
+            // Detect brand from ref prefix if not set
+            var brand = r.brand || '';
+            if (!brand && ref) {
+                var n = parseInt(ref, 10);
+                if (n >= 100000 && n <= 340000) brand = 'Rolex';
+                else if (/^1520|^1521|^1522|^2651|^2636|^2660|^263/.test(ref)) brand = 'Audemars Piguet';
+                else if (/^57|^58|^59|^49|^53|^56|^240|^241/.test(ref)) brand = 'Patek Philippe';
+                else if (/^827|^5231|^87|^M/.test(ref)) brand = 'Tudor';
+            }
+            var model = r.model || '';
+            var year  = r.year || r.production_year || '';
+            var cDesc = (r.condition || r.cond || '').toLowerCase();
+            var hasBox    = /box/i.test(cDesc) || /box/i.test(r.description || '') ? 1 : 0;
+            var hasPapers = /paper|card|warrant/i.test(cDesc) || /paper/i.test(r.description || '') ? 1 : 0;
+            // Build clean description (max 500 chars)
+            var rawDesc = [r.description || '', r.notes || ''].join(' ').trim();
+            var desc = _escXml(rawDesc.substring(0, 500));
+
+            var lines = [
+                '  <item>',
+                ref    ? ('    <reference>' + _escXml(ref) + '</reference>') : '',
+                brand  ? ('    <manufacturer>' + _escXml(brand) + '</manufacturer>') : '',
+                model  ? ('    <model>' + _escXml(model) + '</model>') : '',
+                '    <condition>' + cond + '</condition>',
+                '    <price>' + Math.round(price) + '</price>',
+                '    <currency>USD</currency>',
+                year   ? ('    <year>' + _escXml(String(year)) + '</year>') : '',
+                '    <box>' + hasBox + '</box>',
+                '    <papers>' + hasPapers + '</papers>',
+                '    <location>Hong Kong, China</location>',
+                desc   ? ('    <description>' + desc + '</description>') : '',
+                '  </item>'
+            ].filter(Boolean).join('\n');
+            return lines;
+        }).join('\n');
+
+        return '<?xml version="1.0" encoding="UTF-8"?>\n<items>\n' + xmlItems + '\n</items>';
+    }
+
+    function injectChrono24ExportCard(items) {
+        var page = document.getElementById('page-inventory');
+        if (!page) return;
+
+        var old = document.getElementById('ws10-c24-card');
+        if (old) old.remove();
+
+        var forSale = items.filter(function(r) {
+            return r.sold !== 'Yes' && r.sold !== 1 && r.sold !== true;
+        });
+        var priced = forSale.filter(function(r) {
+            return parseNum(r.selling_price || r.asking_price || r.list_price || '0') > 0;
+        });
+        var missingRef = priced.filter(function(r) {
+            return !extractRef(r.description || '') && !r.ref;
+        });
+        var missingPrice = forSale.length - priced.length;
+
+        // Warning HTML
+        var warnHtml = '';
+        if (missingRef.length > 0) {
+            warnHtml += '<div style="background:rgba(255,171,0,0.1);border:1px solid rgba(255,171,0,0.25);'
+                + 'border-radius:5px;padding:6px 10px;margin-bottom:8px;font-size:0.7rem;color:var(--orange,#ffa500);">'
+                + '\u26A0 ' + missingRef.length + ' item' + (missingRef.length > 1 ? 's' : '') 
+                + ' have no reference number — will export without <reference> field.'
+                + '</div>';
+        }
+        if (missingPrice > 0) {
+            warnHtml += '<div style="background:rgba(255,23,68,0.08);border:1px solid rgba(255,23,68,0.2);'
+                + 'border-radius:5px;padding:6px 10px;margin-bottom:8px;font-size:0.7rem;color:var(--red);">'
+                + '\u2716 ' + missingPrice + ' unsold item' + (missingPrice > 1 ? 's' : '')
+                + ' have no price set — excluded from feed.'
+                + '</div>';
+        }
+
+        var card = document.createElement('div');
+        card.id = 'ws10-c24-card';
+        card.className = 'card';
+        card.style.cssText = 'margin:12px 0;';
+        card.innerHTML = '<div class="card-head">'
+            + '<span>Chrono24 XML Feed</span>'
+            + '<span style="font-size:0.6rem;color:var(--text-2);font-weight:400;text-transform:none;'
+            + 'letter-spacing:0;margin-left:8px;">multi-channel listing sync</span>'
+            + '</div>'
+            + '<div style="padding:12px 16px;">'
+            + warnHtml
+            + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+            + '<div style="background:var(--bg-3);border-radius:6px;padding:10px;text-align:center;">'
+            +   '<div style="font-size:0.58rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Feed Items</div>'
+            +   '<div style="font-size:1.2rem;font-weight:800;font-family:var(--mono);color:var(--accent);margin-top:3px;">' + priced.length + '</div>'
+            + '</div>'
+            + '<div style="background:var(--bg-3);border-radius:6px;padding:10px;text-align:center;">'
+            +   '<div style="font-size:0.58rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Total Inventory</div>'
+            +   '<div style="font-size:1.2rem;font-weight:800;font-family:var(--mono);color:var(--text-0);margin-top:3px;">' + forSale.length + '</div>'
+            + '</div>'
+            + '<div style="background:var(--bg-3);border-radius:6px;padding:10px;text-align:center;">'
+            +   '<div style="font-size:0.58rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">No Price</div>'
+            +   '<div style="font-size:1.2rem;font-weight:800;font-family:var(--mono);color:' + (missingPrice > 0 ? 'var(--red)' : 'var(--green)') + ';margin-top:3px;">' + missingPrice + '</div>'
+            + '</div>'
+            + '</div>'
+            + '<div style="font-size:0.7rem;color:var(--text-2);line-height:1.5;margin-bottom:12px;">'
+            + 'Download the XML feed and upload it to your Chrono24 Marketplace Manager under '
+            + '<em>Stock &rarr; Import &rarr; XML feed</em>. Alternatively, host this file at a stable URL '
+            + 'and provide it to Chrono24 for automated 12-24 hour sync.'
+            + '</div>'
+            + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">'
+            + '<button id="ws10-c24-download" style="background:var(--accent);color:var(--bg-0);border:none;'
+            + 'border-radius:6px;padding:9px 18px;font-size:0.78rem;font-weight:700;cursor:pointer;'
+            + 'display:flex;align-items:center;gap:6px;">'
+            + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"'
+            + ' stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>'
+            + '<polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+            + 'Download XML (' + priced.length + ' items)'
+            + '</button>'
+            + '<button id="ws10-c24-preview" style="background:var(--bg-3);color:var(--text-1);border:1px solid var(--border);'
+            + 'border-radius:6px;padding:9px 14px;font-size:0.78rem;cursor:pointer;">Preview XML</button>'
+            + '</div>'
+            + '<pre id="ws10-c24-preview-box" style="display:none;margin-top:12px;background:var(--bg-0);'
+            + 'border:1px solid var(--border);border-radius:6px;padding:10px;font-size:0.62rem;'
+            + 'font-family:var(--mono);color:var(--text-1);overflow-x:auto;max-height:220px;'
+            + 'overflow-y:auto;white-space:pre;"></pre>'
+            + '</div>';
+
+        // Wire buttons
+        card.querySelector('#ws10-c24-download').addEventListener('click', function() {
+            if (priced.length === 0) {
+                if (typeof showToast === 'function') showToast('No priced inventory to export', 'warn');
+                return;
+            }
+            var xml = _generateChrono24XML(items);
+            var blob = new Blob([xml], { type: 'application/xml;charset=utf-8;' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            var dateStr = new Date().toISOString().slice(0, 10);
+            a.download = 'mk_opulence_chrono24_' + dateStr + '.xml';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            if (typeof showToast === 'function') showToast('Downloaded Chrono24 XML feed — ' + priced.length + ' items', 'ok');
+        });
+
+        var previewShown = false;
+        card.querySelector('#ws10-c24-preview').addEventListener('click', function() {
+            var box = card.querySelector('#ws10-c24-preview-box');
+            if (!box) return;
+            if (previewShown) {
+                box.style.display = 'none';
+                previewShown = false;
+                this.textContent = 'Preview XML';
+            } else {
+                var xml = _generateChrono24XML(items);
+                // Show first ~2000 chars
+                box.textContent = xml.length > 2000 ? xml.slice(0, 2000) + '\n... (' + (xml.length - 2000) + ' more chars)' : xml;
+                box.style.display = 'block';
+                previewShown = true;
+                this.textContent = 'Hide Preview';
+            }
+        });
+
+        // Prepend to page
+        var firstCard = page.querySelector('.card');
+        if (firstCard) page.insertBefore(card, firstCard);
+        else page.appendChild(card);
+    }
+
     function cleanup() {
+        const b0 = document.getElementById('ws10-c24-card');
+        if (b0) b0.remove();
         const b1 = document.getElementById('ws10-autoprice-banner');
         if (b1) b1.remove();
         const b2 = document.getElementById('ws10-stale-banner');
