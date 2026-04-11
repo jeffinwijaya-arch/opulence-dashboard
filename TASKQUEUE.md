@@ -46,15 +46,16 @@ All high tasks completed 2026-04-10.
 - [x] WS9: Profit by channel analysis — Portfolio "By Channel" tab: groups sold watches by source (WhatsApp, Chrono24, eBay, Instagram, direct), canvas bar chart + table with profit, margin, revenue per channel (2026-04-11)
 - [x] Multi-channel listing sync — Chrono24 XML feed generator in ws10-automation.js: fetches inventory, generates Chrono24-compatible XML (reference, brand, model, condition code, price, year, box/papers, location, description), downloadable .xml file + preview panel, missing-price/ref warnings (2026-04-11)
 - [ ] WS10: Competition price tracking — monitor Chrono24 prices for key refs
-- [ ] Performance badges — Fast Shipper, Top Seller badges on seller profiles (competitive with Chrono24)
+- [x] Performance badges — ★ Top Supplier (5+ deals), ↓ Value Dealer (7%+ below market), ◈ Premium ($25k+ avg deal), ✓ Consistent, ⚡ Active (50+ WA listings); shown on Trusted Sellers card and inline on deal cards; competitive with Chrono24 dealer badge system (2026-04-11)
 
 ## COMPLETED (2026-04-11)
-- [x] WS5: Batch ship tab detection bug fixed — _currentTab state tracking replaces brittle CSS-var inspection; cells[5] off-by-one fixed; Select All checkbox-driven
-- [x] WS7: Seasonal Market Intelligence — section 6, monthly buy/sell index, strategy badge, live overlay (2026-04-11)
-- [x] WS7: Price Seasonality (Real Data) — section 7, monthly_medians.json driven, ref selector, canvas chart, buy/sell timing badges (2026-04-11)
-- [x] WS9: Profit by Channel — Portfolio "By Channel" tab, canvas bar chart, channel breakdown (2026-04-11)
-- [x] Multi-channel: Chrono24 XML feed export — ws10-automation.js, Inventory page card, download + preview (2026-04-11)
-- [x] Price analyzer: rolex_dial_options.json expanded 165→184 refs — added Sea-Dweller 136600, Air-King 116900, YM40 current gen 126621/126622, Day-Date 36 Platinum 128206, prev-gen DJ36 G-suffix/RBR/gold variants, Lady-DJ28 additional refs, Pearlmaster 81285/81319 (2026-04-11)
+- [x] WS5: Batch ship tab detection bug fixed (2026-04-11)
+- [x] WS7: Seasonal Market Intelligence — section 6 (2026-04-11)
+- [x] WS7: Price Seasonality (Real Data) — section 7 (2026-04-11)
+- [x] WS9: Profit by Channel (2026-04-11)
+- [x] Multi-channel: Chrono24 XML feed export (2026-04-11)
+- [x] Price analyzer: rolex_dial_options.json expanded 184→268 refs — added 18 Lady-Datejust 26 (179xxx) base refs (entirely new segment), 9 Lady-DJ 26 G-suffix, 7 Lady-DJ 26 RBR, 5 Pearlmaster 29 (80xxx), 4 Pearlmaster 34 addl, Daytona Everose/WG prev-gen (116505/116515LN/116518/116528), Yacht-Master 37 (268621/268622/268648), Day-Date 36/40 G-suffix variants, Datejust 41 RBR current gen, Deepsea (116660/126660/126660JN), DJ36/40 Platinum refs (2026-04-11)
+- [x] Performance badges on seller profiles — computePerformanceBadges() + renderBadgeChips() in ws6-crm.js (2026-04-11)
 
 ## COMPLETED (2026-04-10)
 - [x] WS1: Deal scoring algorithm (0-100 composite score) — ws1-price-intel.js
@@ -90,7 +91,7 @@ All high tasks completed 2026-04-10.
 - [x] Price analyzer: 13 new dealer shorthand patterns in extract_dial()
 - [x] Price analyzer: Phone number extraction improved (33 seller mappings)
 - [x] Price analyzer: Dial synonyms expanded to 30 entries
-- [x] Price analyzer: rolex_dial_options.json expanded ~98→165 refs; added 69 prev-gen refs (116xxx, 118xxx, 326xxx, 114xxx, 50xxx) covering Submariner/GMT/Day-Date/Datejust/Daytona/Milgauss/Cellini/Explorer/YM/YM-II/Sky-Dweller prev-gen (2026-04-10)
+- [x] Price analyzer: rolex_dial_options.json expanded ~98→165 refs (2026-04-10)
 
 ## RULES FOR AGENTS
 1. Pick ONE task from the highest unchecked priority level
