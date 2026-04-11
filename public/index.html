@@ -3721,6 +3721,20 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
 </button>
 
 <script>
+// ── Build stamp ──
+// Set at deploy time (or inlined here when the branch is pushed) so
+// every loaded page self-identifies which commit it's running. Shows
+// up in the Claude Code self-test report and in every error bubble's
+// diagnostics payload — if the user sends a screenshot or pastes a
+// report, you can tell in one glance whether they're on the latest
+// code or a stale cached copy. Update this on every commit that
+// touches user-visible behavior.
+window.__BUILD__ = {
+    commit: 'fa291da',                        // updated per commit
+    built_at: '2026-04-10T20:00:00Z',         // approximate build time
+    version: 'mission-control-v2-self-diag'
+};
+try { console.info('%c[MK build]', 'color:#d4af37;font-weight:700', window.__BUILD__); } catch(e) {}
 // ── Force clear stale service workers + cache on version mismatch ──
 (function(){const V='v3';if(navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(regs=>{regs.forEach(r=>{r.unregister();});});caches.keys().then(ks=>ks.forEach(k=>{if(!k.includes(V))caches.delete(k);}));}})();
 // ── Skeleton loader helpers ──
@@ -16864,6 +16878,7 @@ function _ccCollectDiagnostics(extra) {
     const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection || null;
     const diag = {
         ts: new Date().toISOString(),
+        build: (typeof window !== 'undefined' && window.__BUILD__) ? window.__BUILD__ : null,
         url: (typeof location !== 'undefined' ? location.href : ''),
         online: (typeof navigator !== 'undefined' ? !!navigator.onLine : null),
         connection: conn ? {
@@ -17013,13 +17028,18 @@ function _ccRenderSelfTestResults(results) {
         </div>
         ${r.err ? `<div style="font-size:0.68rem;color:var(--red);padding:2px 0 6px 18px;word-break:break-word;">${String(r.err).replace(/</g,'&lt;')}</div>` : ''}
     `).join('');
+    const build = (window.__BUILD__ || {});
+    const buildLine = build.commit
+        ? `build ${build.commit} · ${build.version || ''}`
+        : 'build: unknown (stale page?)';
     card.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
             <div style="font-size:0.95rem;font-weight:700;color:var(--text-0);">
                 ${pass ? 'Self-test passed' : 'Self-test failed'}
             </div>
             <button class="mc-btn" type="button" data-close style="padding:4px 10px;font-size:0.7rem;">Close</button>
         </div>
+        <div style="font-size:0.62rem;color:var(--text-3);font-family:var(--mono);margin-bottom:8px;">${buildLine}</div>
         <div style="font-size:0.7rem;color:var(--text-2);margin-bottom:10px;">
             Runs list → load → send "ping" → poll. Tests the full Claude Code round-trip end to end.
         </div>
