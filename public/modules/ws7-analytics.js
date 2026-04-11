@@ -1065,6 +1065,248 @@
         }
     }
 
+
+    // ═══════════════════════════════════════════════════
+    // 7. REAL-DATA PRICE SEASONALITY
+    // Fetches /data/monthly_medians.json (written by parse_v4's
+    // _store_monthly_medians each run) and shows actual price
+    // deviations by calendar month per ref — tells Jeffin
+    // WHICH MONTHS are historically cheapest / most expensive
+    // for the specific refs he actually trades.
+    // ═══════════════════════════════════════════════════
+
+    var _priceHistData = null;
+    var _priceHistKey  = null;
+    var _MSHORT = ['','Jan','Feb','Mar','Apr','May','Jun',
+                   'Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    function _loadPriceHistData() {
+        if (_priceHistData) return Promise.resolve(_priceHistData);
+        return fetch('/data/monthly_medians.json')
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(d) { _priceHistData = d; return d; })
+            .catch(function() { return null; });
+    }
+
+    function _parsePriceHist(raw) {
+        // raw: { "YYYY-MM": { "ref|dial": { median, count, low, avg } } }
+        var byKey = {};
+        Object.keys(raw).forEach(function(monthStr) {
+            var parts = monthStr.split('-');
+            if (parts.length < 2) return;
+            var m = parseInt(parts[1], 10);
+            if (isNaN(m) || m < 1 || m > 12) return;
+            var entries = raw[monthStr];
+            Object.keys(entries).forEach(function(key) {
+                var e = entries[key];
+                if (!e || !e.median || e.median <= 0) return;
+                if (!byKey[key]) byKey[key] = { months: {}, total: 0 };
+                if (!byKey[key].months[m]) byKey[key].months[m] = [];
+                byKey[key].months[m].push(e.median);
+                byKey[key].total += (e.count || 1);
+            });
+        });
+        var result = [];
+        Object.keys(byKey).forEach(function(key) {
+            var kd = byKey[key];
+            var mNums = Object.keys(kd.months).map(Number);
+            if (mNums.length < 3) return;
+            var mAvgs = {};
+            mNums.forEach(function(m) {
+                var arr = kd.months[m];
+                mAvgs[m] = arr.reduce(function(s, v) { return s + v; }, 0) / arr.length;
+            });
+            var vals = Object.values(mAvgs);
+            var overall = vals.reduce(function(s, v) { return s + v; }, 0) / vals.length;
+            var bestM  = mNums.reduce(function(a, b) { return mAvgs[a] > mAvgs[b] ? a : b; });
+            var worstM = mNums.reduce(function(a, b) { return mAvgs[a] < mAvgs[b] ? a : b; });
+            var kp = key.split('|');
+            result.push({
+                key:       key,
+                ref:       kp[0],
+                dial:      kp[1] || '',
+                mAvgs:     mAvgs,
+                overall:   overall,
+                bestM:     bestM,
+                worstM:    worstM,
+                bestPct:   (mAvgs[bestM]  - overall) / overall * 100,
+                worstPct:  (mAvgs[worstM] - overall) / overall * 100,
+                mCount:    mNums.length,
+                total:     kd.total
+            });
+        });
+        result.sort(function(a, b) { return b.total - a.total; });
+        return result;
+    }
+
+    function renderPriceHistory() {
+        _loadPriceHistData().then(function(raw) {
+            if (!raw || !Object.keys(raw).length) return;
+            var parsed = _parsePriceHist(raw);
+            if (!parsed.length) return;
+            _buildPriceHistCard(parsed);
+        });
+    }
+
+    function _buildPriceHistCard(list) {
+        var old = document.getElementById('ws7-price-history-card');
+        if (old) old.remove();
+        var top = list.slice(0, 10);
+        if (!_priceHistKey || !top.some(function(r) { return r.key === _priceHistKey; })) {
+            _priceHistKey = top[0].key;
+        }
+        var opts = top.map(function(r) {
+            var lbl = r.ref + (r.dial ? ' ' + r.dial : '') + ' (' + r.mCount + 'mo)';
+            return '<option value="' + r.key + '"'
+                + (r.key === _priceHistKey ? ' selected' : '') + '>' + lbl + '</option>';
+        }).join('');
+        var card = document.createElement('div');
+        card.id = 'ws7-price-history-card';
+        card.className = 'card';
+        card.style.marginTop = '8px';
+        card.innerHTML = '<div class="card-head">'
+            + '<span>Price Seasonality (Real Data)</span>'
+            + '<span style="font-size:0.6rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px;">'
+            + 'actual monthly price patterns from ' + list[0].total.toLocaleString() + '+ listings</span>'
+            + '</div>'
+            + '<div style="padding:8px 14px 4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
+            + '<label style="font-size:0.63rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;font-family:var(--mono);">Ref / Dial</label>'
+            + '<select id="ws7-ph-sel" style="background:var(--bg-2);color:var(--text-0);border:1px solid var(--border);'
+            + 'border-radius:4px;padding:4px 8px;font-size:0.72rem;font-family:var(--mono);cursor:pointer;">'
+            + opts + '</select>'
+            + '</div>'
+            + '<div id="ws7-ph-body" style="padding:4px 12px 10px;"></div>';
+        var anchor = document.getElementById('ws7-seasonal-card')
+            || document.getElementById('ws7-currency-card')
+            || document.getElementById('ws7-region-bar-card');
+        if (anchor) anchor.parentNode.insertBefore(card, anchor.nextSibling);
+        else {
+            var mg = document.getElementById('metrics-grid');
+            if (mg) mg.parentNode.insertBefore(card, mg.nextSibling);
+        }
+        _renderPhBody(_priceHistKey, top);
+        var sel = document.getElementById('ws7-ph-sel');
+        if (sel) sel.addEventListener('change', function() {
+            _priceHistKey = this.value;
+            _renderPhBody(_priceHistKey, top);
+        });
+    }
+
+    function _renderPhBody(key, list) {
+        var body = document.getElementById('ws7-ph-body');
+        if (!body) return;
+        var rd = null;
+        for (var ri = 0; ri < list.length; ri++) {
+            if (list[ri].key === key) { rd = list[ri]; break; }
+        }
+        if (!rd) { body.innerHTML = ''; return; }
+        var fmt = MK.formatPrice;
+        var mAll = [1,2,3,4,5,6,7,8,9,10,11,12];
+        var buyBadge = '<span style="display:inline-block;background:rgba(0,230,118,0.12);color:var(--green);'
+            + 'border:1px solid rgba(0,230,118,0.25);border-radius:4px;padding:3px 8px;'
+            + 'font-size:0.65rem;font-weight:700;font-family:var(--mono);margin-right:6px;">'
+            + 'BUY: ' + _MSHORT[rd.worstM] + ' (' + rd.worstPct.toFixed(1) + '%)</span>';
+        var sellBadge = '<span style="display:inline-block;background:rgba(255,23,68,0.1);color:var(--red);'
+            + 'border:1px solid rgba(255,23,68,0.2);border-radius:4px;padding:3px 8px;'
+            + 'font-size:0.65rem;font-weight:700;font-family:var(--mono);">'
+            + 'SELL: ' + _MSHORT[rd.bestM] + ' ('
+            + (rd.bestPct > 0 ? '+' : '') + rd.bestPct.toFixed(1) + '%)</span>';
+        body.innerHTML = '<div style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">'
+            + buyBadge + sellBadge
+            + '<span style="font-size:0.6rem;color:var(--text-3);font-family:var(--mono);margin-left:4px;">'
+            + rd.mCount + ' months data · avg ' + fmt(rd.overall) + '</span>'
+            + '</div>'
+            + '<canvas id="ws7-ph-canvas" style="width:100%;display:block;margin-bottom:6px;"></canvas>'
+            + '<div id="ws7-ph-grid" style="display:grid;grid-template-columns:repeat(12,1fr);gap:3px;"></div>'
+            + '<div style="font-size:0.58rem;color:var(--text-3);font-family:var(--mono);margin-top:6px;">'
+            + 'Green bar = below avg (cheap month to buy) · Red = above avg (good month to sell) · Grey = no data</div>';
+        setTimeout(function() {
+            _drawPhChart('ws7-ph-canvas', rd, mAll);
+            _drawPhGrid('ws7-ph-grid', rd, mAll, fmt);
+        }, 50);
+    }
+
+    function _drawPhChart(id, rd, months) {
+        var canvas = document.getElementById(id);
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var dpr = window.devicePixelRatio || 1;
+        var W = Math.max(240, (canvas.parentElement ? canvas.parentElement.offsetWidth : 400) - 24);
+        var H = 90;
+        canvas.width  = W * dpr; canvas.height = H * dpr;
+        canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+        ctx.scale(dpr, dpr);
+        var padL = 4, padR = 4, padT = 14, padB = 22;
+        var chartW = W - padL - padR;
+        var chartH = H - padT - padB;
+        var bSlot = chartW / 12;
+        var bW = Math.max(4, Math.floor(bSlot * 0.72));
+        var zY = padT + chartH / 2;
+        // Zero line
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(padL, zY); ctx.lineTo(W - padR, zY); ctx.stroke();
+        var maxDev = 1;
+        months.forEach(function(m) {
+            if (rd.mAvgs[m]) { var d = Math.abs(rd.mAvgs[m] - rd.overall); if (d > maxDev) maxDev = d; }
+        });
+        months.forEach(function(m, i) {
+            var avg = rd.mAvgs[m];
+            var x = padL + i * bSlot + (bSlot - bW) / 2;
+            var isBest = m === rd.bestM, isWorst = m === rd.worstM;
+            if (!avg) {
+                ctx.fillStyle = 'rgba(255,255,255,0.04)';
+                ctx.fillRect(x, zY - 5, bW, 10);
+            } else {
+                var dev  = avg - rd.overall;
+                var devP = dev / rd.overall;
+                var bH   = Math.max(3, Math.abs(dev) / maxDev * (chartH / 2 - 2));
+                var y    = dev >= 0 ? zY - bH : zY;
+                var al   = 0.45 + 0.45 * Math.abs(dev) / maxDev;
+                ctx.fillStyle = dev < 0 ? 'rgba(0,230,118,' + al.toFixed(2) + ')' : 'rgba(255,23,68,' + al.toFixed(2) + ')';
+                ctx.fillRect(x, y, bW, bH);
+                if (Math.abs(devP) > 0.015) {
+                    ctx.fillStyle = dev < 0 ? 'rgba(0,230,118,0.9)' : 'rgba(255,59,48,0.9)';
+                    ctx.font = 'bold 7px system-ui,sans-serif'; ctx.textAlign = 'center';
+                    ctx.fillText((devP > 0 ? '+' : '') + (devP * 100).toFixed(0) + '%',
+                        x + bW / 2, dev >= 0 ? y - 3 : y + bH + 8);
+                }
+            }
+            ctx.fillStyle = (isBest || isWorst)
+                ? (isWorst ? 'rgba(0,230,118,0.9)' : 'rgba(255,59,48,0.9)')
+                : 'rgba(255,255,255,0.35)';
+            ctx.font = (isBest || isWorst ? 'bold ' : '') + '8px system-ui,sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(_MSHORT[m], x + bW / 2, H - padB + 12);
+        });
+    }
+
+    function _drawPhGrid(gridId, rd, months, fmt) {
+        var grid = document.getElementById(gridId);
+        if (!grid) return;
+        var overall = rd.overall;
+        grid.innerHTML = months.map(function(m) {
+            var avg = rd.mAvgs[m];
+            if (!avg) return '<div style="text-align:center;padding:4px 1px;background:var(--bg-2);border-radius:3px;opacity:0.3;">'
+                + '<div style="font-size:0.52rem;color:var(--text-2);font-family:var(--mono);">' + _MSHORT[m] + '</div>'
+                + '<div style="font-size:0.55rem;color:var(--text-3);">-</div></div>';
+            var dev = avg - overall;
+            var devPct = dev / overall * 100;
+            var isBest = m === rd.bestM, isWorst = m === rd.worstM;
+            var color  = dev < 0 ? 'var(--green)' : 'var(--red)';
+            var bg     = dev < 0 ? 'rgba(0,230,118,0.07)' : 'rgba(255,23,68,0.07)';
+            var border = isWorst ? '1px solid rgba(0,230,118,0.4)' : isBest ? '1px solid rgba(255,23,68,0.4)' : '1px solid var(--border)';
+            var priceK = avg >= 1000 ? (avg / 1000).toFixed(0) + 'k' : '$' + Math.round(avg);
+            return '<div style="text-align:center;padding:4px 1px;background:' + bg + ';border-radius:3px;border:' + border + ';">'
+                + '<div style="font-size:0.52rem;color:var(--text-2);font-family:var(--mono);font-weight:'
+                + (isBest || isWorst ? '700' : '400') + ';">' + _MSHORT[m] + '</div>'
+                + '<div style="font-size:0.6rem;font-family:var(--mono);color:' + color + ';font-weight:700;">'
+                + (devPct > 0 ? '+' : '') + devPct.toFixed(1) + '%</div>'
+                + '<div style="font-size:0.5rem;color:var(--text-3);font-family:var(--mono);">' + priceK + '</div>'
+                + '</div>';
+        }).join('');
+    }
+
     // ═══════════════════════════════════════════════════
     // MODULE LIFECYCLE
     // ═══════════════════════════════════════════════════
@@ -1108,7 +1350,8 @@
                 renderPriceGapTable();
                 renderRegionBars();
                 renderCurrencyImpact();
-            renderSeasonalPatterns();
+                renderSeasonalPatterns();
+                renderPriceHistory();
             }, 200);
         }
     }
@@ -1121,6 +1364,7 @@
             'ws7-region-bar-card',
             'ws7-currency-card',
             'ws7-seasonal-card',
+            'ws7-price-history-card',
             'ws7-styles'
         ];
         ids.forEach(function(id) {
@@ -1128,6 +1372,8 @@
             if (el) el.remove();
         });
         _moversData = null;
+        _priceHistData = null;
+        _priceHistKey = null;
     }
 
     // Register
