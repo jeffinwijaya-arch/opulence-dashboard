@@ -49,6 +49,8 @@ All high tasks completed 2026-04-10.
 - [x] Performance badges — ★ Top Supplier (5+ deals), ↓ Value Dealer (7%+ below market), ◈ Premium ($25k+ avg deal), ✓ Consistent, ⚡ Active (50+ WA listings); shown on Trusted Sellers card and inline on deal cards; competitive with Chrono24 dealer badge system (2026-04-11)
 
 ## COMPLETED (2026-04-11)
+- [x] Performance badges — Top Seller/Power Dealer/Best Value/VIP Supplier in ws6-crm.js; computePerformanceBadges() from DATA.sellers; inline on deal cards (2026-04-11)
+- [x] Price analyzer: rolex_dial_options.json expanded 268→404 refs (+136 new refs): Sub NoDate (124060/114060/14060M), Lady-DJ31 178xxx series (12 refs), DJ36 Oyster Rolesor (126201/203/204 + G/RBR), DJ41 126304 + G-suffix Oyster + Jubilee RBR, pre-2010 sports (16610/16613/16618/16710/16713/16718/16600 series), Sky-Dweller missing Rolesor (326930/932/933, 336930/932), GMT Sprite Rolesor (126718GRNR), DJ31/LDJ28 G-suffix sets, vintage DD36 18xxx, Rainbow Daytona (116595RBOW/126595RBOW) (2026-04-11)
 - [x] WS5: Batch ship tab detection bug fixed (2026-04-11)
 - [x] WS7: Seasonal Market Intelligence — section 6 (2026-04-11)
 - [x] WS7: Price Seasonality (Real Data) — section 7 (2026-04-11)
