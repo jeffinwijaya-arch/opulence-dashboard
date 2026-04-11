@@ -8310,9 +8310,9 @@ function updateInventorySummary() {
     el('im-capital').textContent = fmt(totalCost);
     el('im-revenue').textContent = fmt(totalRevenue);
     const profitEl = el('im-profit');
-    profitEl.textContent = (totalProfitAll>=0?'+':'') + fmt(totalProfitAll);
-    profitEl.style.color = totalProfitAll >= 0 ? 'var(--green)' : 'var(--red)';
-    profitEl.title = `All sold: ${fmt(totalProfitAll)} | Paid only: ${fmt(totalProfit)}`;
+    profitEl.textContent = (totalProfit>=0?'+':'') + fmt(totalProfit);
+    profitEl.style.color = totalProfit >= 0 ? 'var(--green)' : 'var(--red)';
+    profitEl.title = `Complete (paid): ${fmt(totalProfit)} | All sold: ${fmt(totalProfitAll)}`;
     // Current month profit (complete lifecycle: sold+shipped+paid)
     const now = new Date();
     const moPrefix = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
@@ -8322,9 +8322,9 @@ function updateInventorySummary() {
     const monthAll = d.filter(r => r.sold==='Yes' && (r.sale_date||'').startsWith(moPrefix) && p(r.cost_price)>0)
         .reduce((s,r) => s + (p(r.sold_price) - p(r.cost_price)), 0);
     const mpEl = el('im-month-profit');
-    mpEl.textContent = (monthAll>=0?'+':'') + fmt(monthAll);
-    mpEl.style.color = monthAll >= 0 ? 'var(--green)' : 'var(--red)';
-    mpEl.title = `All sold: ${fmt(monthAll)} | Paid only: ${fmt(monthProfit)}`;
+    mpEl.textContent = (monthProfit>=0?'+':'') + fmt(monthProfit);
+    mpEl.style.color = monthProfit >= 0 ? 'var(--green)' : 'var(--red)';
+    mpEl.title = `Complete (paid): ${fmt(monthProfit)} | All sold: ${fmt(monthAll)}`;
     el('im-month-label').textContent = moName + ' Profit';
 }
 
