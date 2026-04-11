@@ -1767,6 +1767,67 @@
         @media(max-width:390px) {
             #mobile-more-menu > div { grid-template-columns:repeat(3,1fr)!important; }
         }
+        /* 28. ws6-CRM: referral save button 28px → 44px touch target
+           renderReferralInput injects a <button style="height:28px"> which is
+           well below the 44px minimum. Override here + match input height. */
+        @media(max-width:768px) {
+            #ws6-save-referral { min-height:44px!important; padding:8px 16px!important; font-size:0.8rem!important; }
+            #ws6-referrer-value { min-height:44px!important; }
+        }
+
+        /* 29. ws6-CRM: buyer history stats grid 3-col → 2-col at mobile
+           renderBuyerHistoryPanel injects grid-template-columns:repeat(3,1fr)
+           inline; at 390px each cell is ~100px which cramps the metric. */
+        @media(max-width:768px) {
+            #ws6-buyer-history div[style*="repeat(3"] { grid-template-columns:1fr 1fr!important; }
+        }
+
+        /* 30. ws7-Analytics: price-gap + currency-impact tables → h-scroll
+           .ws7-gap-table has 5 cols; .ws7-fx-table has 7 cols — both overflow
+           at 390px. Wrap as scrollable block just like .tbl / .tbl-wrap. */
+        @media(max-width:768px) {
+            .ws7-gap-table,
+            .ws7-fx-table { display:block!important; overflow-x:auto!important; -webkit-overflow-scrolling:touch!important; width:100%!important; }
+        }
+
+        /* 31. ws7-Analytics: seasonal calendar 12-col → 6-col at 768px
+           The injected ws7-styles already does 600px→6 col, but that still
+           leaves 768-600 broken. Add a broader override; narrow to 4 at 390px. */
+        @media(max-width:768px) {
+            .ws7-seasonal-cal { grid-template-columns:repeat(6,1fr)!important; }
+        }
+        @media(max-width:390px) {
+            .ws7-seasonal-cal { grid-template-columns:repeat(4,1fr)!important; }
+        }
+
+        /* 32. ws7-Analytics: donut + legend stack vertically at 390px
+           At 390px the horizontal donut+legend layout leaves ~170px for the
+           legend which truncates brand names. Stack vertically instead. */
+        @media(max-width:390px) {
+            .ws7-donut-wrap { flex-direction:column!important; align-items:center!important; }
+            .ws7-donut { width:120px!important; height:120px!important; }
+            .ws7-legend { margin-left:0!important; margin-top:10px!important; }
+        }
+
+        /* 33. ws10-Automation: banner flex rows wrap + action buttons 44px
+           All four automation banners use display:flex;justify-content:space-between
+           without flex-wrap — text + buttons jam on narrow phones. */
+        @media(max-width:768px) {
+            #ws10-autoprice-banner > div,
+            #ws10-stale-banner > div,
+            #ws10-sold-detect-banner > div,
+            #ws10-phototag-banner > div { flex-wrap:wrap!important; row-gap:8px!important; }
+            #ws10-autoprice-btn, #ws10-stale-review-btn,
+            #ws10-clean-sold-btn, #ws10-autotag-btn { min-height:44px!important; flex:1!important; min-width:120px!important; }
+        }
+
+        /* 34. ws9-Reporting: tax preview + weekly P&L 4-col → 2-col at mobile
+           #ws9-tax-preview uses repeat(4,1fr) inline; at 390px each cell is
+           ~80px. Weekly P&L uses 1fr 1fr 1fr 1fr — same squeeze. */
+        @media(max-width:768px) {
+            #ws9-tax-preview { grid-template-columns:1fr 1fr!important; }
+            #ws9-weekly-pnl .card-body div[style*="1fr 1fr 1fr"] { grid-template-columns:1fr 1fr!important; }
+        }
     </style>
 </head>
 <body>
