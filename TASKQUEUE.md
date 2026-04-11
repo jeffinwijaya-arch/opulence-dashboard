@@ -36,12 +36,12 @@ All high tasks completed 2026-04-10.
 ### General
 - [ ] Test all 10 modules on mobile Safari — fix any layout/interaction bugs
 - [ ] Performance audit — measure module load time, optimize if >500ms
-- [ ] Add module error boundary — if one module crashes, others keep working
+- [x] Add module error boundary — error boundaries already in module-loader.js: try/catch in _initOne() + renderAll(), failed-module Map, auto-retry after 5s, admin footer indicator (2026-04-11)
 
 ## Priority: LOW
 - [ ] WS4: A/B caption testing — track view counts per caption style
 - [ ] WS7: Seasonal price patterns — monthly average prices per ref to identify buy/sell windows
-- [ ] WS7: Currency impact dashboard — how USD/HKD moves affect margins
+- [x] WS7: Currency impact dashboard — HKD/USD slider (6.50–8.50) shows per-ref arb profit & break-even FX rate, total pool delta vs baseline; added to ws7-analytics.js section 5 (2026-04-11)
 - [ ] WS9: Profit by channel analysis (WhatsApp groups, Instagram, direct)
 - [ ] WS10: Competition price tracking — monitor Chrono24 prices for key refs
 - [ ] Multi-channel listing sync — generate Chrono24-compatible XML feed from inventory (competitive with WatchTraderHub)
