@@ -8310,9 +8310,9 @@ function updateInventorySummary() {
     el('im-capital').textContent = fmt(totalCost);
     el('im-revenue').textContent = fmt(totalRevenue);
     const profitEl = el('im-profit');
-    profitEl.textContent = (totalProfit>=0?'+':'') + fmt(totalProfit);
-    profitEl.style.color = totalProfit >= 0 ? 'var(--green)' : 'var(--red)';
-    profitEl.title = `Complete (paid): ${fmt(totalProfit)} | All sold: ${fmt(totalProfitAll)}`;
+    profitEl.textContent = (totalProfitAll>=0?'+':'') + fmt(totalProfitAll);
+    profitEl.style.color = totalProfitAll >= 0 ? 'var(--green)' : 'var(--red)';
+    profitEl.title = `All sold: ${fmt(totalProfitAll)} | Paid only: ${fmt(totalProfit)}`;
     // Current month profit (complete lifecycle: sold+shipped+paid)
     const now = new Date();
     const moPrefix = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
@@ -8322,9 +8322,9 @@ function updateInventorySummary() {
     const monthAll = d.filter(r => r.sold==='Yes' && (r.sale_date||'').startsWith(moPrefix) && p(r.cost_price)>0)
         .reduce((s,r) => s + (p(r.sold_price) - p(r.cost_price)), 0);
     const mpEl = el('im-month-profit');
-    mpEl.textContent = (monthProfit>=0?'+':'') + fmt(monthProfit);
-    mpEl.style.color = monthProfit >= 0 ? 'var(--green)' : 'var(--red)';
-    mpEl.title = `Complete (paid): ${fmt(monthProfit)} | All sold: ${fmt(monthAll)}`;
+    mpEl.textContent = (monthAll>=0?'+':'') + fmt(monthAll);
+    mpEl.style.color = monthAll >= 0 ? 'var(--green)' : 'var(--red)';
+    mpEl.title = `All sold: ${fmt(monthAll)} | Paid only: ${fmt(monthProfit)}`;
     el('im-month-label').textContent = moName + ' Profit';
 }
 
@@ -17385,16 +17385,24 @@ async function loadClaudeSessions() {
             el.innerHTML = '<div class="mc-empty">No Claude Code sessions found<br/><span style="font-size:0.7rem;color:var(--text-3);">Start a new session to get started</span></div>'; 
             return; 
         }
+        // Sort: idle sessions first (resumable), active last (locked)
+        sessions.sort((a,b) => (a.status === 'active' ? 1 : 0) - (b.status === 'active' ? 1 : 0));
         el.innerHTML = sessions.map(s => {
             const ago = timeAgo(s.last_activity);
-            const statusColor = s.status === 'active' ? '#4ADE80' : '#6B7280';
+            const isActive = s.status === 'active';
+            const statusColor = isActive ? '#4ADE80' : '#6B7280';
+            const statusLabel = isActive ? '<span style="font-size:0.6rem;color:#4ADE80;margin-left:4px;">IN USE</span>' : '';
             const preview = (s.last_message_preview || '').substring(0,100) + ((s.last_message_preview||'').length > 100 ? '...' : '') || 'No recent activity';
-            return `<div class="claude-session-card" onclick="openClaudeSession('${s.session_id}', '${s.project_name}', '${s.project_path || ''}')">
+            const opacity = isActive ? 'opacity:0.5;' : '';
+            const click = isActive
+                ? `onclick="alert('This session is currently active in another terminal. Pick an idle session or create a new one.')"`
+                : `onclick="openClaudeSession('${s.session_id}', '${s.project_name}', '${s.project_path || ''}')"`;
+            return `<div class="claude-session-card" ${click} style="${opacity}">
                 <div class="claude-session-header">
-                    <div class="claude-session-id">${s.session_id_short}</div>
+                    <div class="claude-session-id">${s.session_id_short}${statusLabel}</div>
                     <span style="width:8px;height:8px;border-radius:50%;background:${statusColor};"></span>
                 </div>
-                <div class="claude-session-project">${s.project_name}</div>
+                <div class="claude-session-project">${s.project_name}${isActive ? ' (locked)' : ''}</div>
                 <div class="claude-session-meta">${s.message_count} messages • ${ago}</div>
                 <div class="claude-session-preview">${preview}</div>
             </div>`;
