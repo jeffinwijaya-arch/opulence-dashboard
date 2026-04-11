@@ -96,7 +96,7 @@
         card.style.cssText = 'margin-top:8px;margin-bottom:8px;';
         card.innerHTML = `
             <div class="card-head"><span>Weekly P&L</span><span style="font-size:0.6rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px;">Last 7 days</span></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;padding:10px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(100px, 1fr));gap:6px;padding:10px;">
                 <div style="background:var(--card-2);border-radius:8px;padding:10px;text-align:center;">
                     <div style="font-size:0.62rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.05em;">Realized P&L</div>
                     <div style="font-size:1.1rem;font-weight:700;color:${pnlColor};margin-top:4px;font-family:var(--mono);">${fmtSigned(realizedPnl)}</div>
@@ -368,9 +368,10 @@
         var chartData = data.slice(0, 15);
         var barH = 22;
         var gap = 6;
-        var labelW = 120;
+        var isMobile = window.innerWidth < 600;
+        var labelW = isMobile ? 80 : 120;
         var padL = labelW + 10;
-        var padR = 60;
+        var padR = isMobile ? 40 : 60;
         var padT = 10;
         var height = chartData.length * (barH + gap) + padT + 10;
 
@@ -380,7 +381,8 @@
         var dpr = window.devicePixelRatio || 1;
         canvas.width = width * dpr;
         canvas.height = height * dpr;
-        canvas.style.width = width + 'px';
+        canvas.style.width = '100%';
+        canvas.style.maxWidth = '100%';
         canvas.style.height = height + 'px';
         var ctx = canvas.getContext('2d');
         ctx.scale(dpr, dpr);
@@ -731,7 +733,7 @@
             <div class="card" style="margin-top:8px;">
                 <div class="card-head"><span>Monthly Profit Trend</span></div>
                 <div class="card-body" style="padding:12px;">
-                    <canvas id="ws9-monthly-chart" width="600" height="220" style="width:100%;max-height:220px;"></canvas>
+                    <canvas id="ws9-monthly-chart" style="width:100%;max-width:100%;height:auto;"></canvas>
                 </div>
             </div>
         `;
@@ -748,11 +750,14 @@
         const ctx = canvas.getContext('2d');
         const dpr = window.devicePixelRatio || 1;
         const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
+        const W = rect.width || canvas.parentElement.offsetWidth || 400;
+        const H = 220;
+        canvas.width = W * dpr;
+        canvas.height = H * dpr;
+        canvas.style.width = '100%';
+        canvas.style.maxWidth = '100%';
+        canvas.style.height = H + 'px';
         ctx.scale(dpr, dpr);
-        const W = rect.width;
-        const H = rect.height;
 
         // Reverse so oldest is on left
         const data = months.slice().reverse();
@@ -762,7 +767,7 @@
         const padding = { top: 20, bottom: 40, left: 10, right: 10 };
         const chartW = W - padding.left - padding.right;
         const chartH = H - padding.top - padding.bottom;
-        const barW = Math.max(chartW / data.length * 0.7, 12);
+        const barW = Math.max(chartW / data.length * 0.65, 8);
         const gap = (chartW - barW * data.length) / (data.length + 1);
         const zeroY = padding.top + chartH / 2;
 

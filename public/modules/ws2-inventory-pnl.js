@@ -51,7 +51,7 @@
             }
             .ws2-heatmap-grid {
                 display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(28px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
                 gap: 6px;
             }
             .ws2-heatmap-cell {
@@ -59,7 +59,8 @@
                 cursor: pointer;
                 transition: transform 0.1s, box-shadow 0.1s;
                 position: relative;
-                min-height: 28px;
+                min-height: 36px;
+                aspect-ratio: 1;
             }
             .ws2-heatmap-cell:hover {
                 transform: scale(1.15);
@@ -198,6 +199,7 @@
             }
             .ws2-pnl-trend-canvas {
                 width: 100%;
+                max-width: 100%;
                 height: 48px;
                 display: block;
             }
@@ -352,7 +354,7 @@
             const marginStr = pos.margin >= 0 ? '+' + pos.margin.toFixed(1) + '%' : pos.margin.toFixed(1) + '%';
 
             return `<div class="ws2-heatmap-cell"
-                style="background:${color};width:${size}px;height:${size}px;"
+                style="background:${color};"
                 data-ws2-tip="${desc}\nCost: ${fmtPrice(pos.cost)}\nMarket: ${fmtPrice(pos.market)}\nMargin: ${marginStr}"
                 ${ref ? `onclick="if(typeof lookupRef==='function')lookupRef('${ref}')"` : ''}
             ></div>`;

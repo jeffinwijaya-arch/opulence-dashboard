@@ -217,6 +217,11 @@
                 .ws7-donut-wrap {
                     flex-direction: column;
                     align-items: center;
+                    gap: 12px;
+                }
+                .ws7-legend {
+                    width: 100%;
+                    min-width: unset;
                 }
             }
             .ws7-donut {
@@ -225,6 +230,14 @@
                 border-radius: 50%;
                 position: relative;
                 flex-shrink: 0;
+                max-width: 200px;
+                max-height: 200px;
+            }
+            @media (max-width: 600px) {
+                .ws7-donut {
+                    width: 140px;
+                    height: 140px;
+                }
             }
             .ws7-donut-tooltip {
                 position: fixed;
@@ -781,7 +794,7 @@
         card.innerHTML = '<div class="card-head"><span>HK vs US Price Gap</span>'
             + '<span style="font-size:0.6rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px;">'
             + 'Top ' + top15.length + ' refs with both regions</span></div>'
-            + '<div style="overflow-x:auto;padding:4px 0;">'
+            + '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding:4px 0;">'
             + '<table class="ws7-gap-table">'
             + '<thead><tr>'
             + '<th>Ref / Model</th>'
@@ -1021,7 +1034,7 @@
             + '<span>8.50 (USD strong \u2191)</span>'
             + '</div>'
             + '<div class="ws7-fx-summary" id="ws7-fx-summary"></div>'
-            + '<div style="overflow-x:auto;padding:4px 0;">'
+            + '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding:4px 0;">'
             + '<table class="ws7-fx-table">'
             + '<thead><tr>'
             + '<th>Ref</th>'
@@ -1234,7 +1247,7 @@
         var W = Math.max(240, (canvas.parentElement ? canvas.parentElement.offsetWidth : 400) - 24);
         var H = 90;
         canvas.width  = W * dpr; canvas.height = H * dpr;
-        canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+        canvas.style.width = '100%'; canvas.style.maxWidth = '100%'; canvas.style.height = H + 'px';
         ctx.scale(dpr, dpr);
         var padL = 4, padR = 4, padT = 14, padB = 22;
         var chartW = W - padL - padR;

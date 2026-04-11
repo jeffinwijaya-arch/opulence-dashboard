@@ -815,6 +815,10 @@
         .empty-state .es-desc { font-size:0.72rem; color:var(--text-2); max-width:280px; line-height:1.5; }
         .empty-state .btn { margin-top:14px; }
 
+        /* ── TEXT OVERFLOW GUARDS ── */
+        .text-clamp { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .text-wrap-break { word-break:break-word; overflow-wrap:break-word; }
+
         /* ── PULL TO REFRESH ── */
         .ptr-indicator {
             position:fixed; top:0; left:50%; transform:translateX(-50%) translateY(-50px);
@@ -4660,9 +4664,9 @@ const condTag = c => c==='BNIB'?'tag-green':c==='Like New'?'tag-blue':'tag-gold'
 const regionLabel = r => r==='HK'?'HK':r==='EU'?'EU':'US';
 
 // ── Click-to-copy prices ──
-function copyVal(el,e){if(e)e.stopPropagation();const t=el.textContent.trim();navigator.clipboard.writeText(t).then(()=>{el.classList.add('copied');showToast('Copied: '+t);setTimeout(()=>el.classList.remove('copied'),600);}).catch(()=>{});}
+function copyVal(el,e){if(e)e.stopPropagation();const t=el.textContent.trim();navigator.clipboard.writeText(t).then(()=>{el.classList.add('copied');showToast('Copied: '+t);setTimeout(()=>el.classList.remove('copied'),600);}).catch(()=>{showToast('Copy failed - select text manually','error');});}
 // Make price cells copyable with visual feedback
-document.addEventListener('click',function(e){const td=e.target.closest('.tbl td.right,.tbl td.green,.tbl td.red');if(td&&td.textContent.includes('$')){e.stopPropagation();const v=td.textContent.trim();navigator.clipboard.writeText(v).then(()=>{td.style.transition='background 0.15s';td.style.background='var(--accent-dim)';showToast('Copied: '+v);setTimeout(()=>td.style.background='',600);}).catch(()=>{});}});
+document.addEventListener('click',function(e){const td=e.target.closest('.tbl td.right,.tbl td.green,.tbl td.red');if(td&&td.textContent.includes('$')){e.stopPropagation();const v=td.textContent.trim();navigator.clipboard.writeText(v).then(()=>{td.style.transition='background 0.15s';td.style.background='var(--accent-dim)';showToast('Copied: '+v);setTimeout(()=>td.style.background='',600);}).catch(()=>{showToast('Copy failed','error');});}});
 
 // ── Notifications ──
 const _notifs = [];
@@ -4912,7 +4916,7 @@ function flashChanges(){
 }
 async function refreshData() {
     snapshotMetrics();
-    try { await fetch('/api/refresh',{method:'POST'}); document.querySelector('.main').classList.add('refreshing'); if(typeof showToast==='function') showToast('Refreshing data…'); setTimeout(()=>{loadData();document.querySelector('.main').classList.remove('refreshing'); if(typeof showToast==='function') showToast('Data synced ✓'); setTimeout(flashChanges,500);},3000); } catch(e){}
+    try { await fetch('/api/refresh',{method:'POST'}); document.querySelector('.main').classList.add('refreshing'); if(typeof showToast==='function') showToast('Refreshing data…'); setTimeout(()=>{loadData();document.querySelector('.main').classList.remove('refreshing'); if(typeof showToast==='function') showToast('Data synced ✓'); setTimeout(flashChanges,500);},3000); } catch(e){console.error('Refresh failed:', e); if(typeof showToast==='function') showToast('Refresh failed','error');}
 }
 
 // ── RENDER ──
@@ -5011,13 +5015,24 @@ function renderDashboard() {
 
     const listingsNum = s.total_listings||0;
     const refsNum = s.unique_refs||Object.keys(DATA.refs).length||0;
+    // Actionable metrics: Capital, Ship, Deals, P&L
+    const _metCapital = DATA.portfolio?.total_invested || 0;
+    const _metPositions = DATA.portfolio?.total_pieces || 0;
     $('#metrics-grid').innerHTML = `
-        <div class="metric" style="background:linear-gradient(135deg,var(--bg-2) 0%,var(--bg-3) 100%);"><div class="label">Listings</div><div class="val counter-val" data-target="${listingsNum}" data-format="num">${listingsNum.toLocaleString()}</div><div class="sub">${Object.entries(s.brands||{}).map(([k,v])=>k+':'+v).join(' · ')||'—'}</div><div class="sparkline-wrap"><canvas class="metric-spark" data-key="listings"></canvas></div></div>
-        <div class="metric" style="background:linear-gradient(135deg,var(--bg-2) 0%,rgba(96,165,250,0.06) 100%);border-color:rgba(96,165,250,0.12);"><div class="label">References</div><div class="val counter-val" style="color:rgb(96,165,250)" data-target="${refsNum}" data-format="num">${refsNum}</div><div class="sub">${Object.entries(s.regions||{}).map(([k,v])=>k+':'+v).join(' · ')||'—'}</div><div class="sparkline-wrap"><canvas class="metric-spark" data-key="refs"></canvas></div></div>
-        <div class="metric" style="background:linear-gradient(135deg,var(--bg-2) 0%,rgba(0,230,118,0.05) 100%);border-color:rgba(0,230,118,0.12);"><div class="label">Deals</div><div class="val counter-val" style="color:var(--green)" data-target="${nDeals}" data-format="num">${nDeals}</div><div class="sub">below market</div><div class="sparkline-wrap"><canvas class="metric-spark" data-key="deals"></canvas></div></div>
-        <div class="metric" style="background:linear-gradient(135deg,var(--bg-2) 0%,rgba(212,175,55,0.06) 100%);border-color:rgba(212,175,55,0.12);"><div class="label">Arb Potential</div><div class="val counter-val" style="color:var(--accent)" data-target="${totalProfit}" data-format="dollar">${fmt(totalProfit)}</div><div class="sub">${nArb} opportunities</div><div class="sparkline-wrap"><canvas class="metric-spark" data-key="arb"></canvas></div></div>
-        <div class="metric" id="dash-pnl-metric" style="display:none;"><div class="label">Realized P&L</div><div class="val" id="dash-pnl-val">--</div><div class="sub" id="dash-pnl-sub"></div></div>
+        <div class="metric" style="background:linear-gradient(135deg,var(--bg-2) 0%,rgba(212,175,55,0.06) 100%);border-color:rgba(212,175,55,0.12);"><div class="label">Capital Deployed</div><div class="val counter-val" style="color:var(--accent)" data-target="${_metCapital}" data-format="dollar">${fmt(_metCapital)}</div><div class="sub">${_metPositions} unsold positions</div></div>
+        <div class="metric" id="dash-ship-metric" style="background:linear-gradient(135deg,var(--bg-2) 0%,rgba(255,23,68,0.06) 100%);border-color:rgba(255,23,68,0.12);"><div class="label">Watches to Ship</div><div class="val" id="dash-ship-val" style="color:var(--red);font-size:1.8rem;">--</div><div class="sub" id="dash-ship-sub">loading...</div></div>
+        <div class="metric" style="background:linear-gradient(135deg,var(--bg-2) 0%,rgba(0,230,118,0.05) 100%);border-color:rgba(0,230,118,0.12);"><div class="label">Active Deals</div><div class="val counter-val" style="color:var(--green)" data-target="${nDeals}" data-format="num">${nDeals}</div><div class="sub">below market</div><div class="sparkline-wrap"><canvas class="metric-spark" data-key="deals"></canvas></div></div>
+        <div class="metric" id="dash-pnl-metric" style="display:none;"><div class="label">Total P&L</div><div class="val" id="dash-pnl-val">--</div><div class="sub" id="dash-pnl-sub"></div></div>
     `;
+    // Populate watches-to-ship count async
+    fetchWithTimeout('/api/inventory/all', null, 15000).then(r=>r.ok?r.json():[]).then(items=>{
+        const toShip = (Array.isArray(items)?items:[]).filter(i=>i.sold&&!i.shipped);
+        const shipEl = document.getElementById('dash-ship-val');
+        const shipSub = document.getElementById('dash-ship-sub');
+        if(shipEl) shipEl.textContent = toShip.length;
+        if(shipSub) shipSub.textContent = toShip.length ? 'sold, awaiting shipment' : 'all shipped';
+        if(shipEl && !toShip.length) shipEl.style.color = 'var(--green)';
+    }).catch(()=>{});
     // Market heat gauge
     const heatScore = Math.min(100, Math.round(
         (Math.min(nDeals,50)/50*30) + (Math.min(nArb,30)/30*30) + (Math.min(listingsNum,30000)/30000*20) + (Math.min(refsNum,500)/500*20)
@@ -6517,6 +6532,8 @@ function applyDealsFilter() {
     const tierLabel = {A:'A',B:'B',C:'C'};
     const tierBorder = {A:'var(--green)',B:'var(--accent)',C:'var(--border)'};
 
+    // Sort deals by profit potential (highest dollar profit first)
+    f.sort((a,b) => (b.est_profit||0) - (a.est_profit||0));
     _dealsFiltered = f; // store for detail view
     $('#deals-cards').innerHTML = f.slice(0,30).map((d,idx) => {
         const disc = d.discount_pct||d.gap_pct||0;
@@ -7079,8 +7096,9 @@ async function doLookup() {
                 <div id="lookup-histogram" style="margin:10px 0;height:48px;position:relative;"></div>
                 <div style="display:flex;align-items:center;gap:6px;margin:6px 0;"><span style="font-size:0.72rem;font-weight:700;color:var(--accent);font-family:var(--mono);background:rgba(212,175,55,0.08);padding:3px 10px;border-radius:4px;border:1px solid rgba(212,175,55,0.15);">${count} listings</span></div>
                 <div class="metrics" style="margin-bottom:10px;">
-                    <div class="metric" style="background:linear-gradient(135deg,var(--bg-2) 0%,rgba(0,230,118,0.06) 100%);border-color:rgba(0,230,118,0.15);"><div class="label">Low</div><div class="val green" style="font-size:1.5rem;">${fmt(low)}</div>${b25>0&&low>0?`<div class="sub" style="color:var(--green);font-weight:600;">${(((low-b25)/b25)*100).toFixed(1)}% vs avg</div>`:''}</div>
-                    <div class="metric" style="border-color:rgba(212,175,55,0.2);"><div class="label">Avg B25</div><div class="val" style="color:var(--accent);font-size:1.5rem;">${fmt(b25)}</div><div class="sub">market midpoint</div></div>
+                    <div class="metric" style="background:linear-gradient(135deg,var(--bg-2) 0%,${usB25 ? 'rgba(0,230,118,0.10)' : 'rgba(212,175,55,0.08)'} 100%);border-color:${usB25 ? 'rgba(0,230,118,0.25)' : 'rgba(212,175,55,0.2)'};grid-column:1/-1;"><div class="label" style="font-size:0.78rem;font-weight:700;">${usB25 ? 'You can sell for (US B25)' : 'Market Price (B25)'}</div><div class="val" style="color:${usB25 ? 'var(--green)' : 'var(--accent)'};font-size:2.5rem;letter-spacing:-1px;">${fmt(usB25 || b25)}</div><div class="sub" style="font-size:0.72rem;">${usB25 ? 'US market sell price' : 'avg B25 midpoint'}</div></div>
+                    <div class="metric" style="background:linear-gradient(135deg,var(--bg-2) 0%,rgba(0,230,118,0.06) 100%);border-color:rgba(0,230,118,0.15);"><div class="label">Low</div><div class="val green" style="font-size:1.3rem;">${fmt(low)}</div>${b25>0&&low>0?`<div class="sub" style="color:var(--green);font-weight:600;">${(((low-b25)/b25)*100).toFixed(1)}% vs avg</div>`:''}</div>
+                    <div class="metric" style="border-color:rgba(212,175,55,0.2);"><div class="label">Avg B25</div><div class="val" style="color:var(--accent);font-size:1.3rem;">${fmt(b25)}</div><div class="sub">market midpoint</div></div>
                     <div class="metric" style="background:linear-gradient(135deg,var(--bg-2) 0%,rgba(255,23,68,0.04) 100%);border-color:rgba(255,23,68,0.12);"><div class="label">High</div><div class="val" style="font-size:1.5rem;">${fmt(high)}</div>${b25>0&&high>0?`<div class="sub" style="color:var(--red);font-weight:600;">+${(((high-b25)/b25)*100).toFixed(1)}% vs avg</div>`:''}</div>
                     <div class="metric"><div class="label">Spread</div><div class="val" style="font-size:1.2rem;">${b25>0?(()=>{const s=(high-low)/b25*100;return s>999?'>999%':pct(s);})():'—'}</div>${b25>0?`<div class="sub">${fmt(high-low)} range</div>`:''}</div>
                 </div>
@@ -7872,6 +7890,7 @@ function renderBrowse(append) {
     if (append) tbody.innerHTML+=html; else tbody.innerHTML=html;
     browseOffset+=BROWSE_PAGE;
     $('#browse-more').style.display = browseOffset>=f.length?'none':'';
+    const bsub = $('#browse-subtitle'); if (bsub) { const total = allListings.length; bsub.textContent = (f.length < total ? f.length.toLocaleString() + ' of ' : '') + total.toLocaleString() + ' listings in database'; }
 }
 function getFilteredBrowse() {
     const q=($('#browse-search')?.value||'').toLowerCase(),region=$('#browse-region')?.value||'',cond=$('#browse-cond')?.value||'',sort=$('#browse-sort')?.value||'price-asc';
@@ -8836,6 +8855,7 @@ function fxSwap() {
 async function fxLoadRates() {
     try {
         const r = await fetch('/api/fx/rates');
+        if (!r.ok) throw new Error('FX rates HTTP ' + r.status);
         const d = await r.json();
         if (!d.rates) return;
         const el = document.getElementById('fx-quick-rates');
@@ -8976,7 +8996,7 @@ if (!_userRole.allowedPages) {
     setInterval(renderTicker, 3600000);
     // portfolio_insights deferred — loaded on first visit to Portfolio page (see showPage)
     // Preload payments badge count so it shows without visiting the page
-    fetch('/api/payments/collections-dashboard').then(r=>r.ok?r.json():null).then(d=>{if(!d)return;const n=(d.overdue_receivables?.length||0)+(d.overdue_payables?.length||0);const el=document.getElementById('payments-count');if(el)el.textContent=n;}).catch(e=>{console.error('Payments badge preload failed:', e);});
+    fetch('/api/payments/collections-dashboard').then(r=>r.ok?r.json():null).then(d=>{if(!d)return;const n=(d.overdue_receivables?.length||0)+(d.overdue_payables?.length||0);const el=document.getElementById('payments-count');if(el){el.textContent=n;if(n>0){el.style.background='rgba(255,23,68,0.15)';el.style.color='var(--red)';el.style.borderColor='rgba(255,23,68,0.3)';}}}).catch(e=>{console.error('Payments badge preload failed:', e);});
 }
 // Restore page from URL AFTER init (only if allowed)
 {
@@ -9396,7 +9416,7 @@ function renderInventoryTable(rows) {
         if (r.sold==='Yes'&&r.paid_after_sold!=='Yes') html += `<a onclick="quickAction(${r.row},'paid')" style="cursor:pointer;color:var(--green);margin-right:6px;padding:4px 8px;border:1px solid var(--green);border-radius:4px;font-size:0.7rem;">Paid</a>`;
         html += `<a onclick="editWatch(${r.row})" style="cursor:pointer;color:var(--text-2);margin-right:6px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:0.7rem;">Edit</a>`;
         html += `<a onclick="processOCR(${r.row})" style="cursor:pointer;color:#9b59b6;margin-right:6px;padding:4px 8px;border:1px solid #9b59b6;border-radius:4px;font-size:0.7rem;">Vision</a>`;
-        html += `<a onclick="viewWatchPhotos('${r.description}', ${r.row})" style="cursor:pointer;color:#06b6d4;margin-right:6px;padding:4px 8px;border:1px solid #06b6d4;border-radius:4px;font-size:0.7rem;">Photos</a>`;
+        html += `<a onclick="viewWatchPhotos('${(r.description||'').replace(/'/g,"\\'")}', ${r.row})" style="cursor:pointer;color:#06b6d4;margin-right:6px;padding:4px 8px;border:1px solid #06b6d4;border-radius:4px;font-size:0.7rem;">Photos</a>`;
         html += `<a onclick="documentSingleWatch(${r.row})" style="cursor:pointer;color:#2563eb;padding:4px 8px;border:1px solid #2563eb;border-radius:4px;font-size:0.7rem;margin-right:6px;">Doc</a>`;
         html += `<a onclick="shareWatchCard(${r.row},'${(r.description||'').replace(/'/g,"\\'")}')" style="cursor:pointer;color:#a855f7;padding:4px 8px;border:1px solid #a855f7;border-radius:4px;font-size:0.7rem;margin-right:6px;">Share</a>`;
         html += `<a onclick="deleteWatchDirect(${r.row},'${(r.description||'').replace(/'/g,"\\'")}')" style="cursor:pointer;color:var(--red);padding:4px 8px;border:1px solid var(--red);border-radius:4px;font-size:0.7rem;">Del</a>`;
@@ -9432,7 +9452,7 @@ function renderInventoryTable(rows) {
                 ${r.sold==='Yes'&&r.paid_after_sold!=='Yes'?`<a onclick="quickAction(${r.row},'paid')" style="cursor:pointer;color:var(--green);margin-right:4px;">Paid</a>`:''}
                 <a onclick="editWatch(${r.row})" style="cursor:pointer;color:var(--text-2);margin-right:4px;">Edit</a>
                 <a onclick="processOCR(${r.row})" style="cursor:pointer;color:#9b59b6;margin-right:4px;">Vision</a>
-                <a onclick="viewWatchPhotos('${r.description}', ${r.row})" style="cursor:pointer;color:#06b6d4;margin-right:4px;">Photos</a>
+                <a onclick="viewWatchPhotos('${(r.description||'').replace(/'/g,"\\'")}', ${r.row})" style="cursor:pointer;color:#06b6d4;margin-right:4px;">Photos</a>
                 <a onclick="documentSingleWatch(${r.row})" style="cursor:pointer;color:#2563eb;margin-right:4px;">Doc</a>
                 <a onclick="deleteWatchDirect(${r.row},'${(r.description||'').replace(/'/g,"\\'")}')" style="cursor:pointer;color:var(--red);">Del</a>
             </td>
@@ -9535,7 +9555,7 @@ function showPostModal(row) {
             } else {
                 sugEl.textContent = 'No market data available for ' + refMatch[1];
             }
-        }).catch(() => { sugEl.style.display = 'none'; });
+        }).catch(e => { sugEl.style.display = 'none'; console.error('Suggestion fetch failed:', e); });
     }
 }
 function closePostModal() { document.getElementById('post-modal').style.display = 'none'; }
@@ -10578,7 +10598,7 @@ async function repostWatch(row) {
     if (!watch) return;
     const desc = watch.description || `Row ${row}`;
     if (!confirm(`Repost "${desc}" to My Postings with existing photos and updated caption?`)) return;
-    
+    const _rpEl = event?.target?.closest('a,button'); if (_rpEl) { _rpEl.style.pointerEvents='none'; _rpEl.style.opacity='0.5'; }
     try {
         showToast('Reposting to My Postings...', 'info');
         const r = await fetch('/api/repost-watch', {
@@ -10596,7 +10616,7 @@ async function repostWatch(row) {
         }
     } catch(e) {
         showToast('Error: ' + e.message, 'error');
-    }
+    } finally { if (_rpEl) { _rpEl.style.pointerEvents=''; _rpEl.style.opacity=''; } }
 }
 function closeSellModal() { document.getElementById('sell-modal').style.display = 'none'; }
 async function submitSale() {
@@ -10763,12 +10783,14 @@ async function submitShip() {
 
 async function deleteWatchDirect(row, desc) {
     if (!(await styledConfirm("DELETE \"" + desc + "\"? This cannot be undone.", {style:"danger",confirmText:"Delete",cancelText:"Cancel"}))) return;
+    const _delEl = event && event.target ? event.target.closest('a,button') : null; if (_delEl) { _delEl.style.pointerEvents='none'; _delEl.style.opacity='0.5'; }
     try {
         const r = await fetch(`/api/inventory/${row}/delete`, {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
         const d = await r.json();
         if (d.ok) { if(typeof showToast==="function")showToast("Watch deleted","success"); loadInventoryPage(); }
         else { alert('Error: '+(d.error||'Unknown')); }
     } catch(e) { alert('Error: '+e.message); }
+    finally { if (_delEl) { _delEl.style.pointerEvents=''; _delEl.style.opacity=''; } }
 }
 
 async function deleteWatch() {
@@ -11072,7 +11094,10 @@ async function loadShippingPackages() {
         const r = await fetchWithTimeout('/api/shipping/packages', null, 15000);
         if (!r.ok) return;
         const packages = await r.json();
-        if (!packages.length) return;
+        if (!packages.length) {
+            if (container) container.innerHTML = emptyState('truck','No shipping packages','Packages will appear here when watches are marked for shipping.');
+            return;
+        }
 
         // Find or create container
         let container = document.getElementById('shipping-packages');
@@ -12623,9 +12648,14 @@ async function loadPayments() {
             document.getElementById('pay-net').textContent = fmt(data.cash_flow?.net_position || 0);
             document.getElementById('pay-overdue').textContent = fmt(data.cash_flow?.overdue_receivables || 0);
             
-            // Update payments badge
+            // Update payments badge (red when overdue)
             const overdueCount = (data.overdue_receivables?.length || 0) + (data.overdue_payables?.length || 0);
-            document.getElementById('payments-count').textContent = overdueCount;
+            const _payBadge = document.getElementById('payments-count');
+            if (_payBadge) {
+                _payBadge.textContent = overdueCount;
+                if (overdueCount > 0) { _payBadge.style.background='rgba(255,23,68,0.15)'; _payBadge.style.color='var(--red)'; _payBadge.style.borderColor='rgba(255,23,68,0.3)'; }
+                else { _payBadge.style.background=''; _payBadge.style.color=''; _payBadge.style.borderColor=''; }
+            }
             
             // Render payment tables
             renderPaymentTables(data);
@@ -13835,6 +13865,7 @@ async function loadPayments() {
     async function loadPostingsPage() {
         try {
             const r = await fetch('/api/my-postings');
+            if (!r.ok) throw new Error('HTTP ' + r.status);
             const d = await r.json();
             if (!d.ok) throw new Error(d.error || 'Failed to load');
             _postingsData = d.postings || [];
@@ -15365,7 +15396,8 @@ async function loadPayments() {
             const changesHtml = perf.price_changes
                 ? `<span style="font-family:var(--mono);font-size:0.72rem;color:var(--orange);">${perf.price_changes}</span>`
                 : '<span style="color:var(--text-2);">0</span>';
-            return `<tr>
+            const _postStale = perf.days_listed != null && perf.days_listed > 7;
+            return `<tr style="${_postStale ? 'background:rgba(255,152,0,0.06);' : ''}">
                 <td style="vertical-align:middle;">${photoHtml}</td>
                 <td style="font-weight:600;white-space:nowrap;">${p.ref || '—'}</td>
                 <td style="max-width:400px;font-size:0.72rem;white-space:pre-line;line-height:1.35;word-break:break-word;" title="${desc}">${desc}</td>
@@ -15416,14 +15448,15 @@ async function loadPayments() {
                 const statusBadge = isDraft ? '<span style="background:var(--yellow,#ffd600);color:#000;font-size:0.6rem;padding:1px 6px;border-radius:4px;font-weight:600;">DRAFT</span> ' : '';
                 const perf = _postingPerformanceData[String(mid)] || {};
                 const daysText = perf.days_listed != null ? ' \u00b7 '+perf.days_listed+'d listed' : '';
-                html += `<div class="posting-card" style="${isDraft ? 'border-color:var(--yellow,#ffd600);' : ''}">
+                const _mcStale = perf.days_listed != null && perf.days_listed > 7;
+                html += `<div class="posting-card" style="${isDraft ? 'border-color:var(--yellow,#ffd600);' : (_mcStale ? 'background:rgba(255,152,0,0.08);border-color:var(--orange);' : '')}">
                     ${imgTag}
                     <div class="posting-card-body">
                         <div class="posting-card-ref">${statusBadge}${p.ref || '\u2014'}</div>
                         <div class="posting-card-desc">${desc}</div>
                         <div class="posting-card-meta">
                             <span class="posting-card-price">${price}</span>
-                            <span class="posting-card-date">${p.time_ago || rawDate}${daysText}</span>
+                            <span class="posting-card-date">${p.time_ago || rawDate}${perf.days_listed != null ? ` <span style="font-weight:700;color:${perf.days_listed > 7 ? 'var(--orange)' : 'var(--green)'};padding:1px 6px;border-radius:3px;background:${perf.days_listed > 7 ? 'rgba(255,152,0,0.12)' : 'rgba(0,230,118,0.08)'};font-size:0.68rem;">${perf.days_listed}d</span>` : ''}</span>
                         </div>
                         <div class="posting-card-actions">
                             ${isDraft
@@ -17223,15 +17256,29 @@ function renderJamFeed(type) {
                     }
                 }
             }
-            // Sort groups by date
-            _visualGroups.sort((a, b) => { if (a.date === 'Unscheduled') return -1; if (b.date === 'Unscheduled') return 1; return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+            // Sort groups by urgency: Overdue > Today > Tomorrow > Later
+            _visualGroups.sort((a, b) => {
+                const _urgency = (d) => {
+                    if (d === 'Unscheduled') return 0;
+                    if (d < today) return 1;
+                    if (d === today) return 2;
+                    if (d === tomorrow) return 3;
+                    return 4;
+                };
+                const ua = _urgency(a.date), ub = _urgency(b.date);
+                if (ua !== ub) return ua - ub;
+                if (a.date === 'Unscheduled' && b.date === 'Unscheduled') return 0;
+                return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
+            });
             let lastDate = '';
             let _logisticsPkgSeq = 0;
             for (const grp of _visualGroups) {
                 const d = grp.date;
                 if (d !== lastDate) {
-                    const clr = (d === today || d === 'Unscheduled') ? 'var(--red)' : 'var(--orange)';
-                    html += _dateHeader(d === 'Unscheduled' ? 'Unscheduled' : d, clr);
+                    const _isOverdue = d !== 'Unscheduled' && d < today;
+                    const clr = _isOverdue ? 'var(--red)' : (d === today || d === 'Unscheduled') ? 'var(--red)' : d === tomorrow ? 'var(--orange)' : 'var(--text-2)';
+                    const _overdueLabel = _isOverdue ? ' -- OVERDUE' : '';
+                    html += _dateHeader(d === 'Unscheduled' ? 'Unscheduled' : d, clr).replace('</span></div>', _overdueLabel + '</span></div>');
                     lastDate = d;
                 }
                 _logisticsPkgSeq++;
