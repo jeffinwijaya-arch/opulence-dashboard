@@ -1,0 +1,114 @@
+name: Price Analyzer Agent v3 — scheduled run
+
+# ──────────────────────────────────────────────────────────────
+# INSTALLATION
+# ──────────────────────────────────────────────────────────────
+# Copy this file to `.github/workflows/price-analyzer-agent.yml`
+# via the GitHub web UI (the PAT Claude uses to push does not
+# carry `workflow` scope, so it cannot create files under
+# .github/workflows/ directly — that's why this lives here as
+# an `.example`).
+#
+#   1. github.com/<owner>/<repo>/new/main/.github/workflows
+#   2. Name the file price-analyzer-agent.yml
+#   3. Paste the contents of this file
+#   4. Commit
+#
+# Then add the following repository secret under Settings → Secrets:
+#   ANTHROPIC_API_KEY   — API key used by the Claude Code action
+#
+# ──────────────────────────────────────────────────────────────
+# Every 6 hours, the Price Analyzer Agent v3 wakes up, reads
+# prompts/price-analyzer-agent.md, and runs one full improvement
+# cycle against the repo on a dedicated working branch. It is
+# intentionally locked to a single mission: relentlessly improving
+# the price analyzer pipeline (capture → decipher → classify →
+# dictionary expansion → validation).
+#
+# The agent must:
+#   - never touch unrelated modules,
+#   - commit incremental improvements with clear reasoning,
+#   - open/update a PR summarizing the cycle's deltas.
+#
+# Also runnable on demand via the "Run workflow" button on the
+# Actions tab, with an optional `focus_area` input to steer a
+# single iteration (e.g. "dial extraction", "phone normalization",
+# "rolex_dial_options.json expansion").
+
+on:
+  schedule:
+    # Every 6 hours at :15 past the hour
+    - cron: '15 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      focus_area:
+        description: 'Optional focus area for this iteration'
+        required: false
+        default: ''
+      max_turns:
+        description: 'Max agent turns for this run'
+        required: false
+        default: '40'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: price-analyzer-agent
+  cancel-in-progress: false
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name  "price-analyzer-agent[bot]"
+          git config user.email "price-analyzer-agent@users.noreply.github.com"
+
+      - name: Run Claude Code with Price Analyzer Agent v3 prompt
+        uses: anthropics/claude-code-action@v1
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        with:
+          prompt_file: prompts/price-analyzer-agent.md
+          additional_context: |
+            FOCUS_AREA: ${{ github.event.inputs.focus_area || 'agent decides the highest-leverage target' }}
+            BRANCH: claude/schedule-agent-price-analyzer-U1h3l
+            SCOPE: price analyzer pipeline ONLY. Do not modify unrelated modules.
+            PIPELINE_REFERENCE:
+              - export_data.py
+              - scripts/rebuild_dashboard_data.py
+              - public/data/manual_listings.json
+              - public/data/README.md
+              - ../price_analyzer/parse_v4.py   (sibling dir, may not be available)
+              - ../price_analyzer/rolex_dial_options.json (sibling dir)
+            REQUIRED_OUTPUT_SECTIONS:
+              1. Current Pipeline Assessment
+              2. Step-by-Step Reasoning
+              3. Proposed Improvements
+              4. Self-Reflection & Risk Analysis
+              5. Updated Components
+              6. Test Cases & Validation Plan
+              7. Next Iteration Priorities
+            COMMIT_POLICY: commit every concrete improvement on the
+              dedicated branch with a descriptive message. Append a
+              one-line entry to TASKQUEUE.md under "COMPLETED" for
+              each shipped improvement.
+          max_turns: ${{ github.event.inputs.max_turns || '40' }}
+          working_branch: claude/schedule-agent-price-analyzer-U1h3l
+
+      - name: Summarize on failure
+        if: failure()
+        run: |
+          echo "Price Analyzer Agent v3 scheduled run failed."
+          echo "Inspect the logs above for the failing step. A failed"
+          echo "cycle means no dictionary / pipeline improvements were"
+          echo "shipped in this window — investigate before the next"
+          echo "cron tick (every 6h)."
