@@ -6998,6 +6998,24 @@ async function doLookup() {
         const d = await r.json();
         if (!r.ok || d.error) throw new Error(d.error||'Not found');
 
+        // If search returned 0 matches with a dial filter, show clear "not found" with valid dials
+        const _pf = d.parsed_filters || {};
+        if (d.total_matches === 0 && _pf.dial && _pf.ref) {
+            // Fetch valid dials for this ref from wholesale data
+            let validDials = '';
+            try {
+                const refData = DATA.refs?.[_pf.ref];
+                if (refData?.dials) {
+                    const dialNames = Object.keys(refData.dials).filter(x => x !== 'Unknown');
+                    validDials = dialNames.length
+                        ? '<div style="margin-top:12px;font-size:0.75rem;color:var(--text-2);">Available dials for ' + _pf.ref + ':</div><div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;">' + dialNames.map(d => '<span class="tag tag-gold" style="cursor:pointer;" onclick="$(\'#ref-search\').value=\'' + _pf.ref + ' ' + d.toLowerCase() + '\';doLookup();">' + d + '</span>').join('') + '</div>'
+                        : '';
+                }
+            } catch(e) {}
+            c.innerHTML = '<div style="text-align:center;padding:40px 20px;"><div style="font-size:1.2rem;font-weight:700;color:var(--text-0);margin-bottom:8px;">' + _pf.ref + ' ' + _pf.dial + '</div><div style="font-size:0.85rem;color:var(--red);margin-bottom:16px;">This dial does not exist for this reference</div><div style="font-size:0.8rem;color:var(--text-2);">No listings found matching "' + _pf.dial + '" dial for ' + _pf.ref + '</div>' + validDials + '<div style="margin-top:16px;"><span class="tag tag-gold" style="cursor:pointer;" onclick="$(\'#ref-search\').value=\'' + _pf.ref + '\';doLookup();">View all ' + _pf.ref + ' listings</span></div></div>';
+            return;
+        }
+
         // smart_search returns {price_summary, fair_value, dial_breakdown, listings, ...}
         const ps = d.price_summary||{};
         const fv = d.fair_value?.primary||{};
