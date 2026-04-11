@@ -1,384 +1,566 @@
 /**
  * MK Opulence — ws1-price-intel
- * Price Intelligence workstream module.
+ * Price Intelligence module: deal scoring, price confidence, market depth widget.
  *
- * Features:
- *   1. Deal scoring algorithm — 0-100 score (discount 40%, freshness 20%,
- *      seller reliability 20%, condition 20%), badge on each deal card
- *   2. Price confidence indicator on lookups — HIGH/MEDIUM/LOW with color coding
- *   3. Price trend arrows on lookup results — tracks b25 in localStorage, shows
- *      30-day directional change on repeat visits
+ * Available globals:
+ *   window.DATA          — shared app data (refs, deals, portfolio, etc.)
+ *   window.MKModules     — module system (emit, on, formatPrice, formatPct, inject, card)
+ *   showToast(msg, type) — show notification
+ *   showPage(name)       — navigate to page
+ *
+ * Rules:
+ *   - Register via MKModules.register('ws1-price-intel', { init, render, cleanup })
+ *   - Use MKModules.emit() / MKModules.on() for cross-module communication
+ *   - Use CSS variables for theming (--bg-0, --accent, --text-0, etc.)
  */
 
-(function () {
+(function() {
     'use strict';
 
-    const MOD_ID = 'ws1-price-intel';
+    var MOD_ID = 'ws1-price-intel';
+    var MK = window.MKModules;
 
-    // =========================================================
-    // SECTION 1 — DEAL SCORING
-    // =========================================================
-
-    function buildSellerMap() {
-        const sellers = (window.DATA && window.DATA.sellers) || [];
-        const map = {};
-        sellers.forEach(s => {
-            const phone = (s.seller || '').replace(/[^0-9]/g, '');
-            if (phone) map[phone] = s;
-        });
-        return map;
+    // ─── Styles ───────────────────────────────────────────────────────
+    function injectStyles() {
+        if (document.getElementById('ws1-styles')) return;
+        var style = document.createElement('style');
+        style.id = 'ws1-styles';
+        style.textContent = [
+            '.ws1-score-badge {',
+            '  display:inline-flex; align-items:center; justify-content:center;',
+            '  min-width:32px; padding:2px 6px; border-radius:4px;',
+            '  font-size:0.68rem; font-weight:700; font-family:var(--mono); letter-spacing:0.3px;',
+            '}',
+            '.ws1-score-green { background:rgba(0,230,118,0.12); color:var(--green); border:1px solid rgba(0,230,118,0.25); }',
+            '.ws1-score-yellow { background:rgba(255,193,7,0.12); color:var(--orange); border:1px solid rgba(255,193,7,0.25); }',
+            '.ws1-score-red { background:rgba(255,23,68,0.10); color:var(--red); border:1px solid rgba(255,23,68,0.2); }',
+            '.ws1-confidence-badge {',
+            '  display:inline-flex; align-items:center; gap:3px; padding:2px 8px; border-radius:4px;',
+            '  font-size:0.65rem; font-weight:700; font-family:var(--mono); letter-spacing:0.5px;',
+            '  margin-left:6px; vertical-align:middle;',
+            '}',
+            '.ws1-conf-high { background:rgba(0,230,118,0.12); color:var(--green); border:1px solid rgba(0,230,118,0.25); }',
+            '.ws1-conf-medium { background:rgba(255,193,7,0.12); color:var(--orange); border:1px solid rgba(255,193,7,0.25); }',
+            '.ws1-conf-low { background:rgba(255,23,68,0.10); color:var(--red); border:1px solid rgba(255,23,68,0.2); }',
+            '.ws1-trend { display:inline-flex; align-items:center; gap:2px; font-size:0.68rem; font-weight:700; font-family:var(--mono); vertical-align:middle; margin-left:4px; }',
+            '.ws1-trend-up { color:var(--green); }',
+            '.ws1-trend-down { color:var(--red); }',
+            '.ws1-trend-flat { color:var(--text-2); }',
+            '.ws1-depth-row {',
+            '  display:flex; justify-content:space-between; align-items:center;',
+            '  padding:5px 0; border-bottom:1px solid var(--border); cursor:pointer;',
+            '  transition:background 0.1s;',
+            '}',
+            '.ws1-depth-row:hover { background:var(--bg-hover); }',
+            '.ws1-depth-row:last-child { border-bottom:none; }',
+            '.ws1-depth-ref { font-family:var(--mono); font-size:0.82rem; font-weight:600; color:var(--accent); }',
+            '.ws1-depth-model { font-size:0.72rem; color:var(--text-2); margin-left:6px; }',
+            '.ws1-depth-count { font-family:var(--mono); font-size:0.75rem; font-weight:700; min-width:36px; text-align:right; }',
+            '.ws1-depth-bar { height:4px; border-radius:2px; margin-top:2px; transition:width 0.3s ease; }',
+            '.ws1-depth-section-title {',
+            '  font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:1px;',
+            '  color:var(--text-2); margin:10px 0 4px; font-family:var(--mono);',
+            '}',
+            '.ws1-depth-section-title:first-child { margin-top:0; }'
+        ].join('\n');
+        document.head.appendChild(style);
     }
 
-    function extractPhone(str) {
-        const m = (str || '').match(/\d{8,}/);
-        return m ? m[0] : '';
+    // ─── 1. Deal Scoring Algorithm ────────────────────────────────────
+    //
+    // Composite score 0-100:
+    //   discount_pct     40% — bigger discount = higher score (cap at 25%)
+    //   condition_premium 20% — BNIB > Pre-owned
+    //   region_arbitrage  20% — HK listings score higher (US buyer arbitrage)
+    //   listing_count     20% — more comparables = more confidence
+
+    function computeDealScore(deal) {
+        // Discount component (0-100): higher discount = better, cap at 25%
+        var disc = Math.abs(deal.discount_pct || deal.gap_pct || 0);
+        var discountScore = Math.min(disc / 25 * 100, 100);
+
+        // Condition premium (0-100): BNIB > Like New > Pre-owned
+        var cond = (deal.condition || deal.condition_bucket || '').toLowerCase();
+        var condScore = 30;
+        if (cond.indexOf('bnib') >= 0 || cond.indexOf('unworn') >= 0) condScore = 100;
+        else if (cond.indexOf('new') >= 0 && cond.indexOf('pre') < 0) condScore = 90;
+        else if (cond.indexOf('like new') >= 0 || cond.indexOf('mint') >= 0 || cond.indexOf('excellent') >= 0) condScore = 70;
+        else if (cond.indexOf('very good') >= 0) condScore = 55;
+        else if (cond.indexOf('good') >= 0 || cond.indexOf('pre-owned') >= 0 || cond.indexOf('used') >= 0) condScore = 40;
+
+        // Region arbitrage (0-100): HK region scores highest for US buyer
+        var region = (deal.region || '').toLowerCase();
+        var regionScore = 30; // default neutral
+        if (region === 'hk' || region.indexOf('hong kong') >= 0) regionScore = 100;
+        else if (region === 'sg' || region.indexOf('singapore') >= 0) regionScore = 80;
+        else if (region === 'jp' || region.indexOf('japan') >= 0) regionScore = 75;
+        else if (region === 'eu' || region.indexOf('europe') >= 0 || region === 'uk') regionScore = 55;
+        else if (region === 'us' || region.indexOf('united states') >= 0) regionScore = 20;
+
+        // Listing count / confidence (0-100): more comparables = more reliable deal
+        var listingCount = deal.total_listings || deal.comparable_count || 0;
+        // 30+ listings = max confidence
+        var listingScore = Math.min(listingCount / 30 * 100, 100);
+
+        var score = Math.round(
+            discountScore * 0.40 +
+            condScore * 0.20 +
+            regionScore * 0.20 +
+            listingScore * 0.20
+        );
+        return Math.max(0, Math.min(100, score));
     }
 
-    function scoreDeal(deal, sellerMap) {
-        // 1. Discount vs market B25 (40%) ————————————————————
-        const dealPrice = deal.price_usd || deal.price || 0;
-        const marketB25 = deal.avg_price || 0;
-        let discountScore = 0;
-        if (marketB25 > 0 && dealPrice > 0) {
-            const discPct = (marketB25 - dealPrice) / marketB25 * 100;
-            // 20 %+ below market = 100, scales linearly; negative = 0
-            discountScore = Math.min(100, Math.max(0, discPct / 20 * 100));
-        } else if (deal.est_margin_pct) {
-            discountScore = Math.min(100, Math.max(0, deal.est_margin_pct / 20 * 100));
-        }
-
-        // 2. Freshness / days-on-market (20%) —————————————————
-        // Fresh listings are more actionable; stale ones may have hidden issues
-        let freshnessScore = 50; // neutral when timestamp is unknown
-        const tsRaw = deal.ts || deal.created_at || '';
-        if (tsRaw) {
-            const ts = new Date(tsRaw);
-            if (!isNaN(ts.getTime())) {
-                const daysOld = (Date.now() - ts.getTime()) / 86400000;
-                freshnessScore = daysOld < 2  ? 95
-                    : daysOld < 7   ? 80
-                    : daysOld < 14  ? 60
-                    : daysOld < 30  ? 40
-                    : 20;
-            }
-        }
-
-        // 3. Seller reliability (20%) —————————————————————————
-        // More listings history = higher trust; cross-reference global sellers map
-        let reliabilityScore = 35;
-        const sellerListings = deal.seller_listings || 0;
-        if (sellerListings > 0) {
-            reliabilityScore = Math.min(100, 20 + Math.log(sellerListings + 1) / Math.log(200) * 80);
-        }
-        const phone = extractPhone(deal.seller || deal.phone || '');
-        if (phone && sellerMap[phone]) {
-            const cnt = sellerMap[phone].count || 0;
-            if (cnt > sellerListings) {
-                reliabilityScore = Math.min(100, 20 + Math.log(cnt + 1) / Math.log(200) * 80);
-            }
-        }
-
-        // 4. Condition premium (20%) ——————————————————————————
-        const cond = deal.condition || deal.condition_bucket || '';
-        const condScore = cond === 'BNIB'       ? 100
-            : cond === 'Like New'               ? 75
-            : cond === 'Pre-owned'              ? 45
-            : 50;
-
-        const total = discountScore  * 0.40
-                    + freshnessScore * 0.20
-                    + reliabilityScore * 0.20
-                    + condScore      * 0.20;
-
-        return {
-            score: Math.round(total),
-            breakdown: {
-                discount:    Math.round(discountScore),
-                freshness:   Math.round(freshnessScore),
-                reliability: Math.round(reliabilityScore),
-                condition:   Math.round(condScore)
-            }
-        };
+    function scoreClass(score) {
+        if (score >= 70) return 'ws1-score-green';
+        if (score >= 40) return 'ws1-score-yellow';
+        return 'ws1-score-red';
     }
 
-    function computeAllScores() {
-        const deals = (window.DATA && window.DATA.deals) || [];
-        if (!deals.length) return;
-        const sellerMap = buildSellerMap();
-        deals.forEach(d => {
-            const r = scoreDeal(d, sellerMap);
-            d._ws1Score = r.score;
-            d._ws1Breakdown = r.breakdown;
-        });
-        console.log('[' + MOD_ID + '] scored ' + deals.length + ' deals');
-    }
-
-    function scoreColor(score) {
-        return score >= 70 ? 'var(--green)'
-             : score >= 50 ? 'var(--accent)'
-             : 'var(--text-2)';
+    function scoreBadgeHtml(score) {
+        return '<span class="ws1-score-badge ' + scoreClass(score) + '">' + score + '</span>';
     }
 
     function scoreLabel(score) {
-        return score >= 75 ? 'PRIME'
-             : score >= 60 ? 'GOOD'
-             : score >= 45 ? 'FAIR'
-             : 'WEAK';
+        if (score >= 80) return 'Excellent';
+        if (score >= 65) return 'Strong';
+        if (score >= 45) return 'Fair';
+        return 'Weak';
     }
 
-    // Read active region from DOM (avoids depending on private `currentDealsRegion` let)
-    function getActiveRegion() {
-        const tabs = document.querySelectorAll('#deals-market-section .tabs .tab');
-        for (const tab of tabs) {
-            if (!tab.classList.contains('active')) continue;
-            const t = tab.textContent.trim();
-            if (t === 'US')          return 'US';
-            if (t.startsWith('HK')) return 'HK';
-            return 'all';
-        }
-        return 'all';
-    }
+    /**
+     * Inject deal scores as badges on deal cards in #deals-cards.
+     */
+    function injectDealScores() {
+        var container = document.getElementById('deals-cards');
+        if (!container) return;
+        var deals = window.DATA && window.DATA.deals;
+        if (!deals || !deals.length) return;
 
-    // Replicate applyDealsFilter's filter logic to get the visible deals in order
-    function getVisibleDeals() {
-        const q          = (document.getElementById('deals-search')?.value || '').toLowerCase();
-        const tierFilter = document.getElementById('deals-tier')?.value || '';
-        const region     = getActiveRegion();
+        var cards = container.querySelectorAll('.deal-card');
+        cards.forEach(function(card, idx) {
+            if (idx >= deals.length) return;
+            if (card.querySelector('.ws1-score-badge')) return; // already injected
 
-        let f = (window.DATA && window.DATA.deals) || [];
-        if (region !== 'all') f = f.filter(d => d.region === region);
-        if (tierFilter)       f = f.filter(d => d.tier === tierFilter);
-        if (q) {
-            const terms = typeof window.searchTerms === 'function'
-                ? window.searchTerms(q)
-                : q.split(/\s+/);
-            const match = typeof window.matchesSearch === 'function'
-                ? window.matchesSearch.bind(window)
-                : (text, ts) => ts.every(t => text.toLowerCase().includes(t));
-            f = f.filter(d => match([d.ref, d.model, d.dial, d.seller, d.group].join(' '), terms));
-        }
-        return f.slice(0, 30);
-    }
+            var deal = deals[idx];
+            var score = computeDealScore(deal);
+            deal._ws1Score = score;
 
-    function injectScoreBadges() {
-        const cards = document.querySelectorAll('#deals-cards .deal-card');
-        if (!cards.length) return;
-
-        const visible = getVisibleDeals();
-        cards.forEach((card, idx) => {
-            if (card.querySelector('.ws1-score-badge')) return; // already there
-            const d = visible[idx];
-            if (!d || d._ws1Score == null) return;
-
-            const score  = d._ws1Score;
-            const bd     = d._ws1Breakdown || {};
-            const color  = scoreColor(score);
-            const label  = scoreLabel(score);
-
-            const badge = document.createElement('span');
-            badge.className = 'ws1-score-badge';
-            badge.title = [
-                'Deal Score: ' + score + '/100',
-                'Discount:    ' + bd.discount    + '/100 (40%)',
-                'Freshness:   ' + bd.freshness   + '/100 (20%)',
-                'Seller:      ' + bd.reliability + '/100 (20%)',
-                'Condition:   ' + bd.condition   + '/100 (20%)'
-            ].join('\n');
-            badge.style.cssText =
-                'display:inline-flex;align-items:center;gap:3px;' +
-                'border:1px solid ' + color + ';border-radius:3px;' +
-                'padding:1px 5px;font-family:var(--mono);font-size:0.63rem;' +
-                'color:' + color + ';cursor:default;white-space:nowrap;' +
-                'margin-left:6px;vertical-align:middle;flex-shrink:0;';
-            badge.innerHTML =
-                '<b>' + score + '</b>' +
-                '<span style="opacity:0.7;font-size:0.58rem;">' + label + '</span>';
-
-            // Inject into the ref+model div (left side of the first flex row)
-            const headerRow = card.querySelector('div[style*="justify-content:space-between"]');
-            if (headerRow && headerRow.firstElementChild) {
-                headerRow.firstElementChild.appendChild(badge);
+            // Find the top-right div (discount area)
+            var topRow = card.querySelector('div > div:last-child');
+            if (topRow && topRow.style && topRow.style.textAlign === 'right') {
+                var badge = document.createElement('div');
+                badge.style.marginTop = '3px';
+                badge.innerHTML = '<span style="font-size:0.6rem;color:var(--text-2);font-family:var(--mono);">Score </span>' + scoreBadgeHtml(score) +
+                    '<span style="font-size:0.58rem;color:var(--text-2);margin-left:3px;font-family:var(--mono);">' + scoreLabel(score) + '</span>';
+                badge.style.fontSize = '0.68rem';
+                badge.style.fontFamily = 'var(--mono)';
+                topRow.appendChild(badge);
+            } else {
+                // Fallback: append to first child div
+                var firstDiv = card.querySelector('div');
+                if (firstDiv) {
+                    var wrapper = document.createElement('span');
+                    wrapper.style.marginLeft = '6px';
+                    wrapper.innerHTML = scoreBadgeHtml(score);
+                    firstDiv.appendChild(wrapper);
+                }
             }
         });
     }
 
-    // =========================================================
-    // SECTION 2 — PRICE CONFIDENCE INDICATOR
-    // =========================================================
+    /**
+     * Inject deal scores into dashboard deals table (#dash-deals).
+     */
+    function injectDashDealScores() {
+        var table = document.getElementById('dash-deals');
+        if (!table) return;
+        var deals = window.DATA && window.DATA.deals;
+        if (!deals || !deals.length) return;
 
-    function injectConfidenceIndicator() {
-        const result = document.getElementById('lookup-result');
-        if (!result || result.querySelector('.ws1-confidence')) return;
-
-        const summaryP = result.querySelector('p');
-        if (!summaryP) return;
-
-        // Find the span containing the listing count (e.g. "148 listings | 2 dials")
-        const countSpan = Array.from(summaryP.querySelectorAll('span'))
-            .find(s => /\d+\s+listings?/.test(s.textContent));
-        if (!countSpan) return;
-
-        const countMatch = countSpan.textContent.match(/(\d+)\s+listings?/);
-        if (!countMatch) return;
-        const count = parseInt(countMatch[1], 10);
-
-        let level, color, dots, hint;
-        if (count > 20) {
-            level = 'HIGH';   color = 'var(--green)';  dots = '●●●';
-            hint  = count + ' comparables — reliable pricing data';
-        } else if (count >= 5) {
-            level = 'MEDIUM'; color = 'var(--accent)'; dots = '●●○';
-            hint  = count + ' comparables — moderate confidence';
-        } else {
-            level = 'LOW';    color = 'var(--red)';    dots = '●○○';
-            hint  = count + ' comparable' + (count !== 1 ? 's' : '') + ' — limited data, use caution';
+        // Add header if missing
+        var thead = table.querySelector('thead');
+        if (thead && !thead.querySelector('.ws1-th-score')) {
+            var headerRow = thead.querySelector('tr');
+            if (headerRow) {
+                var th = document.createElement('th');
+                th.className = 'right ws1-th-score';
+                th.textContent = 'Score';
+                th.style.fontSize = '0.65rem';
+                headerRow.appendChild(th);
+            }
         }
 
-        const el = document.createElement('div');
-        el.className = 'ws1-confidence';
-        el.style.cssText =
-            'display:flex;align-items:center;gap:6px;' +
-            'margin-top:4px;margin-bottom:2px;';
-        el.innerHTML =
-            '<span style="font-family:var(--mono);font-size:0.6rem;letter-spacing:2px;color:' + color + ';">' + dots + '</span>' +
-            '<span style="font-size:0.65rem;font-weight:700;color:' + color + ';font-family:var(--mono);">' + level + ' CONFIDENCE</span>' +
-            '<span style="font-size:0.63rem;color:var(--text-2);">' + hint + '</span>';
+        var rows = table.querySelectorAll('tbody tr');
+        rows.forEach(function(row, idx) {
+            if (idx >= deals.length) return;
+            if (row.querySelector('.ws1-score-badge')) return;
 
-        // Insert between the condition tags paragraph and the condition bar
-        summaryP.insertAdjacentElement('afterend', el);
+            var deal = deals[idx];
+            var score = deal._ws1Score != null ? deal._ws1Score : computeDealScore(deal);
+            deal._ws1Score = score;
+
+            var td = document.createElement('td');
+            td.className = 'right';
+            td.innerHTML = scoreBadgeHtml(score);
+            row.appendChild(td);
+        });
     }
 
-    // =========================================================
-    // SECTION 3 — PRICE TREND ARROWS (localStorage persistence)
-    // =========================================================
+    // ─── 2. Price Confidence Indicator ────────────────────────────────
 
-    const HISTORY_KEY = 'mk_ws1_price_history';
-
-    function loadHistory() {
-        try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '{}'); } catch (e) { return {}; }
+    function confidenceLevel(count) {
+        if (count > 20) return { label: 'HIGH', cls: 'ws1-conf-high', icon: '\u25CF' };
+        if (count >= 5) return { label: 'MEDIUM', cls: 'ws1-conf-medium', icon: '\u25CF' };
+        return { label: 'LOW', cls: 'ws1-conf-low', icon: '\u25CF' };
     }
 
-    function saveHistory(hist) {
-        try { localStorage.setItem(HISTORY_KEY, JSON.stringify(hist)); } catch (e) {}
+    function confidenceBadgeHtml(count) {
+        var level = confidenceLevel(count);
+        return '<span class="ws1-confidence-badge ' + level.cls + '">' +
+            level.icon + ' ' + level.label + ' (' + count + ' comps)</span>';
     }
 
-    // Call once on init to snapshot current b25 values per ref
-    function snapshotRefPrices() {
-        const refs = (window.DATA && window.DATA.refs) || {};
-        const keys = Object.keys(refs);
-        if (!keys.length) return;
+    /**
+     * Inject price confidence badge into lookup results (#lookup-result).
+     */
+    function injectLookupConfidence() {
+        var container = document.getElementById('lookup-result');
+        if (!container || !container.innerHTML.trim()) return;
+        if (container.querySelector('.ws1-confidence-badge')) return;
 
-        const hist   = loadHistory();
-        const now    = Date.now();
-        const cutoff = now - 35 * 86400000; // keep 35 days max
+        // Try to get count from rendered text
+        var countMatch = container.textContent.match(/(\d+)\s*listings/);
+        var count = countMatch ? parseInt(countMatch[1], 10) : 0;
 
-        keys.forEach(ref => {
-            const b25 = refs[ref].b25 || 0;
-            if (!b25) return;
-            if (!hist[ref]) hist[ref] = [];
-            hist[ref] = hist[ref].filter(e => e.ts > cutoff);
-            const last = hist[ref][hist[ref].length - 1];
-            // Don't duplicate within 12 h
-            if (!last || now - last.ts > 12 * 3600000) {
-                hist[ref].push({ ts: now, b25 });
+        // Also check DATA.refs for current ref
+        var refSearch = document.getElementById('ref-search');
+        var currentRef = refSearch ? refSearch.value.trim().split(/\s+/)[0] : '';
+        if (currentRef && window.DATA && window.DATA.refs && window.DATA.refs[currentRef]) {
+            var refData = window.DATA.refs[currentRef];
+            if (refData.count) count = Math.max(count, refData.count);
+        }
+
+        if (count === 0) return;
+
+        var h2 = container.querySelector('h2');
+        if (h2) {
+            var badge = document.createElement('span');
+            badge.innerHTML = confidenceBadgeHtml(count);
+            badge.style.display = 'inline';
+            h2.appendChild(badge);
+        }
+    }
+
+    // ─── 3. Price Trend Arrows ────────────────────────────────────────
+
+    function computeTrend(refData) {
+        if (!refData) return null;
+        var median = refData.median || refData.low || 0;
+        var avg = refData.avg || 0;
+        if (!median || !avg) return null;
+
+        if (median > avg * 1.02) return 'up';
+        if (median < avg) return 'down';
+        return 'flat';
+    }
+
+    function trendArrowHtml(trend) {
+        if (!trend) return '';
+        if (trend === 'up') return '<span class="ws1-trend ws1-trend-up" title="Trending up (median > avg +2%)">&#9650;</span>';
+        if (trend === 'down') return '<span class="ws1-trend ws1-trend-down" title="Trending down (median < avg)">&#9660;</span>';
+        return '<span class="ws1-trend ws1-trend-flat" title="Stable (median ~ avg)">&#9654;</span>';
+    }
+
+    function injectLookupTrend() {
+        var container = document.getElementById('lookup-result');
+        if (!container || !container.innerHTML.trim()) return;
+        if (container.querySelector('.ws1-trend')) return;
+
+        var refSearch = document.getElementById('ref-search');
+        var currentRef = refSearch ? refSearch.value.trim().split(/\s+/)[0] : '';
+        if (!currentRef || !window.DATA || !window.DATA.refs) return;
+
+        var refData = window.DATA.refs[currentRef];
+        var trend = computeTrend(refData);
+        if (!trend) return;
+
+        var h2 = container.querySelector('h2');
+        if (h2) {
+            var arrow = document.createElement('span');
+            arrow.innerHTML = ' ' + trendArrowHtml(trend);
+            arrow.style.display = 'inline';
+            h2.appendChild(arrow);
+        }
+    }
+
+    function injectDashDealTrends() {
+        var table = document.getElementById('dash-deals');
+        if (!table) return;
+        var deals = window.DATA && window.DATA.deals;
+        var refs = window.DATA && window.DATA.refs;
+        if (!deals || !deals.length || !refs) return;
+
+        var rows = table.querySelectorAll('tbody tr');
+        rows.forEach(function(row, idx) {
+            if (idx >= deals.length) return;
+            if (row.querySelector('.ws1-trend')) return;
+
+            var deal = deals[idx];
+            var refData = refs[deal.ref];
+            var trend = computeTrend(refData);
+            if (!trend) return;
+
+            var refCell = row.querySelectorAll('td')[1];
+            if (refCell) {
+                var span = document.createElement('span');
+                span.innerHTML = trendArrowHtml(trend);
+                refCell.appendChild(span);
             }
         });
-        saveHistory(hist);
     }
 
-    function calcTrend(ref) {
-        const hist    = loadHistory();
-        const entries = hist[ref];
-        if (!entries || entries.length < 2) return null;
+    function injectDealsCardTrends() {
+        var container = document.getElementById('deals-cards');
+        if (!container) return;
+        var deals = window.DATA && window.DATA.deals;
+        var refs = window.DATA && window.DATA.refs;
+        if (!deals || !deals.length || !refs) return;
 
-        const sorted  = [...entries].sort((a, b) => a.ts - b.ts);
-        const latest  = sorted[sorted.length - 1];
-        const now     = Date.now();
-        // Baseline: oldest entry within 30-day window, or the oldest available
-        const baseline = sorted.find(e => e.ts <= now - 30 * 86400000) || sorted[0];
-        if (baseline === latest || !baseline.b25) return null;
+        var cards = container.querySelectorAll('.deal-card');
+        cards.forEach(function(card, idx) {
+            if (idx >= deals.length) return;
+            if (card.querySelector('.ws1-trend')) return;
 
-        const changePct = (latest.b25 - baseline.b25) / baseline.b25 * 100;
-        return Math.abs(changePct) >= 0.5 ? changePct : null; // ignore noise
+            var deal = deals[idx];
+            var refData = refs[deal.ref];
+            var trend = computeTrend(refData);
+            if (!trend) return;
+
+            var refSpan = card.querySelector('.ref');
+            if (refSpan) {
+                var arrow = document.createElement('span');
+                arrow.innerHTML = trendArrowHtml(trend);
+                refSpan.parentNode.insertBefore(arrow, refSpan.nextSibling);
+            }
+        });
     }
 
-    function injectTrendArrow() {
-        const result = document.getElementById('lookup-result');
-        if (!result) return;
+    // ─── 4. Market Depth Widget ───────────────────────────────────────
 
-        // Remove any stale arrow from a previous lookup
-        result.querySelectorAll('.ws1-trend').forEach(el => el.remove());
+    function buildMarketDepthWidget() {
+        var refs = window.DATA && window.DATA.refs;
+        if (!refs) return;
 
-        const h2 = result.querySelector('h2');
-        if (!h2) return;
+        // Remove existing widget if re-rendering
+        var existing = document.getElementById('ws1-market-depth');
+        if (existing) existing.remove();
 
-        // First child text node holds the ref code
-        const refText = (h2.childNodes[0]?.textContent || '').trim().split(/\s/)[0];
-        if (!refText) return;
+        // Build sorted list of refs by listing count
+        var refList = [];
+        var keys = Object.keys(refs);
+        for (var i = 0; i < keys.length; i++) {
+            var ref = keys[i];
+            var data = refs[ref];
+            var count = data.count || data.total_listings || 0;
+            if (count > 0) {
+                refList.push({
+                    ref: ref,
+                    count: count,
+                    model: data.model || data.brand || '',
+                    avg: data.avg || data.b25 || data.median || 0
+                });
+            }
+        }
 
-        const trend = calcTrend(refText);
-        if (trend === null) return;
+        if (refList.length < 2) return;
 
-        const up    = trend > 0;
-        const color = up ? 'var(--green)' : 'var(--red)';
-        const arrow = up ? '▲' : '▼';
+        refList.sort(function(a, b) { return b.count - a.count; });
 
-        // Compute window length in days for tooltip
-        const hist    = loadHistory();
-        const entries = (hist[refText] || []).sort((a, b) => a.ts - b.ts);
-        const days    = entries.length >= 2
-            ? Math.round((entries[entries.length - 1].ts - entries[0].ts) / 86400000)
-            : 30;
+        var maxCount = refList[0].count;
+        var top5 = refList.slice(0, 5);
+        var bottom5 = refList.slice(-5).reverse();
 
-        const span = document.createElement('span');
-        span.className = 'ws1-trend';
-        span.title = 'Price trend (' + days + 'd): ' + (up ? '+' : '') + trend.toFixed(1) + '%';
-        span.style.cssText =
-            'margin-left:10px;font-size:0.78rem;font-weight:600;' +
-            'font-family:var(--mono);color:' + color + ';';
-        span.textContent = arrow + ' ' + Math.abs(trend).toFixed(1) + '%';
+        var fmt = MK.formatPrice;
 
-        h2.appendChild(span);
+        function renderRow(item, barColor) {
+            var pct = Math.max(5, Math.round(item.count / maxCount * 100));
+            var priceStr = item.avg > 0 ? fmt(item.avg) : '';
+            return '<div class="ws1-depth-row" onclick="if(typeof lookupRef===\'function\')lookupRef(\'' + item.ref + '\')">' +
+                '<div style="flex:1;min-width:0;">' +
+                    '<span class="ws1-depth-ref">' + item.ref + '</span>' +
+                    (item.model ? '<span class="ws1-depth-model">' + item.model + '</span>' : '') +
+                    '<div class="ws1-depth-bar" style="width:' + pct + '%;background:' + barColor + ';"></div>' +
+                '</div>' +
+                '<div style="text-align:right;margin-left:8px;">' +
+                    '<span class="ws1-depth-count" style="color:' + barColor + ';">' + item.count + '</span>' +
+                    (priceStr ? '<div style="font-size:0.62rem;color:var(--text-2);font-family:var(--mono);">' + priceStr + '</div>' : '') +
+                '</div>' +
+            '</div>';
+        }
+
+        var html = '<div class="ws1-depth-section-title">Most Liquid (highest listing count)</div>';
+        for (var j = 0; j < top5.length; j++) {
+            html += renderRow(top5[j], 'var(--green)');
+        }
+
+        html += '<div class="ws1-depth-section-title" style="margin-top:14px;">Least Liquid (lowest listing count)</div>';
+        for (var k = 0; k < bottom5.length; k++) {
+            html += renderRow(bottom5[k], 'var(--red)');
+        }
+
+        // Summary stats
+        var totalListings = 0;
+        for (var m = 0; m < refList.length; m++) totalListings += refList[m].count;
+        var avgPerRef = Math.round(totalListings / refList.length);
+        var medianIdx = Math.floor(refList.length / 2);
+        var medianCount = refList[medianIdx] ? refList[medianIdx].count : 0;
+
+        html += '<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:0.65rem;color:var(--text-2);font-family:var(--mono);">' +
+            '<span>' + refList.length + ' refs tracked</span>' +
+            '<span>Avg ' + avgPerRef + '/ref</span>' +
+            '<span>Median ' + medianCount + '</span>' +
+        '</div>';
+
+        var widgetCard = MK.card('Market Depth', '<div style="padding:8px 10px;">' + html + '</div>');
+
+        var wrapper = document.createElement('div');
+        wrapper.id = 'ws1-market-depth';
+        wrapper.style.marginTop = '8px';
+        wrapper.innerHTML = widgetCard;
+
+        // Insert on the dashboard page, after the Top Deals / Arbitrage grid
+        var dashPage = document.getElementById('page-dashboard');
+        if (!dashPage) return;
+
+        // Find the grid that contains Top Deals and Arbitrage, insert after it
+        var grids = dashPage.querySelectorAll('div[style*="grid-template-columns"]');
+        var targetGrid = null;
+        for (var g = 0; g < grids.length; g++) {
+            if (grids[g].querySelector('#dash-deals') || grids[g].querySelector('#dash-arb')) {
+                targetGrid = grids[g];
+                break;
+            }
+        }
+
+        if (targetGrid && targetGrid.nextSibling) {
+            targetGrid.parentNode.insertBefore(wrapper, targetGrid.nextSibling);
+        } else if (dashPage) {
+            // Fallback: append before the news card
+            var newsCard = dashPage.querySelector('#news-feed');
+            if (newsCard && newsCard.closest('.card')) {
+                dashPage.insertBefore(wrapper, newsCard.closest('.card'));
+            } else {
+                dashPage.appendChild(wrapper);
+            }
+        }
     }
 
-    // =========================================================
-    // MODULE LIFECYCLE
-    // =========================================================
+    // ─── Observers & Hooks ────────────────────────────────────────────
+
+    var _lookupObserver = null;
+    var _lookupDebounce = false;
+
+    function setupLookupObserver() {
+        var target = document.getElementById('lookup-result');
+        if (!target) return;
+        if (_lookupObserver) _lookupObserver.disconnect();
+
+        _lookupObserver = new MutationObserver(function() {
+            if (_lookupDebounce) return;
+            _lookupDebounce = true;
+            requestAnimationFrame(function() {
+                _lookupDebounce = false;
+                injectLookupConfidence();
+                injectLookupTrend();
+            });
+        });
+        _lookupObserver.observe(target, { childList: true, subtree: false });
+    }
+
+    var _dealsObserver = null;
+    var _dealsDebounce = false;
+
+    function setupDealsObserver() {
+        var target = document.getElementById('deals-cards');
+        if (!target) return;
+        if (_dealsObserver) _dealsObserver.disconnect();
+
+        _dealsObserver = new MutationObserver(function() {
+            if (_dealsDebounce) return;
+            _dealsDebounce = true;
+            requestAnimationFrame(function() {
+                _dealsDebounce = false;
+                injectDealScores();
+                injectDealsCardTrends();
+            });
+        });
+        _dealsObserver.observe(target, { childList: true });
+    }
+
+    var _dashDealsObserver = null;
+    var _dashDealsDebounce = false;
+
+    function setupDashDealsObserver() {
+        var tbody = document.querySelector('#dash-deals tbody');
+        if (!tbody) return;
+        if (_dashDealsObserver) _dashDealsObserver.disconnect();
+
+        _dashDealsObserver = new MutationObserver(function() {
+            if (_dashDealsDebounce) return;
+            _dashDealsDebounce = true;
+            requestAnimationFrame(function() {
+                _dashDealsDebounce = false;
+                injectDashDealScores();
+                injectDashDealTrends();
+            });
+        });
+        _dashDealsObserver.observe(tbody, { childList: true });
+    }
+
+    // ─── Module API ───────────────────────────────────────────────────
 
     function init() {
-        console.log('[' + MOD_ID + '] init');
+        console.log('[' + MOD_ID + '] Initializing...');
+        injectStyles();
+        setupLookupObserver();
+        setupDealsObserver();
+        setupDashDealsObserver();
 
-        computeAllScores();
-        snapshotRefPrices();
+        // Listen for data-loaded events to re-setup observers
+        document.addEventListener('mk:data-loaded', function() {
+            setTimeout(function() {
+                setupLookupObserver();
+                setupDealsObserver();
+                setupDashDealsObserver();
+                render();
+            }, 200);
+        });
 
-        // Wrap applyDealsFilter to inject score badges after each render
-        if (typeof window.applyDealsFilter === 'function') {
-            const _origFilter = window.applyDealsFilter;
-            window.applyDealsFilter = function () {
-                _origFilter.apply(this, arguments);
-                injectScoreBadges();
-            };
-        }
-
-        // Wrap doLookup to inject confidence indicator + trend arrow after each search
-        if (typeof window.doLookup === 'function') {
-            const _origLookup = window.doLookup;
-            window.doLookup = async function () {
-                await _origLookup.apply(this, arguments);
-                try { injectConfidenceIndicator(); } catch (e) {}
-                try { injectTrendArrow(); }          catch (e) {}
-            };
-        }
+        // Initial render
+        render();
     }
 
     function render() {
-        computeAllScores();
-        if (document.querySelector('#deals-cards .deal-card')) {
-            injectScoreBadges();
-        }
+        if (!window.DATA) return;
+        injectDealScores();
+        injectDealsCardTrends();
+        injectDashDealScores();
+        injectDashDealTrends();
+        injectLookupConfidence();
+        injectLookupTrend();
+        buildMarketDepthWidget();
     }
 
-    function cleanup() {}
+    function cleanup() {
+        if (_lookupObserver) { _lookupObserver.disconnect(); _lookupObserver = null; }
+        if (_dealsObserver) { _dealsObserver.disconnect(); _dealsObserver = null; }
+        if (_dashDealsObserver) { _dashDealsObserver.disconnect(); _dashDealsObserver = null; }
+        var depth = document.getElementById('ws1-market-depth');
+        if (depth) depth.remove();
+    }
 
-    window.MKModules.register(MOD_ID, { init, render, cleanup });
+    // Register with the module system
+    window.MKModules.register(MOD_ID, { init: init, render: render, cleanup: cleanup });
+
 })();

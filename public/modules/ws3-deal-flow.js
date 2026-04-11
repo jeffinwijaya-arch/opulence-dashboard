@@ -1,341 +1,413 @@
 /**
  * MK Opulence — ws3-deal-flow
- * Deal Flow & Arbitrage workstream module.
+ * Deal Flow & Arbitrage enhancements.
  *
  * Features:
- *   1. Enhanced arbitrage calculator — real cost model:
- *      shipping $150, insurance 1.5% of value, wire $40, FedEx label $35
- *      → injects "True Net" column into arb table + cost banner above table
- *   2. Snipe alert badge — deal cards priced >10% below B25 get a
- *      pulsing gold border + "SNIPE" badge
+ *   1. Enhanced arbitrage calculator with full cost breakdown and True Margin column
+ *   2. Snipe alert badge on deal cards (discount_pct > 10) with pulsing gold glow
+ *      + "Snipes Only" filter button
+ *
+ * Available globals:
+ *   window.DATA          — shared app data (refs, deals, portfolio, etc.)
+ *   window.MKModules     — module system (emit, on, formatPrice, formatPct, inject, card)
+ *   showToast(msg, type) — show notification
+ *   showPage(name)       — navigate to page
+ *
+ * Rules:
+ *   - Register via MKModules.register('ws3-deal-flow', { init, render })
+ *   - Use MKModules.emit() / MKModules.on() for cross-module communication
+ *   - Never use MutationObserver or setInterval for DOM updates
+ *   - Use CSS variables for theming (--bg-0, --accent, --text-0, etc.)
  */
 
-(function () {
+(function() {
     'use strict';
 
     const MOD_ID = 'ws3-deal-flow';
+    const $ = s => document.querySelector(s);
+    const $$ = s => document.querySelectorAll(s);
+    const fmt = n => window.MKModules.formatPrice(n);
+    const pct = (n, d) => window.MKModules.formatPct(n, d);
 
-    // =========================================================
-    // COST MODEL CONSTANTS
-    // =========================================================
-    const COSTS = {
-        shipping:    150,   // FedEx International Priority (flat)
-        insurancePct: 0.015, // 1.5% of declared buy value
-        wireFee:     40,    // incoming wire fee
-        fedexLabel:  35,    // FedEx label & handling paperwork
+    // ── Fee constants for true cost calculation ──
+    const FEES = {
+        SHIPPING: 150,
+        INSURANCE_RATE: 0.015,  // 1.5% of value
+        WIRE_FEE: 40,
+        FEDEX_LABEL: 35
     };
 
-    function fmt(n) {
-        if (n == null || isNaN(n)) return '—';
-        return '$' + Math.round(n).toLocaleString('en-US');
-    }
+    let snipesOnly = false;
 
-    // =========================================================
-    // SECTION 1 — ENHANCED ARBITRAGE CALCULATOR
-    // =========================================================
-
-    function calcTrueCosts(buyPrice) {
-        const shipping  = COSTS.shipping;
-        const insurance = Math.round(buyPrice * COSTS.insurancePct);
-        const wire      = COSTS.wireFee;
-        const label     = COSTS.fedexLabel;
-        const total     = shipping + insurance + wire + label;
-        return { shipping, insurance, wire, label, total };
-    }
-
-    function injectArbStyles() {
-        if (document.getElementById('ws3-arb-styles')) return;
+    // ── CSS injection ──
+    function injectStyles() {
+        if (document.getElementById('ws3-styles')) return;
         const style = document.createElement('style');
-        style.id = 'ws3-arb-styles';
+        style.id = 'ws3-styles';
         style.textContent = `
-            .ws3-true-net-th {
-                color: var(--accent) !important;
-                white-space: nowrap;
+            /* Snipe badge */
+            .deal-card.snipe-card {
+                border-color: var(--accent) !important;
+                animation: snipe-pulse 2s ease-in-out infinite;
+                position: relative;
             }
-            .ws3-true-net-td {
-                font-family: var(--mono);
-                white-space: nowrap;
+            @keyframes snipe-pulse {
+                0%, 100% {
+                    box-shadow: 0 0 4px rgba(212,175,55,0.15), 0 0 12px rgba(212,175,55,0.05);
+                }
+                50% {
+                    box-shadow: 0 0 8px rgba(212,175,55,0.4), 0 0 24px rgba(212,175,55,0.15), 0 0 40px rgba(212,175,55,0.06);
+                }
             }
-            .ws3-cost-panel {
-                display: flex;
-                align-items: center;
-                flex-wrap: wrap;
-                gap: 10px;
-                background: var(--bg-2);
-                border: 1px solid var(--accent-border);
-                border-radius: var(--radius);
-                padding: 8px 14px;
-                margin-bottom: 10px;
-            }
-            .ws3-cost-label {
+            .snipe-badge {
+                display: inline-block;
+                background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light, #e8c84a) 100%);
+                color: var(--bg-0);
                 font-size: 0.6rem;
-                font-weight: 700;
-                color: var(--accent);
-                font-family: var(--mono);
+                font-weight: 800;
+                letter-spacing: 1.2px;
                 text-transform: uppercase;
-                letter-spacing: 1px;
-                flex-shrink: 0;
-                margin-right: 4px;
-            }
-            .ws3-cost-item {
-                font-size: 0.63rem;
-                color: var(--text-2);
+                padding: 2px 8px;
+                border-radius: 3px;
+                margin-left: 6px;
                 font-family: var(--mono);
+                vertical-align: middle;
+                animation: snipe-badge-flash 2s ease-in-out infinite;
             }
-            .ws3-cost-item b {
+            @keyframes snipe-badge-flash {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.7; }
+            }
+
+            /* Snipes Only filter button */
+            .ws3-snipes-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                padding: 4px 10px;
+                border: 1px solid var(--border-strong);
+                border-radius: 4px;
+                background: var(--bg-2);
                 color: var(--text-1);
+                font-size: 0.72rem;
+                font-family: var(--mono);
+                cursor: pointer;
+                transition: all 0.15s;
+                white-space: nowrap;
+            }
+            .ws3-snipes-btn:hover {
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+            .ws3-snipes-btn.active {
+                background: rgba(212,175,55,0.12);
+                border-color: var(--accent);
+                color: var(--accent);
+                font-weight: 600;
+            }
+
+            /* True Margin column highlight */
+            .true-margin-cell {
+                font-weight: 700;
+                font-family: var(--mono);
+                font-variant-numeric: tabular-nums;
+            }
+
+            /* Cost breakdown tooltip */
+            .arb-cost-tooltip {
+                position: relative;
+                cursor: help;
+            }
+            .arb-cost-tooltip .cost-tip {
+                display: none;
+                position: absolute;
+                bottom: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                background: var(--bg-3);
+                border: 1px solid var(--border-strong);
+                border-radius: 6px;
+                padding: 8px 12px;
+                font-size: 0.68rem;
+                font-family: var(--mono);
+                color: var(--text-1);
+                white-space: nowrap;
+                z-index: 100;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+                pointer-events: none;
+                min-width: 180px;
+            }
+            .arb-cost-tooltip .cost-tip::after {
+                content: '';
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                border: 5px solid transparent;
+                border-top-color: var(--border-strong);
+            }
+            .arb-cost-tooltip:hover .cost-tip {
+                display: block;
+            }
+            .cost-tip-row {
+                display: flex;
+                justify-content: space-between;
+                gap: 12px;
+                padding: 1px 0;
+            }
+            .cost-tip-row.total {
+                border-top: 1px solid var(--border-strong);
+                margin-top: 4px;
+                padding-top: 4px;
+                font-weight: 600;
+                color: var(--accent);
             }
         `;
         document.head.appendChild(style);
     }
 
-    function injectArbCostPanel() {
-        const section = document.getElementById('deals-arb-section');
-        if (!section) return;
-        if (section.querySelector('.ws3-cost-panel')) return; // already present
+    // ── Calculate true costs for an arb opportunity ──
+    function calcTrueCosts(a) {
+        const buyP = a.buy_price || 0;
+        const sellP = a.sell_price || 0;
+        const value = Math.max(buyP, sellP);
 
-        const panel = document.createElement('div');
-        panel.className = 'ws3-cost-panel';
-        panel.title = 'Fixed cost model used to compute True Net Margin';
-        panel.innerHTML =
-            '<span class="ws3-cost-label">Real Cost Model</span>' +
-            '<span class="ws3-cost-item">Ship <b>$' + COSTS.shipping + '</b></span>' +
-            '<span class="ws3-cost-item">Insurance <b>' + (COSTS.insurancePct * 100).toFixed(1) + '% of value</b></span>' +
-            '<span class="ws3-cost-item">Wire <b>$' + COSTS.wireFee + '</b></span>' +
-            '<span class="ws3-cost-item">Label <b>$' + COSTS.fedexLabel + '</b></span>' +
-            '<span class="ws3-cost-item" style="margin-left:auto;color:var(--text-3);">True Net = Sell − Buy − all costs</span>';
+        const shipping = FEES.SHIPPING;
+        const insurance = Math.round(value * FEES.INSURANCE_RATE);
+        const wire = FEES.WIRE_FEE;
+        const fedex = FEES.FEDEX_LABEL;
+        const existingFees = a.import_fee || a.fees || 0;
+        const totalAllFees = shipping + insurance + wire + fedex + existingFees;
+        const trueNetProfit = sellP - buyP - totalAllFees;
+        const trueMargin = buyP > 0 ? (trueNetProfit / (buyP + totalAllFees) * 100) : 0;
 
-        // Insert before the card that wraps the table
-        const card = section.querySelector('.card');
-        if (card) section.insertBefore(panel, card);
+        return {
+            shipping,
+            insurance,
+            wire,
+            fedex,
+            existingFees,
+            totalAllFees,
+            trueNetProfit,
+            trueMargin
+        };
     }
 
-    function injectTrueNetColumn() {
+    // ── Build cost tooltip HTML ──
+    function costTooltipHtml(costs) {
+        return `<div class="cost-tip">
+            <div class="cost-tip-row"><span>Shipping</span><span>${fmt(costs.shipping)}</span></div>
+            <div class="cost-tip-row"><span>Insurance (1.5%)</span><span>${fmt(costs.insurance)}</span></div>
+            <div class="cost-tip-row"><span>Wire transfer</span><span>${fmt(costs.wire)}</span></div>
+            <div class="cost-tip-row"><span>FedEx label</span><span>${fmt(costs.fedex)}</span></div>
+            ${costs.existingFees > 0 ? `<div class="cost-tip-row"><span>Import/duties</span><span>${fmt(costs.existingFees)}</span></div>` : ''}
+            <div class="cost-tip-row total"><span>Total fees</span><span>${fmt(costs.totalAllFees)}</span></div>
+        </div>`;
+    }
+
+    // ── Enhance arbitrage table ──
+    function enhanceArbTable() {
         const table = document.getElementById('arb-table');
         if (!table) return;
 
-        // ------ Header TH (injected once, survives tbody re-renders) ------
-        const thead = table.tHead;
-        if (thead && !thead.querySelector('.ws3-true-net-th')) {
-            const th = document.createElement('th');
-            th.className = 'ws3-true-net-th right';
-            th.textContent = 'True Net';
-            const headerRow = thead.rows[0];
-            if (headerRow) {
-                // Insert after column index 6 (Margin), before Conf
-                const refCell = headerRow.cells[7]; // "Conf" is at index 7
-                if (refCell) headerRow.insertBefore(th, refCell);
-                else headerRow.appendChild(th);
+        // Add True Margin header if not present
+        const thead = table.querySelector('thead tr');
+        if (thead && !thead.querySelector('.ws3-true-margin-th')) {
+            // Insert True Margin column after Margin column
+            const marginTh = thead.querySelectorAll('th');
+            // Headers: Reference, Model, Buy, Sell, Fees, Net Profit, Margin, Conf, Depth
+            // We insert "True Margin" after Margin (index 6)
+            const trueMarginTh = document.createElement('th');
+            trueMarginTh.className = 'right ws3-true-margin-th';
+            trueMarginTh.textContent = 'True Margin';
+            trueMarginTh.style.color = 'var(--accent)';
+            if (marginTh[7]) {
+                thead.insertBefore(trueMarginTh, marginTh[7]);
+            } else {
+                thead.appendChild(trueMarginTh);
             }
         }
 
-        // ------ Data cells (injected after each renderArbitrage() re-render) ------
+        // Enhance each row
+        const rows = table.querySelectorAll('tbody tr');
         const dir = document.getElementById('arb-direction')?.value || 'hk_to_us';
-        const q   = (document.getElementById('arb-search')?.value || '').toLowerCase();
-        let arbs  = (window.DATA && window.DATA.arbitrage) || [];
+        const q = (document.getElementById('arb-search')?.value || '').toLowerCase();
+        let arbs = (window.DATA?.arbitrage || []);
         if (dir !== 'all') arbs = arbs.filter(a => a.direction === dir);
-        if (q) arbs = arbs.filter(a =>
-            [a.ref, a.model, a.dial || '', a.bracelet || ''].join(' ').toLowerCase().includes(q)
-        );
+        if (q) arbs = arbs.filter(a => [a.ref, a.model, a.dial || '', a.bracelet || ''].join(' ').toLowerCase().includes(q));
 
-        const tbody = table.tBodies[0];
-        if (!tbody) return;
-
-        Array.from(tbody.rows).forEach((row, idx) => {
-            if (row.querySelector('.ws3-true-net-td')) return; // already injected this render
-
+        rows.forEach((row, idx) => {
             const a = arbs[idx];
             if (!a) return;
 
-            const buyP  = a.buy_price  || (a.direction === 'us_to_hk' ? a.us_price : a.hk_price)  || 0;
-            const sellP = a.sell_price || (a.direction === 'us_to_hk' ? a.hk_price : a.us_price) || 0;
-            const costs = calcTrueCosts(buyP);
-            const trueNet = sellP - buyP - costs.total;
-            const truePct = buyP > 0 ? (trueNet / buyP * 100) : 0;
-            const color   = trueNet > 0 ? 'var(--green)' : 'var(--red)';
+            const costs = calcTrueCosts(a);
 
-            const td = document.createElement('td');
-            td.className = 'ws3-true-net-td right';
-            td.title = [
-                'True Net Calculation:',
-                'Sell price:  ' + fmt(sellP),
-                'Buy price:   ' + fmt(buyP),
-                'Shipping:   -' + fmt(costs.shipping),
-                'Insurance:  -' + fmt(costs.insurance) + ' (1.5% of ' + fmt(buyP) + ')',
-                'Wire fee:   -' + fmt(costs.wire),
-                'FedEx label:-' + fmt(costs.label),
-                '─────────────',
-                'TRUE NET:    ' + (trueNet >= 0 ? '+' : '') + fmt(trueNet),
-            ].join('\n');
-            td.innerHTML =
-                '<span style="font-weight:700;color:' + color + ';">' +
-                    (trueNet >= 0 ? '+' : '') + Math.round(trueNet).toLocaleString('en-US') +
-                '</span>' +
-                '<br><span style="font-size:0.6rem;color:var(--text-2);">' +
-                    (truePct >= 0 ? '+' : '') + truePct.toFixed(1) + '%' +
-                '</span>';
+            // Update Fees cell (index 4) with tooltip
+            const feesCell = row.cells[4];
+            if (feesCell && !feesCell.querySelector('.arb-cost-tooltip')) {
+                const originalText = feesCell.textContent;
+                feesCell.innerHTML = `<div class="arb-cost-tooltip">${fmt(costs.totalAllFees)}${costTooltipHtml(costs)}</div>`;
+                feesCell.className = 'right dim';
+            }
 
-            // Insert after Margin column (index 6) — before Conf column (now at index 7)
-            const refCell = row.cells[7];
-            if (refCell) row.insertBefore(td, refCell);
-            else row.appendChild(td);
+            // Update Net Profit cell (index 5) with true net profit
+            const profitCell = row.cells[5];
+            if (profitCell) {
+                const profitCls = costs.trueNetProfit > 0 ? 'green' : 'red';
+                profitCell.innerHTML = fmt(costs.trueNetProfit);
+                profitCell.className = `right ${profitCls}`;
+                profitCell.style.fontWeight = '700';
+            }
+
+            // Insert True Margin cell if not already there
+            if (!row.querySelector('.ws3-true-margin-td')) {
+                const trueMarginTd = document.createElement('td');
+                trueMarginTd.className = 'right ws3-true-margin-td true-margin-cell';
+                const tmCls = costs.trueMargin > 0 ? 'pos' : 'neg';
+                trueMarginTd.innerHTML = `<span class="pill ${tmCls}">${costs.trueMargin.toFixed(1)}%</span>`;
+                // Insert after Margin cell (index 6)
+                if (row.cells[7]) {
+                    row.insertBefore(trueMarginTd, row.cells[7]);
+                } else {
+                    row.appendChild(trueMarginTd);
+                }
+            }
         });
     }
 
-    // =========================================================
-    // SECTION 2 — SNIPE ALERT BADGE (>10% below B25)
-    // =========================================================
-
-    function injectSnipeStyles() {
-        if (document.getElementById('ws3-snipe-styles')) return;
-        const style = document.createElement('style');
-        style.id = 'ws3-snipe-styles';
-        style.textContent = `
-            @keyframes ws3-snipe-pulse {
-                0%, 100% {
-                    box-shadow: 0 0 0 0 rgba(212,175,55,0.55), var(--shadow-md, 0 4px 16px rgba(0,0,0,0.3));
-                    border-color: rgba(212,175,55,0.85);
-                }
-                50% {
-                    box-shadow: 0 0 0 7px rgba(212,175,55,0), var(--shadow-md, 0 4px 16px rgba(0,0,0,0.3));
-                    border-color: rgba(212,175,55,0.35);
-                }
-            }
-            .ws3-snipe-card {
-                border-color: rgba(212,175,55,0.85) !important;
-                animation: ws3-snipe-pulse 1.8s ease-in-out infinite !important;
-            }
-            .ws3-snipe-badge {
-                display: inline-flex;
-                align-items: center;
-                gap: 3px;
-                background: var(--accent, #d4af37);
-                color: #000;
-                border-radius: 3px;
-                padding: 1px 6px;
-                font-family: var(--mono);
-                font-size: 0.6rem;
-                font-weight: 700;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                vertical-align: middle;
-                flex-shrink: 0;
-                cursor: default;
-            }
-        `;
-        document.head.appendChild(style);
-    }
-
-    function getVisibleDeals() {
-        const q          = (document.getElementById('deals-search')?.value || '').toLowerCase();
-        const tierFilter = document.getElementById('deals-tier')?.value || '';
-
-        // Determine active region from tab state
-        let region = 'all';
-        const tabs = document.querySelectorAll('#deals-market-section .tabs .tab');
-        for (const tab of tabs) {
-            if (!tab.classList.contains('active')) continue;
-            const t = tab.textContent.trim();
-            if (t === 'US')          region = 'US';
-            else if (t.startsWith('HK')) region = 'HK';
-            break;
-        }
-
-        let f = (window.DATA && window.DATA.deals) || [];
-        if (region !== 'all') f = f.filter(d => d.region === region);
-        if (tierFilter)       f = f.filter(d => d.tier === tierFilter);
-        if (q) {
-            f = f.filter(d =>
-                [d.ref, d.model, d.dial, d.seller, d.group].join(' ').toLowerCase().includes(q)
-            );
-        }
-        return f.slice(0, 30);
-    }
-
-    function injectSnipeBadges() {
+    // ── Add snipe badges to deal cards ──
+    function enhanceDealCards() {
         const cards = document.querySelectorAll('#deals-cards .deal-card');
-        if (!cards.length) return;
-
-        const visible = getVisibleDeals();
+        const deals = window._dealsFiltered || window.DATA?.deals || [];
 
         cards.forEach((card, idx) => {
-            const d = visible[idx];
+            const d = deals[idx];
             if (!d) return;
 
-            const discPct = d.discount_pct || d.gap_pct || 0;
-            const isSnipe = discPct > 10;
+            const disc = d.discount_pct || d.gap_pct || 0;
 
-            // Toggle pulsing border class
-            card.classList.toggle('ws3-snipe-card', isSnipe);
-
-            if (isSnipe) {
-                if (card.querySelector('.ws3-snipe-badge')) return; // already there
-
-                const badge = document.createElement('span');
-                badge.className = 'ws3-snipe-badge';
-                badge.title = discPct.toFixed(1) + '% below B25 market price — potential snipe opportunity';
-                badge.textContent = '\u2605 SNIPE';   // ★ SNIPE
-
-                // Place badge in the top-right price area alongside the discount %
-                const rightDiv = card.querySelector('div[style*="text-align:right"]');
-                if (rightDiv) {
-                    // Insert just before the right-side price column
-                    rightDiv.parentElement.insertBefore(badge, rightDiv);
-                } else {
-                    // Fallback: prepend to the card's first row
-                    const firstRow = card.querySelector('div[style*="justify-content:space-between"]');
-                    if (firstRow) firstRow.prepend(badge);
+            if (disc > 10) {
+                // Add snipe class for pulsing gold border
+                if (!card.classList.contains('snipe-card')) {
+                    card.classList.add('snipe-card');
                 }
-            } else {
-                card.querySelector('.ws3-snipe-badge')?.remove();
+
+                // Add SNIPE badge next to ref if not already present
+                if (!card.querySelector('.snipe-badge')) {
+                    const refSpan = card.querySelector('.ref');
+                    if (refSpan) {
+                        const badge = document.createElement('span');
+                        badge.className = 'snipe-badge';
+                        badge.textContent = 'SNIPE';
+                        refSpan.insertAdjacentElement('afterend', badge);
+                    }
+                }
             }
         });
     }
 
-    // =========================================================
-    // MODULE LIFECYCLE
-    // =========================================================
+    // ── Inject Snipes Only button into filter bar ──
+    function injectSnipesButton() {
+        const filterBar = document.querySelector('#deals-market-section > div:first-child');
+        if (!filterBar || filterBar.querySelector('.ws3-snipes-btn')) return;
 
+        const btn = document.createElement('button');
+        btn.className = 'ws3-snipes-btn';
+        btn.textContent = 'Snipes Only';
+        btn.addEventListener('click', () => {
+            snipesOnly = !snipesOnly;
+            btn.classList.toggle('active', snipesOnly);
+            applySnipeFilter();
+        });
+        filterBar.appendChild(btn);
+    }
+
+    // ── Apply snipe filtering ──
+    function applySnipeFilter() {
+        const cards = document.querySelectorAll('#deals-cards .deal-card');
+        const deals = window._dealsFiltered || window.DATA?.deals || [];
+
+        if (!snipesOnly) {
+            // Show all cards
+            cards.forEach(c => c.style.display = '');
+            return;
+        }
+
+        cards.forEach((card, idx) => {
+            const d = deals[idx];
+            if (!d) { card.style.display = 'none'; return; }
+            const disc = d.discount_pct || d.gap_pct || 0;
+            card.style.display = disc > 10 ? '' : 'none';
+        });
+    }
+
+    // ── Hook into existing renderArbitrage ──
+    function hookArbitrage() {
+        const origRenderArbitrage = window.renderArbitrage;
+        if (origRenderArbitrage && !origRenderArbitrage._ws3Hooked) {
+            window.renderArbitrage = function() {
+                origRenderArbitrage.apply(this, arguments);
+                // Enhance after the original renders
+                setTimeout(() => enhanceArbTable(), 0);
+            };
+            window.renderArbitrage._ws3Hooked = true;
+        }
+    }
+
+    // ── Hook into existing applyDealsFilter ──
+    function hookDeals() {
+        const origApplyDealsFilter = window.applyDealsFilter;
+        if (origApplyDealsFilter && !origApplyDealsFilter._ws3Hooked) {
+            window.applyDealsFilter = function() {
+                origApplyDealsFilter.apply(this, arguments);
+                // Enhance after the original renders
+                setTimeout(() => {
+                    enhanceDealCards();
+                    applySnipeFilter();
+                }, 0);
+            };
+            window.applyDealsFilter._ws3Hooked = true;
+        }
+    }
+
+    // ── Module init ──
     function init() {
-        console.log('[' + MOD_ID + '] init');
-
-        injectSnipeStyles();
-        injectArbStyles();
-
-        // Wrap applyDealsFilter → inject snipe badges after each render
-        if (typeof window.applyDealsFilter === 'function') {
-            const _orig = window.applyDealsFilter;
-            window.applyDealsFilter = function () {
-                _orig.apply(this, arguments);
-                try { injectSnipeBadges(); } catch (e) { console.warn('[' + MOD_ID + '] snipe:', e); }
-            };
-        }
-
-        // Wrap renderArbitrage → inject cost panel + True Net column after each render
-        if (typeof window.renderArbitrage === 'function') {
-            const _origArb = window.renderArbitrage;
-            window.renderArbitrage = function () {
-                _origArb.apply(this, arguments);
-                try { injectArbCostPanel(); } catch (e) { console.warn('[' + MOD_ID + '] arb panel:', e); }
-                try { injectTrueNetColumn(); } catch (e) { console.warn('[' + MOD_ID + '] true net:', e); }
-            };
-        }
+        console.log('[' + MOD_ID + '] Initializing...');
+        injectStyles();
+        injectSnipesButton();
+        hookArbitrage();
+        hookDeals();
     }
 
+    // ── Module render (called on data refresh) ──
     function render() {
-        // Called on data reload/refresh
-        if (document.querySelector('#deals-cards .deal-card')) {
-            try { injectSnipeBadges(); } catch (e) {}
+        // Re-inject button if DOM was rebuilt
+        injectSnipesButton();
+
+        // Enhance deal cards if visible
+        const marketSection = document.getElementById('deals-market-section');
+        if (marketSection && marketSection.style.display !== 'none') {
+            setTimeout(() => {
+                enhanceDealCards();
+                applySnipeFilter();
+            }, 0);
         }
-        const arbTbody = document.getElementById('arb-table')?.tBodies[0];
-        if (arbTbody && arbTbody.rows.length) {
-            try { injectArbCostPanel(); } catch (e) {}
-            try { injectTrueNetColumn(); } catch (e) {}
+
+        // Enhance arb table if visible
+        const arbSection = document.getElementById('deals-arb-section');
+        if (arbSection && arbSection.style.display !== 'none') {
+            setTimeout(() => enhanceArbTable(), 0);
         }
     }
 
-    function cleanup() {}
+    function cleanup() {
+        // Remove injected styles
+        const style = document.getElementById('ws3-styles');
+        if (style) style.remove();
+        snipesOnly = false;
+    }
 
+    // Register with the module system
     window.MKModules.register(MOD_ID, { init, render, cleanup });
 
 })();

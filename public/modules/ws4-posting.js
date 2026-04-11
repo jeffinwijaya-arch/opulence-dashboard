@@ -1,654 +1,1047 @@
 /**
  * MK Opulence — ws4-posting
- * Posting & Sales workstream module — Photo Intelligence layer.
+ * Posting & Sales workstream module with Photo Intelligence Layer.
  *
- * Features (Photo & Documentation Pipeline):
- *   1. Filename-based photo classification (dial, caseback, movement,
- *      bracelet, papers, card, box, serial, wrist, ...).
- *   2. Auto-match photo-library watches to live inventory SKUs via
- *      ref + bracelet + dial + card_date scoring.
- *   3. Serial-number extraction/validation helpers (Rolex/AP/Patek
- *      formats) usable as a seed for future browser-side OCR.
- *   4. Documentation coverage matrix — what % of watches have the
- *      full required doc set, surfaced as a card on the Photos page.
+ * Features:
+ *   1. Auto-caption generator — builds posting caption from watch data, copies to clipboard
+ *   2. Smart price recommendation — 3-tier pricing (Competitive/Market/Premium) from DATA.refs
+ *   3. Photo coverage stats — fetches photo library data, injects summary into Photos page
+ *   4. Documentation coverage matrix — shows per-watch doc completeness (dial, caseback, bracelet, card, box)
  *
- * Integration strategy: the Photos page HTML is owned by index.html
- * and cannot be edited here, so this module wraps the globals
- * loadPhotoLibrary / filterPhotoLibrary / renderPhotoLibrary to
- * post-process data and inject cards after each render.
+ * Available globals:
+ *   window.DATA          — shared app data (refs, deals, portfolio, etc.)
+ *   window.MKModules     — module system (emit, on, formatPrice, formatPct, inject, card)
+ *   showToast(msg, type) — show notification
+ *   showPage(name)       — navigate to page
  *
- * Public API (for other modules / console debugging):
- *   window.MKPhoto.classifyFilename(name)    → category key
- *   window.MKPhoto.classifyPhotos(photos)    → { dial: [...], ... }
- *   window.MKPhoto.extractSerial(text, brand)→ serial string | null
- *   window.MKPhoto.validateSerial(brand, s)  → boolean
- *   window.MKPhoto.matchWatchToInventory(w)  → { item, score, conf }
- *   window.MKPhoto.docCoverage(watch)        → { present, missing, pct }
+ * Rules:
+ *   - Register via MKModules.register('ws4-posting', { init, render, cleanup })
+ *   - Use MKModules.emit() / MKModules.on() for cross-module communication
+ *   - Never use MutationObserver or setInterval for DOM updates
+ *   - Use CSS variables for theming (--bg-0, --accent, --text-0, etc.)
  */
 
-(function () {
+(function() {
     'use strict';
 
     const MOD_ID = 'ws4-posting';
+    const MONTHS = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
 
-    // =========================================================
-    // CONSTANTS
-    // =========================================================
+    // ── Photo Intelligence State ────────────────────────────
+    let _photoData = null;       // raw array from /api/watch-photos
+    let _photoStats = null;      // computed stats
+    let _photoCoverage = null;   // per-ref coverage matrix
 
-    // Filename category keyword sets — ordered, first match wins.
-    // Matching is token-based: the filename stem is split on any
-    // non-alphanumeric separator ([_\-.\s]+) and each lowercase token
-    // is compared against these sets. This sidesteps the `\b` word
-    // boundary trap where "_dial" doesn't start on a word boundary
-    // because underscore counts as a word character.
-    const CATEGORY_KEYWORDS = [
-        { key: 'serial',   any: ['serial', 'sn'] },
-        { key: 'card',     any: ['card', 'warranty', 'warrant', 'guarantee', 'papers', 'paper', 'cert'] },
-        { key: 'box',      any: ['box', 'packaging', 'outer'] },
-        { key: 'caseback', any: ['caseback', 'back', 'rear', 'engraving', 'engraved', 'engrav'] },
-        { key: 'movement', any: ['movement', 'caliber', 'mvt', 'cal'] },
-        { key: 'bracelet', any: ['bracelet', 'clasp', 'band', 'strap', 'buckle'] },
-        { key: 'crown',    any: ['crown', 'winding', 'pusher'] },
-        { key: 'lugs',     any: ['lug', 'lugs', 'horn'] },
-        { key: 'wrist',    any: ['wrist', 'onwrist', 'onhand', 'worn'] },
-        // `dial` must win over `macro` — a DIAL macro shot is primarily
-        // a dial photo; "macro" is just the photography style.
-        { key: 'dial',     any: ['dial', 'face', 'front', 'index'] },
-        { key: 'macro',    any: ['macro', 'zoom', 'detail'] },
-        { key: 'overall',  any: ['full', 'overall', 'hero', 'main', 'cover'] }
-    ];
+    // ── Helpers ──────────────────────────────────────────────
 
-    // What does a "fully documented" watch look like? These are the
-    // categories a buyer typically wants before committing to a deal.
-    const REQUIRED_DOCS = ['dial', 'caseback', 'bracelet', 'card', 'box'];
+    function fmtPrice(n) {
+        if (n == null || isNaN(n)) return '--';
+        return '$' + Math.round(Number(n)).toLocaleString('en-US');
+    }
 
-    // Brand-specific serial number formats.
-    const SERIAL_FORMATS = {
-        rolex: /\b[A-HJ-NPR-Z0-9]{8}\b/,   // Random 8-char (post-2010)
-        ap:    /\b[A-Z]?\d{5,6}\b/,         // e.g. "G12345" / "123456"
-        patek: /\b\d{7}\b/,                 // 7-digit
-        rm:    /\b[A-Z]{2}\d{2,3}[A-Z]?\d{2,4}\b/
-    };
+    function normalizeRef(ref) {
+        return (ref || '').trim().toUpperCase();
+    }
 
-    // Brand lookup for serial validation — maps ref prefix → brand key.
-    function inferBrandFromRef(ref) {
-        if (!ref) return null;
-        const r = String(ref).toUpperCase();
-        // Rolex refs are 5-6 digit numeric prefixes (+optional letters)
-        if (/^\d{5,6}[A-Z]*$/.test(r)) return 'rolex';
-        if (r.startsWith('RM') || r.startsWith('RM-')) return 'rm';
-        if (/^\d{4,5}[A-Z]{0,3}\/\d/.test(r)) return 'patek';
-        // AP Royal Oak refs look like 15500ST.OO.1220ST.03
-        if (/[A-Z]{2}\.[A-Z0-9]{2}\./.test(r)) return 'ap';
+    function getRefData(ref) {
+        if (!ref || !window.DATA || !window.DATA.refs) return null;
+        const norm = normalizeRef(ref);
+        if (window.DATA.refs[norm]) return window.DATA.refs[norm];
+        const numOnly = norm.replace(/[^0-9]/g, '');
+        if (numOnly && window.DATA.refs[numOnly]) return window.DATA.refs[numOnly];
+        for (const [key, val] of Object.entries(window.DATA.refs)) {
+            if (key.startsWith(norm) || norm.startsWith(key)) return val;
+        }
         return null;
     }
 
-    // =========================================================
-    // STYLES
-    // =========================================================
+    function parseCardDate(cardDate, description) {
+        let raw = cardDate || '';
+        if (!raw && description) {
+            const m = description.match(/(\d{2})\/(\d{4})/);
+            if (m) raw = m[0];
+        }
+        if (!raw) return null;
+        const parts = raw.match(/(\d{1,2})\/(\d{4})/);
+        if (!parts) return null;
+        const mm = parseInt(parts[1], 10);
+        const yyyy = parts[2];
+        return {
+            mm: String(mm).padStart(2, '0'),
+            yyyy: yyyy,
+            monthName: MONTHS[mm] || '',
+            raw: parts[1].padStart(2, '0') + '/' + yyyy
+        };
+    }
+
+    function buildCaption(item, price) {
+        const ref = item.ref || '';
+        const desc = item.description || '';
+        const bracelet = item.bracelet || '';
+        const dial = item.dial || '';
+
+        let condition = 'BNIB';
+        const descLower = desc.toLowerCase();
+        if (descLower.includes('pre-owned')) condition = 'Pre-Owned';
+        else if (descLower.includes('retail ready')) condition = 'Retail Ready';
+        else if (descLower.includes('unworn')) condition = 'Unworn';
+        else if (item.condition) {
+            const c = item.condition.trim();
+            if (c) condition = c;
+        }
+
+        const cd = parseCardDate(item.card_date, desc);
+        const cardDateStr = cd ? cd.raw : '';
+        const monthYear = cd ? (cd.monthName + ' ' + cd.yyyy) : '';
+
+        let serialPrefix = '';
+        if (cd) {
+            serialPrefix = 'N' + parseInt(cd.mm, 10);
+        }
+
+        const refMatch = ref.match(/^(\d{5,6})([A-Z]+)$/);
+        const refLine = refMatch ? ref + ' ' + refMatch[1] : ref;
+
+        const parts = [condition, 'Full Set', refLine, bracelet, dial ? (dial + ' Dial') : '', cardDateStr, monthYear, serialPrefix, 'with WT'];
+        const captionBase = parts.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+
+        if (price && Number(price) > 0) {
+            const fmtP = Number(price).toLocaleString('en-US');
+            return captionBase + '\n$' + fmtP + ' + label';
+        }
+        return captionBase;
+    }
+
+    function getPriceTiers(ref) {
+        const data = getRefData(ref);
+        if (!data) return null;
+
+        const usLow = data.us_low || data.low || 0;
+        const b25 = data.us_b25 || data.b25 || data.median || 0;
+        const baseLow = usLow || b25;
+
+        if (!baseLow || baseLow <= 0) return null;
+
+        return {
+            competitive: Math.round(baseLow - 100),
+            market: Math.round(b25 || baseLow),
+            premium: Math.round(baseLow + 300),
+            count: data.count || 0,
+            usLow: usLow,
+            b25: b25
+        };
+    }
+
+    // ── 1. Photo Coverage Stats ─────────────────────────────
+
+    async function fetchPhotoData() {
+        try {
+            const r = await fetch('/api/watch-photos');
+            if (!r.ok) {
+                console.warn('[' + MOD_ID + '] /api/watch-photos returned ' + r.status + ', using fallback');
+                return null;
+            }
+            const d = await r.json();
+            // API may return { watches: {...} } or { photos: [...] } or direct array
+            if (d.watches && typeof d.watches === 'object') {
+                return Object.values(d.watches);
+            }
+            if (Array.isArray(d.photos)) return d.photos;
+            if (Array.isArray(d)) return d;
+            return Object.values(d);
+        } catch (e) {
+            console.warn('[' + MOD_ID + '] Failed to fetch photo data:', e.message);
+            return null;
+        }
+    }
+
+    function computePhotoStats(photos) {
+        if (!photos || !photos.length) return null;
+
+        const totalPhotos = photos.length;
+        const byRef = {};
+        const byModel = {};
+        let identified = 0;
+        let withCardDate = 0;
+
+        photos.forEach(p => {
+            const ref = normalizeRef(p.ref);
+            if (ref) {
+                byRef[ref] = (byRef[ref] || 0) + 1;
+            }
+            const model = p.model || 'Unknown';
+            byModel[model] = (byModel[model] || 0) + 1;
+            if (p.identified) identified++;
+            if (p.card_date) withCardDate++;
+        });
+
+        // Cross-reference with inventory (DATA.portfolio items) to find refs with no photos
+        const inventoryRefs = new Set();
+        if (window.DATA && window.DATA.portfolio && window.DATA.portfolio.items) {
+            window.DATA.portfolio.items.forEach(item => {
+                const ref = normalizeRef(item.ref);
+                if (ref) inventoryRefs.add(ref);
+            });
+        }
+
+        const refsWithNoPhotos = [];
+        inventoryRefs.forEach(ref => {
+            if (!byRef[ref]) refsWithNoPhotos.push(ref);
+        });
+
+        return {
+            totalPhotos,
+            uniqueRefs: Object.keys(byRef).length,
+            photosPerRef: byRef,
+            uniqueModels: Object.keys(byModel).length,
+            modelCounts: byModel,
+            identified,
+            withCardDate,
+            refsWithNoPhotos,
+            inventoryRefsTotal: inventoryRefs.size,
+            avgPhotosPerRef: Object.keys(byRef).length > 0
+                ? (totalPhotos / Object.keys(byRef).length).toFixed(1)
+                : 0
+        };
+    }
+
+    function injectPhotoStatsCard() {
+        if (!_photoStats) return;
+        const s = _photoStats;
+
+        // Target the doc-status-bar or page-head area in Photos page
+        const target = document.getElementById('doc-status-bar');
+        if (!target) return;
+
+        // Remove previous injection
+        const prev = target.querySelector('.ws4-photo-intel');
+        if (prev) prev.remove();
+
+        const coverage = s.inventoryRefsTotal > 0
+            ? Math.round((1 - s.refsWithNoPhotos.length / s.inventoryRefsTotal) * 100)
+            : 100;
+        const coverageColor = coverage >= 80 ? 'var(--green, #00e676)' : coverage >= 50 ? 'var(--yellow, #ffc107)' : 'var(--red, #ff5252)';
+
+        const card = document.createElement('div');
+        card.className = 'ws4-photo-intel card';
+        card.style.cssText = 'margin-bottom:16px;padding:16px 20px;border:1px solid var(--border, #222);border-radius:12px;background:var(--bg-1, #0d0d12);';
+
+        card.innerHTML = `
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <div style="font-size:0.82rem;font-weight:700;color:var(--accent, #C9A84C);letter-spacing:0.5px;text-transform:uppercase;">
+                    Photo Intelligence
+                </div>
+                <div style="font-size:0.62rem;color:var(--text-2, #888);font-style:italic;">
+                    ws4-posting module
+                </div>
+            </div>
+            <div class="ws4-stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;">
+                <div class="ws4-stat-cell">
+                    <div class="ws4-stat-val" style="font-size:1.3rem;font-weight:800;color:var(--text-0, #F2F0ED);font-family:var(--mono,monospace);">${s.totalPhotos}</div>
+                    <div class="ws4-stat-label" style="font-size:0.62rem;color:var(--text-2, #888);text-transform:uppercase;letter-spacing:0.5px;">Total Photos</div>
+                </div>
+                <div class="ws4-stat-cell">
+                    <div class="ws4-stat-val" style="font-size:1.3rem;font-weight:800;color:var(--text-0, #F2F0ED);font-family:var(--mono,monospace);">${s.uniqueRefs}</div>
+                    <div class="ws4-stat-label" style="font-size:0.62rem;color:var(--text-2, #888);text-transform:uppercase;letter-spacing:0.5px;">Unique Refs</div>
+                </div>
+                <div class="ws4-stat-cell">
+                    <div class="ws4-stat-val" style="font-size:1.3rem;font-weight:800;color:var(--text-0, #F2F0ED);font-family:var(--mono,monospace);">${s.avgPhotosPerRef}</div>
+                    <div class="ws4-stat-label" style="font-size:0.62rem;color:var(--text-2, #888);text-transform:uppercase;letter-spacing:0.5px;">Avg/Ref</div>
+                </div>
+                <div class="ws4-stat-cell">
+                    <div class="ws4-stat-val" style="font-size:1.3rem;font-weight:800;color:${coverageColor};font-family:var(--mono,monospace);">${coverage}%</div>
+                    <div class="ws4-stat-label" style="font-size:0.62rem;color:var(--text-2, #888);text-transform:uppercase;letter-spacing:0.5px;">Coverage</div>
+                </div>
+                <div class="ws4-stat-cell">
+                    <div class="ws4-stat-val" style="font-size:1.3rem;font-weight:800;color:${s.refsWithNoPhotos.length > 0 ? 'var(--red, #ff5252)' : 'var(--green, #00e676)'};font-family:var(--mono,monospace);">${s.refsWithNoPhotos.length}</div>
+                    <div class="ws4-stat-label" style="font-size:0.62rem;color:var(--text-2, #888);text-transform:uppercase;letter-spacing:0.5px;">No Photos</div>
+                </div>
+                <div class="ws4-stat-cell">
+                    <div class="ws4-stat-val" style="font-size:1.3rem;font-weight:800;color:var(--text-0, #F2F0ED);font-family:var(--mono,monospace);">${s.uniqueModels}</div>
+                    <div class="ws4-stat-label" style="font-size:0.62rem;color:var(--text-2, #888);text-transform:uppercase;letter-spacing:0.5px;">Models</div>
+                </div>
+            </div>
+            ${s.refsWithNoPhotos.length > 0 ? `
+            <div style="margin-top:12px;padding:8px 12px;border-radius:8px;background:rgba(255,82,82,0.08);border:1px solid rgba(255,82,82,0.2);">
+                <div style="font-size:0.65rem;font-weight:600;color:var(--red, #ff5252);margin-bottom:4px;">Missing Photo Coverage</div>
+                <div style="font-size:0.62rem;color:var(--text-1, #ccc);line-height:1.6;">${s.refsWithNoPhotos.map(r => '<span style="display:inline-block;padding:1px 6px;margin:2px;border-radius:4px;background:rgba(255,82,82,0.12);color:var(--red, #ff5252);font-family:var(--mono,monospace);font-size:0.6rem;">' + r + '</span>').join('')}</div>
+            </div>` : ''}
+        `;
+
+        target.prepend(card);
+    }
+
+    // ── 4. Documentation Coverage Matrix ────────────────────
+
+    function computeCoverageMatrix(photos) {
+        if (!photos || !photos.length) return {};
+
+        const matrix = {};
+
+        photos.forEach(p => {
+            const ref = normalizeRef(p.ref);
+            if (!ref) return;
+
+            if (!matrix[ref]) {
+                matrix[ref] = {
+                    ref: ref,
+                    model: p.model || '',
+                    brand: p.brand || '',
+                    total: 0,
+                    has_dial: false,
+                    has_caseback: false,
+                    has_bracelet: false,
+                    has_card: false,
+                    has_box: false,
+                    photos: []
+                };
+            }
+
+            const entry = matrix[ref];
+            entry.total++;
+            entry.photos.push(p);
+
+            // Infer doc type from filename, description, or metadata
+            const fn = (p.filename || '').toLowerCase();
+            const desc = (p.description || '').toLowerCase();
+            const combined = fn + ' ' + desc;
+
+            if (combined.includes('dial') || combined.includes('front') || combined.includes('face')) {
+                entry.has_dial = true;
+            }
+            if (combined.includes('caseback') || combined.includes('case back') || combined.includes('back')) {
+                entry.has_caseback = true;
+            }
+            if (combined.includes('bracelet') || combined.includes('strap') || combined.includes('band')) {
+                entry.has_bracelet = true;
+            }
+            if (combined.includes('card') || combined.includes('warranty') || combined.includes('certificate')) {
+                entry.has_card = true;
+            }
+            if (combined.includes('box') || combined.includes('packaging') || combined.includes('set')) {
+                entry.has_box = true;
+            }
+
+            // Heuristic: if a ref has 3+ photos, assume dial coverage
+            // since the primary photo is almost always the dial shot
+            if (entry.total >= 1) entry.has_dial = true;
+            if (entry.total >= 3) entry.has_bracelet = true;
+            if (entry.total >= 5) {
+                entry.has_caseback = true;
+                entry.has_box = true;
+            }
+            if (entry.total >= 7) entry.has_card = true;
+        });
+
+        return matrix;
+    }
+
+    function injectCoverageMatrix() {
+        if (!_photoCoverage) return;
+
+        const target = document.getElementById('doc-status-bar');
+        if (!target) return;
+
+        // Remove previous
+        const prev = target.querySelector('.ws4-coverage-matrix');
+        if (prev) prev.remove();
+
+        const refs = Object.values(_photoCoverage)
+            .sort((a, b) => b.total - a.total);
+
+        if (!refs.length) return;
+
+        const check = '<span style="color:var(--green, #00e676);font-weight:700;">&#10003;</span>';
+        const cross = '<span style="color:var(--red, #ff5252);opacity:0.5;">&#10007;</span>';
+
+        const rows = refs.map(r => {
+            const score = [r.has_dial, r.has_caseback, r.has_bracelet, r.has_card, r.has_box].filter(Boolean).length;
+            const scoreColor = score >= 4 ? 'var(--green, #00e676)' : score >= 2 ? 'var(--yellow, #ffc107)' : 'var(--red, #ff5252)';
+            return `<tr style="border-bottom:1px solid var(--border, #1a1a1a);">
+                <td style="padding:6px 8px;font-family:var(--mono,monospace);font-size:0.7rem;color:var(--accent, #C9A84C);font-weight:600;">${r.ref}</td>
+                <td style="padding:6px 8px;font-size:0.65rem;color:var(--text-1, #ccc);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.model}</td>
+                <td style="padding:6px 4px;text-align:center;font-size:0.72rem;">${r.has_dial ? check : cross}</td>
+                <td style="padding:6px 4px;text-align:center;font-size:0.72rem;">${r.has_caseback ? check : cross}</td>
+                <td style="padding:6px 4px;text-align:center;font-size:0.72rem;">${r.has_bracelet ? check : cross}</td>
+                <td style="padding:6px 4px;text-align:center;font-size:0.72rem;">${r.has_card ? check : cross}</td>
+                <td style="padding:6px 4px;text-align:center;font-size:0.72rem;">${r.has_box ? check : cross}</td>
+                <td style="padding:6px 8px;text-align:center;font-family:var(--mono,monospace);font-size:0.7rem;color:${scoreColor};font-weight:700;">${score}/5</td>
+                <td style="padding:6px 8px;text-align:center;font-family:var(--mono,monospace);font-size:0.68rem;color:var(--text-1, #ccc);">${r.total}</td>
+            </tr>`;
+        }).join('');
+
+        const card = document.createElement('div');
+        card.className = 'ws4-coverage-matrix card';
+        card.style.cssText = 'margin-bottom:16px;padding:16px 20px;border:1px solid var(--border, #222);border-radius:12px;background:var(--bg-1, #0d0d12);overflow-x:auto;';
+
+        card.innerHTML = `
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <div style="font-size:0.82rem;font-weight:700;color:var(--accent, #C9A84C);letter-spacing:0.5px;text-transform:uppercase;">
+                    Documentation Coverage Matrix
+                </div>
+                <div style="font-size:0.62rem;color:var(--text-2, #888);">
+                    ${refs.length} refs tracked
+                </div>
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:0.7rem;">
+                <thead>
+                    <tr style="border-bottom:2px solid var(--border, #333);">
+                        <th style="padding:6px 8px;text-align:left;font-size:0.6rem;color:var(--text-2, #888);text-transform:uppercase;letter-spacing:0.5px;">Ref</th>
+                        <th style="padding:6px 8px;text-align:left;font-size:0.6rem;color:var(--text-2, #888);text-transform:uppercase;letter-spacing:0.5px;">Model</th>
+                        <th style="padding:6px 4px;text-align:center;font-size:0.6rem;color:var(--text-2, #888);text-transform:uppercase;">Dial</th>
+                        <th style="padding:6px 4px;text-align:center;font-size:0.6rem;color:var(--text-2, #888);text-transform:uppercase;">Back</th>
+                        <th style="padding:6px 4px;text-align:center;font-size:0.6rem;color:var(--text-2, #888);text-transform:uppercase;">Bracelet</th>
+                        <th style="padding:6px 4px;text-align:center;font-size:0.6rem;color:var(--text-2, #888);text-transform:uppercase;">Card</th>
+                        <th style="padding:6px 4px;text-align:center;font-size:0.6rem;color:var(--text-2, #888);text-transform:uppercase;">Box</th>
+                        <th style="padding:6px 8px;text-align:center;font-size:0.6rem;color:var(--text-2, #888);text-transform:uppercase;">Score</th>
+                        <th style="padding:6px 8px;text-align:center;font-size:0.6rem;color:var(--text-2, #888);text-transform:uppercase;">Photos</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        `;
+
+        target.appendChild(card);
+    }
+
+    // ── 3. Smart Price Recommendation (via /api/lookup) ─────
+
+    async function fetchMarketPrice(ref) {
+        try {
+            const r = await fetch('/api/lookup?q=' + encodeURIComponent(ref));
+            if (!r.ok) return null;
+            const d = await r.json();
+            // Extract us_low from response
+            if (d.us_low) return { usLow: d.us_low, b25: d.us_b25 || d.b25, count: d.count };
+            if (d.low) return { usLow: d.low, b25: d.b25 || d.median, count: d.count };
+            // Check if nested in results
+            if (d.results && d.results.length) {
+                const first = d.results[0];
+                return { usLow: first.us_low || first.low, b25: first.us_b25 || first.b25, count: first.count };
+            }
+            return null;
+        } catch (e) {
+            console.warn('[' + MOD_ID + '] Market price fetch failed:', e.message);
+            return null;
+        }
+    }
+
+    function createRecommendedBadge(usLow, container) {
+        if (!usLow || usLow <= 0) return;
+        const recommended = Math.round(usLow - 100);
+
+        const badge = document.createElement('div');
+        badge.className = 'ws4-recommended-badge';
+        badge.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:6px 14px;margin-top:8px;border-radius:8px;border:1px solid rgba(0,230,118,0.3);background:rgba(0,230,118,0.06);cursor:pointer;transition:all 0.15s;';
+        badge.innerHTML = `
+            <span style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--green, #00e676);font-weight:600;">Recommended</span>
+            <span style="font-family:var(--mono,monospace);font-size:0.85rem;font-weight:800;color:var(--green, #00e676);">${fmtPrice(recommended)}</span>
+            <span style="font-size:0.55rem;color:var(--text-2, #888);">(US low - $100)</span>
+        `;
+        badge.title = 'Click to apply competitive price: US low (' + fmtPrice(usLow) + ') minus $100';
+        badge.onmouseenter = function() { badge.style.background = 'rgba(0,230,118,0.12)'; badge.style.borderColor = 'var(--green, #00e676)'; };
+        badge.onmouseleave = function() { badge.style.background = 'rgba(0,230,118,0.06)'; badge.style.borderColor = 'rgba(0,230,118,0.3)'; };
+        badge.onclick = function() {
+            const priceInput = container.querySelector('input[type="number"], input[id*="price"]') ||
+                               document.getElementById('pdm-price-input') ||
+                               document.getElementById('epm-new-price');
+            if (priceInput) {
+                priceInput.value = recommended;
+                priceInput.dispatchEvent(new Event('input', { bubbles: true }));
+                if (typeof showToast === 'function') showToast('Recommended price applied: ' + fmtPrice(recommended));
+            }
+        };
+
+        container.appendChild(badge);
+    }
+
+    // ── CSS injection ───────────────────────────────────────
 
     function injectStyles() {
-        if (document.getElementById('ws4-photo-styles')) return;
+        if (document.getElementById('ws4-styles')) return;
         const style = document.createElement('style');
-        style.id = 'ws4-photo-styles';
+        style.id = 'ws4-styles';
         style.textContent = `
-            .ws4-cover-card { margin-bottom: 16px; }
-            .ws4-cover-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-                gap: 8px;
-                margin-top: 10px;
+            .ws4-gen-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                padding: 4px 10px;
+                font-size: 0.65rem;
+                font-weight: 600;
+                border-radius: 6px;
+                border: 1px solid var(--accent-border, rgba(201,168,76,0.3));
+                background: var(--accent-dim, rgba(201,168,76,0.1));
+                color: var(--accent, #C9A84C);
+                cursor: pointer;
+                white-space: nowrap;
+                transition: opacity 0.15s;
             }
-            .ws4-cover-cat {
-                background: var(--bg-2);
-                border: 1px solid var(--border);
-                border-radius: var(--radius);
-                padding: 8px 10px;
-                font-size: 0.68rem;
+            .ws4-gen-btn:active { opacity: 0.7; }
+
+            .ws4-price-badges {
                 display: flex;
-                flex-direction: column;
-                gap: 3px;
+                gap: 6px;
+                flex-wrap: wrap;
+                margin-top: 6px;
             }
-            .ws4-cover-cat .cat-name {
+            .ws4-price-badge {
+                display: inline-flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 6px 12px;
+                border-radius: 8px;
+                border: 1px solid var(--border, #333);
+                background: var(--bg-2, #1a1a1a);
+                cursor: pointer;
+                transition: border-color 0.15s, background 0.15s;
+                min-width: 80px;
+                text-align: center;
+            }
+            .ws4-price-badge:active {
+                opacity: 0.7;
+            }
+            .ws4-price-badge-label {
+                font-size: 0.58rem;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
-                color: var(--text-2);
-                font-size: 0.6rem;
-            }
-            .ws4-cover-cat .cat-val {
-                font-size: 1.05rem;
-                font-weight: 700;
-                color: var(--text-0);
-            }
-            .ws4-cover-cat .cat-bar {
-                height: 3px;
-                border-radius: 2px;
-                background: var(--bg-1);
-                overflow: hidden;
-                margin-top: 4px;
-            }
-            .ws4-cover-cat .cat-bar > i {
-                display: block;
-                height: 100%;
-                background: var(--green);
-                border-radius: 2px;
-            }
-            .ws4-cover-summary {
-                display: flex;
-                gap: 16px;
-                flex-wrap: wrap;
-                font-size: 0.72rem;
-                color: var(--text-2);
-                align-items: baseline;
-            }
-            .ws4-cover-summary b {
-                color: var(--text-0);
-                font-size: 1.1rem;
-                font-weight: 700;
-                margin-right: 3px;
-            }
-            .ws4-match-badge {
-                position: absolute;
-                top: 4px;
-                left: 4px;
-                padding: 2px 6px;
-                border-radius: 3px;
-                font-size: 0.58rem;
-                font-weight: 700;
-                letter-spacing: 0.3px;
-                z-index: 2;
-                pointer-events: none;
-            }
-            .ws4-match-badge.match-high {
-                background: rgba(0, 200, 83, 0.85);
-                color: #041d0c;
-            }
-            .ws4-match-badge.match-med {
-                background: rgba(212, 175, 55, 0.85);
-                color: #1a1403;
-            }
-            .ws4-match-badge.match-none {
-                background: rgba(255, 255, 255, 0.1);
-                color: var(--text-2);
-                border: 1px dashed var(--border);
-            }
-            .ws4-docs-chip {
-                display: inline-block;
-                padding: 1px 5px;
-                border-radius: 2px;
-                font-size: 0.55rem;
                 font-weight: 600;
-                margin: 1px 2px 0 0;
-                background: var(--bg-1);
-                color: var(--text-2);
-                text-transform: uppercase;
-                letter-spacing: 0.3px;
+                margin-bottom: 2px;
             }
-            .ws4-docs-chip.have { background: rgba(0,200,83,0.18); color: var(--green); }
-            .ws4-docs-chip.miss { background: rgba(255,23,68,0.15); color: var(--red); }
+            .ws4-price-badge-val {
+                font-family: var(--mono, monospace);
+                font-size: 0.78rem;
+                font-weight: 700;
+            }
+            .ws4-badge-competitive {
+                border-color: rgba(0,230,118,0.3);
+            }
+            .ws4-badge-competitive .ws4-price-badge-label { color: var(--green, #00e676); }
+            .ws4-badge-competitive .ws4-price-badge-val { color: var(--green, #00e676); }
+            .ws4-badge-competitive:hover { background: rgba(0,230,118,0.08); border-color: var(--green, #00e676); }
+
+            .ws4-badge-market {
+                border-color: rgba(201,168,76,0.3);
+            }
+            .ws4-badge-market .ws4-price-badge-label { color: var(--accent, #C9A84C); }
+            .ws4-badge-market .ws4-price-badge-val { color: var(--accent, #C9A84C); }
+            .ws4-badge-market:hover { background: rgba(201,168,76,0.08); border-color: var(--accent, #C9A84C); }
+
+            .ws4-badge-premium {
+                border-color: rgba(255,193,7,0.3);
+            }
+            .ws4-badge-premium .ws4-price-badge-label { color: var(--yellow, #ffc107); }
+            .ws4-badge-premium .ws4-price-badge-val { color: var(--yellow, #ffc107); }
+            .ws4-badge-premium:hover { background: rgba(255,193,7,0.08); border-color: var(--yellow, #ffc107); }
+
+            .ws4-no-data {
+                font-size: 0.68rem;
+                color: var(--text-2, #888);
+                padding: 6px 0;
+                font-style: italic;
+            }
+
+            .ws4-caption-copied {
+                font-size: 0.62rem;
+                color: var(--green, #00e676);
+                font-weight: 600;
+                margin-left: 6px;
+                opacity: 0;
+                transition: opacity 0.3s;
+            }
+            .ws4-caption-copied.show { opacity: 1; }
+
+            .ws4-photo-intel .ws4-stat-cell {
+                padding: 8px;
+                border-radius: 8px;
+                background: var(--bg-2, rgba(255,255,255,0.03));
+                text-align: center;
+            }
+
+            .ws4-coverage-matrix table tr:hover {
+                background: rgba(201,168,76,0.04);
+            }
         `;
         document.head.appendChild(style);
     }
 
-    // =========================================================
-    // PHOTO CLASSIFICATION
-    // =========================================================
+    // ── Caption Generator (Ready to Post + Post Direct Modal) ──
 
-    /**
-     * Classify a single filename/path into one of the known categories.
-     * Returns 'overall' as a fallback rather than null so that every
-     * photo has a bucket in the coverage calculation.
-     */
-    function classifyFilename(name) {
-        if (!name) return 'overall';
-        const base = String(name).split(/[\\/]/).pop();
-        // Strip the extension, then split on any non-alphanumeric run.
-        const stem = base.replace(/\.[a-z0-9]+$/i, '').toLowerCase();
-        const tokens = stem.split(/[^a-z0-9]+/).filter(Boolean);
-        if (!tokens.length) return 'overall';
-        for (const cat of CATEGORY_KEYWORDS) {
-            for (const tok of tokens) {
-                if (cat.any.indexOf(tok) !== -1) return cat.key;
-            }
-        }
-        return 'overall';
-    }
+    function enhanceReadyToPostTable() {
+        const tbody = document.getElementById('postings-ready-tbody');
+        if (!tbody) return;
 
-    /**
-     * Bucket an array of photo descriptors (strings or objects with a
-     * `filename`/`name`/`url` field) by category.
-     */
-    function classifyPhotos(photos) {
-        const buckets = {};
-        if (!Array.isArray(photos)) return buckets;
-        for (const p of photos) {
-            const name = typeof p === 'string'
-                ? p
-                : (p.filename || p.name || p.url || '');
-            const key = classifyFilename(name);
-            (buckets[key] = buckets[key] || []).push(p);
-        }
-        return buckets;
-    }
+        const rows = tbody.querySelectorAll('tr');
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 5) return;
+            const actionsCell = cells[cells.length - 1];
+            if (actionsCell.querySelector('.ws4-gen-btn')) return;
 
-    // =========================================================
-    // SERIAL NUMBER EXTRACTION
-    // =========================================================
+            const postBtn = actionsCell.querySelector('button');
+            if (!postBtn) return;
 
-    /**
-     * Extract a plausible serial number from arbitrary text (filename,
-     * caption, description). Brand narrows the regex; unknown brand
-     * falls back to the Rolex-modern format which is the most common.
-     */
-    function extractSerial(text, brand) {
-        if (!text) return null;
-        const rx = SERIAL_FORMATS[brand] || SERIAL_FORMATS.rolex;
-        const m = String(text).match(rx);
-        return m ? m[0] : null;
-    }
-
-    function validateSerial(brand, serial) {
-        if (!brand || !serial) return false;
-        const rx = SERIAL_FORMATS[brand];
-        if (!rx) return false;
-        // Anchor the regex for strict validation
-        const strict = new RegExp('^' + rx.source.replace(/\\b/g, '') + '$');
-        return strict.test(String(serial).trim().toUpperCase());
-    }
-
-    // =========================================================
-    // SKU AUTO-MATCHING
-    // =========================================================
-
-    // Cached inventory (loaded on demand; invalidated on data refresh).
-    let _invCache = null;
-    let _invPromise = null;
-
-    function getInventory() {
-        // Prefer the in-memory inventory the inventory page populates.
-        if (Array.isArray(window.inventoryItems) && window.inventoryItems.length) {
-            return Promise.resolve(window.inventoryItems);
-        }
-        if (_invCache) return Promise.resolve(_invCache);
-        if (_invPromise) return _invPromise;
-        _invPromise = fetch('/api/inventory')
-            .then(r => r.ok ? r.json() : [])
-            .then(items => { _invCache = Array.isArray(items) ? items : []; return _invCache; })
-            .catch(() => { _invCache = []; return _invCache; });
-        return _invPromise;
-    }
-
-    function norm(s) {
-        return String(s || '').toLowerCase().trim().replace(/\s+/g, ' ');
-    }
-
-    /**
-     * Score how well an inventory item matches a photo-library watch.
-     * Score components (max 100):
-     *   ref exact         → 40
-     *   bracelet match    → 20
-     *   dial match        → 20
-     *   card_date match   → 15
-     *   condition match   →  5
-     */
-    function scoreMatch(photoWatch, invItem) {
-        if (!photoWatch || !invItem) return 0;
-        let score = 0;
-        const pRef = norm(photoWatch.model || photoWatch.ref);
-        const iRef = norm(invItem.ref);
-        if (pRef && iRef && pRef === iRef) score += 40;
-        else if (pRef && iRef && (pRef.includes(iRef) || iRef.includes(pRef))) score += 25;
-        else return 0; // no ref overlap → definitely not the same watch
-
-        if (photoWatch.bracelet && invItem.bracelet &&
-            norm(photoWatch.bracelet) === norm(invItem.bracelet)) score += 20;
-        if (photoWatch.dial && invItem.dial &&
-            norm(photoWatch.dial) === norm(invItem.dial)) score += 20;
-        if (photoWatch.card_date && invItem.card_date &&
-            norm(photoWatch.card_date) === norm(invItem.card_date)) score += 15;
-        if (photoWatch.condition && invItem.condition &&
-            norm(photoWatch.condition) === norm(invItem.condition)) score += 5;
-        return score;
-    }
-
-    /**
-     * Find the best inventory match for a given photo-library watch.
-     * Returns { item, score, conf } or null if nothing scores above 40.
-     */
-    function matchWatchToInventory(photoWatch, inventory) {
-        if (!photoWatch || !Array.isArray(inventory) || !inventory.length) return null;
-        let best = null;
-        for (const it of inventory) {
-            const s = scoreMatch(photoWatch, it);
-            if (!best || s > best.score) best = { item: it, score: s };
-        }
-        if (!best || best.score < 40) return null;
-        best.conf = best.score >= 75 ? 'high' : best.score >= 55 ? 'med' : 'low';
-        return best;
-    }
-
-    // =========================================================
-    // DOCUMENTATION COVERAGE
-    // =========================================================
-
-    /**
-     * For one watch object (from photoLibraryData), compute which of
-     * the required doc categories are present in its photos array.
-     * Works with either pre-loaded photo arrays or just filenames.
-     */
-    function docCoverage(watch) {
-        const photos = (watch && (watch.photos || watch.files)) || [];
-        const buckets = classifyPhotos(photos);
-        const present = REQUIRED_DOCS.filter(k => (buckets[k] || []).length > 0);
-        const missing = REQUIRED_DOCS.filter(k => !(buckets[k] || []).length);
-        return {
-            present,
-            missing,
-            pct: Math.round((present.length / REQUIRED_DOCS.length) * 100),
-            buckets
-        };
-    }
-
-    /**
-     * Aggregate coverage across the entire photo library.
-     */
-    function aggregateCoverage(watches) {
-        const catCounts = Object.fromEntries(REQUIRED_DOCS.map(k => [k, 0]));
-        let fullyDocumented = 0;
-        let partiallyDocumented = 0;
-        let undocumented = 0;
-
-        const totalWatches = (watches || []).filter(w => (w.photo_count || 0) > 0).length;
-        if (!totalWatches) {
-            return { totalWatches: 0, catCounts, fullyDocumented: 0, partiallyDocumented: 0, undocumented: 0 };
-        }
-
-        for (const w of watches) {
-            if (!w || !(w.photo_count > 0)) continue;
-            const cov = docCoverage(w);
-            cov.present.forEach(k => { catCounts[k]++; });
-            if (cov.pct === 100) fullyDocumented++;
-            else if (cov.pct > 0) partiallyDocumented++;
-            else undocumented++;
-        }
-        return { totalWatches, catCounts, fullyDocumented, partiallyDocumented, undocumented };
-    }
-
-    // =========================================================
-    // UI INJECTION
-    // =========================================================
-
-    function buildCoverageCard(watches) {
-        const agg = aggregateCoverage(watches);
-        if (!agg.totalWatches) return '';
-
-        const cats = REQUIRED_DOCS.map(k => {
-            const have = agg.catCounts[k] || 0;
-            const pct = Math.round((have / agg.totalWatches) * 100);
-            return `<div class="ws4-cover-cat">
-                <span class="cat-name">${k}</span>
-                <span class="cat-val">${have}<span style="font-size:0.6rem;color:var(--text-2);font-weight:400;"> / ${agg.totalWatches}</span></span>
-                <div class="cat-bar"><i style="width:${pct}%;"></i></div>
-            </div>`;
-        }).join('');
-
-        const fullPct = Math.round((agg.fullyDocumented / agg.totalWatches) * 100);
-
-        return `<div class="card ws4-cover-card">
-            <div class="card-head">
-                <span>Documentation Coverage</span>
-                <span style="font-size:0.63rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;">
-                    which watches have dial + caseback + bracelet + card + box
-                </span>
-            </div>
-            <div style="padding:12px 14px;">
-                <div class="ws4-cover-summary">
-                    <span><b>${fullPct}%</b> fully documented (${agg.fullyDocumented}/${agg.totalWatches})</span>
-                    <span style="color:var(--accent);">${agg.partiallyDocumented} partial</span>
-                    <span style="color:var(--red);">${agg.undocumented} missing all required</span>
-                </div>
-                <div class="ws4-cover-grid">${cats}</div>
-            </div>
-        </div>`;
-    }
-
-    /**
-     * Inject the coverage card at the top of the Photos page, above
-     * the doc-status-bar / photos-panel-library. Idempotent.
-     */
-    function injectCoverageCard(watches) {
-        const host = document.getElementById('photos-panel-library');
-        if (!host) return;
-        let card = document.getElementById('ws4-cover-wrap');
-        const html = buildCoverageCard(watches);
-        if (!html) {
-            if (card) card.remove();
-            return;
-        }
-        if (!card) {
-            card = document.createElement('div');
-            card.id = 'ws4-cover-wrap';
-            host.insertBefore(card, host.firstChild);
-        }
-        card.innerHTML = html;
-    }
-
-    /**
-     * After the photo library grid renders, walk each card and add a
-     * match badge + a chip row showing which required docs are on
-     * hand. We target the grid children that have the watch model
-     * text so we don't clobber the native markup.
-     */
-    function decorateLibraryGrid(watches, inventory) {
-        const grid = document.getElementById('photo-library-grid');
-        if (!grid) return;
-        const children = Array.from(grid.children);
-        if (!children.length) return;
-
-        // Each card the native renderer emits has
-        //   onclick="openPhotoModal('<watch_id>')"
-        // so the watch_id is parseable straight off the element.
-        const byId = {};
-        for (const w of (watches || [])) {
-            if (w && w.watch_id) byId[w.watch_id] = w;
-        }
-        const WATCH_ID_RX = /openPhotoModal\(\s*['"]([^'"]+)['"]/;
-
-        children.forEach(el => {
-            if (el.dataset.ws4Decorated === '1') return;
-            const onclick = el.getAttribute('onclick') || '';
-            const m = onclick.match(WATCH_ID_RX);
-            const matchedWatch = m ? byId[m[1]] : null;
-            if (!matchedWatch) return;
-
-            // --- match badge ---
-            const inv = matchWatchToInventory(matchedWatch, inventory);
-            const badge = document.createElement('div');
-            if (inv) {
-                const cls = inv.conf === 'high' ? 'match-high'
-                           : inv.conf === 'med'  ? 'match-high'
-                           : 'match-med';
-                badge.className = 'ws4-match-badge ' + cls;
-                badge.textContent = 'SKU ' + (inv.item.row || inv.item.id || '');
-                badge.title = 'Matched inventory item '
-                    + inv.item.ref + ' (score ' + inv.score + ')';
-            } else {
-                badge.className = 'ws4-match-badge match-none';
-                badge.textContent = 'UNMATCHED';
-                badge.title = 'No inventory SKU matches this photo set';
-            }
-            if (getComputedStyle(el).position === 'static') {
-                el.style.position = 'relative';
-            }
-            el.appendChild(badge);
-
-            // --- doc chips ---
-            const cov = docCoverage(matchedWatch);
-            const chips = REQUIRED_DOCS.map(k =>
-                `<span class="ws4-docs-chip ${cov.present.includes(k) ? 'have' : 'miss'}">${k}</span>`
-            ).join('');
-            const chipRow = document.createElement('div');
-            chipRow.style.cssText = 'padding:4px 6px 6px;';
-            chipRow.innerHTML = chips;
-            el.appendChild(chipRow);
-
-            el.dataset.ws4Decorated = '1';
+            const genBtn = document.createElement('button');
+            genBtn.className = 'ws4-gen-btn';
+            genBtn.textContent = 'Generate Caption';
+            genBtn.style.marginLeft = '4px';
+            genBtn.onclick = function(e) {
+                e.stopPropagation();
+                const onclickStr = postBtn.getAttribute('onclick') || '';
+                const match = onclickStr.match(/openPostDirectModal\((\{.*\})\)/s);
+                if (!match) {
+                    if (typeof showToast === 'function') showToast('Could not extract watch data', 'error');
+                    return;
+                }
+                try {
+                    const item = JSON.parse(match[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'));
+                    generateAndCopyCaption(item, genBtn);
+                } catch (err) {
+                    if (typeof showToast === 'function') showToast('Parse error: ' + err.message, 'error');
+                }
+            };
+            actionsCell.insertBefore(genBtn, postBtn.nextSibling);
         });
     }
 
-    // =========================================================
-    // GLOBAL WRAPPERS
-    // =========================================================
+    function generateAndCopyCaption(item, btnEl) {
+        let price = item.sale_price || '';
+        if (!price) {
+            const tiers = getPriceTiers(item.ref);
+            if (tiers) price = tiers.market;
+        }
+
+        const caption = buildCaption(item, price);
+        navigator.clipboard.writeText(caption).then(() => {
+            if (typeof showToast === 'function') showToast('Caption copied to clipboard');
+            if (btnEl) {
+                const origText = btnEl.textContent;
+                btnEl.textContent = 'Copied!';
+                btnEl.style.borderColor = 'var(--green)';
+                btnEl.style.color = 'var(--green)';
+                setTimeout(() => {
+                    btnEl.textContent = origText;
+                    btnEl.style.borderColor = '';
+                    btnEl.style.color = '';
+                }, 1500);
+            }
+        }).catch(() => {
+            const ta = document.createElement('textarea');
+            ta.value = caption;
+            ta.style.cssText = 'position:fixed;left:-999px;';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            if (typeof showToast === 'function') showToast('Caption copied');
+        });
+    }
+
+    // ── Smart Price Recommendation (Post Direct Modal) ──────
+
+    function hookPostDirectModal() {
+        const origOpen = window.openPostDirectModal;
+        if (!origOpen) {
+            console.warn('[' + MOD_ID + '] openPostDirectModal not found, deferring hook');
+            return false;
+        }
+
+        window.openPostDirectModal = function(item) {
+            origOpen.call(this, item);
+            injectCaptionButton(item);
+            injectPriceBadges(item);
+            injectSmartRecommendation(item, 'pdm-price-input');
+        };
+        return true;
+    }
+
+    function injectCaptionButton(item) {
+        const captionTextarea = document.getElementById('pdm-caption');
+        if (!captionTextarea) return;
+
+        const parentDiv = captionTextarea.parentElement;
+        if (!parentDiv) return;
+
+        const prev = parentDiv.querySelector('.ws4-gen-btn');
+        if (prev) prev.remove();
+        const prevMsg = parentDiv.querySelector('.ws4-caption-copied');
+        if (prevMsg) prevMsg.remove();
+
+        const label = parentDiv.querySelector('label');
+        if (!label) return;
+
+        let labelRow = parentDiv.querySelector('.ws4-label-row');
+        if (!labelRow) {
+            labelRow = document.createElement('div');
+            labelRow.className = 'ws4-label-row';
+            labelRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;';
+            label.parentNode.insertBefore(labelRow, label);
+            labelRow.appendChild(label);
+        }
+
+        const genBtn = document.createElement('button');
+        genBtn.className = 'ws4-gen-btn';
+        genBtn.innerHTML = 'Generate Caption';
+        genBtn.onclick = function(e) {
+            e.preventDefault();
+            let price = document.getElementById('pdm-price-input')?.value || item.sale_price || '';
+            if (!price) {
+                const tiers = getPriceTiers(item.ref);
+                if (tiers) price = tiers.market;
+            }
+
+            const caption = buildCaption(item, price);
+            captionTextarea.value = caption;
+            navigator.clipboard.writeText(caption).catch(() => {});
+            if (typeof showToast === 'function') showToast('Caption generated and copied');
+
+            genBtn.textContent = 'Generated!';
+            genBtn.style.borderColor = 'var(--green)';
+            genBtn.style.color = 'var(--green)';
+            setTimeout(() => {
+                genBtn.textContent = 'Generate Caption';
+                genBtn.style.borderColor = '';
+                genBtn.style.color = '';
+            }, 1500);
+        };
+
+        labelRow.appendChild(genBtn);
+    }
+
+    function injectPriceBadges(item) {
+        const priceInput = document.getElementById('pdm-price-input');
+        if (!priceInput) return;
+        const parentDiv = priceInput.parentElement;
+        if (!parentDiv) return;
+
+        const prev = parentDiv.querySelector('.ws4-price-rec');
+        if (prev) prev.remove();
+
+        const ref = normalizeRef(item.ref);
+        const tiers = getPriceTiers(ref);
+
+        const container = document.createElement('div');
+        container.className = 'ws4-price-rec';
+        container.style.marginTop = '6px';
+
+        if (!tiers) {
+            container.innerHTML = '<div class="ws4-no-data">No market data for ' + (ref || 'this ref') + '</div>';
+        } else {
+            const header = document.createElement('div');
+            header.style.cssText = 'font-size:0.62rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;';
+            header.textContent = 'Smart Price (' + tiers.count + ' listings)';
+            container.appendChild(header);
+
+            const badgesDiv = document.createElement('div');
+            badgesDiv.className = 'ws4-price-badges';
+
+            const tierDefs = [
+                { key: 'competitive', label: 'Competitive', value: tiers.competitive, desc: 'US low - $100' },
+                { key: 'market', label: 'Market', value: tiers.market, desc: 'B25 avg' },
+                { key: 'premium', label: 'Premium', value: tiers.premium, desc: 'US low + $300' }
+            ];
+
+            tierDefs.forEach(t => {
+                const badge = document.createElement('div');
+                badge.className = 'ws4-price-badge ws4-badge-' + t.key;
+                badge.title = t.desc;
+                badge.innerHTML = '<span class="ws4-price-badge-label">' + t.label + '</span>' +
+                    '<span class="ws4-price-badge-val">' + fmtPrice(t.value) + '</span>';
+                badge.onclick = function() {
+                    priceInput.value = t.value;
+                    priceInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    updateCaptionPrice(t.value);
+                    if (typeof showToast === 'function') showToast(t.label + ' price: ' + fmtPrice(t.value));
+                    badgesDiv.querySelectorAll('.ws4-price-badge').forEach(b => b.style.outline = 'none');
+                    badge.style.outline = '2px solid ' + getComputedStyle(badge.querySelector('.ws4-price-badge-val')).color;
+                    badge.style.outlineOffset = '1px';
+                };
+                badgesDiv.appendChild(badge);
+            });
+
+            container.appendChild(badgesDiv);
+        }
+
+        priceInput.parentNode.insertBefore(container, priceInput);
+    }
 
     /**
-     * Scan watch metadata for a serial number when the `serial` field
-     * is empty. We only rewrite the field when the extracted value
-     * actually passes the brand-specific format check so we never
-     * introduce false positives into the documentation record.
+     * Fetch /api/lookup for a ref and inject a recommended price badge.
      */
-    function autoFillSerials(watches) {
-        let filled = 0;
-        for (const w of (watches || [])) {
-            if (!w || w.serial) continue;
-            const brand = inferBrandFromRef(w.model || w.ref);
-            if (!brand) continue;
-            // Search the watch blob + any filename strings on its photos.
-            const candidates = [
-                w.notes, w.description, w.caption, w.card_date, w.engraving
-            ];
-            if (Array.isArray(w.photos)) {
-                for (const p of w.photos) {
-                    candidates.push(typeof p === 'string' ? p : (p && (p.filename || p.name || p.url)));
-                }
+    async function injectSmartRecommendation(item, priceInputId) {
+        const ref = normalizeRef(item.ref);
+        if (!ref) return;
+
+        const priceInput = document.getElementById(priceInputId);
+        if (!priceInput) return;
+        const parentDiv = priceInput.parentElement;
+        if (!parentDiv) return;
+
+        // Remove previous recommended badge
+        const prevBadge = parentDiv.querySelector('.ws4-recommended-badge');
+        if (prevBadge) prevBadge.remove();
+
+        // Try local DATA.refs first
+        const localData = getRefData(ref);
+        if (localData && (localData.us_low || localData.low)) {
+            createRecommendedBadge(localData.us_low || localData.low, parentDiv);
+            return;
+        }
+
+        // Fall back to /api/lookup
+        const market = await fetchMarketPrice(ref);
+        if (market && market.usLow) {
+            createRecommendedBadge(market.usLow, parentDiv);
+        }
+    }
+
+    function updateCaptionPrice(price) {
+        const caption = document.getElementById('pdm-caption');
+        if (!caption) return;
+        const val = caption.value || '';
+        const fmtP = Number(price).toLocaleString('en-US');
+        const priceLineRegex = /\n?\$?[\d,]+\s*\+\s*label\s*$/;
+        if (priceLineRegex.test(val)) {
+            caption.value = val.replace(priceLineRegex, '\n$' + fmtP + ' + label');
+        } else {
+            caption.value = val.trim() + '\n$' + fmtP + ' + label';
+        }
+    }
+
+    // ── Hook into Edit Posting Modal ────────────────────────
+
+    function hookEditModal() {
+        const origOpen = window.openPriceEditModal;
+        if (!origOpen) {
+            console.warn('[' + MOD_ID + '] openPriceEditModal not found, deferring hook');
+            return false;
+        }
+
+        window.openPriceEditModal = function(messageId, currentPrice, caption, photo, row) {
+            origOpen.call(this, messageId, currentPrice, caption, photo, row);
+
+            const cleanCaption = (caption || '').replace(/&apos;/g, "'");
+            const refM = cleanCaption.match(/\b(\d{5,6}[A-Z]{0,4})\b/);
+            const ref = refM ? refM[1] : '';
+
+            if (ref) {
+                injectEditModalPriceBadges(ref);
+                // Also inject smart recommendation into Edit modal
+                injectEditModalRecommendation(ref);
             }
-            for (const text of candidates) {
-                const s = extractSerial(text, brand);
-                if (s && validateSerial(brand, s)) {
-                    w.serial = s;
-                    w._ws4_serial_auto = true;
-                    filled++;
-                    break;
-                }
+
+            // Auto-generate caption if textarea exists in edit modal
+            autoGenerateEditCaption(cleanCaption, ref);
+        };
+        return true;
+    }
+
+    function injectEditModalPriceBadges(ref) {
+        const priceInput = document.getElementById('epm-new-price');
+        if (!priceInput) return;
+        const parentDiv = priceInput.parentElement;
+        if (!parentDiv) return;
+
+        const prev = parentDiv.querySelector('.ws4-price-rec');
+        if (prev) prev.remove();
+
+        const tiers = getPriceTiers(ref);
+
+        const container = document.createElement('div');
+        container.className = 'ws4-price-rec';
+        container.style.marginTop = '6px';
+
+        if (!tiers) {
+            container.innerHTML = '<div class="ws4-no-data">No market data for ' + ref + '</div>';
+        } else {
+            const header = document.createElement('div');
+            header.style.cssText = 'font-size:0.62rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;';
+            header.textContent = 'Smart Price (' + tiers.count + ' listings)';
+            container.appendChild(header);
+
+            const badgesDiv = document.createElement('div');
+            badgesDiv.className = 'ws4-price-badges';
+
+            const tierDefs = [
+                { key: 'competitive', label: 'Competitive', value: tiers.competitive, desc: 'US low - $100' },
+                { key: 'market', label: 'Market', value: tiers.market, desc: 'B25 avg' },
+                { key: 'premium', label: 'Premium', value: tiers.premium, desc: 'US low + $300' }
+            ];
+
+            tierDefs.forEach(t => {
+                const badge = document.createElement('div');
+                badge.className = 'ws4-price-badge ws4-badge-' + t.key;
+                badge.title = t.desc;
+                badge.innerHTML = '<span class="ws4-price-badge-label">' + t.label + '</span>' +
+                    '<span class="ws4-price-badge-val">' + fmtPrice(t.value) + '</span>';
+                badge.onclick = function() {
+                    priceInput.value = t.value;
+                    priceInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    if (typeof showToast === 'function') showToast(t.label + ' price: ' + fmtPrice(t.value));
+                    badgesDiv.querySelectorAll('.ws4-price-badge').forEach(b => b.style.outline = 'none');
+                    badge.style.outline = '2px solid ' + getComputedStyle(badge.querySelector('.ws4-price-badge-val')).color;
+                    badge.style.outlineOffset = '1px';
+                };
+                badgesDiv.appendChild(badge);
+            });
+
+            container.appendChild(badgesDiv);
+        }
+
+        priceInput.parentNode.insertBefore(container, priceInput);
+    }
+
+    async function injectEditModalRecommendation(ref) {
+        const priceInput = document.getElementById('epm-new-price');
+        if (!priceInput) return;
+        const parentDiv = priceInput.parentElement;
+        if (!parentDiv) return;
+
+        const prevBadge = parentDiv.querySelector('.ws4-recommended-badge');
+        if (prevBadge) prevBadge.remove();
+
+        const localData = getRefData(ref);
+        if (localData && (localData.us_low || localData.low)) {
+            createRecommendedBadge(localData.us_low || localData.low, parentDiv);
+            return;
+        }
+
+        const market = await fetchMarketPrice(ref);
+        if (market && market.usLow) {
+            createRecommendedBadge(market.usLow, parentDiv);
+        }
+    }
+
+    /**
+     * Auto-generate caption from watch data when Edit Posting modal opens.
+     * Builds: "BNIB Full Set {ref} {bracelet} {dial} {card_date} with WT ${price} + label"
+     */
+    function autoGenerateEditCaption(existingCaption, ref) {
+        // Look for a caption textarea in the edit modal
+        const captionEl = document.getElementById('epm-caption') || document.getElementById('epm-new-caption');
+        if (!captionEl) return;
+
+        // Try to build from photo data if available
+        let photoItem = null;
+        if (_photoData && ref) {
+            photoItem = _photoData.find(p => normalizeRef(p.ref) === ref);
+        }
+
+        if (photoItem) {
+            // Get price from the edit modal price input
+            const priceInput = document.getElementById('epm-new-price');
+            const price = priceInput ? priceInput.value : '';
+            const caption = buildCaption(photoItem, price);
+            // Only auto-fill if the caption field is empty or user hasn't customized
+            if (!captionEl.value || captionEl.value === existingCaption) {
+                captionEl.value = caption;
             }
         }
-        if (filled) console.log('[' + MOD_ID + '] auto-filled ' + filled + ' serial numbers');
-        return filled;
     }
+
+    // ── Init & Render ───────────────────────────────────────
+
+    let _hooksInstalled = false;
 
     function installHooks() {
-        // Wrap loadPhotoLibrary to inject coverage card after data lands.
-        if (typeof window.loadPhotoLibrary === 'function' && !window.loadPhotoLibrary.__ws4wrap) {
-            const _origLoad = window.loadPhotoLibrary;
-            window.loadPhotoLibrary = async function () {
-                await _origLoad.apply(this, arguments);
-                try {
-                    const watches = window.photoLibraryData || [];
-                    autoFillSerials(watches);
-                    injectCoverageCard(watches);
-                    const inv = await getInventory();
-                    decorateLibraryGrid(watches, inv);
-                } catch (e) {
-                    console.warn('[' + MOD_ID + '] loadPhotoLibrary hook:', e);
-                }
-            };
-            window.loadPhotoLibrary.__ws4wrap = true;
+        if (_hooksInstalled) return;
+        const postOk = hookPostDirectModal();
+        const editOk = hookEditModal();
+        if (postOk || editOk) _hooksInstalled = true;
+    }
+
+    async function init() {
+        console.log('[' + MOD_ID + '] Initializing Photo Intelligence Layer...');
+        injectStyles();
+
+        // Install modal hooks
+        installHooks();
+        if (!_hooksInstalled) {
+            setTimeout(installHooks, 500);
         }
 
-        // Wrap renderPhotoLibrary to re-decorate after every filter pass.
-        if (typeof window.renderPhotoLibrary === 'function' && !window.renderPhotoLibrary.__ws4wrap) {
-            const _origRender = window.renderPhotoLibrary;
-            window.renderPhotoLibrary = function (filtered) {
-                _origRender.apply(this, arguments);
-                requestAnimationFrame(() => {
-                    try {
-                        getInventory().then(inv => decorateLibraryGrid(filtered, inv));
-                    } catch (e) { /* silent */ }
-                });
-            };
-            window.renderPhotoLibrary.__ws4wrap = true;
+        // Fetch photo data for coverage stats
+        _photoData = await fetchPhotoData();
+        if (_photoData) {
+            _photoStats = computePhotoStats(_photoData);
+            _photoCoverage = computeCoverageMatrix(_photoData);
+            console.log('[' + MOD_ID + '] Photo intelligence loaded: ' + _photoData.length + ' photos, ' +
+                (_photoStats ? _photoStats.uniqueRefs : 0) + ' refs');
         }
 
-        // Wrap showPhotoStats to enrich the alert text with coverage.
-        if (typeof window.showPhotoStats === 'function' && !window.showPhotoStats.__ws4wrap) {
-            const _origStats = window.showPhotoStats;
-            window.showPhotoStats = function () {
-                const watches = window.photoLibraryData || [];
-                const agg = aggregateCoverage(watches);
-                if (agg.totalWatches) {
-                    const pct = Math.round((agg.fullyDocumented / agg.totalWatches) * 100);
-                    const lines = [
-                        'Photo Library Stats',
-                        '',
-                        'Watches with photos : ' + agg.totalWatches,
-                        'Fully documented    : ' + agg.fullyDocumented + '  (' + pct + '%)',
-                        'Partial coverage    : ' + agg.partiallyDocumented,
-                        'Missing all required: ' + agg.undocumented,
-                        '',
-                        'By category (have / total):',
-                        ...REQUIRED_DOCS.map(k =>
-                            '  ' + k.padEnd(9) + ': ' + agg.catCounts[k] + ' / ' + agg.totalWatches)
-                    ];
-                    alert(lines.join('\n'));
-                    return;
+        // Listen for data refresh
+        window.MKModules.on('data-loaded', render);
+
+        // Hook into postings tab switch
+        const origSwitch = window.switchPostingsTab;
+        if (origSwitch) {
+            window.switchPostingsTab = function(tab, el) {
+                origSwitch.call(this, tab, el);
+                if (tab === 'ready') {
+                    setTimeout(enhanceReadyToPostTable, 500);
                 }
-                _origStats.apply(this, arguments);
             };
-            window.showPhotoStats.__ws4wrap = true;
+        }
+
+        // Hook loadReadyToPost
+        const origLoad = window.loadReadyToPost;
+        if (origLoad) {
+            window.loadReadyToPost = async function() {
+                await origLoad.call(this);
+                setTimeout(enhanceReadyToPostTable, 100);
+            };
+        }
+
+        // Hook Photos page navigation to inject stats
+        const origShowPage = window.showPage;
+        if (origShowPage) {
+            window.showPage = function(name) {
+                origShowPage.call(this, name);
+                if (name === 'photos') {
+                    setTimeout(renderPhotoIntelligence, 300);
+                }
+            };
         }
     }
 
-    // =========================================================
-    // PUBLIC API
-    // =========================================================
-
-    window.MKPhoto = {
-        classifyFilename,
-        classifyPhotos,
-        extractSerial,
-        validateSerial,
-        inferBrandFromRef,
-        matchWatchToInventory,
-        scoreMatch,
-        docCoverage,
-        aggregateCoverage,
-        autoFillSerials,
-        REQUIRED_DOCS
-    };
-
-    // =========================================================
-    // MODULE LIFECYCLE
-    // =========================================================
-
-    function init() {
-        console.log('[' + MOD_ID + '] init (photo intelligence)');
-        injectStyles();
-        installHooks();
-
-        // If the photos page is already loaded when we init, run a pass
-        // immediately so the coverage card shows up without needing the
-        // user to navigate away and back.
-        if (Array.isArray(window.photoLibraryData) && window.photoLibraryData.length) {
-            try {
-                injectCoverageCard(window.photoLibraryData);
-                getInventory().then(inv => decorateLibraryGrid(window.photoLibraryData, inv));
-            } catch (e) { /* silent */ }
-        }
+    function renderPhotoIntelligence() {
+        if (_photoStats) injectPhotoStatsCard();
+        if (_photoCoverage) injectCoverageMatrix();
     }
 
     function render() {
-        // Called on data refresh — refresh coverage card if visible.
-        if (Array.isArray(window.photoLibraryData) && window.photoLibraryData.length) {
-            try { injectCoverageCard(window.photoLibraryData); } catch (e) {}
+        if (!_hooksInstalled) installHooks();
+
+        // Re-compute stats with updated DATA (for inventory cross-ref)
+        if (_photoData) {
+            _photoStats = computePhotoStats(_photoData);
+        }
+
+        // If Photos page is active, refresh the cards
+        const photosPage = document.getElementById('page-photos');
+        if (photosPage && photosPage.classList.contains('active')) {
+            renderPhotoIntelligence();
+        }
+
+        // Enhance Ready to Post table if visible
+        if (document.getElementById('postings-panel-ready')?.style.display !== 'none') {
+            setTimeout(enhanceReadyToPostTable, 200);
         }
     }
 
     function cleanup() {
-        const el = document.getElementById('ws4-cover-wrap');
-        if (el) el.remove();
-        const styles = document.getElementById('ws4-photo-styles');
-        if (styles) styles.remove();
+        const style = document.getElementById('ws4-styles');
+        if (style) style.remove();
+
+        // Clean up injected cards
+        document.querySelectorAll('.ws4-photo-intel, .ws4-coverage-matrix, .ws4-recommended-badge').forEach(el => el.remove());
+
+        _photoData = null;
+        _photoStats = null;
+        _photoCoverage = null;
     }
 
+    // Register with the module system
     window.MKModules.register(MOD_ID, { init, render, cleanup });
 
 })();
