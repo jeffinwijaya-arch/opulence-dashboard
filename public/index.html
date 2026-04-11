@@ -3744,9 +3744,9 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
 // code or a stale cached copy. Update this on every commit that
 // touches user-visible behavior.
 window.__BUILD__ = {
-    commit: 'eea4ef2',                        // updated per commit
-    built_at: '2026-04-11T00:30:00Z',         // approximate build time
-    version: 'mission-control-v4-live-mirror'
+    commit: 'pending',                        // updated per commit
+    built_at: '2026-04-11T01:00:00Z',         // approximate build time
+    version: 'mission-control-v5-lookup-fallback'
 };
 try { console.info('%c[MK build]', 'color:#d4af37;font-weight:700', window.__BUILD__); } catch(e) {}
 // ── Force clear stale service workers + cache on version mismatch ──
@@ -6389,7 +6389,102 @@ async function doLookup() {
                 }
             }
         } catch(e3) {}
-    } catch(e) { c.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-2);">${e.message||'No data for "'+q+'"'}</div>`; }
+    } catch(e) {
+        // The backend /api/smart_search is the price parser, which
+        // sometimes lags behind what's in bundle.json — a ref can be
+        // present in DATA.refs but "not found" by the parser because
+        // its index was built with a count >= 5 filter, or its ref
+        // whitelist doesn't include newer variants, or it just hasn't
+        // been re-run since the data landed. Instead of showing an
+        // opaque "No data for X" and leaving the user to wonder, fall
+        // back to whatever DATA.refs has and render a minimal view
+        // with an explicit "limited data" warning. Strictly additive:
+        // if the bundle doesn't have the ref either, we show the same
+        // error as before.
+        try {
+            const refKey = (q || '').split(/\s+/)[0];
+            const bundleRec = DATA && DATA.refs && DATA.refs[refKey];
+            if (bundleRec && (bundleRec.count || 0) > 0) {
+                _renderFallbackLookup(c, refKey, bundleRec, e && e.message);
+                return;
+            }
+        } catch(_) { /* fallback itself failed — show the original error */ }
+        c.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-2);">${e.message||'No data for "'+q+'"'}</div>`;
+    }
+}
+
+// Minimal lookup renderer that pulls from bundle.json when the
+// backend parser can't find a ref. Shows the same core metrics
+// (b25, median, low, high, US/HK split, dial breakdown) plus an
+// explicit warning about data quality so the user knows why
+// numbers that look "impossible" (e.g. 3 identical listings) are
+// what they are.
+function _renderFallbackLookup(container, ref, rec, backendErr) {
+    const count = rec.count || 0;
+    const b25   = rec.b25 || rec.median || 0;
+    const low   = rec.low || 0;
+    const high  = rec.high || 0;
+    const model = rec.model || rec.label || '';
+    const usCount = rec.us_count || 0;
+    const hkCount = rec.hk_count || 0;
+    const hkB25   = rec.hk_b25 || rec.hk_median || 0;
+    const usB25   = rec.us_b25 || rec.us_median || 0;
+
+    // Quality signals the user will want to see at a glance.
+    const singleRegion   = (usCount === 0) !== (hkCount === 0);
+    const tightSpread    = count >= 2 && high > 0 && low > 0 && ((high - low) / (b25 || 1)) < 0.01;
+    const lowSampleWarn  = count < 5;
+    const warnings = [];
+    if (lowSampleWarn) warnings.push(`only ${count} listing${count === 1 ? '' : 's'} (LOW confidence)`);
+    if (tightSpread)   warnings.push('all listings within 1% — probable single-dealer dupes');
+    if (singleRegion)  warnings.push(`${usCount === 0 ? 'HK' : 'US'}-only market`);
+
+    // Dial breakdown if the bundle has it
+    let dialRows = '';
+    if (rec.dials && typeof rec.dials === 'object') {
+        const entries = Object.entries(rec.dials).sort((a,b) => (b[1].count||0) - (a[1].count||0));
+        if (entries.length) {
+            dialRows = '<div style="margin-top:12px;"><div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:6px;">Dial breakdown</div><table class="tbl" style="font-size:0.75rem;"><thead><tr><th>Dial</th><th class="right">B25</th><th class="right">Low</th><th class="right">High</th><th class="right">N</th></tr></thead><tbody>' +
+                entries.map(([name, d]) => `<tr><td style="color:var(--accent);">${name}</td><td class="right">${fmt(d.b25 || d.median || 0)}</td><td class="right green">${fmt(d.low || 0)}</td><td class="right">${fmt(d.high || 0)}</td><td class="right dim">${d.count || 0}</td></tr>`).join('') +
+                '</tbody></table></div>';
+        }
+    }
+
+    const regionalRow = (usB25 || hkB25) ? `
+        <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap;font-size:0.75rem;">
+            ${usB25 ? `<div><span class="dim">US b25 </span><span style="color:var(--accent);font-family:var(--mono);">${fmt(usB25)}</span> <span class="dim">(${usCount})</span></div>` : ''}
+            ${hkB25 ? `<div><span class="dim">HK b25 </span><span style="color:var(--accent);font-family:var(--mono);">${fmt(hkB25)}</span> <span class="dim">(${hkCount})</span></div>` : ''}
+        </div>` : '';
+
+    container.innerHTML = `
+        <div class="card" style="padding:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;">
+                <div>
+                    <div style="font-family:var(--mono);color:var(--accent);font-size:1.05rem;font-weight:700;">${ref}</div>
+                    <div style="font-size:0.82rem;color:var(--text-1);margin-top:2px;">${model}</div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-family:var(--mono);font-size:1.15rem;font-weight:700;color:var(--text-0);">${fmt(b25)}</div>
+                    <div style="font-size:0.65rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;">b25 · ${count} listing${count === 1 ? '' : 's'}</div>
+                </div>
+            </div>
+            <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap;font-size:0.75rem;">
+                <div><span class="dim">Low </span><span class="green" style="font-family:var(--mono);">${fmt(low)}</span></div>
+                <div><span class="dim">High </span><span style="font-family:var(--mono);">${fmt(high)}</span></div>
+                <div><span class="dim">Spread </span><span style="font-family:var(--mono);">${b25 > 0 && high > 0 ? (((high - low) / b25) * 100).toFixed(1) + '%' : '—'}</span></div>
+            </div>
+            ${regionalRow}
+            ${warnings.length ? `
+                <div style="margin-top:12px;padding:8px 10px;background:rgba(250,204,21,0.08);border:1px solid rgba(250,204,21,0.25);border-radius:6px;font-size:0.7rem;color:#facc15;">
+                    <div style="font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Limited data</div>
+                    ${warnings.map(w => '<div>· ' + w + '</div>').join('')}
+                </div>` : ''}
+            <div style="margin-top:10px;padding:6px 8px;background:var(--bg-1);border:1px solid var(--border);border-radius:4px;font-size:0.62rem;color:var(--text-3);font-family:var(--mono);">
+                source: bundle.json fallback · backend parser returned "${(backendErr || 'not found').replace(/[<>]/g,'')}" · re-run the indexer to sync
+            </div>
+            ${dialRows}
+        </div>
+    `;
 }
 
 // ── PORTFOLIO ──
