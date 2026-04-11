@@ -35,7 +35,7 @@
             --text-0: #ececea;
             --text-1: #a8a6a0;
             --text-2: #5c5b57;
-            --text-3: #3a3a42;
+            --text-3: #4a4a52;
             --accent: #d4af37;
             --accent-light: #e8c84a;
             --accent-dim: rgba(212,175,55,0.07);
@@ -275,7 +275,7 @@
         .tbl td, .metric .val, .detail-row span:last-child { font-variant-numeric: tabular-nums; }
 
         /* ── UX: Smooth transitions ── */
-        .card, .btn, .tag, .nav a, .tab, .metric { transition: all 0.15s ease; }
+        .card, .btn, .tag, .nav a, .tab, .metric { transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease, transform 0.15s ease, opacity 0.15s ease; }
 
         /* ── UX: Modal animations ── */
         #watch-modal[style*="flex"] { animation: modalFadeIn 0.2s ease; }
@@ -356,8 +356,8 @@
         .deal-card.tier-a:hover { border-color:rgba(0,230,118,0.2); box-shadow:var(--shadow-md),0 0 20px rgba(0,230,118,0.05); }
         .deal-card.tier-b { border-left-color:var(--accent); background:linear-gradient(135deg,var(--bg-2) 0%,rgba(212,175,55,0.02) 100%); }
         .deal-card.tier-b:hover { border-color:rgba(212,175,55,0.2); }
-        .deal-card.tier-c { opacity:0.7; border-left-color:var(--text-3); }
-        .deal-card.tier-c:hover { opacity:0.85; }
+        .deal-card.tier-c { opacity:0.75; border-left-color:var(--text-3); }
+        .deal-card.tier-c:hover { opacity:0.9; }
         .deal-discount { font-size:1.4rem; font-weight:800; font-family:var(--mono); line-height:1; letter-spacing:-0.5px; }
         .seller-badge { display:inline-flex;align-items:center;gap:3px;font-size:0.6rem;padding:1px 6px;border-radius:3px;font-family:var(--mono);font-weight:600; }
         .seller-badge.sb-high { background:rgba(0,230,118,0.1);color:var(--green);border:1px solid rgba(0,230,118,0.15); }
@@ -376,7 +376,7 @@
             border:1px solid var(--border);
         }
         .deal-stat .ds-val { font-size:1rem; font-weight:700; font-family:var(--mono); }
-        .deal-stat .ds-label { font-size:0.56rem; color:var(--text-2); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
+        .deal-stat .ds-label { font-size:0.62rem; color:var(--text-2); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
 
         /* ── DETAIL GRID ── */
         .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
@@ -420,7 +420,7 @@
             background:rgba(14,14,20,0.95); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
             border-top:1px solid var(--border-strong);
             padding:6px 8px; padding-bottom:max(10px, env(safe-area-inset-bottom));
-            overflow-x:auto; white-space:nowrap;
+            overflow-x:auto; white-space:nowrap; overscroll-behavior-x:contain;
         }
         .mobile-nav::-webkit-scrollbar { display:none; }
         .mobile-nav a {
@@ -435,7 +435,7 @@
 
         /* ── FOOTER ── */
         .footer {
-            padding:16px 20px; text-align:center; font-size:0.62rem; color:var(--text-3);
+            padding:16px 20px; text-align:center; font-size:0.65rem; color:var(--text-2);
             letter-spacing:1.5px; text-transform:uppercase; border-top:1px solid var(--border);
             font-family:var(--mono); display:flex; align-items:center; justify-content:center; gap:12px;
         }
@@ -511,8 +511,8 @@
             .card-head { padding:10px 12px; }
             .card-body { padding:10px 12px; }
             .tbl th, .tbl td { padding:5px 4px; font-size:0.68rem; }
-            .btn, button { min-height:40px; font-size:0.8rem; }
-            .input, select, input[type="text"], input[type="number"] { min-height:38px; font-size:0.85rem; }
+            .btn, button { min-height:44px; font-size:0.8rem; }
+            .input, select, input[type="text"], input[type="number"] { min-height:44px; font-size:16px; }
             div[style*="display:flex"][style*="gap"] { flex-wrap:wrap !important; }
             .mobile-nav a { min-width:48px; padding:6px 4px; font-size:0.62rem; }
             .tbl .hide-sm { display:none; }
@@ -527,7 +527,7 @@
 
         @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
         .fade-in { animation:fadeIn 0.25s ease-out; }
-        .refreshing { opacity:0.4; pointer-events:none; filter:blur(1px); transition:all 0.3s; }
+        .refreshing { opacity:0.55; pointer-events:none; filter:blur(1px); transition:opacity 0.3s ease, filter 0.3s ease; }
 
         /* ── MOBILE MORE MENU IMPROVEMENTS ── */
         #mobile-more-backdrop {
@@ -659,14 +659,14 @@
             display:flex; align-items:center; gap:6px; margin-left:8px; white-space:nowrap;
         }
         .market-dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
-        .market-dot.open { background:var(--green); box-shadow:0 0 6px rgba(0,230,118,0.5); animation:pulse 2s infinite; }
+        .market-dot.open { background:var(--green); box-shadow:0 0 6px rgba(0,230,118,0.5); animation:pulse 2s infinite; will-change:opacity; }
         .market-dot.closed { background:var(--red); opacity:0.5; }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
 
         /* ── BREADCRUMB STATS BAR ── */
         .quick-stats {
             display:flex; gap:16px; align-items:center; padding:4px 0 8px;
-            font-family:var(--mono); font-size:0.62rem; color:var(--text-3);
+            font-family:var(--mono); font-size:0.65rem; color:var(--text-2);
             letter-spacing:0.3px; overflow-x:auto; white-space:nowrap;
         }
         .quick-stats .qs-item { display:flex; align-items:center; gap:4px; }
@@ -713,7 +713,7 @@
             align-items:center; gap:6px;
         }
         .page-context .pc-name { color:var(--accent); font-weight:700; text-transform:uppercase; }
-        .page-context .pc-sep { opacity:0.3; }
+        .page-context .pc-sep { opacity:0.5; }
         @media(max-width:900px) { .page-context { display:flex; } }
 
         /* ── SORT INDICATORS ── */
@@ -1647,6 +1647,102 @@
                 min-height:44px!important; width:100%!important; padding:10px 14px!important;
                 font-size:0.78rem!important;
             }
+        }
+
+        /* ══════════════════════════════════════════════════
+           DEEP UX — Readability, Contrast, Performance
+           Behavioral design: reduce cognitive load,
+           increase scanability, prevent input errors
+           ══════════════════════════════════════════════════ */
+
+        /* 13. Metric labels readable on mobile (was 0.56rem — invisible in sunlight) */
+        @media(max-width:768px) {
+            .metric .label { font-size:0.68rem!important; letter-spacing:0.8px; }
+            .metric .sub { font-size:0.68rem; }
+            .deal-stat .ds-label { font-size:0.68rem!important; }
+            .pf-label { font-size:0.68rem!important; }
+        }
+
+        /* 14. Prevent iOS auto-zoom on ALL form inputs */
+        @media(max-width:768px) {
+            textarea, input[type="text"], input[type="number"], input[type="search"],
+            input[type="email"], input[type="tel"], input[type="url"], select {
+                font-size:16px!important;
+            }
+        }
+
+        /* 15. Gesture safety — prevent nav horizontal scroll from triggering back-swipe */
+        @media(max-width:768px) {
+            .mobile-nav { overscroll-behavior-x:contain; scroll-snap-type:x proximity; }
+            .mobile-nav a { scroll-snap-align:center; }
+            .tbl-wrap, #im-table-wrap, .card-body { overscroll-behavior-x:contain; }
+        }
+
+        /* 16. Active tap feedback — haptic feel on interactive elements */
+        @media(max-width:768px) {
+            .btn:active, button:active, .tab:active, .deal-card:active, .jam-card:active {
+                transform:scale(0.97)!important; opacity:0.85;
+            }
+            .mobile-nav a:active { transform:scale(0.92); }
+        }
+
+        /* 17. Disable hover effects on touch — prevent sticky hover on iOS */
+        @media(hover:none) and (pointer:coarse) {
+            .deal-card:hover { transform:none; box-shadow:var(--shadow-sm); }
+            .btn:hover { transform:none; box-shadow:none; }
+            .card:hover { transform:none; }
+            .metric:hover { transform:none; border-color:var(--border); }
+            .metric:hover::before { display:none; }
+            .metric:hover::after { box-shadow:none; }
+        }
+
+        /* 18. CRM stats grid — prevent cramming on 390px */
+        @media(max-width:480px) {
+            #crm-stats { grid-template-columns:1fr 1fr!important; gap:6px; }
+            #crm-stats .metric { padding:10px; }
+        }
+
+        /* 19. Chat input usable on mobile */
+        @media(max-width:768px) {
+            #claude-chat-input, .chat-input { min-height:44px!important; font-size:16px!important; }
+        }
+
+        /* 20. Smooth momentum scroll on all scrollable containers */
+        @media(max-width:768px) {
+            .card-body, .tbl-wrap, #im-table-wrap, .tabs, #inv-month-tabs {
+                -webkit-overflow-scrolling:touch; scroll-behavior:smooth;
+            }
+        }
+
+        /* 21. Better scroll hint — subtle gradient fade on horizontal scrollers */
+        @media(max-width:768px) {
+            .tbl-wrap, #im-table-wrap {
+                position:relative;
+            }
+            .tbl-wrap::after, #im-table-wrap::after {
+                content:''; position:sticky; right:0; top:0; bottom:0; width:24px;
+                background:linear-gradient(to left, var(--bg-2), transparent);
+                pointer-events:none; float:right; margin-top:-100%; height:100%;
+            }
+        }
+
+        /* 22. Pull-to-refresh — respect notch on iPhone */
+        @media(max-width:768px) {
+            .ptr-container { top:env(safe-area-inset-top, 0)!important; }
+        }
+
+        /* 23. Detail rows — stack on very narrow screens */
+        @media(max-width:390px) {
+            .detail-grid { grid-template-columns:1fr!important; }
+            .detail-row { font-size:0.75rem; padding:6px 0; }
+            .deal-discount { font-size:1rem; }
+            .popular-grid { grid-template-columns:1fr!important; }
+        }
+
+        /* 24. Changelog / notification contrast fix */
+        @media(max-width:768px) {
+            .changelog-files { color:var(--text-2)!important; font-size:0.7rem!important; }
+            .notif-item .ni-time { color:var(--text-2)!important; }
         }
     </style>
 </head>
