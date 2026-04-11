@@ -305,12 +305,53 @@
 
     let _sellerScores = {};
 
+    // ── Performance Badges (Chrono24-style) ──────────────────────
+    function computePerformanceBadges(score) {
+        if (!score) return [];
+        var badges = [];
+        if (score.transactions >= 5) {
+            badges.push({ label: '★ Top Supplier', color: '#c9950a', bg: 'rgba(201,149,10,0.1)', title: score.transactions + ' deals sourced from this seller' });
+        }
+        if (score.avgDiscount >= 0.07) {
+            badges.push({ label: '↓ Value Dealer', color: 'var(--green)', bg: 'rgba(52,199,89,0.1)', title: 'Avg ' + (score.avgDiscount * 100).toFixed(1) + '% below market' });
+        }
+        if (score.avgCost >= 25000) {
+            badges.push({ label: '◈ Premium', color: 'var(--accent)', bg: 'rgba(180,130,60,0.1)', title: 'Avg deal size ' + fmt(score.avgCost) });
+        }
+        if (score.consistencyScore >= 25 && score.transactions >= 2) {
+            badges.push({ label: '✓ Consistent', color: 'var(--text-1)', bg: 'var(--bg-3)', title: 'Consistently reliable pricing' });
+        }
+        var waData = window.DATA && window.DATA.sellers;
+        if (waData) {
+            var info = waData[score.name] || waData[(score.name || '').toLowerCase()];
+            var listings = info ? (info.count || info.listings || info.total_listings || 0) : 0;
+            if (listings >= 50) {
+                badges.push({ label: '⚡ Active', color: '#e08c00', bg: 'rgba(224,140,0,0.1)', title: listings + ' WhatsApp listings' });
+            }
+        }
+        return badges;
+    }
+
+    function renderBadgeChips(badges, limit) {
+        if (!badges || !badges.length) return '';
+        var shown = limit ? badges.slice(0, limit) : badges;
+        return shown.map(function(b) {
+            return '<span style="display:inline-block;font-size:0.55rem;font-weight:700;padding:1px 5px;border-radius:3px;background:' + b.bg + ';color:' + b.color + ';margin-right:3px;letter-spacing:0.2px;white-space:nowrap;border:1px solid ' + b.color + ';line-height:1.5;" title="' + (b.title || '') + '">' + b.label + '</span>';
+        }).join('');
+    }
+
     function getSellerBadgeHTML(sellerName) {
         if (!sellerName) return '';
         var key = sellerName.toLowerCase();
         var score = _sellerScores[key];
         if (!score) return '';
-        return '<span class="ws6-seller-badge" style="display:inline-block;font-size:0.58rem;font-weight:700;padding:2px 6px;border-radius:3px;border:1px solid ' + score.color + ';color:' + score.color + ';text-transform:uppercase;letter-spacing:0.3px;margin-left:4px;vertical-align:middle;line-height:1.4;min-width:48px;text-align:center;box-sizing:border-box;" title="Score: ' + score.score + '/100 | ' + score.transactions + ' transactions">' + score.label + '</span>';
+        var tierBadge = '<span class="ws6-seller-badge" style="display:inline-block;font-size:0.58rem;font-weight:700;padding:2px 6px;border-radius:3px;border:1px solid ' + score.color + ';color:' + score.color + ';text-transform:uppercase;letter-spacing:0.3px;margin-left:4px;vertical-align:middle;line-height:1.4;min-width:48px;text-align:center;box-sizing:border-box;" title="Score: ' + score.score + '/100 | ' + score.transactions + ' transactions">' + score.label + '</span>';
+        var perfBadges = computePerformanceBadges(score);
+        if (!perfBadges.length) return tierBadge;
+        var perfHtml = perfBadges.slice(0, 2).map(function(b) {
+            return '<span class="ws6-seller-badge" style="display:inline-block;font-size:0.55rem;font-weight:700;padding:1px 5px;border-radius:3px;background:' + b.bg + ';color:' + b.color + ';margin-left:3px;letter-spacing:0.2px;white-space:nowrap;border:1px solid ' + b.color + ';vertical-align:middle;line-height:1.5;" title="' + (b.title || '') + '">' + b.label + '</span>';
+        }).join('');
+        return tierBadge + perfHtml;
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -555,13 +596,16 @@
                     ? '<span style="color:var(--red);">+' + (Math.abs(s.avgDiscount) * 100).toFixed(1) + '%</span>'
                     : '<span style="color:var(--text-2);">at market</span>';
 
+            var perfBadges = computePerformanceBadges(s);
+            var badgeRow = perfBadges.length ? '<div style="margin-top:3px;">' + renderBadgeChips(perfBadges, 3) + '</div>' : '';
             return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;' + (idx < scoreEntries.slice(0, 8).length - 1 ? 'border-bottom:1px solid var(--border);' : '') + '">'
                 + '<div style="min-width:32px;text-align:center;">'
                 + '<div style="font-family:var(--mono);font-size:0.85rem;font-weight:700;color:' + barColor + ';">' + s.score + '</div>'
                 + '</div>'
                 + '<div style="flex:1;min-width:0;">'
                 + '<div style="font-size:0.78rem;font-weight:600;color:var(--text-0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + s.name + '</div>'
-                + '<div style="font-size:0.62rem;color:var(--text-2);">' + s.transactions + ' tx' + (s.transactions !== 1 ? 's' : '') + ' -- ' + discountStr + ' vs market</div>'
+                + '<div style="font-size:0.62rem;color:var(--text-2);">' + s.transactions + ' tx' + (s.transactions !== 1 ? 's' : '') + ' — ' + discountStr + ' vs market</div>'
+                + badgeRow
                 + '</div>'
                 + '<div style="width:60px;">'
                 + '<div style="height:4px;background:var(--bg-3);border-radius:2px;overflow:hidden;">'
