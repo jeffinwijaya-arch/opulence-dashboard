@@ -3744,9 +3744,9 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
 // code or a stale cached copy. Update this on every commit that
 // touches user-visible behavior.
 window.__BUILD__ = {
-    commit: 'edefb31',                        // updated per commit
-    built_at: '2026-04-11T00:00:00Z',         // approximate build time
-    version: 'mission-control-v3-merged'
+    commit: 'pending',                        // updated per commit
+    built_at: '2026-04-11T00:30:00Z',         // approximate build time
+    version: 'mission-control-v4-live-mirror'
 };
 try { console.info('%c[MK build]', 'color:#d4af37;font-weight:700', window.__BUILD__); } catch(e) {}
 // ── Force clear stale service workers + cache on version mismatch ──
@@ -17571,9 +17571,222 @@ function _ccInjectToolbar() {
 
 const refreshClaudeSessions = loadClaudeSessions;
 
+// =========================================================
+// § LIVE MIRROR (Server-Sent Events from /stream/<session_id>)
+// =========================================================
+// Subscribes to a long-lived SSE stream on the backend that tails
+// the Claude session's JSONL file (~/.claude/projects/<p>/<id>.jsonl)
+// and emits each new message as it lands. This lets the dashboard
+// mirror an ACTIVE Claude session that another process (another
+// terminal, a local CLI, the Flask /send handler) is driving, which
+// is the one thing the old POST-only architecture fundamentally
+// couldn't do because /send would fight the session lock.
+//
+// Wire protocol expected from the backend:
+//   GET /api/mission-control/claude-code/stream/<session_id>
+//   Accept: text/event-stream
+//   → streams SSE events forever, one per new message:
+//
+//     event: message
+//     data: {"role": "user"|"assistant", "content": "...", "ts": 123}
+//
+//     event: heartbeat
+//     data: {}
+//
+// Failure modes handled gracefully:
+//   - 404 (no backend stream endpoint yet): close, log, don't retry.
+//     The dashboard still works via the synchronous /send flow.
+//   - Network drop: reconnect with exponential backoff (1s, 2s, 4s,
+//     8s, 16s, cap at 30s).
+//   - Duplicate messages across reconnects: de-duplicate by message
+//     id or (role + content + ts) if no id is available.
+//
+// The mirror is strictly additive. If the backend never ships the
+// /stream endpoint, nothing breaks — you get the existing behavior.
+
+let _ccLiveSource = null;
+let _ccLiveSessionId = null;
+let _ccLiveSeenIds = new Set();
+let _ccLiveReconnectTimer = null;
+let _ccLiveReconnectDelay = 1000;
+let _ccLiveEverConnected = false;
+let _ccLiveGaveUp = false;
+
+function _ccSetLiveBadge(state) {
+    // state: 'connecting' | 'live' | 'offline' | null
+    const sub = document.getElementById('claude-chat-subtitle');
+    if (!sub) return;
+    let badge = document.getElementById('claude-live-badge');
+    if (!state) { if (badge) badge.remove(); return; }
+    if (!badge) {
+        badge = document.createElement('span');
+        badge.id = 'claude-live-badge';
+        badge.style.cssText = 'display:inline-block;margin-left:8px;padding:1px 6px;border-radius:3px;font-size:0.58rem;font-weight:700;letter-spacing:0.5px;vertical-align:middle;';
+        sub.appendChild(badge);
+    }
+    if (state === 'connecting') {
+        badge.textContent = '◌ CONNECTING';
+        badge.style.background = 'rgba(250,204,21,0.15)';
+        badge.style.color = '#facc15';
+    } else if (state === 'live') {
+        badge.textContent = '● LIVE';
+        badge.style.background = 'rgba(34,197,94,0.18)';
+        badge.style.color = '#22c55e';
+    } else {
+        badge.textContent = '○ OFFLINE';
+        badge.style.background = 'rgba(107,114,128,0.2)';
+        badge.style.color = '#9ca3af';
+    }
+}
+
+function _ccCloseLiveMirror() {
+    if (_ccLiveReconnectTimer) { clearTimeout(_ccLiveReconnectTimer); _ccLiveReconnectTimer = null; }
+    if (_ccLiveSource) {
+        try { _ccLiveSource.close(); } catch(e) {}
+        _ccLiveSource = null;
+    }
+    _ccLiveSessionId = null;
+    _ccLiveSeenIds = new Set();
+    _ccLiveReconnectDelay = 1000;
+    _ccLiveEverConnected = false;
+    _ccLiveGaveUp = false;
+    _ccSetLiveBadge(null);
+}
+
+function _ccOpenLiveMirror(sessionId) {
+    if (!sessionId) return;
+    if (typeof EventSource === 'undefined') {
+        // No SSE support — silently skip.
+        return;
+    }
+    _ccLiveSessionId = sessionId;
+    _ccLiveSeenIds = new Set();
+
+    // Seed the de-dupe set with whatever loadClaudeConversation just
+    // rendered, so we don't double-print history on the first connect.
+    try {
+        const messagesEl = document.getElementById('claude-chat-messages');
+        if (messagesEl) {
+            messagesEl.querySelectorAll('.chat-msg').forEach(el => {
+                const role = el.classList.contains('user') ? 'user' : 'assistant';
+                _ccLiveSeenIds.add(role + ':' + (el.textContent || '').trim().slice(0, 200));
+            });
+        }
+    } catch(e) {}
+
+    _ccConnectLiveMirror(sessionId);
+}
+
+function _ccConnectLiveMirror(sessionId) {
+    if (_ccLiveGaveUp) return;
+    _ccSetLiveBadge('connecting');
+    const url = '/api/mission-control/claude-code/stream/' + encodeURIComponent(sessionId);
+    let es;
+    try {
+        es = new EventSource(url, { withCredentials: true });
+    } catch(e) {
+        console.warn('[cc-mirror] EventSource construct failed:', e);
+        _ccSetLiveBadge('offline');
+        return;
+    }
+    _ccLiveSource = es;
+
+    es.addEventListener('open', () => {
+        _ccLiveEverConnected = true;
+        _ccLiveReconnectDelay = 1000; // reset backoff
+        _ccSetLiveBadge('live');
+        _ccRecordOutcome({
+            endpoint: '/api/mission-control/claude-code/stream',
+            method: 'GET',
+            ok: true,
+            status: 200,
+            req_id: 'stream-' + sessionId.slice(0, 8),
+            latency_ms: 0
+        });
+    });
+
+    es.addEventListener('message', (ev) => {
+        let payload = null;
+        try { payload = JSON.parse(ev.data); } catch(e) { return; }
+        if (!payload || typeof payload !== 'object') return;
+        _ccHandleLiveMessage(payload);
+    });
+
+    es.addEventListener('heartbeat', () => { /* keep-alive, no-op */ });
+
+    es.addEventListener('error', () => {
+        // EventSource auto-reconnects on transient errors, but it
+        // also fires 'error' on hard 404. If we never successfully
+        // opened the stream, assume the backend doesn't implement it
+        // and stop retrying — the sync /send flow still works fine.
+        if (!_ccLiveEverConnected) {
+            _ccLiveGaveUp = true;
+            _ccSetLiveBadge(null);
+            console.info('[cc-mirror] /stream endpoint unavailable, running without live mirror');
+            try { es.close(); } catch(e) {}
+            _ccLiveSource = null;
+            _ccRecordOutcome({
+                endpoint: '/api/mission-control/claude-code/stream',
+                method: 'GET',
+                ok: false,
+                status: 404,
+                error_msg: 'stream endpoint not implemented or unreachable',
+                latency_ms: 0
+            });
+            return;
+        }
+        // We were previously connected — reconnect with backoff.
+        _ccSetLiveBadge('offline');
+        try { es.close(); } catch(e) {}
+        _ccLiveSource = null;
+        if (_ccLiveReconnectTimer) clearTimeout(_ccLiveReconnectTimer);
+        _ccLiveReconnectTimer = setTimeout(() => {
+            if (_ccLiveSessionId === sessionId) {
+                _ccConnectLiveMirror(sessionId);
+            }
+        }, _ccLiveReconnectDelay);
+        _ccLiveReconnectDelay = Math.min(_ccLiveReconnectDelay * 2, 30000);
+    });
+}
+
+function _ccHandleLiveMessage(msg) {
+    // msg shape: { id?, role, content, ts? }
+    if (!msg.role || msg.content == null) return;
+    const id = msg.id
+        ? ('id:' + msg.id)
+        : (msg.role + ':' + String(msg.content).trim().slice(0, 200));
+    if (_ccLiveSeenIds.has(id)) return;
+    _ccLiveSeenIds.add(id);
+
+    // Render into the chat. If the role is 'assistant' and we're
+    // currently showing a thinking bubble (from a just-sent message),
+    // replace the bubble content instead of appending a new one.
+    if (msg.role === 'assistant') {
+        const thinkEl = document.getElementById('claude-thinking');
+        if (thinkEl) {
+            // Streaming partial — update the thinking bubble live.
+            thinkEl.innerHTML =
+                '<div style="white-space:pre-wrap;word-break:break-word;">' +
+                String(msg.content).replace(/</g,'&lt;').replace(/>/g,'&gt;') +
+                '</div>';
+            const messagesEl = document.getElementById('claude-chat-messages');
+            if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight;
+            // If this is the final chunk, convert thinking → permanent.
+            if (msg.done) {
+                thinkEl.id = '';
+                thinkEl.className = 'chat-msg assistant';
+            }
+            return;
+        }
+    }
+
+    appendChatMessage(msg.role, String(msg.content));
+}
+
 function showClaudeSessions() {
     document.getElementById('claude-sessions-list').style.display = 'block';
     document.getElementById('claude-chat-view').style.display = 'none';
+    _ccCloseLiveMirror();      // stop any active SSE subscription
     _currentClaudeSessionId = null;
     // Release the FAB so it can show again on other pages.
     document.body.classList.remove('claude-chat-active');
@@ -17585,6 +17798,10 @@ function showClaudeSessions() {
 }
 
 async function openClaudeSession(sessionId, projectName, projectPath) {
+    // If we're switching sessions, kill any prior mirror first so we
+    // don't end up with two EventSources racing to append messages.
+    _ccCloseLiveMirror();
+
     _currentClaudeSessionId = sessionId;
     // Only overwrite the project path if the caller actually supplied
     // one — createNewClaudeSession used to pass nothing, which blew
@@ -17607,6 +17824,10 @@ async function openClaudeSession(sessionId, projectName, projectPath) {
     document.getElementById('claude-chat-subtitle').textContent = sessionId.substring(0,8) + '...';
 
     await loadClaudeConversation(sessionId);
+
+    // Kick off the live mirror. This is a no-op on backends that
+    // don't implement the /stream endpoint (404 → silent degrade).
+    _ccOpenLiveMirror(sessionId);
 
     const input = document.getElementById('claude-chat-input');
     if (input) input.focus();
