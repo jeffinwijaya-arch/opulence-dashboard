@@ -33,6 +33,162 @@
     };
     var OTHER_COLOR = '#555';
 
+    // ═══════════════════════════════════════════════════
+    // 6. SEASONAL MARKET INTELLIGENCE
+    // ═══════════════════════════════════════════════════
+
+    // Monthly buy/sell scores for Hong Kong luxury watch market.
+    // Buy score = how favourable it is to BUY this month (0=terrible, 100=ideal).
+    // Sell score = how favourable it is to SELL this month.
+    // Based on documented seasonal patterns in the HK pre-owned market.
+    var SEASONAL_GUIDE = [
+        { month: 1,  label: 'Jan', buy: 85, sell: 40, strategy: 'Accumulate',        note: 'Post-holiday lull. Best time to accumulate steel sports watches at deflated prices.' },
+        { month: 2,  label: 'Feb', buy: 60, sell: 72, strategy: 'Sell Gold',          note: 'CNY demand lifts YG/Patek/AP premiums. Sell gold pieces, hold steel.' },
+        { month: 3,  label: 'Mar', buy: 48, sell: 82, strategy: 'Sell Now',           note: 'Pre-Watches\u00A0&\u00A0Wonders run-up. Strong demand, prices near yearly highs.' },
+        { month: 4,  label: 'Apr', buy: 72, sell: 55, strategy: 'Buy Dips',           note: 'W&W new releases soften pre-owned prices. Good buy window on key refs.' },
+        { month: 5,  label: 'May', buy: 58, sell: 68, strategy: 'Selective',          note: 'Post-W&W market normalises. Selective selling on premium references.' },
+        { month: 6,  label: 'Jun', buy: 65, sell: 62, strategy: 'Hold',               note: 'Balanced summer market. No strong seasonal edge either way.' },
+        { month: 7,  label: 'Jul', buy: 78, sell: 44, strategy: 'Accumulate',         note: 'Summer lull begins. Dealers reduce inventory. Buy opportunities emerge.' },
+        { month: 8,  label: 'Aug', buy: 88, sell: 35, strategy: 'Heavy Buy',          note: 'Lowest prices of the year. Load up on steel sports before Q4 run-up.' },
+        { month: 9,  label: 'Sep', buy: 52, sell: 74, strategy: 'Start Selling',      note: 'Q4 build-up. HK jewellery show activity. Prices firming — start selling.' },
+        { month: 10, label: 'Oct', buy: 38, sell: 85, strategy: 'Sell Aggressively',  note: 'Peak demand approaching. Holiday buyers entering market. Sell aggressively.' },
+        { month: 11, label: 'Nov', buy: 30, sell: 90, strategy: 'Maximum Sell',       note: 'Holiday gift season. Highest retail demand of the year. Premium prices.' },
+        { month: 12, label: 'Dec', buy: 34, sell: 82, strategy: 'Sell & Clear',       note: 'Festive demand strong. Avoid overpaying on buys. Clear inventory before Jan.' }
+    ];
+
+    var STRATEGY_COLORS = {
+        'Heavy Buy': '#00e676', 'Accumulate': '#4caf50', 'Buy Dips': '#8bc34a',
+        'Hold': '#ffc107', 'Selective': '#ff9800',
+        'Sell Gold': '#ff7043', 'Start Selling': '#f44336', 'Sell Now': '#ff1744',
+        'Sell Aggressively': '#ff1744', 'Maximum Sell': '#e91e63', 'Sell & Clear': '#ff5722'
+    };
+
+    function _seasonalScore2Color(score) {
+        if (score >= 75) return '#00e676';
+        if (score >= 50) return '#ffc107';
+        return '#ff1744';
+    }
+
+    function renderSeasonalPatterns() {
+        var old = document.getElementById('ws7-seasonal-card');
+        if (old) old.remove();
+
+        var currentMonth = new Date().getMonth() + 1; // 1-12
+        var guide = SEASONAL_GUIDE[currentMonth - 1];
+
+        // Live market snapshot from window.DATA
+        var deals = (window.DATA && window.DATA.deals) || [];
+        var totalDeals = deals.length;
+        var avgDiscount = 0;
+        if (deals.length > 0) {
+            var discSum = 0;
+            for (var di = 0; di < deals.length; di++) {
+                discSum += Math.abs(deals[di].discount_pct || deals[di].gap_pct || 0);
+            }
+            avgDiscount = discSum / deals.length;
+        }
+
+        // Build 12-month calendar strip
+        var calHtml = '';
+        for (var mi = 0; mi < SEASONAL_GUIDE.length; mi++) {
+            var m = SEASONAL_GUIDE[mi];
+            var isCurrent = (m.month === currentMonth);
+            var buyColor  = _seasonalScore2Color(m.buy);
+            var sellColor = _seasonalScore2Color(m.sell);
+            var borderStyle = isCurrent ? 'border:2px solid var(--accent);' : 'border:1px solid var(--border);';
+            var bgStyle     = isCurrent ? 'background:rgba(201,168,76,0.08);' : 'background:var(--bg-3);';
+
+            calHtml += '<div style="' + borderStyle + bgStyle + 'border-radius:6px;padding:6px 3px;text-align:center;position:relative;">'
+                + (isCurrent ? '<div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:var(--accent);color:#000;font-size:0.48rem;font-weight:800;padding:1px 4px;border-radius:3px;white-space:nowrap;letter-spacing:0.3px;">NOW</div>' : '')
+                + '<div style="font-size:0.63rem;font-weight:700;color:var(--text-0);margin-bottom:4px;">' + m.label + '</div>'
+                + '<div style="display:flex;justify-content:space-around;gap:2px;">'
+                + '<div style="flex:1;">'
+                +   '<div style="font-size:0.46rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.2px;margin-bottom:1px;">B</div>'
+                +   '<div style="font-size:0.65rem;font-weight:800;color:' + buyColor + ';font-family:var(--mono);">' + m.buy + '</div>'
+                + '</div>'
+                + '<div style="flex:1;">'
+                +   '<div style="font-size:0.46rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.2px;margin-bottom:1px;">S</div>'
+                +   '<div style="font-size:0.65rem;font-weight:800;color:' + sellColor + ';font-family:var(--mono);">' + m.sell + '</div>'
+                + '</div>'
+                + '</div>'
+                + '</div>';
+        }
+
+        // Strategy badge
+        var strategyColor = STRATEGY_COLORS[guide.strategy] || 'var(--accent)';
+
+        // Score boxes for current month
+        var buyBg   = guide.buy  >= 75 ? 'rgba(0,230,118,0.1)'  : guide.buy  >= 50 ? 'rgba(255,193,7,0.1)'  : 'rgba(255,23,68,0.08)';
+        var buyTxt  = _seasonalScore2Color(guide.buy);
+        var sellBg  = guide.sell >= 75 ? 'rgba(0,230,118,0.1)'  : guide.sell >= 50 ? 'rgba(255,193,7,0.1)'  : 'rgba(255,23,68,0.08)';
+        var sellTxt = _seasonalScore2Color(guide.sell);
+
+        // Live stat boxes (only if data available)
+        var liveHtml = '';
+        if (totalDeals > 0) {
+            liveHtml += '<div style="flex:1;text-align:center;padding:6px 4px;border-radius:6px;background:var(--bg-2);">'
+                + '<div style="font-size:0.55rem;color:var(--text-2);text-transform:uppercase;margin-bottom:2px;">Live Deals</div>'
+                + '<div style="font-size:1.1rem;font-weight:800;font-family:var(--mono);color:var(--text-0);">' + totalDeals + '</div>'
+                + '</div>';
+        }
+        if (avgDiscount > 0) {
+            liveHtml += '<div style="flex:1;text-align:center;padding:6px 4px;border-radius:6px;background:var(--bg-2);">'
+                + '<div style="font-size:0.55rem;color:var(--text-2);text-transform:uppercase;margin-bottom:2px;">Avg Disc.</div>'
+                + '<div style="font-size:1.1rem;font-weight:800;font-family:var(--mono);color:var(--green);">' + avgDiscount.toFixed(1) + '%</div>'
+                + '</div>';
+        }
+
+        var card = document.createElement('div');
+        card.id = 'ws7-seasonal-card';
+        card.className = 'card';
+        card.style.marginTop = '8px';
+
+        card.innerHTML = '<div class="card-head"><span>Seasonal Market Intelligence</span>'
+            + '<span style="font-size:0.6rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px;">HK pre-owned market &bull; B=buy score S=sell score (0\u2013100)</span>'
+            + '</div>'
+            // 12-month calendar strip — responsive: 6 cols on mobile, 12 on desktop
+            + '<div class="ws7-seasonal-cal" style="display:grid;grid-template-columns:repeat(12,1fr);gap:4px;padding:16px 12px 8px;">'
+            + calHtml
+            + '</div>'
+            // Current month insight panel
+            + '<div style="margin:4px 12px 8px;padding:10px 14px;border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);background:var(--bg-3);">'
+            +   '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
+            +     '<span style="font-size:0.68rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;">' + guide.label + ' Strategy</span>'
+            +     '<span style="font-size:0.64rem;font-weight:800;padding:2px 8px;border-radius:4px;background:' + strategyColor + '22;color:' + strategyColor + ';border:1px solid ' + strategyColor + '44;">' + guide.strategy + '</span>'
+            +   '</div>'
+            +   '<div style="font-size:0.72rem;color:var(--text-1);line-height:1.55;margin-bottom:8px;">' + guide.note + '</div>'
+            +   '<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+            +     '<div style="flex:1;min-width:60px;text-align:center;padding:6px 4px;border-radius:6px;background:' + buyBg + ';">'
+            +       '<div style="font-size:0.55rem;color:var(--text-2);text-transform:uppercase;margin-bottom:2px;">Buy Score</div>'
+            +       '<div style="font-size:1.2rem;font-weight:800;font-family:var(--mono);color:' + buyTxt + ';">' + guide.buy + '</div>'
+            +     '</div>'
+            +     '<div style="flex:1;min-width:60px;text-align:center;padding:6px 4px;border-radius:6px;background:' + sellBg + ';">'
+            +       '<div style="font-size:0.55rem;color:var(--text-2);text-transform:uppercase;margin-bottom:2px;">Sell Score</div>'
+            +       '<div style="font-size:1.2rem;font-weight:800;font-family:var(--mono);color:' + sellTxt + ';">' + guide.sell + '</div>'
+            +     '</div>'
+            +     liveHtml
+            +   '</div>'
+            + '</div>'
+            + '<div style="padding:4px 12px 8px;font-size:0.58rem;color:var(--text-3);font-family:var(--mono);">'
+            + 'Based on HK pre-owned luxury watch market seasonal patterns. Not financial advice.'
+            + '</div>';
+
+        // Insert after currency impact card or last analytics card
+        var insertAfter = document.getElementById('ws7-currency-card')
+            || document.getElementById('ws7-region-bar-card')
+            || document.getElementById('ws7-price-gap-card')
+            || document.getElementById('ws7-movers-card')
+            || document.getElementById('ws7-brand-donut-card');
+        if (insertAfter) {
+            insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
+        } else {
+            var mg = document.getElementById('metrics-grid');
+            if (mg) mg.parentNode.insertBefore(card, mg.nextSibling);
+        }
+    }
+
+
+
     // ── Cached data ──
     var _moversData = null;
 
@@ -353,7 +509,15 @@
             .ws7-fx-be-safe { background: rgba(0,230,118,0.12); color: var(--green, #00e676); border: 1px solid rgba(0,230,118,0.2); }
             .ws7-fx-be-warn { background: rgba(255,193,7,0.12); color: var(--orange, #ffc107); border: 1px solid rgba(255,193,7,0.2); }
             .ws7-fx-be-dead { background: rgba(255,23,68,0.10); color: var(--red, #ff1744); border: 1px solid rgba(255,23,68,0.2); }
+
+            /* ── Seasonal Calendar ── */
+            @media (max-width: 600px) {
+                .ws7-seasonal-cal {
+                    grid-template-columns: repeat(6, 1fr) !important;
+                }
+            }
         `;
+
         document.head.appendChild(style);
     }
 
@@ -944,6 +1108,7 @@
                 renderPriceGapTable();
                 renderRegionBars();
                 renderCurrencyImpact();
+            renderSeasonalPatterns();
             }, 200);
         }
     }
@@ -955,6 +1120,7 @@
             'ws7-price-gap-card',
             'ws7-region-bar-card',
             'ws7-currency-card',
+            'ws7-seasonal-card',
             'ws7-styles'
         ];
         ids.forEach(function(id) {

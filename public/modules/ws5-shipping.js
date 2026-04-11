@@ -41,7 +41,6 @@
         if (!preview) {
             preview = document.createElement('div');
             preview.id = PREVIEW_ID;
-            // Insert ABOVE the shipping form (before the form grid)
             var shipForm = valueInput.closest('form') || valueInput.closest('.card-body') || valueInput.closest('.card');
             if (shipForm) {
                 shipForm.parentElement.insertBefore(preview, shipForm);
@@ -78,35 +77,26 @@
     var BATCH_MODAL_ID = 'ws5-batch-modal';
     var _batchSelected = new Set();
 
-    /**
-     * Get the current tracker data from the global _allTrackings.
-     * The tracker table in index.html stores tracking objects with
-     * { id, tracking_number, direction, status, watch_ref, from, to, ... }
-     */
-    function getTrackings() {
-        // _allTrackings is defined in index.html's IIFE scope but renderTrackerTable
-        // writes data-id attributes on rows. We read from the DOM + re-fetch if needed.
-        // We access it through the tracker tbody rows.
-        return [];
-    }
+    // Track the currently active tracker tab — updated by switchTrackerTab hook.
+    // Default is 'outbound' since that is the tracker's initial tab.
+    var _currentTab = 'outbound';
 
     /**
-     * Return outbound tracker rows that are NOT delivered (i.e. eligible for batch action).
+     * Return outbound tracker rows that are NOT delivered (eligible for batch action).
+     * Returns empty array when not on outbound tab.
      */
     function getUnshippedOutboundRows() {
+        if (_currentTab !== 'outbound') return [];
         var tbody = document.getElementById('tracker-tbody');
         if (!tbody) return [];
         var rows = [];
         var trs = tbody.querySelectorAll('tr');
         for (var i = 0; i < trs.length; i++) {
             var tr = trs[i];
-            // Skip placeholder / empty-state rows
-            if (tr.cells.length < 5) continue;
-            // Status is column 5 (0-indexed)
+            // Need at least 6 cells to safely read cells[5] (status column, 0-indexed)
+            if (tr.cells.length < 6) continue;
             var statusCell = tr.cells[5];
-            if (!statusCell) continue;
-            var statusText = (statusCell.textContent || '').toLowerCase().trim();
-            // Skip delivered packages
+            var statusText = (statusCell ? statusCell.textContent : '').toLowerCase().trim();
             if (statusText === 'delivered') continue;
             rows.push(tr);
         }
@@ -124,27 +114,44 @@
         selAllBtn.style.cssText = 'background:var(--bg-3);color:var(--text-1);font-weight:500;white-space:nowrap;margin-left:8px;font-size:0.72rem;';
         selAllBtn.textContent = 'Select All';
         selAllBtn.onclick = function() {
-            var rows = getUnshippedOutboundRows();
-            if (rows.length === 0) {
-                if (typeof showToast === 'function') showToast('No unshipped packages to select', 'info');
+            if (_currentTab !== 'outbound') {
+                if (typeof showToast === 'function') showToast('Switch to Outbound tab to use batch shipping', 'info');
                 return;
             }
-            var allSelected = rows.length > 0 && _batchSelected.size >= rows.length;
+            // Ensure checkboxes are injected before querying them
+            injectCheckboxes();
+            var checkboxes = document.querySelectorAll('#tracker-tbody .ws5-chk');
+            if (checkboxes.length === 0) {
+                // Distinguish: tracker empty vs all delivered
+                var tbody = document.getElementById('tracker-tbody');
+                var allTrs = tbody ? tbody.querySelectorAll('tr') : [];
+                var hasEligibleRows = false;
+                for (var i = 0; i < allTrs.length; i++) {
+                    if (allTrs[i].cells.length >= 6) { hasEligibleRows = true; break; }
+                }
+                if (!hasEligibleRows) {
+                    if (typeof showToast === 'function') showToast('No packages in tracker', 'info');
+                } else {
+                    if (typeof showToast === 'function') showToast('All packages already delivered', 'info');
+                }
+                return;
+            }
+            var allSelected = _batchSelected.size >= checkboxes.length;
             if (allSelected) {
-                _batchSelected.clear();
+                checkboxes.forEach(function(chk) {
+                    _batchSelected.delete(chk.dataset.key);
+                    chk.checked = false;
+                });
                 selAllBtn.textContent = 'Select All';
             } else {
-                rows.forEach(function(tr) {
-                    var trackingCell = tr.cells[1];
-                    var trackingLink = trackingCell ? trackingCell.querySelector('a') : null;
-                    var trackingNum = trackingLink ? trackingLink.textContent.trim() : '';
-                    if (!trackingNum && trackingCell) trackingNum = trackingCell.textContent.trim();
-                    var rowKey = trackingNum || ('row-' + Array.prototype.indexOf.call(tr.parentElement.children, tr));
-                    _batchSelected.add(rowKey);
+                checkboxes.forEach(function(chk) {
+                    if (chk.dataset.key) {
+                        _batchSelected.add(chk.dataset.key);
+                        chk.checked = true;
+                    }
                 });
                 selAllBtn.textContent = 'Deselect All';
             }
-            injectCheckboxes();
             updateBatchButton();
         };
 
@@ -154,7 +161,6 @@
         btn.style.cssText = 'background:var(--blue,#4A90D9);color:#fff;font-weight:600;white-space:nowrap;display:none;margin-left:8px;';
         btn.textContent = 'Ship Selected (0)';
         btn.onclick = openBatchModal;
-        // Insert next to the Add Tracking button
         var addBtn = pageHead.querySelector('button');
         if (addBtn && addBtn.parentElement) {
             addBtn.parentElement.insertBefore(selAllBtn, addBtn.nextSibling);
@@ -166,55 +172,38 @@
         var tbody = document.getElementById('tracker-tbody');
         if (!tbody) return;
 
-        // Read what tab is active (only add checkboxes on outbound)
-        var outboundTab = document.getElementById('tab-outbound');
-        var isOutbound = outboundTab && outboundTab.style.borderBottomColor &&
-            outboundTab.style.borderBottomColor !== 'transparent' &&
-            outboundTab.style.color !== 'var(--text-2)';
+        // Use _currentTab state — reliable, no CSS introspection needed.
+        // The old approach checked outboundTab.style.color === 'var(--accent)'
+        // which ALWAYS fails: browsers return computed RGB, not CSS variable strings.
+        var isOutbound = (_currentTab === 'outbound');
 
-        // Also check the accent-styled tab
-        if (!isOutbound) {
-            var inboundTab = document.getElementById('tab-inbound');
-            // If inbound is active, outbound is not
-            if (inboundTab && inboundTab.style.color === 'var(--accent)') {
-                isOutbound = false;
-            } else if (outboundTab && outboundTab.style.color === 'var(--accent)') {
-                isOutbound = true;
-            }
-        }
-
-        // Clear old selections when changing tabs (checkboxes get re-rendered)
         var trs = tbody.querySelectorAll('tr');
         var anyCheckboxExists = false;
 
         for (var i = 0; i < trs.length; i++) {
             var tr = trs[i];
             // Skip placeholder / empty-state rows
-            if (tr.cells.length < 5) continue;
+            if (tr.cells.length < 6) continue;
 
             var firstCell = tr.cells[0];
             if (!firstCell) continue;
 
             // Remove any old checkboxes first
             var oldChk = firstCell.querySelector('.ws5-chk');
-            if (oldChk) {
-                oldChk.remove();
-            }
+            if (oldChk) oldChk.remove();
 
             // Only inject on outbound tab, for non-delivered rows
             if (!isOutbound) continue;
 
             var statusCell = tr.cells[5];
-            if (!statusCell) continue;
-            var statusText = (statusCell.textContent || '').toLowerCase().trim();
+            var statusText = (statusCell ? statusCell.textContent : '').toLowerCase().trim();
             if (statusText === 'delivered') continue;
 
-            // Extract a stable identifier: the tracking number from column 1
+            // Extract stable identifier: the tracking number from column 1
             var trackingCell = tr.cells[1];
             var trackingLink = trackingCell ? trackingCell.querySelector('a') : null;
             var trackingNum = trackingLink ? trackingLink.textContent.trim() : '';
             if (!trackingNum && trackingCell) trackingNum = trackingCell.textContent.trim();
-            // Fall back to row index if no tracking number
             var rowKey = trackingNum || ('row-' + i);
 
             var chk = document.createElement('input');
@@ -237,7 +226,7 @@
             anyCheckboxExists = true;
         }
 
-        // If we're not on outbound or no eligible rows, clear selection
+        // If not on outbound or no eligible rows, clear selection
         if (!isOutbound || !anyCheckboxExists) {
             _batchSelected.clear();
         }
@@ -253,9 +242,6 @@
         btn.style.display = count > 0 ? 'inline-block' : 'none';
     }
 
-    /**
-     * Build a structured list of selected rows with their display data.
-     */
     function getSelectedItems() {
         var tbody = document.getElementById('tracker-tbody');
         if (!tbody) return [];
@@ -264,7 +250,7 @@
 
         for (var i = 0; i < trs.length; i++) {
             var tr = trs[i];
-            if (tr.cells.length < 5) continue;
+            if (tr.cells.length < 6) continue;
 
             var trackingCell = tr.cells[1];
             var trackingLink = trackingCell ? trackingCell.querySelector('a') : null;
@@ -275,12 +261,10 @@
             if (!_batchSelected.has(rowKey)) continue;
 
             var watchRef = (tr.cells[0].textContent || '').replace(/^\s+/, '').trim();
-            // Remove checkbox text artifact if present
             var fromVal = (tr.cells[2].textContent || '').trim();
             var toVal = (tr.cells[3].textContent || '').trim();
             var statusText = (tr.cells[5].textContent || '').trim();
 
-            // Try to extract tracking id from row buttons (deleteTracking('id') pattern)
             var actionCell = tr.cells[8];
             var trackingId = '';
             if (actionCell) {
@@ -321,7 +305,6 @@
             return;
         }
 
-        // Cost estimate: typical watch is ~$10K declared
         var perPkgCost = calcShippingCost(10000);
         var totalEstimate = items.length * perPkgCost.total;
 
@@ -380,7 +363,6 @@
         modal.appendChild(inner);
         document.body.appendChild(modal);
 
-        // Bind button events (avoids inline onclick with global functions)
         document.getElementById('ws5-batch-close').onclick = closeBatchModal;
         document.getElementById('ws5-batch-cancel').onclick = closeBatchModal;
         document.getElementById('ws5-batch-confirm').onclick = function() {
@@ -393,10 +375,6 @@
         if (modal) modal.remove();
     }
 
-    /**
-     * Confirm batch ship: calls the ship API for each selected package,
-     * then refreshes the tracker page and shows a toast.
-     */
     async function confirmBatchShip(items) {
         var statusEl = document.getElementById('ws5-batch-status');
         var confirmBtn = document.getElementById('ws5-batch-confirm');
@@ -424,18 +402,8 @@
             }
 
             try {
-                // Call the ship API endpoint with tracking number
-                // The API expects: { row (watch row/id), tracking, type }
-                // We extract watch_id from the trackingId if available
-                var payload = {
-                    tracking: item.trackingNum,
-                    type: 'foreign'
-                };
-
-                // If we have a tracking ID, try to get associated watch info
-                if (item.trackingId) {
-                    payload.tracking_id = item.trackingId;
-                }
+                var payload = { tracking: item.trackingNum, type: 'foreign' };
+                if (item.trackingId) payload.tracking_id = item.trackingId;
 
                 var r = await fetch('/api/inventory/ship', {
                     method: 'POST',
@@ -444,9 +412,8 @@
                 });
                 var d = await r.json();
 
-                if (d.ok) {
-                    succeeded++;
-                } else {
+                if (d.ok) { succeeded++; }
+                else {
                     failed++;
                     errors.push((item.watchRef || item.trackingNum) + ': ' + (d.error || 'Unknown error'));
                 }
@@ -456,7 +423,6 @@
             }
         }
 
-        // Show result
         if (statusEl) {
             if (failed === 0) {
                 statusEl.style.cssText = 'display:block;background:rgba(0,200,83,0.1);color:var(--green);padding:8px;border-radius:var(--radius);font-size:0.75rem;margin-bottom:8px;';
@@ -470,99 +436,82 @@
             }
         }
 
-        // Update button to "Done"
         confirmBtn.disabled = false;
         confirmBtn.textContent = 'Done';
         confirmBtn.onclick = function() {
             closeBatchModal();
             _batchSelected.clear();
+            var selAllBtn = document.getElementById('ws5-select-all-btn');
+            if (selAllBtn) selAllBtn.textContent = 'Select All';
             updateBatchButton();
-            // Refresh the tracker page
-            if (typeof window.loadTrackerPage === 'function') {
-                window.loadTrackerPage();
-            }
+            if (typeof window.loadTrackerPage === 'function') window.loadTrackerPage();
         };
-        if (cancelBtn) {
-            cancelBtn.disabled = false;
-        }
+        if (cancelBtn) cancelBtn.disabled = false;
 
-        // Emit event for other modules
         window.MKModules.emit('batch-ship-completed', { succeeded: succeeded, failed: failed });
 
         if (typeof showToast === 'function') {
-            if (failed === 0) {
-                showToast(succeeded + ' package' + (succeeded !== 1 ? 's' : '') + ' shipped successfully', 'ok');
-            } else {
-                showToast(succeeded + ' shipped, ' + failed + ' failed', 'warn');
-            }
+            if (failed === 0) showToast(succeeded + ' package' + (succeeded !== 1 ? 's' : '') + ' shipped successfully', 'ok');
+            else showToast(succeeded + ' shipped, ' + failed + ' failed', 'warn');
         }
     }
 
-    /**
-     * Minimal HTML escaping for user-facing strings.
-     */
     function escHtml(str) {
         if (!str) return '';
         return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
     // ── Event-driven updates ────────────────────────────────────────
-    function onShipValueChange() {
-        renderCostPreview();
-    }
+    function onShipValueChange() { renderCostPreview(); }
 
     function onPageChange(e) {
         var page = e && e.detail && e.detail.page;
-        if (page === 'shipping') {
-            render();
-        }
+        if (page === 'shipping') render();
     }
 
     // ── Module lifecycle ────────────────────────────────────────────
     function init() {
         console.log('[' + MOD_ID + '] Initializing...');
 
-        // Listen for declared value changes on the label form
         var shipValueInput = document.getElementById('ship-value');
         if (shipValueInput) {
             shipValueInput.addEventListener('input', onShipValueChange);
             shipValueInput.addEventListener('change', onShipValueChange);
         }
 
-        // Listen for page navigation
         window.MKModules.on('page-change', onPageChange);
 
-        // Hook into the existing loadTrackerPage to re-inject checkboxes
+        // Hook loadTrackerPage — re-inject checkboxes after tracker re-renders.
         var origLoadTracker = window.loadTrackerPage;
         if (typeof origLoadTracker === 'function') {
             window.loadTrackerPage = async function() {
                 await origLoadTracker.apply(this, arguments);
-                // Re-inject checkboxes after tracker data renders
-                // Clear stale selections since rows are fully re-rendered
                 _batchSelected.clear();
+                var selAllBtn = document.getElementById('ws5-select-all-btn');
+                if (selAllBtn) selAllBtn.textContent = 'Select All';
                 setTimeout(function() { injectCheckboxes(); }, 150);
             };
         }
 
-        // Also hook into switchTrackerTab to re-inject checkboxes on tab switch
+        // Hook switchTrackerTab — track active tab reliably.
+        // Set _currentTab BEFORE delegating so injectCheckboxes() sees the
+        // correct state when it runs in the setTimeout below.
         var origSwitchTab = window.switchTrackerTab;
         if (typeof origSwitchTab === 'function') {
             window.switchTrackerTab = function(tab) {
+                _currentTab = String(tab || 'outbound').toLowerCase();
                 origSwitchTab.apply(this, arguments);
-                // Clear selections when switching tabs
                 _batchSelected.clear();
-                setTimeout(function() { injectCheckboxes(); }, 100);
+                var selAllBtn = document.getElementById('ws5-select-all-btn');
+                if (selAllBtn) selAllBtn.textContent = 'Select All';
+                setTimeout(function() { injectCheckboxes(); updateBatchButton(); }, 100);
             };
         }
 
-        // Inject batch controls into shipping page header
         injectBatchControls();
 
-        // Initial render if already on shipping page
         var shippingPage = document.getElementById('page-shipping');
-        if (shippingPage && shippingPage.style.display !== 'none') {
-            render();
-        }
+        if (shippingPage && shippingPage.style.display !== 'none') render();
     }
 
     function render() {
@@ -581,14 +530,13 @@
         if (preview) preview.remove();
         var batchBtn = document.getElementById(BATCH_BTN_ID);
         if (batchBtn) batchBtn.remove();
+        var selAllBtn = document.getElementById('ws5-select-all-btn');
+        if (selAllBtn) selAllBtn.remove();
         closeBatchModal();
         _batchSelected.clear();
     }
 
-    // Expose cost calculator for other modules
     window._ws5CalcCost = calcShippingCost;
-
-    // Register with the module system
     window.MKModules.register(MOD_ID, { init: init, render: render, cleanup: cleanup });
 
 })();

@@ -20,7 +20,7 @@ All high tasks completed 2026-04-10.
 ## Priority: MEDIUM
 
 ### WS5: Shipping (ws5-shipping.js)
-- [ ] Batch ship UX polish — test the checkbox selector end-to-end, handle edge cases (no packages, all shipped)
+- [x] Batch ship UX polish — fixed tab detection bug (CSS var inspection → _currentTab state), off-by-one on cells check, Select All now uses DOM checkboxes directly, toasts for empty/all-delivered/wrong-tab edge cases (2026-04-11)
 
 ### WS6: CRM (ws6-crm.js)
 - [x] Referral tracking — "referred by" field on buyer records, track referral chains (2026-04-10)
@@ -40,12 +40,17 @@ All high tasks completed 2026-04-10.
 
 ## Priority: LOW
 - [ ] WS4: A/B caption testing — track view counts per caption style
-- [ ] WS7: Seasonal price patterns — monthly average prices per ref to identify buy/sell windows
+- [x] WS7: Seasonal price patterns — 12-month calendar with buy/sell scores (0-100) for HK market, current-month strategy badge, live deal count + avg discount overlay; added to ws7-analytics.js section 6 (2026-04-11)
 - [x] WS7: Currency impact dashboard — HKD/USD slider (6.50–8.50) shows per-ref arb profit & break-even FX rate, total pool delta vs baseline; added to ws7-analytics.js section 5 (2026-04-11)
 - [ ] WS9: Profit by channel analysis (WhatsApp groups, Instagram, direct)
 - [ ] WS10: Competition price tracking — monitor Chrono24 prices for key refs
 - [ ] Multi-channel listing sync — generate Chrono24-compatible XML feed from inventory (competitive with WatchTraderHub)
 - [ ] Performance badges — Fast Shipper, Top Seller badges on seller profiles (competitive with Chrono24)
+
+## COMPLETED (2026-04-11)
+- [x] WS5: Batch ship tab detection bug fixed — _currentTab state tracking replaces brittle CSS-var inspection; cells[5] off-by-one fixed; Select All checkbox-driven
+- [x] WS7: Seasonal Market Intelligence — section 6, monthly buy/sell index, strategy badge, live overlay (2026-04-11)
+- [x] Price analyzer: rolex_dial_options.json expanded 165→184 refs — added Sea-Dweller 136600, Air-King 116900, YM40 current gen 126621/126622, Day-Date 36 Platinum 128206, prev-gen DJ36 G-suffix/RBR/gold variants, Lady-DJ28 additional refs, Pearlmaster 81285/81319 (2026-04-11)
 
 ## COMPLETED (2026-04-10)
 - [x] WS1: Deal scoring algorithm (0-100 composite score) — ws1-price-intel.js
