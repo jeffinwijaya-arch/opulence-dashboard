@@ -395,12 +395,15 @@
         .input {
             background:var(--bg-3); border:1px solid var(--border); border-radius:var(--radius);
             padding:7px 12px; font-size:0.8rem; color:var(--text-0);
-            font-family:var(--font); outline:none; transition:all 0.2s ease;
+            font-family:var(--font); transition:all 0.2s ease;
         }
-        .input:focus { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-glow); }
+        .input:focus { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-glow); outline:none; }
         input:focus, select:focus, textarea:focus {
-            border-color: var(--accent); outline: none;
+            border-color: var(--accent);
             box-shadow: 0 0 0 2px rgba(201,168,76,0.2);
+        }
+        input:focus-visible, select:focus-visible, textarea:focus-visible {
+            outline:2px solid var(--accent); outline-offset:2px;
         }
         .input::placeholder { color:var(--text-2); }
         select.input { cursor:pointer; }
@@ -702,6 +705,18 @@
             transition:top 0.2s ease;
         }
         .skip-link:focus { top:0; }
+
+        /* ── REDUCED MOTION ── */
+        @media(prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; }
+            .ticker-inner { animation:none !important; }
+            .skeleton { animation:none !important; }
+            .counter-val { transition:none !important; }
+            .page.active { animation:none !important; }
+            .metric:hover { transform:none !important; }
+            .btn:hover { transform:none !important; }
+            html { scroll-behavior:auto !important; }
+        }
 
         /* ── NAV TOOLTIPS ── */
         .nav a[title] { position:relative; }
@@ -1826,36 +1841,6 @@
             }
         }
 
-        /* ── Search clear buttons ── */
-        .search-wrap { position:relative; display:flex; flex:1; min-width:0; }
-        .search-wrap input { flex:1; padding-right:32px !important; }
-        .search-clear {
-            position:absolute; right:8px; top:50%; transform:translateY(-50%);
-            width:20px; height:20px; border-radius:50%; border:none;
-            background:var(--bg-3); color:var(--text-2); font-size:0.7rem;
-            cursor:pointer; display:none; align-items:center; justify-content:center;
-            line-height:1; padding:0; font-weight:700;
-        }
-        .search-clear:hover { background:var(--red); color:#fff; }
-        .search-wrap input:not(:placeholder-shown) + .search-clear { display:flex; }
-
-        /* ── Form validation error state ── */
-        .input-error { border-color:var(--red) !important; box-shadow:0 0 0 1px var(--red) !important; }
-
-        /* ── Dropdown improvements ── */
-        select.input, select:not([multiple]) {
-            appearance:none; -webkit-appearance:none;
-            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8a8a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-            background-repeat:no-repeat; background-position:right 10px center; background-size:12px;
-            padding-right:30px !important;
-        }
-        @media(max-width:900px) {
-            select.input, select:not([multiple]) { font-size:0.85rem !important; }
-        }
-
-        /* ── Textarea auto-resize ── */
-        textarea.auto-resize { overflow:hidden; resize:none !important; min-height:60px; }
-
         /* ══════════════════════════════════════════════════
            P0 MOBILE EMERGENCY — iPhone 390px Safari
            ══════════════════════════════════════════════════ */
@@ -2139,6 +2124,37 @@
 
         /* Mission Control tabs */
         .mc-tab-btn.active { background:var(--accent); color:#000; }
+
+        /* ── Search clear buttons ── */
+        .search-wrap { position:relative; display:flex; flex:1; min-width:0; }
+        .search-wrap input { flex:1; padding-right:32px !important; }
+        .search-clear {
+            position:absolute; right:8px; top:50%; transform:translateY(-50%);
+            width:20px; height:20px; border-radius:50%; border:none;
+            background:var(--bg-3); color:var(--text-2); font-size:0.7rem;
+            cursor:pointer; display:none; align-items:center; justify-content:center;
+            line-height:1; padding:0; font-weight:700;
+        }
+        .search-clear:hover { background:var(--red); color:#fff; }
+        .search-wrap input:not(:placeholder-shown) + .search-clear { display:flex; }
+
+        /* ── Form validation error state ── */
+        .input-error { border-color:var(--red) !important; box-shadow:0 0 0 1px var(--red) !important; }
+
+        /* ── Dropdown improvements ── */
+        select.input, select:not([multiple]) {
+            appearance:none; -webkit-appearance:none;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8a8a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat:no-repeat; background-position:right 10px center; background-size:12px;
+            padding-right:30px !important;
+        }
+        @media(max-width:900px) {
+            select.input, select:not([multiple]) { font-size:0.85rem !important; }
+        }
+
+        /* ── Textarea auto-resize ── */
+        textarea.auto-resize { overflow:hidden; resize:none !important; min-height:60px; }
+
     </style>
 </head>
 <body>
@@ -2159,7 +2175,7 @@ window.__V = '20260410-1740';
 setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.classList.add('hide');setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s);},500);}},6000);
 </script>
 <div class="app">
-    <a href="#page-dashboard" class="skip-link" tabindex="1">Skip to content</a>
+    <a href="#main-content" class="skip-link">Skip to content</a>
     <!-- TOP BAR -->
     <header class="top-bar" role="banner">
         <a class="logo" onclick="showPage('dashboard')">MK<span> OPULENCE</span></a>
@@ -2169,7 +2185,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
             <span class="search-hint" id="searchHint">/</span>
         </div>
         <button onclick="openQuickCmd()" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 12px;font-size:0.75rem;font-weight:600;cursor:pointer;margin-right:8px;white-space:nowrap;" title="Cmd+K">Quick</button>
-        <div id="notif-bell" style="position:relative;cursor:pointer;margin-right:8px;padding:4px;" onclick="toggleNotifPanel()" title="Notifications">
+        <div id="notif-bell" style="position:relative;cursor:pointer;margin-right:8px;padding:4px;" onclick="toggleNotifPanel()" title="Notifications" aria-label="Notifications">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             <span id="notif-count" style="display:none;position:absolute;top:-2px;right:-4px;background:var(--red);color:#fff;font-size:0.55rem;font-weight:700;min-width:16px;height:16px;border-radius:8px;align-items:center;justify-content:center;font-family:var(--mono);padding:0 3px;"></span>
         </div>
@@ -2193,10 +2209,10 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
             <!-- Briefing tab removed -->
         </nav>
         <div class="live-clock" id="live-clock"></div>
-        <div class="theme-toggle" onclick="toggleTheme()" id="themeToggle" title="Toggle light/dark mode">
+        <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle" title="Toggle light/dark mode" aria-label="Toggle light/dark mode">
             <svg class="theme-icon-dark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
             <svg class="theme-icon-light" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-        </div>
+        </button>
     </header>
 
     <!-- TICKER -->
@@ -2217,7 +2233,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                     placeholder="Search watches, invoices, labels…"
                     oninput="debouncedUnifiedSearch(this.value)"
                     onkeydown="if(event.key==='Escape')closeUnifiedSearch()">
-                <button class="usearch-close" onclick="closeUnifiedSearch()">X</button>
+                <button class="usearch-close" onclick="closeUnifiedSearch()" aria-label="Close search">X</button>
             </div>
             <div class="usearch-results" id="usearch-results">
                 <div class="usearch-empty">Type to search across all data</div>
@@ -2271,7 +2287,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
         <a onclick="openQuickCmd()" style="color:var(--accent);">
             <span class="mn-icon"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>Quick
         </a>
-        <a id="more-toggle" onclick="toggleMobileMore()" style="position:relative;">
+        <a id="more-toggle" onclick="toggleMobileMore()" style="position:relative;" aria-label="More navigation options">
             <span class="mn-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></span>More
         </a>
     </nav>
@@ -2296,7 +2312,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
         </div>
     </div>
 
-    <main class="main" role="main">
+    <main class="main" role="main" id="main-content" tabindex="-1">
         <!-- ═══ DASHBOARD ═══ -->
         <div class="page active" id="page-dashboard">
             <div class="page-head">
@@ -2331,7 +2347,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                 <div class="card-head"><span> FX Calculator</span><span style="font-size:0.6rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px;">Wise mid-market + fees</span></div>
                 <div style="padding:10px;">
                     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-                        <input class="input" id="fx-amount" type="number" value="10000" style="width:120px;font-size:0.95rem;" oninput="fxCalc()">
+                        <input class="input" id="fx-amount" type="number" inputmode="decimal" value="10000" style="width:120px;font-size:0.95rem;" oninput="fxCalc()">
                         <select class="input" id="fx-from" style="width:80px;" onchange="fxCalc()">
                             <option value="USD" selected>USD</option><option value="HKD">HKD</option><option value="CAD">CAD</option><option value="IDR">IDR</option>
                         </select>
@@ -2414,23 +2430,23 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                 <p>Below-market opportunities and cross-region price differentials.</p>
             </div>
             <!-- Sub-tabs -->
-            <div class="tabs" style="margin-bottom:12px;">
-                <div class="tab active" id="deals-subtab-market" onclick="switchDealsSubtab('market',this)">Below Market</div>
-                <div class="tab" id="deals-subtab-arb" onclick="switchDealsSubtab('arb',this)">Arbitrage</div>
+            <div class="tabs" style="margin-bottom:12px;" role="tablist" aria-label="Deal categories">
+                <div class="tab active" id="deals-subtab-market" onclick="switchDealsSubtab('market',this)" role="tab" aria-selected="true">Below Market</div>
+                <div class="tab" id="deals-subtab-arb" onclick="switchDealsSubtab('arb',this)" role="tab" aria-selected="false">Arbitrage</div>
             </div>
 
             <!-- Below Market sub-section -->
             <div id="deals-market-section">
                 <div style="display:flex;gap:6px;margin-bottom:10px;">
-                    <input class="input" id="deals-search" placeholder="Filter ref, model, dial, seller..." oninput="debouncedFilterDeals()" style="flex:1;">
+                    <span class="search-wrap"><input class="input" id="deals-search" placeholder="Filter ref, model, dial, seller..." oninput="debouncedFilterDeals()"><button type="button" class="search-clear" onclick="this.previousElementSibling.value='';this.previousElementSibling.dispatchEvent(new Event('input'));this.style.display='none';" aria-label="Clear">&times;</button></span>
                     <select class="input" id="deals-tier" onchange="filterDeals()" style="width:100px;">
                         <option value="">All Tiers</option><option value="A">A-Tier</option><option value="B">B-Tier</option><option value="C">C-Tier</option>
                     </select>
                 </div>
-                <div class="tabs">
-                    <div class="tab active" onclick="setDealsRegion('all',this)">All</div>
-                    <div class="tab" onclick="setDealsRegion('US',this)">US</div>
-                    <div class="tab" onclick="setDealsRegion('HK',this)">HK Import</div>
+                <div class="tabs" role="tablist" aria-label="Region filter">
+                    <div class="tab active" onclick="setDealsRegion('all',this)" role="tab" aria-selected="true">All</div>
+                    <div class="tab" onclick="setDealsRegion('US',this)" role="tab" aria-selected="false">US</div>
+                    <div class="tab" onclick="setDealsRegion('HK',this)" role="tab" aria-selected="false">HK Import</div>
                 </div>
                 <div id="deals-cards"></div>
                 <div id="deals-detail" style="display:none;margin-top:8px;"></div>
@@ -2461,7 +2477,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                 <p>Search by ref, nickname, or natural language — e.g. "daytona panda", "black sub", "126334 blue jubilee"</p>
             </div>
             <div style="display:flex;gap:8px;align-items:center;max-width:620px;">
-                <input class="input" id="ref-search" placeholder="e.g. 126500, daytona panda, black sub, gmt pepsi jubilee..." oninput="debounceSearch()" style="flex:1;">
+                <span class="search-wrap"><input class="input" id="ref-search" placeholder="e.g. 126500, daytona panda, black sub, gmt pepsi jubilee..." oninput="debounceSearch()"><button type="button" class="search-clear" onclick="this.previousElementSibling.value='';this.previousElementSibling.dispatchEvent(new Event('input'));this.style.display='none';" aria-label="Clear">&times;</button></span>
                 <button class="btn" id="compare-btn" onclick="toggleCompareMode()" title="Compare two references side by side" style="white-space:nowrap;font-size:0.72rem;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Compare
                 </button>
@@ -2508,7 +2524,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                 <p id="browse-subtitle">Full listing database.</p>
             </div>
             <div style="display:flex;gap:6px;margin-bottom:10px;">
-                <input class="input" id="browse-search" placeholder="Search ref, dial, seller, group..." oninput="debouncedFilterBrowse()" style="flex:1;">
+                <span class="search-wrap"><input class="input" id="browse-search" placeholder="Search ref, dial, seller, group..." oninput="debouncedFilterBrowse()"><button type="button" class="search-clear" onclick="this.previousElementSibling.value='';this.previousElementSibling.dispatchEvent(new Event('input'));this.style.display='none';" aria-label="Clear">&times;</button></span>
                 <select class="input" id="browse-region" onchange="filterBrowse()" style="width:90px;"><option value="">All</option><option value="US">US</option><option value="HK">HK</option><option value="EU">EU</option></select>
                 <select class="input" id="browse-cond" onchange="filterBrowse()" style="width:110px;"><option value="">All</option><option value="BNIB">BNIB</option><option value="Like New">Like New</option><option value="Pre-owned">Pre-owned</option></select>
                 <select class="input" id="browse-sort" onchange="filterBrowse()" style="width:110px;"><option value="price-asc">Price Asc</option><option value="price-desc">Price Desc</option><option value="ref">Ref A-Z</option></select>
@@ -2594,7 +2610,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                     </div>
                     <div>
                         <label style="font-size:0.7rem;color:var(--text-2);display:block;margin-bottom:3px;">Packages</label>
-                        <input id="fedex-pickup-count" class="input" type="number" value="1" min="1" style="width:100%;">
+                        <input id="fedex-pickup-count" class="input" type="number" inputmode="decimal" value="1" min="1" style="width:100%;">
                     </div>
                     <div>
                         <label style="font-size:0.7rem;color:var(--text-2);display:block;margin-bottom:3px;">Ready Time</label>
@@ -2606,7 +2622,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                     </div>
                     <div>
                         <label style="font-size:0.7rem;color:var(--text-2);display:block;margin-bottom:3px;">Total Weight (lbs)</label>
-                        <input id="fedex-pickup-weight" class="input" type="number" value="1" min="1" style="width:100%;">
+                        <input id="fedex-pickup-weight" class="input" type="number" inputmode="decimal" value="1" min="1" style="width:100%;">
                     </div>
                 </div>
                 <div style="margin-top:8px;">
@@ -2667,9 +2683,9 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                         </div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                             <div><label style="font-size:0.68rem;color:var(--text-2);">Declared Value ($)</label>
-                                <input class="input" id="ship-value" type="number" placeholder="0" style="width:100%;margin-top:3px;"></div>
+                                <input class="input" id="ship-value" type="number" inputmode="decimal" placeholder="0" style="width:100%;margin-top:3px;"></div>
                             <div><label style="font-size:0.68rem;color:var(--text-2);">Weight (lbs)</label>
-                                <input class="input" id="ship-weight" type="number" value="1" style="width:100%;margin-top:3px;"></div>
+                                <input class="input" id="ship-weight" type="number" inputmode="decimal" value="1" style="width:100%;margin-top:3px;"></div>
                         </div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                             <div><label style="font-size:0.68rem;color:var(--text-2);">Service</label>
@@ -2888,7 +2904,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
             
             <!-- Enhanced Controls -->
             <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
-                <input class="input" id="im-search" placeholder="Search ref, seller, buyer, serial..." style="flex:1;min-width:150px;" oninput="debouncedFilterInventory()">
+                <span class="search-wrap" style="min-width:150px;"><input class="input" id="im-search" placeholder="Search ref, seller, buyer, serial..." oninput="debouncedFilterInventory()"><button type="button" class="search-clear" onclick="this.previousElementSibling.value='';this.previousElementSibling.dispatchEvent(new Event('input'));this.style.display='none';" aria-label="Clear">&times;</button></span>
                 <span id="im-filter-badge" class="tag tag-gold" style="display:none;cursor:pointer;font-size:0.62rem;" onclick="clearInventoryFilters()"></span>
                 
                 <!-- Status Filter -->
@@ -2958,7 +2974,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
             <div style="background:var(--bg-2);border-radius:var(--radius);padding:20px;max-width:500px;width:90%;max-height:85vh;overflow-y:auto;" onclick="event.stopPropagation();">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                     <h3 id="watch-modal-title" style="margin:0;">Add Watch</h3>
-                    <button onclick="closeWatchModal()" style="background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;">X</button>
+                    <button onclick="closeWatchModal()" style="background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;" aria-label="Close watch details">X</button>
                 </div>
                 <input type="hidden" id="wm-row">
                 <div style="display:grid;gap:8px;">
@@ -2978,22 +2994,22 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                         </div>
                     </div>
                     <div><label style="font-size:0.68rem;color:var(--text-2);">Description (e.g. 126300 Jubilee Black 02/2026)</label>
-                        <input class="input" id="wm-desc" style="width:100%;margin-top:3px;" placeholder="Auto-filled from ref + selections above"></div>
+                        <input class="input" id="wm-desc" required style="width:100%;margin-top:3px;" placeholder="Auto-filled from ref + selections above"></div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                         <div><label style="font-size:0.68rem;color:var(--text-2);">Bought From</label>
                             <input class="input" id="wm-from" style="width:100%;margin-top:3px;"></div>
                         <div><label style="font-size:0.68rem;color:var(--text-2);">Cost Price ($)</label>
-                            <input class="input" id="wm-cost" type="number" style="width:100%;margin-top:3px;"></div>
+                            <input class="input" id="wm-cost" type="number" inputmode="decimal" required style="width:100%;margin-top:3px;"></div>
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                         <div><label style="font-size:0.68rem;color:var(--text-2);">Sold To</label>
                             <input class="input" id="wm-to" style="width:100%;margin-top:3px;"></div>
                         <div><label style="font-size:0.68rem;color:var(--text-2);">Sold Price ($)</label>
-                            <input class="input" id="wm-sold-price" type="number" style="width:100%;margin-top:3px;"></div>
+                            <input class="input" id="wm-sold-price" type="number" inputmode="decimal" style="width:100%;margin-top:3px;"></div>
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                         <div><label style="font-size:0.68rem;color:var(--text-2);">Sale/Asking Price ($)</label>
-                            <input class="input" id="wm-sale-price" type="number" style="width:100%;margin-top:3px;"></div>
+                            <input class="input" id="wm-sale-price" type="number" inputmode="decimal" style="width:100%;margin-top:3px;"></div>
                         <div><label style="font-size:0.68rem;color:var(--text-2);">Buy Date</label>
                             <input class="input" id="wm-buy-date" type="date" style="width:100%;margin-top:3px;"></div>
                     </div>
@@ -3043,15 +3059,15 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
             <div style="background:var(--bg-2);border-radius:var(--radius);padding:20px;max-width:400px;width:90%;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                     <h3 style="margin:0;">Record Sale</h3>
-                    <button onclick="closeSellModal()" style="background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;">X</button>
+                    <button onclick="closeSellModal()" style="background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;" aria-label="Close sell dialog">X</button>
                 </div>
                 <input type="hidden" id="sm-row">
                 <div id="sm-watch-info" style="font-size:0.75rem;color:var(--text-2);margin-bottom:10px;padding:8px;background:var(--bg-3);border-radius:var(--radius);"></div>
                 <div style="display:grid;gap:8px;">
                     <div><label style="font-size:0.68rem;color:var(--text-2);">Sold To</label>
-                        <input class="input" id="sm-to" style="width:100%;margin-top:3px;" placeholder="Buyer name"></div>
+                        <input class="input" id="sm-to" required style="width:100%;margin-top:3px;" placeholder="Buyer name"></div>
                     <div><label style="font-size:0.68rem;color:var(--text-2);">Sold Price ($)</label>
-                        <input class="input" id="sm-price" type="number" style="width:100%;margin-top:3px;" placeholder="e.g. 26100"></div>
+                        <input class="input" id="sm-price" type="number" inputmode="decimal" required style="width:100%;margin-top:3px;" placeholder="e.g. 26100"></div>
                     <div><label style="font-size:0.68rem;color:var(--text-2);">Sale Date</label>
                         <input class="input" id="sm-date" type="date" style="width:100%;margin-top:3px;"></div>
                     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
@@ -3068,7 +3084,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
             <div style="background:var(--bg-2);border-radius:var(--radius);padding:20px;max-width:400px;width:90%;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                     <h3 style="margin:0;">Mark Shipped</h3>
-                    <button onclick="closeShipModal()" style="background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;">X</button>
+                    <button onclick="closeShipModal()" style="background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;" aria-label="Close ship dialog">X</button>
                 </div>
                 <input type="hidden" id="shm-row">
                 <div id="shm-watch-info" style="font-size:0.75rem;color:var(--text-2);margin-bottom:10px;padding:8px;background:var(--bg-3);border-radius:var(--radius);"></div>
@@ -3089,14 +3105,14 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
             <div style="background:var(--bg-2);border-radius:var(--radius);padding:20px;max-width:400px;width:90%;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                     <h3 style="margin:0;">Mark Posted</h3>
-                    <button onclick="closePostModal()" style="background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;">X</button>
+                    <button onclick="closePostModal()" style="background:none;border:none;color:var(--text-2);font-size:1.2rem;cursor:pointer;" aria-label="Close posting dialog">X</button>
                 </div>
                 <input type="hidden" id="pm-row">
                 <div id="pm-watch-info" style="font-size:0.75rem;color:var(--text-2);margin-bottom:10px;padding:8px;background:var(--bg-3);border-radius:var(--radius);"></div>
                 <div id="pm-suggestion" style="display:none;padding:8px;background:rgba(240,192,64,0.1);border:1px solid rgba(240,192,64,0.3);border-radius:var(--radius);margin-bottom:8px;font-size:0.72rem;color:#f0c040;"></div>
                 <div style="display:grid;gap:8px;">
                     <div><label style="font-size:0.68rem;color:var(--text-2);">Asking Price ($)</label>
-                        <input class="input" id="pm-price" type="number" style="width:100%;margin-top:3px;" placeholder="e.g. 21800"></div>
+                        <input class="input" id="pm-price" type="number" inputmode="decimal" style="width:100%;margin-top:3px;" placeholder="e.g. 21800"></div>
                     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
                         <button class="btn" onclick="closePostModal()" style="opacity:0.6;">Cancel</button>
                         <button class="btn" id="pm-submit" onclick="submitPost()" style="background:#f0c040;color:var(--bg-1);">Post</button>
@@ -3120,7 +3136,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
             </div>
             <!-- Search -->
             <div style="margin-bottom:10px;">
-                <input type="text" id="postings-search" placeholder="Search postings (ref, dial, description...)" oninput="debouncedFilterPostings()" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg-1);color:var(--text-0);font-size:0.85rem;box-sizing:border-box;">
+                <span class="search-wrap" style="width:100%;"><input type="text" id="postings-search" placeholder="Search postings (ref, dial, description...)" oninput="debouncedFilterPostings()" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg-1);color:var(--text-0);font-size:0.85rem;box-sizing:border-box;"><button type="button" class="search-clear" onclick="this.previousElementSibling.value='';this.previousElementSibling.dispatchEvent(new Event('input'));this.style.display='none';" aria-label="Clear">&times;</button></span>
             </div>
             <!-- Controls row -->
             <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
@@ -3193,7 +3209,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                                         <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Caption</label>
                                         <button class="btn" onclick="(async function(){const ph=window._epmCurrentPhoto;if(!ph){showToast('No photo to redact','error');return;}const btn=event.target;btn.textContent='Loading...';btn.disabled=true;try{const r=await fetch('/api/posting-photo/'+ph);const blob=await r.blob();const file=new File([blob],ph,{type:blob.type||'image/jpeg'});openPostingRedactEditor(file,window._epmCurrentRow||'',document.getElementById('epm-caption')?.value||'');}catch(e){showToast('Failed to load photo','error');}btn.textContent='REDACT';btn.disabled=false;})()" style="font-size:0.65rem;padding:4px 12px;background:var(--red-dim);color:var(--red);border:1px solid var(--red);border-radius:6px;cursor:pointer;font-weight:700;">REDACT</button>
                                     </div>
-                                    <textarea class="input" id="epm-caption" rows="3" style="width:100%;margin-top:4px;font-family:var(--mono);font-size:0.74rem;resize:vertical;"></textarea>
+                                    <textarea class="input auto-resize" id="epm-caption" rows="3" style="width:100%;margin-top:4px;font-family:var(--mono);font-size:0.74rem;"></textarea>
                                 </div>
                                 <div id="epm-price-intel" style="display:none;margin-bottom:10px;padding:10px;background:var(--bg-1);border:1px solid var(--border-strong);border-radius:var(--radius);font-size:0.72rem;">
                                     <div style="color:var(--text-2);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Price Intelligence</div>
@@ -3201,7 +3217,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                                 </div>
                                 <div style="margin-bottom:14px;">
                                     <label style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;">Price ($)</label>
-                                    <input class="input" id="epm-new-price" type="number" placeholder="e.g. 15500" style="width:100%;margin-top:4px;" oninput="(function(){const c=document.getElementById('epm-caption');const p=document.getElementById('epm-new-price').value;if(c&&p){c.value=c.value.replace(/\n?\$?[\d,]+\s*\+\s*label\s*$/,'').trim()+'\n$'+Number(p).toLocaleString()+' + label';}})();" />
+                                    <input class="input" id="epm-new-price" type="number" inputmode="decimal" placeholder="e.g. 15500" style="width:100%;margin-top:4px;" oninput="(function(){const c=document.getElementById('epm-caption');const p=document.getElementById('epm-new-price').value;if(c&&p){c.value=c.value.replace(/\n?\$?[\d,]+\s*\+\s*label\s*$/,'').trim()+'\n$'+Number(p).toLocaleString()+' + label';}})();" />
                                 </div>
                                 <div style="display:flex;gap:8px;justify-content:flex-end;">
                                     <button class="btn" onclick="closePriceEditModal()" style="opacity:0.6;">Cancel</button>
@@ -3274,7 +3290,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                 <div style="background:var(--bg-1);border:1px solid var(--border-strong);border-radius:var(--radius-lg);max-width:500px;width:90%;padding:20px;font-family:var(--font);max-height:90vh;overflow-y:auto;">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
                         <span style="font-size:0.9rem;font-weight:600;color:var(--text-0);">Post to My Postings</span>
-                        <button onclick="closePostDirectModal()" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:1.1rem;">X</button>
+                        <button onclick="closePostDirectModal()" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:1.1rem;" aria-label="Close direct posting dialog">X</button>
                     </div>
                     <input type="hidden" id="pdm-row">
                     <div style="margin-bottom:10px;">
@@ -3287,11 +3303,11 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                     </div>
                     <div style="margin-bottom:10px;">
                         <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Caption</label>
-                        <textarea id="pdm-caption" rows="4" style="width:100%;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);color:var(--text-0);padding:8px;font-family:var(--mono);font-size:0.74rem;resize:vertical;margin-top:4px;"></textarea>
+                        <textarea id="pdm-caption" class="auto-resize" rows="4" style="width:100%;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);color:var(--text-0);padding:8px;font-family:var(--mono);font-size:0.74rem;margin-top:4px;"></textarea>
                     </div>
                     <div style="margin-bottom:14px;">
                         <label style="font-size:0.7rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Asking Price ($)</label>
-                        <input class="input" id="pdm-price-input" type="number" placeholder="e.g. 18500" style="width:100%;margin-top:4px;">
+                        <input class="input" id="pdm-price-input" type="number" inputmode="decimal" placeholder="e.g. 18500" style="width:100%;margin-top:4px;">
                     </div>
                     <div style="display:flex;gap:8px;justify-content:flex-end;">
                         <button class="btn" onclick="closePostDirectModal()" style="opacity:0.6;">Cancel</button>
@@ -3467,11 +3483,11 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                         </div>
                         <div style="flex:0 0 100px;">
                             <label style="font-size:0.65rem;color:var(--text-2);display:block;margin-bottom:2px;">Amount</label>
-                            <input id="sin-add-amount" class="input" type="number" placeholder="0" style="width:100%;font-size:0.8rem;">
+                            <input id="sin-add-amount" class="input" type="number" inputmode="decimal" placeholder="0" style="width:100%;font-size:0.8rem;">
                         </div>
                         <div id="sin-add-cost-wrap" style="flex:0 0 100px;display:none;">
                             <label style="font-size:0.65rem;color:var(--text-2);display:block;margin-bottom:2px;">Cost (internal)</label>
-                            <input id="sin-add-cost" class="input" type="number" placeholder="0" style="width:100%;font-size:0.8rem;">
+                            <input id="sin-add-cost" class="input" type="number" inputmode="decimal" placeholder="0" style="width:100%;font-size:0.8rem;">
                         </div>
                         <div id="sin-add-tracking-wrap" style="flex:0 0 130px;display:none;">
                             <label style="font-size:0.65rem;color:var(--text-2);display:block;margin-bottom:2px;">Tracking</label>
@@ -3662,7 +3678,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                         <h3 id="modal-title" style="margin:0;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%;"></h3>
                         <div style="display:flex;gap:6px;align-items:center;">
                             <span id="editor-status" style="font-size:0.65rem;color:var(--green);display:none;"> Saved</span>
-                            <button onclick="closePhotoModal()" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;line-height:1;">×</button>
+                            <button onclick="closePhotoModal()" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;line-height:1;" aria-label="Close photo viewer">×</button>
                         </div>
                     </div>
                     <!-- Toolbar (single compact row) -->
@@ -3678,7 +3694,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                     </div>
                     <!-- Canvas area (takes most space) -->
                     <div style="flex:1;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;min-height:0;">
-                        <canvas id="editor-canvas" style="max-width:100%;max-height:100%;cursor:crosshair;border:1px solid rgba(255,255,255,0.1);border-radius:4px;"></canvas>
+                        <canvas id="editor-canvas" aria-label="Photo editor canvas" style="max-width:100%;max-height:100%;cursor:crosshair;border:1px solid rgba(255,255,255,0.1);border-radius:4px;"></canvas>
                         <div id="redact-hint" style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:var(--text-1);padding:4px 10px;border-radius:4px;font-size:0.6rem;pointer-events:none;display:none;">
                             Draw to redact
                         </div>
@@ -4403,7 +4419,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
             Search
         </div>
     </div>
-    <button class="fab-btn" id="fab-btn" onclick="toggleFab()">
+    <button class="fab-btn" id="fab-btn" onclick="toggleFab()" aria-label="Quick actions">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     </button>
 </div>
@@ -7078,7 +7094,7 @@ async function doLookup() {
                 ${signalHtml}
                 ${relatedHtml}
             </div></div>
-            <div class="card" style="margin-top:8px;" id="lookup-chart-card"><div class="card-head"><span>Price History (14d)</span></div><div class="card-body" style="padding:8px;"><canvas id="lookup-chart"></canvas><div id="lookup-chart-empty" class="dim" style="text-align:center;padding:12px;display:none;">No history available</div></div></div>
+            <div class="card" style="margin-top:8px;" id="lookup-chart-card"><div class="card-head"><span>Price History (14d)</span></div><div class="card-body" style="padding:8px;"><canvas id="lookup-chart" aria-label="Price history chart"></canvas><div id="lookup-chart-empty" class="dim" style="text-align:center;padding:12px;display:none;">No history available</div></div></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
                 <div class="card"><div class="card-head"><span>US Listings (${_allListingsData.filter(l=>(l.region||'').toUpperCase()==='US').length})</span></div><div class="card-body" style="max-height:400px;overflow-y:auto;"><div id="cheapest-us">${(()=>{const usL=_allListingsData.filter(l=>(l.region||'').toUpperCase()==='US');if(!usL.length)return'<div style="color:var(--text-2);padding:8px;">No US listings</div>';return usL.map((l,i)=>{const srcText=String(l.source_text||'').replace(/\+?\s*label\s+gambar tidak disertakan/gi,'').replace(/gambar tidak disertakan/gi,'').replace(/\(file terlampir\)/gi,'').trim().split('<').join('&lt;').split('>').join('&gt;');const phoneClean=(l.phone||'').replace(/[^0-9]/g,'');const waBtn=phoneClean?' <a href="https://wa.me/'+phoneClean+'" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);text-decoration:none;font-weight:700;">WA</a>':'';const ts=l.ts||'';let card='<div class="listing-card">';card+='<div style="display:flex;justify-content:space-between;align-items:center;">';const _lp=l.price_usd||l.price;const _pct=b25>0&&_lp>0?((_lp-b25)/b25*100):null;const _vb=_pct!=null?'<span style="font-size:0.6rem;font-weight:600;padding:1px 6px;border-radius:3px;margin-left:5px;background:'+(_pct<-2?'rgba(0,230,118,0.12)':_pct>5?'rgba(255,23,68,0.1)':'rgba(255,255,255,0.04)')+';color:'+(_pct<-2?'var(--green)':_pct>5?'var(--red)':'var(--text-2)')+';border:1px solid '+(_pct<-2?'rgba(0,230,118,0.2)':_pct>5?'rgba(255,23,68,0.2)':'rgba(255,255,255,0.06)')+';">'+(_pct>=0?'+':'')+_pct.toFixed(1)+'%</span>':'';card+='<span style="font-family:var(--mono);font-weight:700;color:var(--green)">'+fmt(_lp)+_vb+'</span>';card+='<span><span class="tag '+condTag(l.condition)+'">'+(l.condition||'\u2014')+'</span></span>';card+='</div>';card+='<div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">'+(l.dial||'')+' '+(l.bracelet||'')+' '+(l.year?'('+l.year+')':'')+' · '+(l.seller||'?')+waBtn+'</div>';if(ts)card+='<div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">'+ts+'</div>';if(srcText)card+='<div style="font-size:0.70rem;color:var(--text-1);margin-top:4px;padding:6px 8px;background:rgba(255,255,255,0.04);border-radius:4px;border-left:2px solid var(--green);font-family:var(--mono);white-space:pre-wrap;word-break:break-all;line-height:1.4;">'+srcText+'</div>';card+='</div>';return card;}).join('');})()}</div></div></div>
                 <div class="card"><div class="card-head"><span>HK Listings (${_allListingsData.filter(l=>(l.region||'').toUpperCase()==='HK').length})</span></div><div class="card-body" style="max-height:400px;overflow-y:auto;"><div id="cheapest-hk">${(()=>{const hkL=_allListingsData.filter(l=>(l.region||'').toUpperCase()==='HK');if(!hkL.length)return'<div style="color:var(--text-2);padding:8px;">No HK listings</div>';return hkL.map((l,i)=>{const srcText=String(l.source_text||'').replace(/\+?\s*label\s+gambar tidak disertakan/gi,'').replace(/gambar tidak disertakan/gi,'').replace(/\(file terlampir\)/gi,'').trim().split('<').join('&lt;').split('>').join('&gt;');const phoneClean=(l.phone||'').replace(/[^0-9]/g,'');const waBtn=phoneClean?' <a href="https://wa.me/'+phoneClean+'" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);text-decoration:none;font-weight:700;">WA</a>':'';const ts=l.ts||'';let card='<div class="listing-card">';card+='<div style="display:flex;justify-content:space-between;align-items:center;">';const _lp=l.price_usd||l.price;const _pct=b25>0&&_lp>0?((_lp-b25)/b25*100):null;const _vb=_pct!=null?'<span style="font-size:0.6rem;font-weight:600;padding:1px 6px;border-radius:3px;margin-left:5px;background:'+(_pct<-2?'rgba(0,230,118,0.12)':_pct>5?'rgba(255,23,68,0.1)':'rgba(255,255,255,0.04)')+';color:'+(_pct<-2?'var(--green)':_pct>5?'var(--red)':'var(--text-2)')+';border:1px solid '+(_pct<-2?'rgba(0,230,118,0.2)':_pct>5?'rgba(255,23,68,0.2)':'rgba(255,255,255,0.06)')+';">'+(_pct>=0?'+':'')+_pct.toFixed(1)+'%</span>':'';card+='<span style="font-family:var(--mono);font-weight:700;color:var(--green)">'+fmt(_lp)+_vb+'</span>';card+='<span><span class="tag '+condTag(l.condition)+'">'+(l.condition||'\u2014')+'</span></span>';card+='</div>';card+='<div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">'+(l.dial||'')+' '+(l.bracelet||'')+' '+(l.year?'('+l.year+')':'')+' · '+(l.seller||'?')+waBtn+'</div>';if(ts)card+='<div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">'+ts+'</div>';if(srcText)card+='<div style="font-size:0.70rem;color:var(--text-1);margin-top:4px;padding:6px 8px;background:rgba(255,255,255,0.04);border-radius:4px;border-left:2px solid var(--orange);font-family:var(--mono);white-space:pre-wrap;word-break:break-all;line-height:1.4;">'+srcText+'</div>';card+='</div>';return card;}).join('');})()}</div></div></div>
@@ -7360,9 +7376,9 @@ function renderPfSummary(c, p, items) {
             <div class="metric"><div class="label">Capital at Risk</div><div class="val red">${fmt(p.capital_at_risk)}</div></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-            <div class="card"><div class="card-head"><span>Portfolio Value</span><span style="font-size:0.65rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;">14-day trend</span></div><div class="card-body" style="padding:8px;"><canvas id="portfolio-chart"></canvas></div></div>
+            <div class="card"><div class="card-head"><span>Portfolio Value</span><span style="font-size:0.65rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;">14-day trend</span></div><div class="card-body" style="padding:8px;"><canvas id="portfolio-chart" aria-label="Portfolio value trend chart"></canvas></div></div>
             <div class="card"><div class="card-head"><span>Brand Allocation</span></div><div class="card-body" style="display:flex;flex-direction:column;align-items:center;padding:12px;">
-                <div class="donut-wrap"><canvas id="brand-donut"></canvas>
+                <div class="donut-wrap"><canvas id="brand-donut" aria-label="Brand allocation donut chart"></canvas>
                     <div class="donut-center"><div class="dc-val">${items.filter(i=>!i.sold).length}</div><div class="dc-label">positions</div></div>
                 </div>
                 <div class="donut-legend">${brandLegend}</div>
@@ -7848,6 +7864,11 @@ function renderBrowse(append) {
     </tr>${srcRow}`;
     }).join('');
     const tbody = $('#browse-table tbody');
+    if (!f.length && !append) {
+        tbody.innerHTML = '<tr><td colspan="11">' + emptyState('search','No listings match','Try broadening your search or adjusting filters.','filterBrowse()') + '</td></tr>';
+        $('#browse-more').style.display = 'none';
+        return;
+    }
     if (append) tbody.innerHTML+=html; else tbody.innerHTML=html;
     browseOffset+=BROWSE_PAGE;
     $('#browse-more').style.display = browseOffset>=f.length?'none':'';
@@ -8540,7 +8561,7 @@ function drawCanvasSparkline(canvas, values, opts={}) {
 
     // Current value label
     const lastVal = values[values.length-1];
-    const valStr = lastVal >= 1000 ? '\$' + (lastVal/1000).toFixed(lastVal>=10000?0:1) + 'k' : Math.round(lastVal).toLocaleString();
+    const valStr = lastVal >= 1000 ? '$' + (lastVal/1000).toFixed(lastVal>=10000?0:1) + 'k' : Math.round(lastVal).toLocaleString();
     ctx.font = 'bold 9px JetBrains Mono, monospace';
     ctx.fillStyle = color;
     ctx.textAlign = 'right';
@@ -8603,11 +8624,12 @@ function drawDonutChart(canvasId, segments, opts={}) {
     const canvas = document.getElementById(canvasId);
     if (!canvas || !segments.length) return;
     const dpr = window.devicePixelRatio || 1;
-    const size = opts.size || 180;
+    const size = opts.size || Math.min(180, canvas.parentElement ? canvas.parentElement.offsetWidth : 180);
     canvas.width = size * dpr;
     canvas.height = size * dpr;
     canvas.style.width = size + 'px';
     canvas.style.height = size + 'px';
+    canvas.style.maxWidth = '100%';
     const ctx = canvas.getContext('2d');
     ctx.scale(dpr, dpr);
 
@@ -8954,7 +8976,7 @@ if (!_userRole.allowedPages) {
     setInterval(renderTicker, 3600000);
     // portfolio_insights deferred — loaded on first visit to Portfolio page (see showPage)
     // Preload payments badge count so it shows without visiting the page
-    fetch('/api/payments/collections-dashboard').then(r=>r.ok?r.json():null).then(d=>{if(!d)return;const n=(d.overdue_receivables?.length||0)+(d.overdue_payables?.length||0);const el=document.getElementById('payments-count');if(el)el.textContent=n;}).catch(()=>{});
+    fetch('/api/payments/collections-dashboard').then(r=>r.ok?r.json():null).then(d=>{if(!d)return;const n=(d.overdue_receivables?.length||0)+(d.overdue_payables?.length||0);const el=document.getElementById('payments-count');if(el)el.textContent=n;}).catch(e=>{console.error('Payments badge preload failed:', e);});
 }
 // Restore page from URL AFTER init (only if allowed)
 {
@@ -11828,7 +11850,7 @@ function addInvLineItem(name='', desc='', rate='') {
     div.innerHTML = `
         <input class="input inv-li-name" value="${(name||'').replace(/"/g,'&quot;')}" placeholder="Item name (e.g. 126610LN Oyster Black)">
         <input class="input inv-li-desc" value="${(desc||'').replace(/"/g,'&quot;')}" placeholder="Description (e.g. serial MM/YYYY)">
-        <input class="input inv-li-rate" type="number" value="${rate||''}" placeholder="Rate" oninput="calcInvTotals()">
+        <input class="input inv-li-rate" type="number" inputmode="decimal" value="${rate||''}" placeholder="Rate" oninput="calcInvTotals()">
         <button onclick="this.parentElement.remove();calcInvTotals()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:1rem;">X</button>
     `;
     container.appendChild(div);
@@ -12791,25 +12813,20 @@ async function loadPayments() {
     
     async function loadPhotoLibrary() {
         try {
-            console.log('Loading photo library...');
             const response = await fetch('/api/watch-photos');
-            console.log('Photo library response status:', response.status);
             
             if (!response.ok) {
                 throw new Error(`Failed to load photo library: ${response.status} ${response.statusText}`);
             }
             
             const data = await response.json();
-            console.log('Photo library data:', data);
             photoLibraryData = data.watches || [];
-            console.log('Loaded', photoLibraryData.length, 'photos');
             
             // Update stats
             try {
                 const stats = await fetch('/api/watch-photos/stats');
                 if (stats.ok) {
                     const statsData = await stats.json();
-                    console.log('Stats data:', statsData);
                     updatePhotoStats(statsData);
                 }
             } catch (statsError) {
@@ -12865,7 +12882,6 @@ async function loadPayments() {
         });
         
         $('#photo-results').textContent = `${filtered.length} of ${photoLibraryData.length} photos`;
-        console.log('Rendering', filtered.length, 'photos');
         renderPhotoLibrary(filtered);
     }
     
@@ -14380,6 +14396,7 @@ async function loadPayments() {
         document.getElementById('pdm-photo-file').value = '';
 
         document.getElementById('post-direct-modal').style.display = 'flex';
+        setTimeout(() => { const fi = document.getElementById('pdm-caption'); if(fi) fi.focus(); }, 100);
     }
 
     function closePostDirectModal() {
@@ -17422,7 +17439,7 @@ function _jamCard(type, item) {
             detailLine += `<div style="margin-top:4px;padding:0;font-size:0.72rem;color:var(--text-0);display:flex;align-items:center;gap:4px;">
                 <span style="color:var(--orange);font-weight:600;white-space:nowrap;font-size:0.7rem;">DELIVER TO:</span>
                 <input type="text" value="${(addrNotes).replace(/"/g,'&quot;')}" placeholder="Address + instructions..." 
-                    style="flex:1;font-size:0.72rem;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-2);color:var(--text-0);outline:none;"
+                    style="flex:1;font-size:0.72rem;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-2);color:var(--text-0);"
                     id="deliver-input-${item.id}">
                 <button onclick="saveDeliverTo(${item.id},${item.package_id||0},document.getElementById('deliver-input-${item.id}').value);this.textContent='\u2713 Sent';setTimeout(()=>this.textContent='Send',2000)" 
                     style="padding:4px 10px;font-size:0.65rem;border:1px solid var(--orange);background:none;color:var(--orange);border-radius:6px;cursor:pointer;white-space:nowrap;font-weight:700;">Send</button>
@@ -17432,7 +17449,7 @@ function _jamCard(type, item) {
             detailLine += `<div style="margin-top:4px;padding:0;font-size:0.72rem;color:var(--text-0);display:flex;align-items:center;gap:4px;">
                 <span style="color:var(--text-2);font-weight:600;white-space:nowrap;font-size:0.7rem;">NOTES:</span>
                 <input type="text" value="${noteVal.replace(/"/g,'&quot;')}" placeholder="Instructions for shipper..." 
-                    style="flex:1;font-size:0.72rem;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-2);color:var(--text-0);outline:none;"
+                    style="flex:1;font-size:0.72rem;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-2);color:var(--text-0);"
                     id="notes-input-${item.id}">
                 <button onclick="saveDeliverTo(${item.id},${item.package_id||0},document.getElementById('notes-input-${item.id}').value);this.textContent='\u2713 Sent';setTimeout(()=>this.textContent='Send',2000)" 
                     style="padding:4px 10px;font-size:0.65rem;border:1px solid var(--orange);background:none;color:var(--orange);border-radius:6px;cursor:pointer;white-space:nowrap;font-weight:700;">Send</button>
@@ -17577,13 +17594,13 @@ async function showNewPackageModal() {
             <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
                 <div>
                     <label style="font-size:0.68rem;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Recipient</label>
-                    <input type="text" id="pkg-recipient" list="pkg-recipients-list" placeholder="Buyer name..." style="width:100%;padding:10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.82rem;outline:none;margin-top:4px;box-sizing:border-box;" oninput="pkgRecipientChange()">
+                    <input type="text" id="pkg-recipient" list="pkg-recipients-list" placeholder="Buyer name..." style="width:100%;padding:10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.82rem;margin-top:4px;box-sizing:border-box;" oninput="pkgRecipientChange()">
                     <datalist id="pkg-recipients-list">${recipientOptions}</datalist>
                 </div>
                 <div style="display:flex;gap:10px;">
                     <div style="flex:1;">
                         <label style="font-size:0.68rem;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Carrier</label>
-                        <select id="pkg-carrier" style="width:100%;padding:10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.82rem;outline:none;margin-top:4px;">
+                        <select id="pkg-carrier" style="width:100%;padding:10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.82rem;margin-top:4px;">
                             <option value="FedEx">FedEx</option>
                             <option value="UPS">UPS</option>
                             <option value="Local Delivery">Local Delivery</option>
@@ -17591,12 +17608,12 @@ async function showNewPackageModal() {
                     </div>
                     <div style="flex:1;">
                         <label style="font-size:0.68rem;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Ship By</label>
-                        <input type="date" id="pkg-ship-date" value="${today}" style="width:100%;padding:10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.82rem;outline:none;margin-top:4px;box-sizing:border-box;">
+                        <input type="date" id="pkg-ship-date" value="${today}" style="width:100%;padding:10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.82rem;margin-top:4px;box-sizing:border-box;">
                     </div>
                 </div>
                 <div>
                     <label style="font-size:0.68rem;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Package Name</label>
-                    <input type="text" id="pkg-name" placeholder="Auto-generated..." style="width:100%;padding:10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.82rem;outline:none;margin-top:4px;box-sizing:border-box;">
+                    <input type="text" id="pkg-name" placeholder="Auto-generated..." style="width:100%;padding:10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.82rem;margin-top:4px;box-sizing:border-box;">
                 </div>
             </div>
             <div style="font-size:0.72rem;font-weight:700;color:var(--text-1);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Select Watches <span id="pkg-watch-count" style="color:var(--accent);">(0 selected)</span></div>
@@ -17871,7 +17888,7 @@ function _showJamWatchPicker(uploadType) {
                 <button onclick="document.getElementById('jam-picker-modal').remove()" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:1.2rem;">X</button>
             </div>
             <input type="text" id="jam-picker-search" placeholder="Search by ref or description..." 
-                style="width:100%;padding:10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.8rem;margin-bottom:10px;outline:none;"
+                style="width:100%;padding:10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.8rem;margin-bottom:10px;"
                 oninput="filterJamPicker()">
             <div id="jam-picker-list" style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:6px;">
                 ${items.map(i => `
@@ -20362,5 +20379,77 @@ if (_userRole.allowedPages) {
     document.addEventListener('mk:page-changed', updateWatchlistBadges);
     setTimeout(updateWatchlistBadges, 2000);
 })();
+
+// ── Forms & Input Enhancements ──
+(function() {
+    // 1. Textarea auto-resize
+    function initAutoResize(ta) {
+        if (!ta || ta._autoResizeInit) return;
+        ta._autoResizeInit = true;
+        ta.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+        // Trigger initial resize if has content
+        if (ta.value) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }
+    }
+    // Observe for dynamically-added textareas
+    new MutationObserver(function(muts) {
+        muts.forEach(function(m) {
+            m.addedNodes.forEach(function(n) {
+                if (n.nodeType !== 1) return;
+                if (n.matches && n.matches('textarea.auto-resize')) initAutoResize(n);
+                if (n.querySelectorAll) n.querySelectorAll('textarea.auto-resize').forEach(initAutoResize);
+            });
+        });
+    }).observe(document.body, {childList:true, subtree:true});
+    // Init existing
+    document.querySelectorAll('textarea.auto-resize').forEach(initAutoResize);
+
+    // 2. Date inputs default to today
+    function setDateDefaults() {
+        var today = new Date().toISOString().split('T')[0];
+        document.querySelectorAll('input[type="date"]').forEach(function(el) {
+            if (!el.value && !el.dataset.noDefault) el.value = today;
+        });
+    }
+    // Run on modal open by observing style changes
+    new MutationObserver(function(muts) {
+        muts.forEach(function(m) {
+            if (m.type === 'attributes' && m.attributeName === 'style') {
+                var t = m.target;
+                if (t.style && t.style.display === 'flex' && t.id && t.id.includes('modal')) {
+                    setTimeout(setDateDefaults, 50);
+                }
+            }
+        });
+    }).observe(document.body, {childList:true, subtree:true, attributes:true, attributeFilter:['style']});
+
+    // 3. Form validation - add .input-error on required fields when empty on submit
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('button[onclick*="submit"], .btn[onclick*="submit"]');
+        if (!btn) return;
+        var modal = btn.closest('[id*="modal"]');
+        if (!modal) return;
+        var inputs = modal.querySelectorAll('input.input[required], textarea[required]');
+        inputs.forEach(function(inp) {
+            if (!inp.value.trim()) {
+                inp.classList.add('input-error');
+                inp.addEventListener('input', function handler() {
+                    inp.classList.remove('input-error');
+                    inp.removeEventListener('input', handler);
+                }, {once:true});
+            }
+        });
+    }, true);
+
+    // Also clear error on focus
+    document.addEventListener('focus', function(e) {
+        if (e.target.classList && e.target.classList.contains('input-error')) {
+            e.target.classList.remove('input-error');
+        }
+    }, true);
+})();
+
 </script>
 <!-- build 1775856917 -->
