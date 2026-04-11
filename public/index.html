@@ -320,12 +320,12 @@
 
         /* ── PAGES ── */
         .page { display:none; }
-        .page.active { display:block; animation:pageIn 0.15s ease-out; }
-        .page.page-exit { display:block; animation:pageOut 0.08s ease-in forwards; position:absolute; width:100%; pointer-events:none; }
+        .page.active { display:block; animation:pageIn 0.15s ease-out; will-change:opacity,transform; }
+        .page.page-exit { display:block; animation:pageOut 0.08s ease-in forwards; position:absolute; width:100%; pointer-events:none; will-change:opacity,transform; }
         .page-head { margin-bottom:16px; }
         .page-head h1 { font-size:1.3rem; font-weight:700; letter-spacing:-0.3px; }
         .page-head p { font-size:0.78rem; color:var(--text-2); margin-top:4px; }
-        @keyframes pageIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+        @keyframes pageIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
         @keyframes pageOut { from{opacity:1} to{opacity:0} }
 
         /* ── CONFIDENCE ── */
@@ -392,6 +392,10 @@
             font-family:var(--font); outline:none; transition:all 0.2s ease;
         }
         .input:focus { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-glow); }
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent); outline: none;
+            box-shadow: 0 0 0 2px rgba(201,168,76,0.2);
+        }
         .input::placeholder { color:var(--text-2); }
         select.input { cursor:pointer; }
 
@@ -1156,12 +1160,13 @@
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
         }
-        .btn:active, button:active:not(:disabled) {
+        .btn:active, button:active:not(:disabled), .jam-pill:active, [onclick]:active {
             transform: scale(0.96) !important;
-            transition: transform 0.08s ease !important;
+            opacity: 0.8;
+            transition: all 0.1s ease !important;
         }
-        .btn, button {
-            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        .btn, button, .jam-pill, [onclick] {
+            transition: all 0.1s ease;
         }
 
         /* ── TOAST NOTIFICATIONS ── */
@@ -1189,7 +1194,7 @@
         @keyframes toastIn { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @keyframes toastOut { to { opacity: 0; transform: translateY(10px) scale(0.95); } }
         @media(max-width:900px) {
-            .toast-container { bottom: calc(70px + env(safe-area-inset-bottom)); }
+            .toast-container { bottom: calc(90px + env(safe-area-inset-bottom)); }
         }
 
         /* ── SKELETON LOADING ── */
@@ -1744,6 +1749,75 @@
             .changelog-files { color:var(--text-2)!important; font-size:0.7rem!important; }
             .notif-item .ni-time { color:var(--text-2)!important; }
         }
+
+        /* ══════════════════════════════════════════════════
+           LAYOUT & HIERARCHY FIXES — Spacing, Structure
+           ══════════════════════════════════════════════════ */
+
+        /* 25. Page section consistent spacing */
+        @media(max-width:500px) {
+            .page { padding:16px; }
+        }
+        @media(min-width:501px) and (max-width:768px) {
+            .page { padding:24px; }
+        }
+        @media(min-width:769px) {
+            .page { padding:32px; }
+        }
+
+        /* 26. Metrics grid — 2 columns at 500px (not 4) */
+        @media(max-width:500px) {
+            .metrics { grid-template-columns:1fr 1fr!important; gap:8px; }
+        }
+
+        /* 27. Search input overflow fix on mobile */
+        @media(max-width:768px) {
+            .usearch-input { max-width:calc(100vw - 120px); }
+            #im-search, #ref-search, #browse-search, #deals-search,
+            #postings-search, #inv-search, #contacts-search {
+                max-width:calc(100vw - 40px)!important;
+            }
+        }
+
+        /* 28. Card layout standardization */
+        .card {
+            border-radius:var(--radius-lg); padding:0;
+            border:1px solid var(--border);
+        }
+        .card-head { padding:12px 16px; }
+        .card-body { padding:16px; }
+        @media(max-width:500px) {
+            .card-head { padding:10px 12px; }
+            .card-body { padding:12px; }
+        }
+
+        /* 29. Operations page package groups — better mobile spacing */
+        @media(max-width:768px) {
+            .pkg-drop-zone { gap:12px!important; padding:8px!important; }
+            .pkg-drop-zone .jam-card,
+            .pkg-drop-zone > div { margin-bottom:0; }
+        }
+
+        /* 30. Thumb zone — action buttons at card bottom, full width stacked on mobile */
+        @media(max-width:768px) {
+            .jam-card { display:flex; flex-direction:column; }
+            .jam-card-footer {
+                order:99; margin-top:auto; padding-top:12px;
+                display:flex; flex-direction:column; gap:8px; width:100%;
+            }
+            .jam-card-footer .btn,
+            .jam-card-footer button {
+                width:100%!important; min-height:48px!important;
+                font-size:0.82rem!important; justify-content:center;
+            }
+            .posting-card-actions {
+                flex-direction:column; gap:8px; margin-top:12px;
+            }
+            .posting-card-actions .btn {
+                width:100%; min-height:44px; justify-content:center;
+                text-align:center; display:flex; align-items:center;
+            }
+        }
     </style>
 </head>
 <body>
@@ -2027,7 +2101,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
             <!-- Below Market sub-section -->
             <div id="deals-market-section">
                 <div style="display:flex;gap:6px;margin-bottom:10px;">
-                    <input class="input" id="deals-search" placeholder="Filter ref, model, dial, seller..." oninput="filterDeals()" style="flex:1;">
+                    <input class="input" id="deals-search" placeholder="Filter ref, model, dial, seller..." oninput="debouncedFilterDeals()" style="flex:1;">
                     <select class="input" id="deals-tier" onchange="filterDeals()" style="width:100px;">
                         <option value="">All Tiers</option><option value="A">A-Tier</option><option value="B">B-Tier</option><option value="C">C-Tier</option>
                     </select>
@@ -2113,7 +2187,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                 <p id="browse-subtitle">Full listing database.</p>
             </div>
             <div style="display:flex;gap:6px;margin-bottom:10px;">
-                <input class="input" id="browse-search" placeholder="Search ref, dial, seller, group..." oninput="filterBrowse()" style="flex:1;">
+                <input class="input" id="browse-search" placeholder="Search ref, dial, seller, group..." oninput="debouncedFilterBrowse()" style="flex:1;">
                 <select class="input" id="browse-region" onchange="filterBrowse()" style="width:90px;"><option value="">All</option><option value="US">US</option><option value="HK">HK</option><option value="EU">EU</option></select>
                 <select class="input" id="browse-cond" onchange="filterBrowse()" style="width:110px;"><option value="">All</option><option value="BNIB">BNIB</option><option value="Like New">Like New</option><option value="Pre-owned">Pre-owned</option></select>
                 <select class="input" id="browse-sort" onchange="filterBrowse()" style="width:110px;"><option value="price-asc">Price Asc</option><option value="price-desc">Price Desc</option><option value="ref">Ref A-Z</option></select>
@@ -2493,7 +2567,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
             
             <!-- Enhanced Controls -->
             <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
-                <input class="input" id="im-search" placeholder="Search ref, seller, buyer, serial..." style="flex:1;min-width:150px;" oninput="filterInventory()">
+                <input class="input" id="im-search" placeholder="Search ref, seller, buyer, serial..." style="flex:1;min-width:150px;" oninput="debouncedFilterInventory()">
                 <span id="im-filter-badge" class="tag tag-gold" style="display:none;cursor:pointer;font-size:0.62rem;" onclick="clearInventoryFilters()"></span>
                 
                 <!-- Status Filter -->
@@ -2725,7 +2799,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
             </div>
             <!-- Search -->
             <div style="margin-bottom:10px;">
-                <input type="text" id="postings-search" placeholder="Search postings (ref, dial, description...)" oninput="filterPostings()" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg-1);color:var(--text-0);font-size:0.85rem;box-sizing:border-box;">
+                <input type="text" id="postings-search" placeholder="Search postings (ref, dial, description...)" oninput="debouncedFilterPostings()" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg-1);color:var(--text-0);font-size:0.85rem;box-sizing:border-box;">
             </div>
             <!-- Controls row -->
             <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
@@ -4092,6 +4166,29 @@ try { console.info('%c[MK build]', 'color:#d4af37;font-weight:700', window.__BUI
 function skelRows(n=4){let h='';for(let i=0;i<n;i++){const w1=['w30','w40','w50'][i%3],w2=['w20','w30','w40'][i%3];h+=`<div class="skel-row"><div class="skel-line ${w1}"></div><div class="skel-line ${w2}"></div><div class="skel-line w20"></div></div>`;}return h;}
 function skelTable(cols=5,rows=5){let h='<table class="tbl"><tbody>';for(let r=0;r<rows;r++){h+='<tr>';for(let c=0;c<cols;c++){const w=['w40','w30','w20','w50','w60'][c%5];h+=`<td><div class="skel-line ${w}" style="min-width:40px;"></div></td>`;}h+='</tr>';}return h+'</tbody></table>';}
 function skelCards(n=3){let h='';for(let i=0;i<n;i++)h+=`<div class="skel-card"><div class="skel-line w60 h16"></div><div class="skel-line w80 h8"></div><div class="skel-line w40 h8"></div></div>`;return h;}
+// ── Skeleton timeout safety net: replace stuck skeletons after 10s ──
+(function(){
+    var SKEL_TIMEOUT=10000;
+    var _skelTimers=new WeakMap();
+    function watchSkeleton(el){
+        if(_skelTimers.has(el))clearTimeout(_skelTimers.get(el));
+        _skelTimers.set(el,setTimeout(function(){
+            if(el.isConnected&&el.querySelector&&el.querySelector('.skel-card,.skel-row,.skel-line')){
+                el.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-2);font-size:0.82rem;">Failed to load<br><button onclick="location.reload()" style="margin-top:10px;padding:6px 16px;border-radius:6px;border:1px solid var(--border);background:var(--bg-3);color:var(--text-0);cursor:pointer;font-size:0.78rem;">Retry</button></div>';
+            }
+            _skelTimers.delete(el);
+        },SKEL_TIMEOUT));
+    }
+    var _mo=new MutationObserver(function(mutations){
+        for(var i=0;i<mutations.length;i++){
+            var m=mutations[i];
+            if(m.type==='childList'&&m.target&&m.target.querySelector){
+                if(m.target.querySelector('.skel-card,.skel-row,.skel-line'))watchSkeleton(m.target);
+            }
+        }
+    });
+    _mo.observe(document.documentElement,{childList:true,subtree:true});
+})();
 // ── Fetch with timeout (15s default) ──
 function fetchWithTimeout(url, opts, ms) {
     if (ms === undefined) ms = 15000;
@@ -4329,6 +4426,13 @@ let allListings = [];
 let browseOffset = 0;
 const BROWSE_PAGE = 80;
 let currentDealsRegion = 'all';
+
+// ── Generic debounce utility ──
+function _mkDebounce(fn, ms) { let t; return function() { clearTimeout(t); t = setTimeout(fn, ms); }; }
+const debouncedFilterBrowse = _mkDebounce(function(){ browseOffset=0; renderBrowse(); }, 200);
+const debouncedFilterDeals = _mkDebounce(function(){ if(typeof filterDeals==='function') filterDeals(); }, 200);
+const debouncedFilterInventory = _mkDebounce(function(){ if(typeof filterInventory==='function') filterInventory(); }, 200);
+const debouncedFilterPostings = _mkDebounce(function(){ if(typeof filterPostings==='function') filterPostings(); }, 200);
 
 const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals & Arbitrage',invoices:'Invoices',shipping:'Shipping',inventory:'Inventory',payments:'Payments',photos:'Photos','mission-control':'Mission Control'};
 
@@ -8499,7 +8603,7 @@ if (_userRole.allowedPages) {
 if (!_userRole.allowedPages) {
     setInterval(()=>{ fxLoadRates(); }, 3600000);
     setInterval(renderTicker, 3600000);
-    fetch('/api/portfolio_insights').then(r=>r.json()).then(d=>{DATA.portfolio=d;renderPortfolioSnapshot();}).catch(()=>{});
+    // portfolio_insights deferred — loaded on first visit to Portfolio page (see showPage)
     // Preload payments badge count so it shows without visiting the page
     fetch('/api/payments/collections-dashboard').then(r=>r.ok?r.json():null).then(d=>{if(!d)return;const n=(d.overdue_receivables?.length||0)+(d.overdue_payables?.length||0);const el=document.getElementById('payments-count');if(el)el.textContent=n;}).catch(()=>{});
 }
@@ -8538,16 +8642,9 @@ if (!_userRole.allowedPages) {
     }, 1000);
 }
 
-// ═══ AUTO-REFRESH (every 2 min) ═══
+// ═══ AUTO-REFRESH DISABLED — use manual Hard Reload or pull-to-refresh ═══
 let _lastLoadTs = Date.now();
-setInterval(()=>{
-    // Skip auto-refresh if user is actively typing in chat
-    if (document.activeElement && document.activeElement.id === 'chat-input') return;
-    _lastLoadTs = Date.now();
-    loadData();
-    renderTicker();
-    fetch('/api/portfolio_insights').then(r=>r.json()).then(d=>{DATA.portfolio=d;}).catch(()=>{});
-}, 120000);
+// Previously: setInterval auto-refresh every 2 min — removed to prevent constant reloads
 
 // ═══ STALE DATA WARNING ═══
 function checkStale() {
