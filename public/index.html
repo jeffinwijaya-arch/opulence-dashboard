@@ -3848,9 +3848,9 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
 // code or a stale cached copy. Update this on every commit that
 // touches user-visible behavior.
 window.__BUILD__ = {
-    commit: 'f5a6979',                        // updated per commit
-    built_at: '2026-04-11T02:00:00Z',         // approximate build time
-    version: 'data-pipeline-v6-manual-merge-dedupe'
+    commit: 'pending',                        // updated per commit
+    built_at: '2026-04-11T03:00:00Z',         // approximate build time
+    version: 'mobile-v7-redact-swipe-fix'
 };
 try { console.info('%c[MK build]', 'color:#d4af37;font-weight:700', window.__BUILD__); } catch(e) {}
 // ── Force clear stale service workers + cache on version mismatch ──
@@ -3922,9 +3922,22 @@ updateClock();setInterval(updateClock,30000);
 // ── Swipe page navigation (mobile) ──
 (function(){if(!('ontouchstart' in window))return;
 const pages=['dashboard','inventory','jam','lookup','deals','portfolio','invoices','shipping','payments','postings','photos'];
+// Any of these selectors present in the touch target's ancestry disables
+// swipe-nav for that gesture. Added canvas + the photo/redact modals
+// because drawing a horizontal redaction rectangle was being interpreted
+// as a right-swipe (Postings → Payments was the reported case). Form
+// controls and scrollable tables were already excluded.
+const _SWIPE_NAV_EXCLUDE = 'input,textarea,select,canvas,.tbl-wrap,#qcmd-panel,#usearch-overlay,.listing-card,#posting-redact-modal,#photo-modal,#posting-price-edit-modal,#ul-paste-modal,#ul-manage-modal,[role="dialog"],.modal,.chat-container';
+// Any of these visible in the DOM at touchend disables swipe-nav as a
+// belt-and-suspenders check, in case a modal opened between touchstart
+// and touchend (e.g. the user tapped a button that spawned a modal and
+// then finger-released outside the modal).
+const _SWIPE_NAV_BLOCKING_OPEN = '#posting-redact-modal,#photo-modal,#ul-paste-modal,#ul-manage-modal';
 let sx=0,sy=0,swiping=false;
-document.addEventListener('touchstart',function(e){if(e.target.closest('input,textarea,select,.tbl-wrap,#qcmd-panel,#usearch-overlay,.listing-card'))return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;swiping=true;},{passive:true});
-document.addEventListener('touchend',function(e){if(!swiping)return;swiping=false;const dx=e.changedTouches[0].clientX-sx;const dy=e.changedTouches[0].clientY-sy;if(Math.abs(dx)<80||Math.abs(dy)>Math.abs(dx)*0.6)return;
+document.addEventListener('touchstart',function(e){if(e.target.closest(_SWIPE_NAV_EXCLUDE))return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;swiping=true;},{passive:true});
+document.addEventListener('touchend',function(e){if(!swiping)return;swiping=false;
+if(document.querySelector(_SWIPE_NAV_BLOCKING_OPEN))return;
+const dx=e.changedTouches[0].clientX-sx;const dy=e.changedTouches[0].clientY-sy;if(Math.abs(dx)<80||Math.abs(dy)>Math.abs(dx)*0.6)return;
 const cur=document.querySelector('.page.active')?.id?.replace('page-','');if(!cur)return;
 const allowed=window.__USER_ROLE?.allowedPages||pages;const idx=allowed.indexOf(cur);if(idx<0)return;
 if(dx<-80&&idx<allowed.length-1){showPage(allowed[idx+1]);}
