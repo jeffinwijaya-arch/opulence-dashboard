@@ -18047,16 +18047,15 @@ async function loadClaudeSessions() {
             const ago = timeAgo(s.last_activity);
             const statusColor = s.status === 'active' ? '#4ADE80' : '#6B7280';
             const preview = s.last_message_preview ? s.last_message_preview.substring(0,100) + (s.last_message_preview.length > 100 ? '...' : '') : 'No recent activity';
-            // Escape any quotes in projectName / projectPath before inlining
-            // them into the onclick attribute, otherwise a project name
-            // like "Jeff's dash" breaks the handler.
+            const isActive = s.status === 'active';
+            const statusLabel = isActive ? ' <span style="color:#4ADE80;font-size:0.6rem;">ACTIVE</span>' : '';
             const esc = v => String(v || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
             return `<div class="claude-session-card" onclick="openClaudeSession('${esc(s.session_id)}', '${esc(s.project_name)}', '${esc(s.project_path || '')}')">
                 <div class="claude-session-header">
                     <div class="claude-session-id">${s.session_id_short}${statusLabel}</div>
                     <span style="width:8px;height:8px;border-radius:50%;background:${statusColor};"></span>
                 </div>
-                <div class="claude-session-project">${s.project_name}${isActive ? ' (locked)' : ''}</div>
+                <div class="claude-session-project">${s.project_name}${isActive ? ' (in use)' : ''}</div>
                 <div class="claude-session-meta">${s.message_count} messages • ${ago}</div>
                 <div class="claude-session-preview">${preview}</div>
             </div>`;
