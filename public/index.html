@@ -1744,6 +1744,29 @@
             .changelog-files { color:var(--text-2)!important; font-size:0.7rem!important; }
             .notif-item .ni-time { color:var(--text-2)!important; }
         }
+
+        /* 25. More menu — safe-area-bottom on iPhone notch/Dynamic Island
+           The inline style bottom:60px ignores the home indicator; on iPhone 14 Pro
+           the nav occupies ~78px from the bottom. Override via CSS !important. */
+        @media(max-width:768px) {
+            #mobile-more-menu { bottom: calc(60px + env(safe-area-inset-bottom))!important; }
+        }
+
+        /* 26. FX Calculator — stacked/full-width inputs at 390px
+           Fixed inline widths (120px + 80px + 80px) pack to ~310px; at 390px with
+           6px gaps and card padding that's fine but after flex-wrap the amount
+           field hangs on its own line. Expand to fill instead. */
+        @media(max-width:390px) {
+            #fx-amount { width:100%!important; }
+            #fx-from, #fx-to { flex:1!important; width:auto!important; min-width:60px!important; }
+        }
+
+        /* 27. More menu grid — 3 columns at 390px
+           4 columns at 390px gives ~87px per cell; icon + label is legible
+           but tight. 3 columns gives ~116px and a much cleaner tap target. */
+        @media(max-width:390px) {
+            #mobile-more-menu > div { grid-template-columns:repeat(3,1fr)!important; }
+        }
     </style>
 </head>
 <body>
@@ -1895,7 +1918,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
 
             <!-- Aging mobile nav removed -->
             <!-- Briefing mobile nav removed -->
-            <a class="more-grid-item" onclick="mobileNav('mission-control')"><span class="mgi-icon"></span>Mission Control</a>
+            <a class="more-grid-item" onclick="mobileNav('mission-control')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Mission Control</a>
             <a class="more-grid-item" onclick="mobileNav('dashboard');openUnifiedSearch()"><span class="mgi-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>Search</a>
             <a class="more-grid-item" onclick="mobileNav('ad-crm')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span>AD CRM</a>
         </div>
