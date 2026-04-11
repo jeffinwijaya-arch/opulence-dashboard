@@ -1,6 +1,6 @@
 /**
  * MK Opulence — ws5-shipping
- * Shipping cost estimator + batch ship selector.
+ * Live FedEx cost estimator, label validation, batch ship selector.
  *
  * Available globals:
  *   window.DATA          — shared app data (refs, deals, portfolio, etc.)
@@ -9,7 +9,7 @@
  *   showPage(name)       — navigate to page
  *
  * Rules:
- *   - Register via MKModules.register('ws5-shipping', { init, render })
+ *   - Register via MKModules.register('ws5-shipping', { init, render, cleanup })
  *   - Use MKModules.emit() / MKModules.on() for cross-module communication
  *   - Never use MutationObserver or setInterval for DOM updates
  *   - Use CSS variables for theming (--bg-0, --accent, --text-0, etc.)
@@ -21,522 +21,614 @@
     var MOD_ID = 'ws5-shipping';
     var fmt = window.MKModules.formatPrice;
 
+    // ── Rate model per service ─────────────────────────────────────
+    var RATES = {
+        'Priority Overnight':   { base: 65.00, perLb: 8.50 },
+        'Standard Overnight':   { base: 52.00, perLb: 6.50 },
+        'FedEx 2Day':           { base: 32.00, perLb: 4.00 },
+        'FedEx Ground':         { base: 18.00, perLb: 2.50 }
+    };
+    var SIGNATURE_FEE = 5.50;
+    var RESIDENTIAL_FEE = 5.50;
+
     // ── Cost calculation ────────────────────────────────────────────
-    function calcShippingCost(declaredValue) {
-        var val = parseFloat(declaredValue) || 0;
-        var fedex = 45 + (val / 1000) * 5;           // base $45 + $5 per $1K
-        var insurance = val * 0.015;                   // 1.5% of declared value
-        return { fedex: fedex, insurance: insurance, total: fedex + insurance, declaredValue: val };
+    function calcShippingCost(opts) {
+        // Accept legacy single-arg call (declaredValue only)
+        if (typeof opts === 'number' || typeof opts === 'string') {
+            opts = { value: opts };
+        }
+        var val = parseFloat(opts.value) || 0;
+        var weight = parseFloat(opts.weight) || 1;
+        var service = opts.service || 'Priority Overnight';
+        var residential = !!opts.residential;
+
+        var rate = RATES[service] || RATES['Priority Overnight'];
+        var base = rate.base + Math.max(0, weight - 1) * rate.perLb;
+        var sig = SIGNATURE_FEE;
+        var res = residential ? RESIDENTIAL_FEE : 0;
+        var valCharge = Math.max(3, 0.015 * val);
+
+        var total = base + sig + res + valCharge;
+
+        return {
+            base: base,
+            signature: sig,
+            residential: res,
+            declaredValueCharge: valCharge,
+            total: total,
+            declaredValue: val,
+            weight: weight,
+            service: service,
+            warnHigh: val > 50000,
+            warnLow: val > 0 && val < 100
+        };
     }
 
-    // ── Cost Preview Card ───────────────────────────────────────────
-    var PREVIEW_ID = 'ws5-cost-preview';
+    // ── Live FedEx Cost Estimator ───────────────────────────────────
+    var ESTIMATOR_ID = 'ws5-cost-estimator';
 
-    function renderCostPreview() {
-        var valueInput = document.getElementById('ship-value');
-        if (!valueInput) return;
-        var cost = calcShippingCost(valueInput.value);
+    function getFormValues() {
+        var g = function(id) { var el = document.getElementById(id); return el ? (el.value || '').trim() : ''; };
+        return {
+            value: g('ship-value'),
+            weight: g('ship-weight') || '1',
+            service: g('ship-service') || 'Priority Overnight',
+            residential: !!(document.getElementById('ship-residential') && document.getElementById('ship-residential').checked)
+        };
+    }
 
-        var preview = document.getElementById(PREVIEW_ID);
-        if (!preview) {
-            preview = document.createElement('div');
-            preview.id = PREVIEW_ID;
-            var shipForm = valueInput.closest('form') || valueInput.closest('.card-body') || valueInput.closest('.card');
-            if (shipForm) {
-                shipForm.parentElement.insertBefore(preview, shipForm);
-            } else {
-                var shipSubmitRow = document.getElementById('ship-submit-btn');
-                if (shipSubmitRow && shipSubmitRow.parentElement) {
-                    var formContainer = shipSubmitRow.parentElement.parentElement;
-                    formContainer.parentElement.insertBefore(preview, formContainer);
-                }
+    function renderEstimator() {
+        var submitBtn = document.getElementById('ship-submit-btn');
+        if (!submitBtn) return;
+
+        var vals = getFormValues();
+        var cost = calcShippingCost(vals);
+
+        var el = document.getElementById(ESTIMATOR_ID);
+        if (!el) {
+            el = document.createElement('div');
+            el.id = ESTIMATOR_ID;
+            // Insert above the button row (parent of submit button)
+            var btnRow = submitBtn.closest('div[style*="flex"]') || submitBtn.parentElement;
+            if (btnRow && btnRow.parentElement) {
+                btnRow.parentElement.insertBefore(el, btnRow);
             }
         }
 
         if (cost.declaredValue <= 0) {
-            preview.style.display = 'none';
+            el.style.display = 'none';
             return;
         }
 
-        preview.style.display = 'block';
-        preview.style.cssText = 'display:block;background:var(--bg-3);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:10px 14px;margin-top:6px;font-family:var(--mono);';
-        preview.innerHTML =
-            '<div style="font-size:0.68rem;color:var(--accent);text-transform:uppercase;font-weight:600;letter-spacing:0.5px;margin-bottom:6px;">Estimated Shipping Cost</div>' +
-            '<div style="display:grid;grid-template-columns:1fr auto;gap:3px 12px;font-size:0.78rem;">' +
-                '<span style="color:var(--text-2);">FedEx Priority Overnight</span>' +
-                '<span style="text-align:right;color:var(--text-1);">' + fmt(cost.fedex) + '</span>' +
-                '<span style="color:var(--text-2);">Insurance (1.5% of ' + fmt(cost.declaredValue) + ')</span>' +
-                '<span style="text-align:right;color:var(--text-1);">' + fmt(cost.insurance) + '</span>' +
+        var warnings = '';
+        if (cost.warnHigh) {
+            warnings += '<div style="margin-top:6px;padding:6px 8px;background:rgba(255,59,48,0.12);border:1px solid var(--red);border-radius:4px;font-size:0.7rem;color:var(--red);font-family:inherit;">' +
+                '!! Declared value exceeds $50,000 FedEx retail ceiling. Consider splitting shipments or using FedEx Custom Critical.</div>';
+        }
+        if (cost.warnLow) {
+            warnings += '<div style="margin-top:6px;padding:6px 8px;background:rgba(255,171,0,0.12);border:1px solid var(--orange);border-radius:4px;font-size:0.7rem;color:var(--orange);font-family:inherit;">' +
+                '? Declared value under $100 looks suspicious for a watch shipment.</div>';
+        }
+
+        el.style.cssText = 'display:block;background:var(--bg-2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:6px;padding:10px 14px;margin-top:8px;margin-bottom:8px;';
+        el.innerHTML =
+            '<div style="font-size:0.65rem;color:var(--accent);text-transform:uppercase;font-weight:600;letter-spacing:0.5px;margin-bottom:6px;">Estimated FedEx Cost</div>' +
+            '<div style="display:grid;grid-template-columns:1fr auto;gap:2px 12px;font-size:0.76rem;">' +
+                '<span style="color:var(--text-2);">' + escHtml(cost.service) + ' (base + ' + cost.weight + ' lb)</span>' +
+                '<span style="text-align:right;color:var(--text-0);">$' + cost.base.toFixed(2) + '</span>' +
+                '<span style="color:var(--text-2);">Signature</span>' +
+                '<span style="text-align:right;color:var(--text-0);">$' + cost.signature.toFixed(2) + '</span>' +
+                (cost.residential > 0 ? '<span style="color:var(--text-2);">Residential surcharge</span><span style="text-align:right;color:var(--text-0);">$' + cost.residential.toFixed(2) + '</span>' : '') +
+                '<span style="color:var(--text-2);">Declared value charge (max($3, 1.5% of ' + fmt(cost.declaredValue) + '))</span>' +
+                '<span style="text-align:right;color:var(--text-0);">$' + cost.declaredValueCharge.toFixed(2) + '</span>' +
                 '<span style="border-top:1px solid var(--border);padding-top:4px;font-weight:700;color:var(--text-0);">Total</span>' +
-                '<span style="border-top:1px solid var(--border);padding-top:4px;text-align:right;font-weight:700;color:var(--green);font-size:0.85rem;">' + fmt(cost.total) + '</span>' +
-            '</div>';
+                '<span style="border-top:1px solid var(--border);padding-top:4px;text-align:right;font-weight:700;color:var(--green);font-size:0.85rem;">$' + cost.total.toFixed(2) + '</span>' +
+            '</div>' +
+            warnings;
+    }
+
+    // ── Label Creation Reliability (validation + duplicate guard) ───
+    var _lastSubmitKey = '';
+    var _lastSubmitTime = 0;
+
+    function validateShipForm() {
+        var fields = {
+            'ship-contact': function(v) { return v.length > 0; },
+            'ship-address': function(v) { return v.length > 0; },
+            'ship-city': function(v) { return v.length > 0; },
+            'ship-state': function(v) { return /^[A-Za-z]{2}$/.test(v); },
+            'ship-zip': function(v) { return /^\d{5}(-?\d{4})?$/.test(v); },
+            'ship-value': function(v) { return parseFloat(v) > 0; },
+            'ship-phone': function(v) { return v.replace(/\D/g, '').length >= 10; }
+        };
+
+        var valid = true;
+        var firstInvalid = null;
+
+        Object.keys(fields).forEach(function(id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            var val = (el.value || '').trim();
+            var ok = fields[id](val);
+            if (!ok) {
+                el.style.border = '2px solid var(--red)';
+                valid = false;
+                if (!firstInvalid) firstInvalid = el;
+            } else {
+                el.style.border = '';
+            }
+        });
+
+        if (!valid && firstInvalid) {
+            firstInvalid.focus();
+        }
+
+        return valid;
+    }
+
+    function checkDuplicateSubmission() {
+        var contact = (document.getElementById('ship-contact') || {}).value || '';
+        var zip = (document.getElementById('ship-zip') || {}).value || '';
+        var key = (contact + '|' + zip).toLowerCase().trim();
+        var now = Date.now();
+
+        if (key === _lastSubmitKey && (now - _lastSubmitTime) < 60000) {
+            return true; // duplicate
+        }
+        return false;
+    }
+
+    function recordSubmission() {
+        var contact = (document.getElementById('ship-contact') || {}).value || '';
+        var zip = (document.getElementById('ship-zip') || {}).value || '';
+        _lastSubmitKey = (contact + '|' + zip).toLowerCase().trim();
+        _lastSubmitTime = Date.now();
+    }
+
+    function wrapSubmitShipLabel() {
+        var origSubmit = window.submitShipLabel;
+        if (!origSubmit || origSubmit._ws5Wrapped) return;
+
+        window.submitShipLabel = async function() {
+            // Validate fields
+            if (!validateShipForm()) {
+                if (typeof showToast === 'function') showToast('Please fix highlighted fields', 'warn');
+                return;
+            }
+
+            // High value confirmation
+            var val = parseFloat((document.getElementById('ship-value') || {}).value) || 0;
+            if (val > 50000) {
+                if (!confirm('Declared value is $' + val.toLocaleString() + ' which exceeds FedEx retail ceiling ($50,000). Proceed anyway?')) {
+                    return;
+                }
+            }
+
+            // Duplicate guard
+            if (checkDuplicateSubmission()) {
+                if (!confirm('You submitted a label to this contact+ZIP within the last 60 seconds. Create another?')) {
+                    return;
+                }
+            }
+
+            recordSubmission();
+            return origSubmit.apply(this, arguments);
+        };
+        window.submitShipLabel._ws5Wrapped = true;
     }
 
     // ── Batch Ship Selector ─────────────────────────────────────────
-    var BATCH_BTN_ID = 'ws5-batch-ship-btn';
-    var BATCH_MODAL_ID = 'ws5-batch-modal';
+    var BATCH_ID = 'ws5-batch-selector';
+    var _batchWatches = [];
     var _batchSelected = new Set();
 
-    // Track the currently active tracker tab — updated by switchTrackerTab hook.
-    // Default is 'outbound' since that is the tracker's initial tab.
-    var _currentTab = 'outbound';
-
-    /**
-     * Return outbound tracker rows that are NOT delivered (eligible for batch action).
-     * Returns empty array when not on outbound tab.
-     */
-    function getUnshippedOutboundRows() {
-        if (_currentTab !== 'outbound') return [];
-        var tbody = document.getElementById('tracker-tbody');
-        if (!tbody) return [];
-        var rows = [];
-        var trs = tbody.querySelectorAll('tr');
-        for (var i = 0; i < trs.length; i++) {
-            var tr = trs[i];
-            // Need at least 6 cells to safely read cells[5] (status column, 0-indexed)
-            if (tr.cells.length < 6) continue;
-            var statusCell = tr.cells[5];
-            var statusText = (statusCell ? statusCell.textContent : '').toLowerCase().trim();
-            if (statusText === 'delivered') continue;
-            rows.push(tr);
-        }
-        return rows;
+    function ageDays(dateStr) {
+        if (!dateStr) return 999;
+        var d = new Date(dateStr);
+        if (isNaN(d.getTime())) return 999;
+        return Math.floor((Date.now() - d.getTime()) / 86400000);
     }
 
-    function injectBatchControls() {
-        var pageHead = document.querySelector('#page-shipping .page-head');
-        if (!pageHead || document.getElementById(BATCH_BTN_ID)) return;
-
-        // Select All toggle button
-        var selAllBtn = document.createElement('button');
-        selAllBtn.id = 'ws5-select-all-btn';
-        selAllBtn.className = 'btn';
-        selAllBtn.style.cssText = 'background:var(--bg-3);color:var(--text-1);font-weight:500;white-space:nowrap;margin-left:8px;font-size:0.72rem;';
-        selAllBtn.textContent = 'Select All';
-        selAllBtn.onclick = function() {
-            if (_currentTab !== 'outbound') {
-                if (typeof showToast === 'function') showToast('Switch to Outbound tab to use batch shipping', 'info');
-                return;
-            }
-            // Ensure checkboxes are injected before querying them
-            injectCheckboxes();
-            var checkboxes = document.querySelectorAll('#tracker-tbody .ws5-chk');
-            if (checkboxes.length === 0) {
-                // Distinguish: tracker empty vs all delivered
-                var tbody = document.getElementById('tracker-tbody');
-                var allTrs = tbody ? tbody.querySelectorAll('tr') : [];
-                var hasEligibleRows = false;
-                for (var i = 0; i < allTrs.length; i++) {
-                    if (allTrs[i].cells.length >= 6) { hasEligibleRows = true; break; }
-                }
-                if (!hasEligibleRows) {
-                    if (typeof showToast === 'function') showToast('No packages in tracker', 'info');
-                } else {
-                    if (typeof showToast === 'function') showToast('All packages already delivered', 'info');
-                }
-                return;
-            }
-            var allSelected = _batchSelected.size >= checkboxes.length;
-            if (allSelected) {
-                checkboxes.forEach(function(chk) {
-                    _batchSelected.delete(chk.dataset.key);
-                    chk.checked = false;
-                });
-                selAllBtn.textContent = 'Select All';
-            } else {
-                checkboxes.forEach(function(chk) {
-                    if (chk.dataset.key) {
-                        _batchSelected.add(chk.dataset.key);
-                        chk.checked = true;
-                    }
-                });
-                selAllBtn.textContent = 'Deselect All';
-            }
-            updateBatchButton();
-        };
-
-        var btn = document.createElement('button');
-        btn.id = BATCH_BTN_ID;
-        btn.className = 'btn';
-        btn.style.cssText = 'background:var(--blue,#4A90D9);color:#fff;font-weight:600;white-space:nowrap;display:none;margin-left:8px;';
-        btn.textContent = 'Ship Selected (0)';
-        btn.onclick = openBatchModal;
-        var addBtn = pageHead.querySelector('button');
-        if (addBtn && addBtn.parentElement) {
-            addBtn.parentElement.insertBefore(selAllBtn, addBtn.nextSibling);
-            addBtn.parentElement.insertBefore(btn, selAllBtn.nextSibling);
-        }
+    function ageChip(days) {
+        var color, label;
+        if (days <= 1) { color = 'var(--green)'; label = 'Today'; }
+        else if (days <= 3) { color = 'var(--orange)'; label = days + 'd'; }
+        else { color = 'var(--red)'; label = days + 'd'; }
+        return '<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:0.62rem;font-weight:600;background:' + color + ';color:var(--bg-1);">' + label + '</span>';
     }
 
-    function injectCheckboxes() {
-        var tbody = document.getElementById('tracker-tbody');
-        if (!tbody) return;
-
-        // Use _currentTab state — reliable, no CSS introspection needed.
-        // The old approach checked outboundTab.style.color === 'var(--accent)'
-        // which ALWAYS fails: browsers return computed RGB, not CSS variable strings.
-        var isOutbound = (_currentTab === 'outbound');
-
-        var trs = tbody.querySelectorAll('tr');
-        var anyCheckboxExists = false;
-
-        for (var i = 0; i < trs.length; i++) {
-            var tr = trs[i];
-            // Skip placeholder / empty-state rows
-            if (tr.cells.length < 6) continue;
-
-            var firstCell = tr.cells[0];
-            if (!firstCell) continue;
-
-            // Remove any old checkboxes first
-            var oldChk = firstCell.querySelector('.ws5-chk');
-            if (oldChk) oldChk.remove();
-
-            // Only inject on outbound tab, for non-delivered rows
-            if (!isOutbound) continue;
-
-            var statusCell = tr.cells[5];
-            var statusText = (statusCell ? statusCell.textContent : '').toLowerCase().trim();
-            if (statusText === 'delivered') continue;
-
-            // Extract stable identifier: the tracking number from column 1
-            var trackingCell = tr.cells[1];
-            var trackingLink = trackingCell ? trackingCell.querySelector('a') : null;
-            var trackingNum = trackingLink ? trackingLink.textContent.trim() : '';
-            if (!trackingNum && trackingCell) trackingNum = trackingCell.textContent.trim();
-            var rowKey = trackingNum || ('row-' + i);
-
-            var chk = document.createElement('input');
-            chk.type = 'checkbox';
-            chk.className = 'ws5-chk';
-            chk.style.cssText = 'margin-right:6px;cursor:pointer;accent-color:var(--accent);vertical-align:middle;width:20px;height:20px;min-width:20px;';
-            chk.dataset.key = rowKey;
-            chk.checked = _batchSelected.has(rowKey);
-            chk.addEventListener('change', (function(key) {
-                return function() {
-                    if (this.checked) {
-                        _batchSelected.add(key);
-                    } else {
-                        _batchSelected.delete(key);
-                    }
-                    updateBatchButton();
-                };
-            })(rowKey));
-            firstCell.insertBefore(chk, firstCell.firstChild);
-            anyCheckboxExists = true;
-        }
-
-        // If not on outbound or no eligible rows, clear selection
-        if (!isOutbound || !anyCheckboxExists) {
-            _batchSelected.clear();
-        }
-
-        updateBatchButton();
-    }
-
-    function updateBatchButton() {
-        var btn = document.getElementById(BATCH_BTN_ID);
-        if (!btn) return;
-        var count = _batchSelected.size;
-        btn.textContent = 'Ship Selected (' + count + ')';
-        btn.style.display = count > 0 ? 'inline-block' : 'none';
-    }
-
-    function getSelectedItems() {
-        var tbody = document.getElementById('tracker-tbody');
-        if (!tbody) return [];
-        var items = [];
-        var trs = tbody.querySelectorAll('tr');
-
-        for (var i = 0; i < trs.length; i++) {
-            var tr = trs[i];
-            if (tr.cells.length < 6) continue;
-
-            var trackingCell = tr.cells[1];
-            var trackingLink = trackingCell ? trackingCell.querySelector('a') : null;
-            var trackingNum = trackingLink ? trackingLink.textContent.trim() : '';
-            if (!trackingNum && trackingCell) trackingNum = trackingCell.textContent.trim();
-            var rowKey = trackingNum || ('row-' + i);
-
-            if (!_batchSelected.has(rowKey)) continue;
-
-            var watchRef = (tr.cells[0].textContent || '').replace(/^\s+/, '').trim();
-            var fromVal = (tr.cells[2].textContent || '').trim();
-            var toVal = (tr.cells[3].textContent || '').trim();
-            var statusText = (tr.cells[5].textContent || '').trim();
-
-            var actionCell = tr.cells[8];
-            var trackingId = '';
-            if (actionCell) {
-                var deleteBtn = actionCell.querySelector('button[onclick*="deleteTracking"]');
-                if (deleteBtn) {
-                    var onclick = deleteBtn.getAttribute('onclick') || '';
-                    var match = onclick.match(/deleteTracking\(['"]([^'"]+)['"]\)/);
-                    if (match) trackingId = match[1];
-                }
-            }
-
-            items.push({
-                key: rowKey,
-                watchRef: watchRef,
-                trackingNum: trackingNum,
-                from: fromVal,
-                to: toVal,
-                status: statusText,
-                trackingId: trackingId
+    async function loadBatchData() {
+        try {
+            var r = await fetch('/api/inventory/all');
+            if (!r.ok) return;
+            var data = await r.json();
+            var watches = data.watches || data || [];
+            _batchWatches = watches.filter(function(w) {
+                return w.sold && !w.shipped && !w.deleted;
             });
+        } catch (e) {
+            console.error('[ws5] batch load error:', e);
+            _batchWatches = [];
         }
-        return items;
     }
 
-    function openBatchModal() {
-        if (_batchSelected.size === 0) {
-            if (typeof showToast === 'function') showToast('No packages selected -- use checkboxes to select', 'info');
-            return;
-        }
+    function renderBatchSelector() {
+        // Find the shipping-packages section or the page itself
+        var page = document.getElementById('page-shipping');
+        if (!page) return;
 
-        var items = getSelectedItems();
-        if (items.length === 0) {
-            if (typeof showToast === 'function') {
-                showToast('Selected packages no longer available (already shipped?)', 'warn');
-            }
-            _batchSelected.clear();
-            updateBatchButton();
-            return;
-        }
-
-        var perPkgCost = calcShippingCost(10000);
-        var totalEstimate = items.length * perPkgCost.total;
-
-        var existing = document.getElementById(BATCH_MODAL_ID);
+        var existing = document.getElementById(BATCH_ID);
         if (existing) existing.remove();
 
-        var modal = document.createElement('div');
-        modal.id = BATCH_MODAL_ID;
-        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;';
-        modal.onclick = function(e) { if (e.target === modal) closeBatchModal(); };
+        if (_batchWatches.length === 0) return;
 
-        var itemsHtml = items.map(function(it, idx) {
-            return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;' +
-                (idx < items.length - 1 ? 'border-bottom:1px solid var(--border);' : '') +
-                'font-size:0.78rem;">' +
-                '<div style="min-width:0;flex:1;">' +
-                    '<span style="font-weight:600;color:var(--text-0);">' + escHtml(it.watchRef) + '</span>' +
-                    '<span style="color:var(--text-2);margin-left:8px;font-size:0.72rem;">' + escHtml(it.to || it.from || '') + '</span>' +
-                '</div>' +
-                '<div style="text-align:right;flex-shrink:0;margin-left:8px;">' +
-                    '<span style="font-family:var(--mono);color:var(--text-2);font-size:0.68rem;">' + escHtml(it.trackingNum || 'No tracking') + '</span>' +
-                    '<br><span style="font-size:0.65rem;color:var(--text-3);">' + escHtml(it.status) + '</span>' +
-                '</div>' +
-            '</div>';
+        var card = document.createElement('div');
+        card.id = BATCH_ID;
+        card.className = 'card';
+        card.style.cssText = 'margin-top:16px;margin-bottom:16px;';
+
+        var rows = _batchWatches.map(function(w, idx) {
+            var days = ageDays(w.sale_date || w.sold_date);
+            var checked = _batchSelected.has(w.id) ? ' checked' : '';
+            return '<tr style="border-bottom:1px solid var(--border);">' +
+                '<td style="padding:6px 8px;"><input type="checkbox" class="ws5-batch-chk" data-id="' + w.id + '"' + checked + ' style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer;"></td>' +
+                '<td style="padding:6px 8px;font-size:0.75rem;font-weight:600;color:var(--text-0);">' + escHtml(w.reference || w.ref || '') + '</td>' +
+                '<td style="padding:6px 8px;font-size:0.72rem;color:var(--text-2);">' + escHtml(w.description || w.dial || '').substring(0, 30) + '</td>' +
+                '<td style="padding:6px 8px;font-size:0.72rem;color:var(--text-1);">' + escHtml(w.sold_to || w.buyer || '') + '</td>' +
+                '<td style="padding:6px 8px;font-size:0.72rem;color:var(--text-1);">' + (w.sold_price ? fmt(w.sold_price) : '--') + '</td>' +
+                '<td style="padding:6px 8px;">' + ageChip(days) + '</td>' +
+            '</tr>';
         }).join('');
 
-        var inner = document.createElement('div');
-        inner.style.cssText = 'background:var(--bg-1);border:1px solid var(--border-strong);border-radius:var(--radius-lg);max-width:560px;width:92%;padding:20px;max-height:80vh;overflow-y:auto;';
-
-        inner.innerHTML =
-            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">' +
-                '<span style="font-size:0.95rem;font-weight:700;color:var(--text-0);">Batch Ship -- ' + items.length + ' Package' + (items.length !== 1 ? 's' : '') + '</span>' +
-                '<button id="ws5-batch-close" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:1.1rem;">&#x2715;</button>' +
-            '</div>' +
-            '<div style="margin-bottom:12px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">' +
-                itemsHtml +
-            '</div>' +
-            '<div style="background:var(--bg-3);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;font-family:var(--mono);">' +
-                '<div style="font-size:0.68rem;color:var(--accent);text-transform:uppercase;font-weight:600;letter-spacing:0.5px;margin-bottom:6px;">Cost Estimate (' + items.length + ' package' + (items.length !== 1 ? 's' : '') + ' @ $10K declared each)</div>' +
-                '<div style="display:grid;grid-template-columns:1fr auto;gap:3px 12px;font-size:0.78rem;">' +
-                    '<span style="color:var(--text-2);">FedEx Priority Overnight x' + items.length + '</span>' +
-                    '<span style="text-align:right;color:var(--text-1);">' + fmt(items.length * perPkgCost.fedex) + '</span>' +
-                    '<span style="color:var(--text-2);">Insurance x' + items.length + '</span>' +
-                    '<span style="text-align:right;color:var(--text-1);">' + fmt(items.length * perPkgCost.insurance) + '</span>' +
-                    '<span style="border-top:1px solid var(--border);padding-top:4px;font-weight:700;color:var(--text-0);">Total Estimate</span>' +
-                    '<span style="border-top:1px solid var(--border);padding-top:4px;text-align:right;font-weight:700;color:var(--green);font-size:0.88rem;">' + fmt(totalEstimate) + '</span>' +
+        card.innerHTML =
+            '<div class="card-head" style="display:flex;justify-content:space-between;align-items:center;">' +
+                '<span>Batch Ship -- Sold & Unshipped (' + _batchWatches.length + ')</span>' +
+                '<div style="display:flex;gap:6px;">' +
+                    '<button class="btn" id="ws5-batch-prefill" style="font-size:0.68rem;padding:4px 10px;background:var(--bg-2);color:var(--accent);border:1px solid var(--accent);">Prefill</button>' +
+                    '<button class="btn" id="ws5-batch-create" style="font-size:0.68rem;padding:4px 10px;background:var(--green);color:var(--bg-1);font-weight:600;">Create Labels for Selected (0)</button>' +
                 '</div>' +
-                '<div style="font-size:0.62rem;color:var(--text-3);margin-top:4px;">Actual costs vary by declared value.</div>' +
             '</div>' +
-            '<div id="ws5-batch-status" style="display:none;padding:8px;border-radius:var(--radius);font-size:0.75rem;margin-bottom:8px;"></div>' +
-            '<div style="display:flex;gap:8px;justify-content:flex-end;">' +
-                '<button class="btn" id="ws5-batch-cancel" style="opacity:0.6;">Cancel</button>' +
-                '<button class="btn" id="ws5-batch-confirm" style="background:var(--green);color:var(--bg-1);font-weight:600;">Confirm Ship All</button>' +
+            '<div style="overflow-x:auto;">' +
+                '<table style="width:100%;border-collapse:collapse;font-size:0.75rem;">' +
+                    '<thead><tr style="border-bottom:1px solid var(--border);">' +
+                        '<th style="padding:6px 8px;text-align:left;"><input type="checkbox" id="ws5-batch-all" style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer;"></th>' +
+                        '<th style="padding:6px 8px;text-align:left;font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Ref</th>' +
+                        '<th style="padding:6px 8px;text-align:left;font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Desc</th>' +
+                        '<th style="padding:6px 8px;text-align:left;font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Buyer</th>' +
+                        '<th style="padding:6px 8px;text-align:left;font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Price</th>' +
+                        '<th style="padding:6px 8px;text-align:left;font-size:0.65rem;color:var(--text-2);text-transform:uppercase;">Age</th>' +
+                    '</tr></thead>' +
+                    '<tbody>' + rows + '</tbody>' +
+                '</table>' +
             '</div>';
 
-        modal.appendChild(inner);
-        document.body.appendChild(modal);
-
-        document.getElementById('ws5-batch-close').onclick = closeBatchModal;
-        document.getElementById('ws5-batch-cancel').onclick = closeBatchModal;
-        document.getElementById('ws5-batch-confirm').onclick = function() {
-            confirmBatchShip(items);
-        };
-    }
-
-    function closeBatchModal() {
-        var modal = document.getElementById(BATCH_MODAL_ID);
-        if (modal) modal.remove();
-    }
-
-    async function confirmBatchShip(items) {
-        var statusEl = document.getElementById('ws5-batch-status');
-        var confirmBtn = document.getElementById('ws5-batch-confirm');
-        var cancelBtn = document.getElementById('ws5-batch-cancel');
-        if (!confirmBtn) return;
-
-        confirmBtn.disabled = true;
-        confirmBtn.textContent = 'Shipping...';
-        if (cancelBtn) cancelBtn.disabled = true;
-
-        if (statusEl) {
-            statusEl.style.display = 'block';
-            statusEl.style.cssText = 'display:block;background:var(--bg-3);color:var(--text-1);padding:8px;border-radius:var(--radius);font-size:0.75rem;margin-bottom:8px;';
-            statusEl.textContent = 'Processing 0 / ' + items.length + '...';
+        // Insert after shipping-packages section or at end of page
+        var packagesSection = document.getElementById('shipping-packages');
+        if (packagesSection && packagesSection.nextSibling) {
+            page.insertBefore(card, packagesSection.nextSibling);
+        } else if (packagesSection) {
+            page.appendChild(card);
+        } else {
+            // Insert before the label form card
+            var labelForm = document.querySelector('#page-shipping .card');
+            if (labelForm) {
+                page.insertBefore(card, labelForm);
+            } else {
+                page.appendChild(card);
+            }
         }
+
+        // Bind events
+        bindBatchEvents();
+    }
+
+    function bindBatchEvents() {
+        var allChk = document.getElementById('ws5-batch-all');
+        if (allChk) {
+            allChk.onchange = function() {
+                var checked = allChk.checked;
+                _batchWatches.forEach(function(w) {
+                    if (checked) _batchSelected.add(w.id);
+                    else _batchSelected.delete(w.id);
+                });
+                var chks = document.querySelectorAll('.ws5-batch-chk');
+                chks.forEach(function(c) { c.checked = checked; });
+                updateBatchCreateBtn();
+            };
+        }
+
+        var chks = document.querySelectorAll('.ws5-batch-chk');
+        chks.forEach(function(c) {
+            c.onchange = function() {
+                var id = parseInt(c.dataset.id);
+                if (c.checked) _batchSelected.add(id);
+                else _batchSelected.delete(id);
+                updateBatchCreateBtn();
+            };
+        });
+
+        var prefillBtn = document.getElementById('ws5-batch-prefill');
+        if (prefillBtn) prefillBtn.onclick = batchPrefill;
+
+        var createBtn = document.getElementById('ws5-batch-create');
+        if (createBtn) createBtn.onclick = batchCreateLabels;
+    }
+
+    function updateBatchCreateBtn() {
+        var btn = document.getElementById('ws5-batch-create');
+        if (btn) {
+            btn.textContent = 'Create Labels for Selected (' + _batchSelected.size + ')';
+        }
+    }
+
+    async function batchPrefill() {
+        if (_batchSelected.size === 0) {
+            if (typeof showToast === 'function') showToast('Select watches first', 'info');
+            return;
+        }
+
+        // Get first selected watch to prefill the label form
+        var watchId = _batchSelected.values().next().value;
+        var watch = _batchWatches.find(function(w) { return w.id === watchId; });
+        if (!watch) return;
+
+        var buyer = watch.sold_to || watch.buyer || '';
+
+        // Try to resolve buyer against contacts
+        if (buyer) {
+            try {
+                var r = await fetch('/api/contacts');
+                if (r.ok) {
+                    var contacts = await r.json();
+                    var match = (contacts || []).find(function(c) {
+                        return c.name && c.name.toLowerCase() === buyer.toLowerCase();
+                    });
+                    if (match) {
+                        setField('ship-contact', match.name || buyer);
+                        setField('ship-company', match.company || '');
+                        setField('ship-address', match.address || '');
+                        setField('ship-city', match.city || '');
+                        setField('ship-state', match.state || '');
+                        setField('ship-zip', match.zip || '');
+                        setField('ship-phone', match.phone || '');
+                        var resEl = document.getElementById('ship-residential');
+                        if (resEl) resEl.checked = !!match.is_residential;
+                    } else {
+                        setField('ship-contact', buyer);
+                    }
+                }
+            } catch (e) {
+                setField('ship-contact', buyer);
+            }
+        }
+
+        // Fill declared value from sold_price
+        if (watch.sold_price) {
+            setField('ship-value', String(watch.sold_price));
+        }
+
+        renderEstimator();
+        if (typeof showToast === 'function') showToast('Prefilled from ' + buyer, 'ok');
+    }
+
+    async function batchCreateLabels() {
+        if (_batchSelected.size === 0) {
+            if (typeof showToast === 'function') showToast('No watches selected', 'info');
+            return;
+        }
+
+        var count = _batchSelected.size;
+        if (!confirm('Create ' + count + ' label' + (count > 1 ? 's' : '') + ' for selected watches? Each will use the current form address.')) {
+            return;
+        }
+
+        var btn = document.getElementById('ws5-batch-create');
+        if (btn) { btn.disabled = true; btn.textContent = 'Creating...'; }
 
         var succeeded = 0;
         var failed = 0;
         var errors = [];
 
-        for (var i = 0; i < items.length; i++) {
-            var item = items[i];
-            if (statusEl) {
-                statusEl.textContent = 'Processing ' + (i + 1) + ' / ' + items.length + ' -- ' + (item.watchRef || item.trackingNum) + '...';
-            }
+        var selectedWatches = _batchWatches.filter(function(w) { return _batchSelected.has(w.id); });
+
+        for (var i = 0; i < selectedWatches.length; i++) {
+            var w = selectedWatches[i];
+            var g = function(id) { var el = document.getElementById(id); return el ? (el.value || '').trim() : ''; };
+            var data = {
+                contact: g('ship-contact'),
+                company: g('ship-company') || g('ship-contact'),
+                address: g('ship-address'),
+                apt: g('ship-apt'),
+                city: g('ship-city'),
+                state: g('ship-state'),
+                zip: g('ship-zip'),
+                phone: g('ship-phone') || '424-502-9600',
+                email: g('ship-email') || 'jeffinwijaya@gmail.com',
+                value: String(w.sold_price || g('ship-value')),
+                weight: g('ship-weight') || '1',
+                service: g('ship-service'),
+                signature: g('ship-signature'),
+                residential: !!(document.getElementById('ship-residential') && document.getElementById('ship-residential').checked),
+                watch_id: w.id
+            };
 
             try {
-                var payload = { tracking: item.trackingNum, type: 'foreign' };
-                if (item.trackingId) payload.tracking_id = item.trackingId;
-
-                var r = await fetch('/api/inventory/ship', {
+                var r = await fetch('/api/ifs/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(data)
                 });
                 var d = await r.json();
-
-                if (d.ok) { succeeded++; }
-                else {
+                if (d.error) {
                     failed++;
-                    errors.push((item.watchRef || item.trackingNum) + ': ' + (d.error || 'Unknown error'));
+                    errors.push((w.reference || w.ref || w.id) + ': ' + d.error);
+                } else {
+                    succeeded++;
                 }
             } catch (e) {
                 failed++;
-                errors.push((item.watchRef || item.trackingNum) + ': ' + e.message);
+                errors.push((w.reference || w.ref || w.id) + ': ' + e.message);
             }
         }
 
-        if (statusEl) {
-            if (failed === 0) {
-                statusEl.style.cssText = 'display:block;background:rgba(0,200,83,0.1);color:var(--green);padding:8px;border-radius:var(--radius);font-size:0.75rem;margin-bottom:8px;';
-                statusEl.textContent = 'All ' + succeeded + ' package' + (succeeded !== 1 ? 's' : '') + ' shipped successfully.';
-            } else if (succeeded === 0) {
-                statusEl.style.cssText = 'display:block;background:rgba(255,23,68,0.1);color:var(--red);padding:8px;border-radius:var(--radius);font-size:0.75rem;margin-bottom:8px;';
-                statusEl.innerHTML = 'All shipments failed.<br>' + errors.map(escHtml).join('<br>');
-            } else {
-                statusEl.style.cssText = 'display:block;background:rgba(255,171,0,0.1);color:var(--gold);padding:8px;border-radius:var(--radius);font-size:0.75rem;margin-bottom:8px;';
-                statusEl.innerHTML = succeeded + ' shipped, ' + failed + ' failed.<br>' + errors.map(escHtml).join('<br>');
-            }
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Create Labels for Selected (' + _batchSelected.size + ')';
         }
-
-        confirmBtn.disabled = false;
-        confirmBtn.textContent = 'Done';
-        confirmBtn.onclick = function() {
-            closeBatchModal();
-            _batchSelected.clear();
-            var selAllBtn = document.getElementById('ws5-select-all-btn');
-            if (selAllBtn) selAllBtn.textContent = 'Select All';
-            updateBatchButton();
-            if (typeof window.loadTrackerPage === 'function') window.loadTrackerPage();
-        };
-        if (cancelBtn) cancelBtn.disabled = false;
-
-        window.MKModules.emit('batch-ship-completed', { succeeded: succeeded, failed: failed });
 
         if (typeof showToast === 'function') {
-            if (failed === 0) showToast(succeeded + ' package' + (succeeded !== 1 ? 's' : '') + ' shipped successfully', 'ok');
-            else showToast(succeeded + ' shipped, ' + failed + ' failed', 'warn');
+            if (failed === 0) {
+                showToast(succeeded + ' label' + (succeeded > 1 ? 's' : '') + ' created', 'ok');
+            } else {
+                showToast(succeeded + ' created, ' + failed + ' failed', 'warn');
+            }
         }
+
+        if (errors.length > 0) {
+            console.error('[ws5] batch label errors:', errors);
+        }
+
+        // Refresh
+        _batchSelected.clear();
+        await loadBatchData();
+        renderBatchSelector();
+        window.MKModules.emit('batch-labels-created', { succeeded: succeeded, failed: failed });
     }
 
+    function setField(id, val) {
+        var el = document.getElementById(id);
+        if (el) el.value = val;
+    }
+
+    /**
+     * Minimal HTML escaping for user-facing strings.
+     */
     function escHtml(str) {
         if (!str) return '';
         return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    // ── Event-driven updates ────────────────────────────────────────
-    function onShipValueChange() { renderCostPreview(); }
+    // ── Event handlers ──────────────────────────────────────────────
+    function onEstimatorInputChange() {
+        renderEstimator();
+    }
 
     function onPageChange(e) {
         var page = e && e.detail && e.detail.page;
-        if (page === 'shipping') render();
+        if (page === 'shipping') {
+            render();
+        }
     }
 
     // ── Module lifecycle ────────────────────────────────────────────
     function init() {
         console.log('[' + MOD_ID + '] Initializing...');
 
-        var shipValueInput = document.getElementById('ship-value');
-        if (shipValueInput) {
-            shipValueInput.addEventListener('input', onShipValueChange);
-            shipValueInput.addEventListener('change', onShipValueChange);
+        // Listen for form changes that affect cost estimator
+        ['ship-value', 'ship-weight'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', onEstimatorInputChange);
+                el.addEventListener('change', onEstimatorInputChange);
+            }
+        });
+        ['ship-service'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('change', onEstimatorInputChange);
+            }
+        });
+        var resEl = document.getElementById('ship-residential');
+        if (resEl) {
+            resEl.addEventListener('change', onEstimatorInputChange);
         }
 
+        // Wrap submitShipLabel for validation
+        wrapSubmitShipLabel();
+
+        // Listen for page navigation
         window.MKModules.on('page-change', onPageChange);
 
-        // Hook loadTrackerPage — re-inject checkboxes after tracker re-renders.
-        var origLoadTracker = window.loadTrackerPage;
-        if (typeof origLoadTracker === 'function') {
-            window.loadTrackerPage = async function() {
-                await origLoadTracker.apply(this, arguments);
-                _batchSelected.clear();
-                var selAllBtn = document.getElementById('ws5-select-all-btn');
-                if (selAllBtn) selAllBtn.textContent = 'Select All';
-                setTimeout(function() { injectCheckboxes(); }, 150);
+        // Hook into loadShippingPage to trigger setup
+        var origLoadShipping = window.loadShippingPage;
+        if (typeof origLoadShipping === 'function' && !origLoadShipping._ws5Wrapped) {
+            window.loadShippingPage = async function() {
+                await origLoadShipping.apply(this, arguments);
+                await setupShippingPage();
             };
+            window.loadShippingPage._ws5Wrapped = true;
         }
 
-        // Hook switchTrackerTab — track active tab reliably.
-        // Set _currentTab BEFORE delegating so injectCheckboxes() sees the
-        // correct state when it runs in the setTimeout below.
-        var origSwitchTab = window.switchTrackerTab;
-        if (typeof origSwitchTab === 'function') {
-            window.switchTrackerTab = function(tab) {
-                _currentTab = String(tab || 'outbound').toLowerCase();
-                origSwitchTab.apply(this, arguments);
-                _batchSelected.clear();
-                var selAllBtn = document.getElementById('ws5-select-all-btn');
-                if (selAllBtn) selAllBtn.textContent = 'Select All';
-                setTimeout(function() { injectCheckboxes(); updateBatchButton(); }, 100);
-            };
-        }
-
-        injectBatchControls();
-
+        // If already on shipping page, run setup
         var shippingPage = document.getElementById('page-shipping');
-        if (shippingPage && shippingPage.style.display !== 'none') render();
+        if (shippingPage && shippingPage.style.display !== 'none') {
+            render();
+        }
+    }
+
+    async function setupShippingPage() {
+        // Rebind estimator inputs (in case DOM was rebuilt)
+        ['ship-value', 'ship-weight'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) {
+                el.removeEventListener('input', onEstimatorInputChange);
+                el.removeEventListener('change', onEstimatorInputChange);
+                el.addEventListener('input', onEstimatorInputChange);
+                el.addEventListener('change', onEstimatorInputChange);
+            }
+        });
+        ['ship-service'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) {
+                el.removeEventListener('change', onEstimatorInputChange);
+                el.addEventListener('change', onEstimatorInputChange);
+            }
+        });
+        var resEl = document.getElementById('ship-residential');
+        if (resEl) {
+            resEl.removeEventListener('change', onEstimatorInputChange);
+            resEl.addEventListener('change', onEstimatorInputChange);
+        }
+
+        // Re-wrap submit if needed
+        wrapSubmitShipLabel();
+
+        // Load batch data and render
+        await loadBatchData();
+        renderBatchSelector();
+        renderEstimator();
     }
 
     function render() {
-        renderCostPreview();
-        injectBatchControls();
-        setTimeout(function() { injectCheckboxes(); }, 200);
+        renderEstimator();
+        loadBatchData().then(function() {
+            renderBatchSelector();
+        });
     }
 
     function cleanup() {
-        var shipValueInput = document.getElementById('ship-value');
-        if (shipValueInput) {
-            shipValueInput.removeEventListener('input', onShipValueChange);
-            shipValueInput.removeEventListener('change', onShipValueChange);
-        }
-        var preview = document.getElementById(PREVIEW_ID);
-        if (preview) preview.remove();
-        var batchBtn = document.getElementById(BATCH_BTN_ID);
-        if (batchBtn) batchBtn.remove();
-        var selAllBtn = document.getElementById('ws5-select-all-btn');
-        if (selAllBtn) selAllBtn.remove();
-        closeBatchModal();
+        ['ship-value', 'ship-weight', 'ship-service'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) {
+                el.removeEventListener('input', onEstimatorInputChange);
+                el.removeEventListener('change', onEstimatorInputChange);
+            }
+        });
+        var resEl = document.getElementById('ship-residential');
+        if (resEl) resEl.removeEventListener('change', onEstimatorInputChange);
+
+        var estimator = document.getElementById(ESTIMATOR_ID);
+        if (estimator) estimator.remove();
+        var batch = document.getElementById(BATCH_ID);
+        if (batch) batch.remove();
         _batchSelected.clear();
+        _batchWatches = [];
     }
 
+    // Expose cost calculator for other modules
     window._ws5CalcCost = calcShippingCost;
+
+    // Register with the module system
     window.MKModules.register(MOD_ID, { init: init, render: render, cleanup: cleanup });
 
 })();
