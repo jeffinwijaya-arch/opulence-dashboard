@@ -1,0 +1,21 @@
+[
+  {
+    "_comment": "Manual listings — entries the backend parser (../price_analyzer/parse_v4.py) missed or misread. Merged into the pipeline by export_data.py and scripts/rebuild_dashboard_data.py. Same schema as public/data/listings.json (the output format). Every entry MUST carry a `source` field starting with 'manual:' so it's traceable. Add new entries at the top. Remove entries when the parser starts indexing them correctly. Cross-posts (same dealer, same price, same ref in multiple groups) should be ONE entry here — the dedupe step collapses them anyway, but keeping them consolidated at the source reduces noise."
+  },
+  {
+    "ref": "268655",
+    "price": 26350,
+    "dial": "Black",
+    "bracelet": "Oysterflex",
+    "condition": "BNIB",
+    "completeness": "Full Set",
+    "region": "US",
+    "seller": "+1 (305) 954-8700",
+    "group": "RWB Lounge / Timepieces Galore / SELL-Bay-OVER 10k / MDA RWB",
+    "model": "Yacht-Master 37",
+    "brand": "Rolex",
+    "year": "2025",
+    "source": "manual:whatsapp-2026-04-11",
+    "notes": "Same US dealer cross-posted in 4 WhatsApp groups. Price is '26K + 350 to complete' = $26,350 (card/fee surcharge). Parser was blind to this dealer entirely — no entry in sellers.json for +1 305 at all."
+  }
+]
