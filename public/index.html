@@ -6125,6 +6125,7 @@ function postingRedactRedo() {
         _postingRedactRects.push(_postingRedactRedoStack.pop());
         postingRedactRender();
         _updatePostingRedactCount();
+        showToast('Redone \u2014 ' + _postingRedactRects.length + ' total', 'info', 2000);
     }
 }
 
@@ -6357,6 +6358,7 @@ function postingRedactUndo() {
         _postingRedactRedoStack.push(_postingRedactRects.pop());
         postingRedactRender();
         _updatePostingRedactCount();
+        showToast('Undone \u2014 ' + _postingRedactRects.length + ' remaining', 'info', 2000);
     } else if (_postingRedactOrigImg && _postingRedactImg !== _postingRedactOrigImg) {
         _postingRedactImg = _postingRedactOrigImg;
         _postingRedactFile = _postingRedactOrigFile;
@@ -6421,8 +6423,10 @@ async function postingRedactSave() {
     const blob = await new Promise(r => fullCanvas.toBlob(r, 'image/jpeg', 0.92));
     const redactedFile = new File([blob], (_postingRedactFile.name || 'photo').replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' });
 
+    const _savedCount = _postingRedactRects.length;
     _cleanupPostingRedact();
     await doUploadPostingFile(redactedFile, _postingRedactRow, _postingRedactDesc);
+    showToast('Saved with ' + _savedCount + ' redaction' + (_savedCount !== 1 ? 's' : ''), 'success');
 }
 
 async function downloadPostingRedacted() {
@@ -17045,6 +17049,13 @@ window.addEventListener('online', () => { const b = document.getElementById('off
 function showToast(message, type='info', duration=3000) {
     const container = document.getElementById('toast-container');
     if (!container) return;
+    // Enforce max 3 visible toasts — remove oldest
+    const existing = container.querySelectorAll('.toast:not(.toast-out)');
+    if (existing.length >= 3) {
+        const oldest = existing[0];
+        oldest.classList.add('toast-out');
+        setTimeout(() => oldest.remove(), 250);
+    }
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.textContent = message;
