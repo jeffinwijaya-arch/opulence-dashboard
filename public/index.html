@@ -3297,7 +3297,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
 
             <!-- Photo Modal -->
             <!-- Photo Editor Modal -->
-            <div id="photo-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.95);z-index:9999;overflow:auto;" onclick="if(event.target===this) { if(typeof closePhotoModal==='function') closePhotoModal(); }">
+            <div id="photo-modal" role="dialog" aria-label="Photo redaction editor" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.95);z-index:9999;overflow:auto;" onclick="if(event.target===this) { if(typeof closePhotoModal==='function') closePhotoModal(); }">
                 <div style="max-width:900px;margin:auto;padding:8px;height:100%;display:flex;flex-direction:column;">
                     <!-- Header + status (compact) -->
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;color:white;flex-shrink:0;">
@@ -3311,11 +3311,11 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                     <div id="editor-toolbar" style="display:flex;gap:4px;margin-bottom:4px;flex-wrap:wrap;align-items:center;flex-shrink:0;">
                         <!-- Mode toggle group -->
                         <div style="display:inline-flex;border-radius:6px;overflow:hidden;border:1px solid var(--border);">
-                            <button class="btn" onclick="setEditorTool('redact')" id="btn-redact" style="padding:6px 12px;font-size:0.72rem;border:none;border-radius:0;background:var(--red-dim);color:var(--red);font-weight:600;">Redact</button>
-                            <button class="btn" onclick="setEditorTool('view')" id="btn-view" style="padding:6px 12px;font-size:0.72rem;border:none;border-radius:0;background:var(--bg-2);color:var(--text-2);">View</button>
+                            <button class="btn" onclick="setEditorTool('redact')" id="btn-redact" aria-label="Redact" style="padding:6px 12px;font-size:0.72rem;border:none;border-radius:0;background:var(--red-dim);color:var(--red);font-weight:600;">Redact</button>
+                            <button class="btn" onclick="setEditorTool('view')" id="btn-view" aria-label="View" style="padding:6px 12px;font-size:0.72rem;border:none;border-radius:0;background:var(--bg-2);color:var(--text-2);">View</button>
                         </div>
                         <!-- Auto-detect + presets -->
-                        <button class="btn" onclick="autoRedactPhoto()" id="btn-auto-redact" style="padding:6px 12px;font-size:0.72rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">Auto-Detect</button>
+                        <button class="btn" onclick="autoRedactPhoto()" id="btn-auto-redact" aria-label="Auto-Detect" style="padding:6px 12px;font-size:0.72rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">Auto-Detect</button>
                         <select class="btn" id="editor-preset-select" onchange="applyRedactPreset(this.value);this.value='';" title="Quick-redact presets for common watch photo areas" style="padding:5px 6px;font-size:0.68rem;background:var(--bg-2);color:var(--text-2);border-color:var(--border);cursor:pointer;min-width:0;width:auto;">
                             <option value="">Presets</option>
                             <option value="caseback-serial">Caseback serial</option>
@@ -3328,21 +3328,21 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                         <button class="btn" onclick="toggleCoverage()" id="btn-coverage" style="padding:6px 10px;font-size:0.72rem;background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.15);color:var(--text-2);">Coverage</button>
                         <!-- Edit actions -->
                         <div style="display:inline-flex;gap:3px;">
-                            <button class="btn" onclick="undoRedaction()" id="btn-editor-undo" title="Undo (Ctrl+Z)" style="padding:6px 10px;font-size:0.72rem;">Undo</button>
-                            <button class="btn" onclick="editorRedo()" id="btn-editor-redo" title="Redo (Ctrl+Shift+Z)" style="padding:6px 10px;font-size:0.72rem;opacity:0.35;">Redo</button>
-                            <button class="btn" onpointerdown="editorStartPeek()" onpointerup="editorStopPeek()" onpointerleave="editorStopPeek()" id="btn-editor-peek" title="Hold to see original" style="padding:6px 10px;font-size:0.72rem;opacity:0.5;user-select:none;-webkit-user-select:none;">Peek</button>
-                            <button class="btn" onclick="confirmClearRedactions()" title="Remove all redactions" style="padding:6px 10px;font-size:0.72rem;">Clear</button>
+                            <button class="btn" onclick="undoRedaction()" id="btn-editor-undo" aria-label="Undo" title="Undo (Ctrl+Z)" style="padding:6px 10px;font-size:0.72rem;">Undo</button>
+                            <button class="btn" onclick="editorRedo()" id="btn-editor-redo" aria-label="Redo" title="Redo (Ctrl+Shift+Z)" style="padding:6px 10px;font-size:0.72rem;opacity:0.35;">Redo</button>
+                            <button class="btn" onpointerdown="editorStartPeek()" onpointerup="editorStopPeek()" onpointerleave="editorStopPeek()" id="btn-editor-peek" aria-label="Peek" title="Hold to see original" style="padding:6px 10px;font-size:0.72rem;opacity:0.5;user-select:none;-webkit-user-select:none;">Peek</button>
+                            <button class="btn" onclick="confirmClearRedactions()" aria-label="Clear" title="Remove all redactions" style="padding:6px 10px;font-size:0.72rem;">Clear</button>
                         </div>
                         <!-- Redaction count / selection badge -->
                         <span id="editor-redact-count" style="display:none;font-size:0.65rem;color:var(--text-2);background:var(--bg-2);padding:2px 8px;border-radius:10px;font-variant-numeric:tabular-nums;"></span>
                         <span id="editor-selection-badge" style="display:none;font-size:0.65rem;color:var(--accent);background:var(--accent-dim);padding:2px 8px;border-radius:10px;cursor:pointer;" onclick="editorDeleteSelected()" title="Click to remove selected rect"></span>
                         <div style="flex:1;"></div>
                         <!-- Save (green, prominent) -->
-                        <button class="btn" onclick="saveRedactedPhoto()" id="btn-editor-save" style="padding:6px 14px;font-size:0.75rem;background:var(--green-dim);color:var(--green);border-color:var(--green);font-weight:600;">Save</button>
+                        <button class="btn" onclick="saveRedactedPhoto()" id="btn-editor-save" aria-label="Save" style="padding:6px 14px;font-size:0.75rem;background:var(--green-dim);color:var(--green);border-color:var(--green);font-weight:600;">Save</button>
                         <!-- Download -->
                         <button class="btn" onclick="downloadRedactedPhoto()" title="Download redacted image" style="padding:6px 10px;font-size:0.72rem;background:transparent;color:var(--text-2);border-color:var(--border);">Download</button>
                         <!-- Delete (separated, subdued) -->
-                        <button class="btn" onclick="confirmDeletePhoto()" title="Delete photo" style="padding:6px 10px;font-size:0.72rem;background:transparent;color:var(--text-2);border-color:var(--border);">Delete</button>
+                        <button class="btn" onclick="confirmDeletePhoto()" aria-label="Delete" title="Delete photo" style="padding:6px 10px;font-size:0.72rem;background:transparent;color:var(--text-2);border-color:var(--border);">Delete</button>
                     </div>
                     <!-- Shortcut hint bar (appears on hover/focus) -->
                     <div id="editor-shortcut-bar" style="display:none;font-size:0.6rem;color:var(--text-2);padding:0 2px 4px;flex-shrink:0;">
@@ -3360,7 +3360,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                     </details>
                     <!-- Canvas area (takes most space) -->
                     <div id="editor-canvas-wrapper" style="flex:1;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;min-height:0;touch-action:none;">
-                        <canvas id="editor-canvas" style="cursor:default;border:2px solid rgba(255,255,255,0.08);border-radius:6px;transition:border-color 0.2s,box-shadow 0.2s;transform-origin:0 0;position:absolute;"></canvas>
+                        <canvas id="editor-canvas" role="img" aria-label="Photo being edited" style="cursor:default;border:2px solid rgba(255,255,255,0.08);border-radius:6px;transition:border-color 0.2s,box-shadow 0.2s;transform-origin:0 0;position:absolute;"></canvas>
                         <!-- Before/After comparison divider -->
                         <div id="editor-compare-divider" style="display:none;position:absolute;top:0;height:100%;width:2px;background:white;cursor:ew-resize;z-index:10;pointer-events:auto;box-shadow:0 0 6px rgba(0,0,0,0.6);">
                             <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:24px;height:24px;background:white;border-radius:50%;box-shadow:0 0 6px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;">
@@ -3373,6 +3373,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                             Draw rectangles to redact &middot; <span style="color:var(--text-2);">Ctrl+Z to undo</span>
                         </div>
                     </div>
+                    <div id="photo-editor-sr-announce" aria-live="polite" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;"></div>
                     <!-- Details (collapsible on mobile) -->
                     <details id="modal-details-wrap" style="flex-shrink:0;margin-top:4px;">
                         <summary style="color:var(--text-2);font-size:0.65rem;cursor:pointer;padding:4px 0;">Edit Info ▾</summary>
@@ -5633,6 +5634,14 @@ async function convertFileToJpeg(file) {
     }
 }
 
+// ── Screen reader announcement helper for redact editors ──
+function _announceRedact(msg) {
+    const el = document.getElementById('photo-editor-sr-announce') || document.getElementById('posting-redact-sr-announce');
+    if (el) { el.textContent = ''; requestAnimationFrame(() => { el.textContent = msg; }); }
+    const el2 = document.getElementById('posting-redact-sr-announce');
+    if (el2 && el2 !== el) { el2.textContent = ''; requestAnimationFrame(() => { el2.textContent = msg; }); }
+}
+
 // ── Inline redaction editor for posting photos ──
 let _postingRedactFile = null;
 let _postingRedactOrigFile = null; // Keep original for undo/skip
@@ -5667,16 +5676,18 @@ function openPostingRedactEditor(file, row, desc) {
 
     const overlay = document.createElement('div');
     overlay.id = 'posting-redact-modal';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-label', 'Photo redaction editor');
     overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;height:100dvh;background:#000;z-index:99999;overflow:hidden;touch-action:none;display:flex;flex-direction:column;opacity:0;transition:opacity 0.15s ease-out;';
     document.body.style.overflow = 'hidden';
     const isMobile = window.innerWidth <= 768;
     overlay.innerHTML = `
         ${!isMobile ? '' : '<div style="flex:1;display:flex;overflow:hidden;position:relative;" id="redact-canvas-wrapper"><canvas id="posting-redact-canvas" style="cursor:crosshair;position:absolute;transform-origin:0 0;"></canvas><div id="posting-redact-hint" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.75);color:rgba(255,255,255,0.8);padding:14px 24px;border-radius:12px;font-size:14px;pointer-events:none;text-align:center;transition:opacity 0.4s;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);line-height:1.6;">Draw rectangles to redact<br><span style="font-size:11px;color:rgba(255,255,255,0.4);">Pinch to zoom &middot; hold to peek &middot; tap rect to select</span></div></div>'}
         <div id="redact-toolbar" style="display:flex;align-items:center;gap:6px;padding:${isMobile ? '8px 10px env(safe-area-inset-bottom, 8px) 10px' : 'env(safe-area-inset-top,0) 10px 8px 10px'};flex-shrink:0;${isMobile ? 'border-top' : 'border-bottom'}:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);">
-            <button onclick="postingRedactUndo()" id="posting-undo-btn" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,.85);font-size:13px;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;min-width:44px;min-height:40px;transition:background 0.15s,opacity 0.15s;">Undo</button>
-            <button onclick="postingRedactRedo()" id="posting-redo-btn" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,.85);font-size:13px;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;min-width:44px;min-height:40px;transition:background 0.15s,opacity 0.15s;opacity:0.3;">Redo</button>
-            <button onclick="postingRedactRotate()" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,.85);font-size:13px;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;min-width:44px;min-height:40px;transition:background 0.15s;">Rotate</button>
-            <button onclick="postingAutoRedact()" id="posting-auto-btn" style="background:rgba(138,43,226,0.25);color:#d4aaff;font-size:13px;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;min-width:44px;min-height:40px;transition:background 0.15s,opacity 0.15s;">Auto</button>
+            <button onclick="postingRedactUndo()" id="posting-undo-btn" aria-label="Undo" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,.85);font-size:13px;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;min-width:44px;min-height:40px;transition:background 0.15s,opacity 0.15s;">Undo</button>
+            <button onclick="postingRedactRedo()" id="posting-redo-btn" aria-label="Redo" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,.85);font-size:13px;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;min-width:44px;min-height:40px;transition:background 0.15s,opacity 0.15s;opacity:0.3;">Redo</button>
+            <button onclick="postingRedactRotate()" aria-label="Rotate" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,.85);font-size:13px;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;min-width:44px;min-height:40px;transition:background 0.15s;">Rotate</button>
+            <button onclick="postingAutoRedact()" id="posting-auto-btn" aria-label="Auto" style="background:rgba(138,43,226,0.25);color:#d4aaff;font-size:13px;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;min-width:44px;min-height:40px;transition:background 0.15s,opacity 0.15s;">Auto</button>
             <span id="posting-redact-count" style="font-size:11px;color:rgba(255,255,255,0.45);padding:0 2px;display:none;font-variant-numeric:tabular-nums;"></span>
             <span id="posting-selection-badge" style="display:none;font-size:11px;color:#60a5fa;padding:0 4px;cursor:pointer;" onclick="postingDeleteSelected()"></span>
             <div style="flex:1;"></div>
@@ -5686,17 +5697,20 @@ function openPostingRedactEditor(file, row, desc) {
                 <button onclick="redactZoomIn()" style="background:none;color:rgba(255,255,255,.55);font-size:18px;padding:6px 10px;border:none;border-radius:6px;cursor:pointer;min-width:38px;min-height:38px;transition:background 0.15s;" onpointerdown="this.style.background='rgba(255,255,255,0.1)'" onpointerup="this.style.background='none'" onpointerleave="this.style.background='none'">+</button>
             </div>
             <div style="flex:1;"></div>
-            <button onclick="postingRedactSkip()" style="background:rgba(255,255,255,0.06);color:rgba(255,255,255,.4);font-size:13px;padding:8px 14px;border:1px solid rgba(255,255,255,0.08);border-radius:6px;cursor:pointer;min-height:40px;transition:background 0.15s;">Skip</button>
-            <button onclick="downloadPostingRedacted()" title="Download redacted image" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,.85);font-size:13px;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;min-width:44px;min-height:40px;transition:background 0.15s;">Download</button>
-            <button onclick="postingRedactSave()" id="posting-done-btn" style="background:rgba(74,222,128,0.2);color:#4ade80;font-size:14px;padding:8px 20px;border:1px solid rgba(74,222,128,0.3);border-radius:8px;cursor:pointer;font-weight:600;min-height:40px;transition:background 0.15s,opacity 0.15s;">Done</button>
+            <button onclick="postingRedactSkip()" aria-label="Skip" style="background:rgba(255,255,255,0.06);color:rgba(255,255,255,.4);font-size:13px;padding:8px 14px;border:1px solid rgba(255,255,255,0.08);border-radius:6px;cursor:pointer;min-height:40px;transition:background 0.15s;">Skip</button>
+            <button onclick="downloadPostingRedacted()" aria-label="Download" title="Download redacted image" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,.85);font-size:13px;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;min-width:44px;min-height:40px;transition:background 0.15s;">Download</button>
+            <button onclick="postingRedactSave()" id="posting-done-btn" aria-label="Done" style="background:rgba(74,222,128,0.2);color:#4ade80;font-size:14px;padding:8px 20px;border:1px solid rgba(74,222,128,0.3);border-radius:8px;cursor:pointer;font-weight:600;min-height:40px;transition:background 0.15s,opacity 0.15s;">Done</button>
         </div>
         ${isMobile ? '' : '<div id="redact-canvas-wrapper" style="flex:1;overflow:hidden;position:relative;"><canvas id="posting-redact-canvas" style="cursor:crosshair;position:absolute;transform-origin:0 0;"></canvas><div id="posting-redact-hint" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.75);color:rgba(255,255,255,0.8);padding:14px 24px;border-radius:12px;font-size:14px;pointer-events:none;text-align:center;transition:opacity 0.4s;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);line-height:1.6;">Draw rectangles to redact<br><span style="font-size:11px;color:rgba(255,255,255,0.4);">Pinch to zoom &middot; hold to peek &middot; tap rect to select</span></div></div>'}
+        <div id="posting-redact-sr-announce" aria-live="polite" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;"></div>
     `;
     document.body.appendChild(overlay);
     // Fade in
     requestAnimationFrame(() => { requestAnimationFrame(() => { overlay.style.opacity = '1'; }); });
 
     const canvas = document.getElementById('posting-redact-canvas');
+    canvas.setAttribute('tabindex', '0');
+    canvas.focus();
     const ctx = canvas.getContext('2d');
 
     const reader = new FileReader();
@@ -5815,6 +5829,7 @@ function openPostingRedactEditor(file, row, desc) {
         postingRedactRender();
         _updatePostingRedactCount();
         _hapticTap();
+        _announceRedact(_postingRedactRects.length + ' redactions drawn');
     };
     canvas.onmouseleave = canvas.onmouseup;
 
@@ -5929,6 +5944,7 @@ function openPostingRedactEditor(file, row, desc) {
             postingRedactRender();
             _updatePostingRedactCount();
             _hapticTap();
+            _announceRedact(_postingRedactRects.length + ' redactions drawn');
         }
     };
 
@@ -6142,6 +6158,7 @@ function postingRedactRedo() {
         postingRedactRender();
         _updatePostingRedactCount();
         showToast('Redone \u2014 ' + _postingRedactRects.length + ' total', 'info', 2000);
+        _announceRedact(_postingRedactRects.length + ' redactions drawn');
     }
 }
 
@@ -6353,6 +6370,7 @@ async function postingAutoRedact() {
                 }
                 _hapticTap();
                 showToast(count === '0' ? 'No areas found' : 'Auto-detected ' + count + ' area' + (count !== '1' ? 's' : ''), count === '0' ? 'warning' : 'success', 2500);
+                _announceRedact('Auto-detection complete');
             };
             img.onerror = function() {
                 _stopRedactScanAnim();
@@ -6376,6 +6394,7 @@ function postingRedactUndo() {
         postingRedactRender();
         _updatePostingRedactCount();
         showToast('Undone \u2014 ' + _postingRedactRects.length + ' remaining', 'info', 2000);
+        _announceRedact('Redaction removed');
     } else if (_postingRedactOrigImg && _postingRedactImg !== _postingRedactOrigImg) {
         _postingRedactImg = _postingRedactOrigImg;
         _postingRedactFile = _postingRedactOrigFile;
@@ -6383,6 +6402,7 @@ function postingRedactUndo() {
         _postingRedactRedoStack = [];
         postingRedactRender();
         _updatePostingRedactCount();
+        _announceRedact('Redaction removed');
         const autoBtn = document.getElementById('posting-auto-btn');
         if (autoBtn) autoBtn.textContent = 'Auto';
     }
@@ -13356,6 +13376,9 @@ async function loadPayments() {
         img.src = '/api/watch-photos/' + watchId + '/image?t=' + Date.now();
         
         $('#photo-modal').style.display = 'block';
+        // Focus first toolbar button for keyboard accessibility
+        const firstToolbarBtn = document.querySelector('#editor-toolbar button');
+        if (firstToolbarBtn) firstToolbarBtn.focus();
 
         // Wire up canvas events
         canvas.onmousedown = editorMouseDown;
@@ -13837,8 +13860,9 @@ async function loadPayments() {
         updateEditorRedactCount();
         _hapticTap();
         _logEditorAction('Drew rect #' + editorRedactions.length + ' (' + Math.round(rect.w) + 'x' + Math.round(rect.h) + ')');
+        _announceRedact(editorRedactions.length + ' redactions drawn');
     }
-    
+
     var _editorScanAnim = null;
     function _startEditorScanAnim() {
         const container = $('#editor-canvas')?.parentElement;
@@ -13895,16 +13919,18 @@ async function loadPayments() {
                 editorRedactions = [];
                 setTimeout(() => loadPhotoLibrary(), 500);
                 showToast('Auto-detected ' + result.redaction_count + ' area' + (result.redaction_count !== 1 ? 's' : ''), 'success', 2500);
+                _announceRedact('Auto-detection complete');
             } else {
                 statusEl.textContent = 'No serial/date text detected \u2014 use manual redact';
                 statusEl.style.color = '#ffb400';
                 showToast('No areas found', 'warning', 2500);
+                _announceRedact('Auto-detection complete');
             }
         } catch(e) {
             statusEl.textContent = 'X Auto-redact failed: ' + e.message;
             statusEl.style.color = 'var(--red)';
         }
-        
+
         _stopEditorScanAnim();
         btn.textContent = 'Auto-Detect';
         btn.disabled = false;
@@ -13974,6 +14000,7 @@ async function loadPayments() {
             updateEditorRedactCount();
             showToast('Undone \u2014 ' + editorRedactions.length + ' remaining', 'info', 2000);
             _logEditorAction('Undo \u2192 ' + editorRedactions.length + ' remaining');
+            _announceRedact('Redaction removed');
         }
     }
 
@@ -13984,6 +14011,7 @@ async function loadPayments() {
             updateEditorRedactCount();
             showToast('Redone \u2014 ' + editorRedactions.length + ' total', 'info', 2000);
             _logEditorAction('Redo \u2192 ' + editorRedactions.length + ' total');
+            _announceRedact(editorRedactions.length + ' redactions drawn');
         }
     }
 
@@ -14022,6 +14050,7 @@ async function loadPayments() {
         renderEditor();
         const btn = $('#btn-editor-peek');
         if (btn) { btn.style.background = 'var(--accent-dim)'; btn.style.color = 'var(--accent)'; btn.style.opacity = '1'; }
+        _announceRedact('Peek mode active');
     }
     function editorStopPeek() {
         if (!editorPeeking) return;
