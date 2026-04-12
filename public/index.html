@@ -245,8 +245,6 @@
         .tbl tr:nth-child(even):hover td { background:var(--bg-hover); }
         .tbl .ref { color:var(--accent); font-weight:600; cursor:pointer; transition:color 0.1s; }
         .tbl .ref:hover { color:var(--accent-light); }
-        .tbl .green { color:var(--green); font-weight:700; }
-        .tbl .red { color:var(--red); font-weight:700; }
         .tbl .dim { color:var(--text-2); }
         .tbl .right { text-align:right; }
         .tbl-wrap { overflow-x:auto; border-radius:var(--radius); -webkit-overflow-scrolling:touch; }
@@ -312,15 +310,12 @@
         /* ── UX: Nav pill badges ── */
         .nav .badge { border-radius:10px; padding:2px 8px; font-size:0.58rem; min-width:18px; text-align:center; line-height:1.2; }
 
-        /* ── UX: P&L vivid colors ── */
-        .tbl .green, .green { color:#00e676; font-weight:700; }
-        .tbl .red, .red { color:#ff4466; font-weight:700; }
-        html.light .tbl .green, html.light .green { color:#0a8a3f; }
-        html.light .tbl .red, html.light .red { color:#d42020; }
+        /* ── UX: P&L vivid colors (uses CSS vars for automatic theme support) ── */
+        .tbl .green, .green { color:var(--green); font-weight:700; }
+        .tbl .red, .red { color:var(--red); font-weight:700; }
 
         /* ── UX: Mobile responsive ── */
         @media (max-width:768px) {
-            .tbl-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
             .ticker-inner { animation-duration:40s; }
         }
 
@@ -2608,7 +2603,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                 <div class="card-head"><span> FX Calculator</span><span style="font-size:0.6rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px;">Wise mid-market + fees</span></div>
                 <div style="padding:10px;">
                     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-                        <input class="input" id="fx-amount" type="number" inputmode="decimal" value="10000" style="width:120px;font-size:0.95rem;" oninput="fxCalc()">
+                        <input class="input" id="fx-amount" type="number" inputmode="decimal" value="10000" style="width:120px;font-size:0.95rem;" oninput="debouncedFxCalc()">
                         <select class="input" id="fx-from" style="width:80px;" onchange="fxCalc()">
                             <option value="USD" selected>USD</option><option value="HKD">HKD</option><option value="CAD">CAD</option><option value="IDR">IDR</option>
                         </select>
@@ -2721,7 +2716,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                         <option value="us_to_hk">US → HK (Export)</option>
                         <option value="all">All Directions</option>
                     </select>
-                    <input class="input" id="arb-search" placeholder="Filter ref, model..." oninput="renderArbitrage()" style="flex:1;max-width:240px;">
+                    <input class="input" id="arb-search" placeholder="Filter ref, model..." oninput="debouncedFilterArbitrage()" style="flex:1;max-width:240px;">
                     <span class="dim" style="font-size:0.72rem;font-family:var(--mono);" id="arb-summary"></span>
                 </div>
                 <div class="card"><div class="tbl-wrap"><table class="tbl" id="arb-table"><thead><tr>
@@ -2791,10 +2786,10 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                 <select class="input" id="browse-sort" onchange="filterBrowse()" style="width:110px;"><option value="price-asc">Price Asc</option><option value="price-desc">Price Desc</option><option value="ref">Ref A-Z</option></select>
             </div>
             <div class="card">
-                <div class="tbl-wrap"><table class="tbl" id="browse-table"><thead><tr>
+                <div class="tbl-wrap" id="browse-vscroll" style="max-height:580px;overflow-y:auto;"><table class="tbl" id="browse-table"><thead><tr>
                     <th>Ref</th><th>Model</th><th>Dial</th><th>Bracelet</th><th class="right">Price</th><th>Cond</th><th>Year</th><th>Set</th><th>Region</th><th>Seller</th><th>Group</th>
                 </tr></thead><tbody></tbody></table></div>
-                <div style="text-align:center;padding:8px;"><button class="btn" onclick="loadMoreBrowse()" id="browse-more">Load More</button></div>
+                <div style="text-align:center;padding:8px;display:none;"><button class="btn" onclick="loadMoreBrowse()" id="browse-more">Load More</button></div>
             </div>
         </div>
 
@@ -2913,7 +2908,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                         <div>
                             <label style="font-size:0.72rem;color:var(--text-2);text-transform:uppercase;">Contact / Preset</label>
                             <div style="display:flex;gap:6px;margin-top:4px;">
-                                <input class="input" id="ship-contact-search" placeholder="Search contacts..." oninput="filterContactsDropdown(this.value)" style="flex:1;" autocomplete="off">
+                                <input class="input" id="ship-contact-search" placeholder="Search contacts..." oninput="debouncedFilterContacts()" style="flex:1;" autocomplete="off">
                                 <button class="btn" onclick="toggleContactsList()" style="font-size:0.7rem;padding:4px 10px;white-space:nowrap;">&#9776; Contacts</button>
                             </div>
                             <div id="ship-contacts-dropdown" style="display:none;position:relative;z-index:100;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);margin-top:2px;max-height:160px;overflow-y:auto;"></div>
@@ -3045,7 +3040,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                 </div>
                 <div class="card-body">
                     <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
-                        <input class="input" id="contacts-search" placeholder="Search contacts..." oninput="loadContactsList(this.value)" style="flex:1;">
+                        <input class="input" id="contacts-search" placeholder="Search contacts..." oninput="debouncedLoadContacts()" style="flex:1;">
                     </div>
                     <div id="contacts-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;">
                         <div class="skel-card"><div class="skel-line w60 h16"></div><div class="skel-line w40 h8"></div></div>
@@ -3601,7 +3596,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                     <option value="paid">Paid</option>
                     <option value="void">Void</option>
                 </select>
-                <input class="input" id="inv-search" placeholder="Search customer or invoice #..." oninput="loadInternalInvoices()" style="flex:1;min-width:150px;">
+                <input class="input" id="inv-search" placeholder="Search customer or invoice #..." oninput="debouncedFilterInvoices()" style="flex:1;min-width:150px;">
                 <button class="btn" onclick="showNewInvoiceModal()" style="white-space:nowrap;background:var(--accent);color:var(--bg-1);">+ New Invoice</button>
             </div>
             <!-- Invoice list -->
@@ -3892,8 +3887,8 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
             <!-- Filters & Search -->
             <div class="card" style="margin-bottom:16px;">
                 <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-                    <input class="input" id="library-search" placeholder="Search by model, dial, date..." 
-                           oninput="filterPhotoLibrary()" style="flex:1;min-width:200px;">
+                    <input class="input" id="library-search" placeholder="Search by model, dial, date..."
+                           oninput="debouncedFilterPhotoLibrary()" style="flex:1;min-width:200px;">
                     <select class="input" id="model-filter" onchange="filterPhotoLibrary()" style="width:140px;">
                         <option value="">All Models</option>
                         <option value="126710BLRO">GMT Pepsi</option>
@@ -5013,10 +5008,30 @@ let currentDealsRegion = 'all';
 
 // ── Generic debounce utility ──
 function _mkDebounce(fn, ms) { let t; return function() { clearTimeout(t); t = setTimeout(fn, ms); }; }
-const debouncedFilterBrowse = _mkDebounce(function(){ browseOffset=0; renderBrowse(); }, 200);
+const debouncedFilterBrowse = _mkDebounce(function(){ const vs=document.getElementById('browse-vscroll');if(vs)vs.scrollTop=0; browseOffset=0; renderBrowse(); }, 200);
 const debouncedFilterDeals = _mkDebounce(function(){ if(typeof filterDeals==='function') filterDeals(); }, 200);
 const debouncedFilterInventory = _mkDebounce(function(){ if(typeof filterInventory==='function') filterInventory(); }, 200);
 const debouncedFilterPostings = _mkDebounce(function(){ if(typeof filterPostings==='function') filterPostings(); }, 200);
+const debouncedFilterArbitrage = _mkDebounce(function(){ if(typeof renderArbitrage==='function') renderArbitrage(); }, 200);
+const debouncedFilterInvoices = _mkDebounce(function(){ if(typeof loadInternalInvoices==='function') loadInternalInvoices(); }, 200);
+const debouncedFilterPhotoLibrary = _mkDebounce(function(){ if(typeof filterPhotoLibrary==='function') filterPhotoLibrary(); }, 200);
+const debouncedLoadContacts = _mkDebounce(function(){ if(typeof loadContactsList==='function') loadContactsList(document.getElementById('contacts-search')?.value||''); }, 200);
+const debouncedFilterContacts = _mkDebounce(function(){ if(typeof filterContactsDropdown==='function') filterContactsDropdown(document.getElementById('ship-contact-search')?.value||''); }, 200);
+const debouncedFxCalc = _mkDebounce(function(){ if(typeof fxCalc==='function') fxCalc(); }, 150);
+
+// ── sessionStorage API cache (5-min TTL) ──
+function _cacheGet(key) {
+    try {
+        const raw = sessionStorage.getItem('mk_c_' + key);
+        if (!raw) return null;
+        const { ts, data } = JSON.parse(raw);
+        if (Date.now() - ts > 300000) { sessionStorage.removeItem('mk_c_' + key); return null; }
+        return data;
+    } catch(e) { return null; }
+}
+function _cacheSet(key, data) {
+    try { sessionStorage.setItem('mk_c_' + key, JSON.stringify({ ts: Date.now(), data })); } catch(e) {}
+}
 
 const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals & Arbitrage',invoices:'Invoices',shipping:'Shipping',inventory:'Inventory',payments:'Payments',photos:'Photos','mission-control':'Mission Control'};
 
@@ -5149,20 +5164,31 @@ async function loadData() {
             if (!resp || !resp.ok) return fallback;
             try { return await resp.json(); } catch(_) { return fallback; }
         };
-        try {
-            const [dealsR, arbR, topR, syncR] = await Promise.all([
-                fetch('/api/deals'), fetch('/api/arbitrage'),
-                fetch('/api/top_refs'), fetch('/api/sync_info'),
-            ]);
-            if (dealsR.status === 401) { window.location.href = '/login'; return; }
-            const liveDealsParsed = await safeJson(dealsR, null);
-            if (liveDealsParsed && Array.isArray(liveDealsParsed)) DATA.deals = liveDealsParsed;
-            const liveArbParsed = await safeJson(arbR, null);
-            if (liveArbParsed && Array.isArray(liveArbParsed)) DATA.arbitrage = liveArbParsed;
-            const liveTopRefs = await safeJson(topR, null);
-            if (liveTopRefs && Array.isArray(liveTopRefs)) DATA.topRefs = liveTopRefs;
-            DATA.syncInfo = await safeJson(syncR, null);
-        } catch(e) { console.warn('Live API overlay failed (using bundle):', e); }
+        // Check sessionStorage cache first (speeds up page revisits within 5 min)
+        const _cachedLive = _cacheGet('live_api');
+        if (_cachedLive) {
+            if (_cachedLive.deals) DATA.deals = _cachedLive.deals;
+            if (_cachedLive.arbitrage) DATA.arbitrage = _cachedLive.arbitrage;
+            if (_cachedLive.topRefs) DATA.topRefs = _cachedLive.topRefs;
+            if (_cachedLive.syncInfo) DATA.syncInfo = _cachedLive.syncInfo;
+        } else {
+            try {
+                const [dealsR, arbR, topR, syncR] = await Promise.all([
+                    fetch('/api/deals'), fetch('/api/arbitrage'),
+                    fetch('/api/top_refs'), fetch('/api/sync_info'),
+                ]);
+                if (dealsR.status === 401) { window.location.href = '/login'; return; }
+                const liveDealsParsed = await safeJson(dealsR, null);
+                if (liveDealsParsed && Array.isArray(liveDealsParsed)) DATA.deals = liveDealsParsed;
+                const liveArbParsed = await safeJson(arbR, null);
+                if (liveArbParsed && Array.isArray(liveArbParsed)) DATA.arbitrage = liveArbParsed;
+                const liveTopRefs = await safeJson(topR, null);
+                if (liveTopRefs && Array.isArray(liveTopRefs)) DATA.topRefs = liveTopRefs;
+                DATA.syncInfo = await safeJson(syncR, null);
+                // Cache successful responses for fast revisits
+                _cacheSet('live_api', { deals: DATA.deals, arbitrage: DATA.arbitrage, topRefs: DATA.topRefs, syncInfo: DATA.syncInfo });
+            } catch(e) { console.warn('Live API overlay failed (using bundle):', e); }
+        }
 
         if (!Array.isArray(DATA.deals)) DATA.deals = [];
         if (!Array.isArray(DATA.arbitrage)) DATA.arbitrage = [];
@@ -5182,10 +5208,18 @@ async function loadData() {
 async function loadPortfolio() { try { const r = await fetch('/api/portfolio_insights'); DATA.portfolio = await r.json(); renderPortfolio(); } catch(e) { console.error(e); } }
 async function loadListings() {
     try {
+        // Serve from sessionStorage cache on revisits (avoids re-fetching large JSON)
+        const _cached = _cacheGet('listings');
+        if (_cached && Array.isArray(_cached) && _cached.length) {
+            allListings = _cached;
+            $('#browse-subtitle').textContent = allListings.length.toLocaleString()+' listings in database';
+            browseOffset=0; renderBrowse(); return;
+        }
         let r = await fetch('/data/listings.json?v=' + Date.now()); if (!r.ok) r = await fetch('/api/search?q=');
         if (r.ok) {
             allListings = (await r.json()).map(l => ({ref:l.ref||'',model:l.model||'',dial:l.dial||'',bracelet:l.bracelet||'',price:l.price_usd||l.price||0,condition:l.condition||'',completeness:l.completeness||'',region:l.region||'',seller:l.seller||'',phone:l.phone||'',group:l.group||'',brand:l.brand||'Rolex',year:l.year||'',source_text:l.source_text||''}));
             allListings.sort((a,b)=>a.price-b.price);
+            _cacheSet('listings', allListings);
             $('#browse-subtitle').textContent = allListings.length.toLocaleString()+' listings in database';
             browseOffset=0; renderBrowse();
         }
@@ -6181,7 +6215,7 @@ function openPostingModal(item, photoCount) {
                     <div style="display:flex;gap:6px;flex-wrap:wrap;max-height:160px;overflow-y:auto;">
                         ${d.photos.map(p => `
                             <div style="position:relative;cursor:pointer;" onclick="useLibraryPhoto('${p.id}', '${p.url}', ${item.row}, '${(item.description||'').replace(/'/g,"\\'")}')">
-                                <img src="${p.url}" style="width:140px;height:140px;object-fit:cover;border-radius:6px;border:1px solid var(--border);" />
+                                <img src="${p.url}" loading="lazy" style="width:140px;height:140px;object-fit:cover;border-radius:6px;border:1px solid var(--border);" />
                                 <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);color:white;font-size:0.5rem;padding:1px 3px;border-radius:0 0 4px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.dial||p.ref}</div>
                             </div>
                         `).join('')}
@@ -6214,7 +6248,7 @@ async function loadPostingPhotoPreviews(row) {
         if (!data.photos?.length) { preview.innerHTML = ''; return; }
         preview.innerHTML = data.photos.map(p =>
             `<div style="position:relative;display:inline-block;">
-                <img src="/api/watch-photos/${row}/images/${p.filename}" style="width:140px;height:140px;object-fit:cover;border-radius:6px;border:1px solid var(--border);" />
+                <img src="/api/watch-photos/${row}/images/${p.filename}" loading="lazy" style="width:140px;height:140px;object-fit:cover;border-radius:6px;border:1px solid var(--border);" />
                 <button onclick="event.stopPropagation();deletePostingPhoto(${row},'${p.filename}')" style="position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;background:var(--red);color:#fff;border:2px solid var(--bg-1);font-size:0.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;z-index:10;touch-action:manipulation;">x</button>
                 <button onclick="redactPostingPhoto(${row},'${p.filename}','')" style="position:absolute;bottom:4px;left:4px;font-size:0.55rem;padding:2px 6px;background:rgba(0,0,0,0.7);color:#fff;border:none;border-radius:4px;cursor:pointer;">Redact</button>
             </div>`
@@ -8187,46 +8221,83 @@ function renderPfAging(c, p, items) {
     c.innerHTML = html;
 }
 
-// ── BROWSE ──
-function renderBrowse(append) {
-    const f = getFilteredBrowse();
-    const slice = f.slice(browseOffset, browseOffset+BROWSE_PAGE);
-    const html = slice.map((l,idx)=>{
-        const yearCell = l.year
-            ? `<td class="dim">${l.year}</td>`
-            : (l.source_text
-                ? `<td style="cursor:pointer;color:var(--accent);font-size:0.7rem;" onclick="toggleSource(this)" title="Click to see original listing text">src</td>`
-                : `<td class="dim" style="opacity:0.3">N/A</td>`);
-        const srcRow = (!l.year && l.source_text)
-            ? `<tr class="source-row" style="display:none;"><td colspan="11" style="padding:8px 12px;background:var(--bg-3);font-size:0.72rem;color:var(--text-1);white-space:pre-wrap;line-height:1.5;border-left:2px solid var(--accent);">${l.source_text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td></tr>`
-            : '';
-        return `<tr>
-        <td class="ref" onclick="lookupRef('${l.ref}')">${l.ref}</td>
-        <td class="dim" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.model}</td>
-        <td>${l.dial}</td><td class="dim">${l.bracelet}</td><td class="right">${fmt(l.price)}</td>
-        <td><span class="tag ${condTag(l.condition)}">${l.condition||'—'}</span></td>
-        ${yearCell}
-        <td class="dim">${l.completeness}</td><td class="dim">${regionLabel(l.region)}</td>
-        <td class="dim" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.phone ? `<a href="https://wa.me/${l.phone.replace(/[^0-9]/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);text-decoration:none;margin-right:4px;" title="WhatsApp ${l.seller}">WA</a>` : ''}${l.seller}</td>
-        <td class="dim" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.group}</td>
-    </tr>${srcRow}`;
-    }).join('');
-    const tbody = $('#browse-table tbody');
-    if (!f.length && !append) {
+// ── BROWSE (virtual scroll) ──
+const _BROWSE_ROW_H = 37; // estimated px per row (thead excluded)
+let _browseFiltered = [];  // current filtered dataset cache
+
+function _makeBrowseRow(l) {
+    const yearCell = l.year
+        ? `<td class="dim">${l.year}</td>`
+        : (l.source_text
+            ? `<td style="cursor:pointer;color:var(--accent);font-size:0.7rem;" onclick="toggleSource(this)" title="Click to see original listing text">src</td>`
+            : `<td class="dim" style="opacity:0.3">N/A</td>`);
+    const srcRow = (!l.year && l.source_text)
+        ? `<tr class="source-row" style="display:none;"><td colspan="11" style="padding:8px 12px;background:var(--bg-3);font-size:0.72rem;color:var(--text-1);white-space:pre-wrap;line-height:1.5;border-left:2px solid var(--accent);">${l.source_text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td></tr>`
+        : '';
+    return `<tr>
+    <td class="ref" onclick="lookupRef('${l.ref}')">${l.ref}</td>
+    <td class="dim" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.model}</td>
+    <td>${l.dial}</td><td class="dim">${l.bracelet}</td><td class="right">${fmt(l.price)}</td>
+    <td><span class="tag ${condTag(l.condition)}">${l.condition||'—'}</span></td>
+    ${yearCell}
+    <td class="dim">${l.completeness}</td><td class="dim">${regionLabel(l.region)}</td>
+    <td class="dim" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.phone ? `<a href="https://wa.me/${l.phone.replace(/[^0-9]/g,'')}" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);text-decoration:none;margin-right:4px;" title="WhatsApp ${l.seller}">WA</a>` : ''}${l.seller}</td>
+    <td class="dim" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.group}</td>
+</tr>${srcRow}`;
+}
+
+function _renderBrowseVirtual() {
+    const vscroll = document.getElementById('browse-vscroll');
+    const tbody = document.querySelector('#browse-table tbody');
+    if (!vscroll || !tbody) return;
+    const f = _browseFiltered;
+
+    // Update subtitle
+    const bsub = document.getElementById('browse-subtitle');
+    if (bsub) bsub.textContent = (f.length < allListings.length ? f.length.toLocaleString() + ' of ' : '') + allListings.length.toLocaleString() + ' listings in database';
+
+    if (!f.length) {
         tbody.innerHTML = '<tr><td colspan="11">' + emptyState('search','No listings match','Try broadening your search or adjusting filters.','filterBrowse()') + '</td></tr>';
-        $('#browse-more').style.display = 'none';
         return;
     }
-    if (append) tbody.innerHTML+=html; else tbody.innerHTML=html;
-    browseOffset+=BROWSE_PAGE;
-    $('#browse-more').style.display = browseOffset>=f.length?'none':'';
-    const bsub = $('#browse-subtitle'); if (bsub) { const total = allListings.length; bsub.textContent = (f.length < total ? f.length.toLocaleString() + ' of ' : '') + total.toLocaleString() + ' listings in database'; }
+
+    const containerH = vscroll.clientHeight || 580;
+    const scrollTop = vscroll.scrollTop;
+    const buf = 15;
+    const start = Math.max(0, Math.floor(scrollTop / _BROWSE_ROW_H) - buf);
+    const end = Math.min(f.length, start + Math.ceil(containerH / _BROWSE_ROW_H) + buf * 2);
+
+    const topPad = start * _BROWSE_ROW_H;
+    const botPad = Math.max(0, (f.length - end) * _BROWSE_ROW_H);
+
+    const rows = f.slice(start, end).map(_makeBrowseRow).join('');
+    tbody.innerHTML =
+        (topPad > 0 ? `<tr style="height:${topPad}px;"><td colspan="11" style="padding:0;border:none;"></td></tr>` : '') +
+        rows +
+        (botPad > 0 ? `<tr style="height:${botPad}px;"><td colspan="11" style="padding:0;border:none;"></td></tr>` : '');
 }
+
+function _initBrowseVirtualScroll() {
+    const vscroll = document.getElementById('browse-vscroll');
+    if (!vscroll || vscroll._vsInit) return;
+    vscroll._vsInit = true;
+    let _raf;
+    vscroll.addEventListener('scroll', function() {
+        if (_raf) cancelAnimationFrame(_raf);
+        _raf = requestAnimationFrame(_renderBrowseVirtual);
+    }, { passive: true });
+}
+
 function getFilteredBrowse() {
     const q=($('#browse-search')?.value||'').toLowerCase(),region=$('#browse-region')?.value||'',cond=$('#browse-cond')?.value||'',sort=$('#browse-sort')?.value||'price-asc';
     let f=allListings.filter(l=>{if(region&&l.region!==region)return false;if(cond&&l.condition!==cond)return false;if(q&&!matchesSearch([l.ref,l.dial,l.seller,l.group,l.model].join(' '),searchTerms(q)))return false;return true;});
     if(sort==='price-desc')f.sort((a,b)=>b.price-a.price);else if(sort==='ref')f.sort((a,b)=>a.ref.localeCompare(b.ref));else f.sort((a,b)=>a.price-b.price);
     return f;
+}
+function renderBrowse() {
+    _browseFiltered = getFilteredBrowse();
+    _initBrowseVirtualScroll();
+    _renderBrowseVirtual();
 }
 function toggleSource(el) {
     const srcRow = el.closest('tr').nextElementSibling;
@@ -8235,31 +8306,15 @@ function toggleSource(el) {
         el.textContent = srcRow.style.display === 'none' ? 'src' : 'hide';
     }
 }
-function filterBrowse(){browseOffset=0;renderBrowse();}
-function loadMoreBrowse(){renderBrowse(true);}
-// Infinite scroll for browse table
-(function(){
-    let _browseObserver;
-    const _setupBrowseInfiniteScroll = () => {
-        const btn = document.getElementById('browse-more');
-        if (!btn || _browseObserver) return;
-        _browseObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting && btn.style.display !== 'none') {
-                    loadMoreBrowse();
-                }
-            });
-        }, {rootMargin: '200px'});
-        _browseObserver.observe(btn);
-    };
-    // Setup when browse page becomes visible
-    const _origShowPage = window.showPage;
-    if (_origShowPage) {
-        // Defer setup to after browse tab is shown
-        document.addEventListener('click', () => setTimeout(_setupBrowseInfiniteScroll, 500));
-    }
-    setTimeout(_setupBrowseInfiniteScroll, 2000);
-})();
+function filterBrowse() {
+    const vscroll = document.getElementById('browse-vscroll');
+    if (vscroll) vscroll.scrollTop = 0;
+    _browseFiltered = getFilteredBrowse();
+    _initBrowseVirtualScroll();
+    _renderBrowseVirtual();
+}
+function loadMoreBrowse() { /* replaced by virtual scroll */ }
+// Browse table uses virtual scroll — IntersectionObserver no longer needed for Load More
 
 // ── KEYBOARD ──
 document.addEventListener('keydown',e=>{
@@ -9345,9 +9400,28 @@ if (_userRole.allowedPages) {
     // Full access — load everything now
     loadData();
     setTimeout(renderTicker, 3000);
-    loadNews();
-    fxLoadRates();
-    fxCalc();
+    // Defer non-critical fetches until after initial render
+    setTimeout(function() {
+        fxLoadRates();
+        fxCalc();
+        // Load news only when the news card scrolls into view
+        const _newsEl = document.getElementById('news-feed');
+        const _actEl = document.getElementById('activity-feed');
+        if ('IntersectionObserver' in window && (_newsEl || _actEl)) {
+            const _deferObs = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (!entry.isIntersecting) return;
+                    const id = entry.target.id;
+                    if (id === 'news-feed' && typeof loadNews === 'function') { loadNews(); }
+                    _deferObs.unobserve(entry.target);
+                });
+            }, { rootMargin: '200px' });
+            if (_newsEl) _deferObs.observe(_newsEl);
+        } else {
+            // Fallback: load after a delay
+            setTimeout(loadNews, 1000);
+        }
+    }, 600);
 }
 // These only run for full-access users
 if (!_userRole.allowedPages) {
@@ -9473,8 +9547,8 @@ function updateDevotion(){
   if(ref)ref.textContent=v.r;
   if(ts){const h=hour%12||12;const ap=hour>=12?'PM':'AM';ts.textContent=h+':00 '+ap;}
 }
-updateDevotion();
-setInterval(updateDevotion,60000);
+// Defer devotion update to after initial render (local data, fast but non-critical)
+setTimeout(function(){ updateDevotion(); setInterval(updateDevotion, 60000); }, 400);
 
 // ── INVENTORY MANAGEMENT ──
 var invMgmtData = [];
@@ -14296,7 +14370,7 @@ async function loadPayments() {
             const photoGrid = b.watches.map(w => {
                 const photoUrl = w.photo_url || '';
                 return photoUrl 
-                    ? `<img src="${photoUrl}" style="width:100px;height:100px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;" onclick="window.open('${photoUrl}','_blank')">`
+                    ? `<img src="${photoUrl}" loading="lazy" style="width:100px;height:100px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;" onclick="window.open('${photoUrl}','_blank')">`
                     : `<div style="width:100px;height:100px;background:var(--bg-1);border-radius:6px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:var(--text-2);">No photo</div>`;
             }).join('');
 
@@ -14425,7 +14499,7 @@ async function loadPayments() {
             const price = p.price ? '$' + Number(p.price).toLocaleString() : '—';
             const mid = p.message_id || '';
             const photoHtml = p.photo
-                ? `<img src="/api/posting-photo/${p.photo}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">`
+                ? `<img src="/api/posting-photo/${p.photo}" loading="lazy" style="width:50px;height:50px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">`
                 : '<span style="color:var(--text-2);font-size:0.65rem;">No photo</span>';
             const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\').replace(/\n/g,' ').replace(/\r/g,'');
             const safePhoto = (p.photo || '').replace(/'/g,'&apos;');
@@ -14481,7 +14555,7 @@ async function loadPayments() {
                 const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\').replace(/\n/g,' ').replace(/\r/g,'');
                 const safePhoto = (p.photo || '').replace(/'/g,'&apos;');
                 const imgTag = p.photo
-                    ? `<img src="/api/posting-photo/${p.photo}" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">`
+                    ? `<img src="/api/posting-photo/${p.photo}" loading="lazy" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">`
                     : '';
                 const isDraft = p.status === 'draft';
                 const statusBadge = isDraft ? '<span style="background:var(--yellow,#ffd600);color:#000;font-size:0.6rem;padding:1px 6px;border-radius:4px;font-weight:600;">DRAFT</span> ' : '';
@@ -15918,7 +15992,7 @@ async function loadPayments() {
             const price = p.price ? '$' + Number(p.price).toLocaleString() : '—';
             const mid = p.message_id || '';
             const photoHtml = p.photo
-                ? `<img src="/api/posting-photo/${p.photo}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">`
+                ? `<img src="/api/posting-photo/${p.photo}" loading="lazy" style="width:50px;height:50px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">`
                 : '<span style="color:var(--text-2);font-size:0.65rem;">No photo</span>';
             const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\').replace(/\n/g,' ').replace(/\r/g,'');
             const safePhoto = (p.photo || '').replace(/'/g,'&apos;');
@@ -15977,7 +16051,7 @@ async function loadPayments() {
                 const priceRaw = p.price || '';
                 const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\').replace(/\n/g,' ').replace(/\r/g,'');
                 const safePhoto = (p.photo || '').replace(/'/g,'&apos;');
-                const imgTag = p.photo ? `<img src="/api/posting-photo/${p.photo}" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">` : '';
+                const imgTag = p.photo ? `<img src="/api/posting-photo/${p.photo}" loading="lazy" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">` : '';
                 const isDraft = p.status === 'draft';
                 const statusBadge = isDraft ? '<span style="background:var(--yellow,#ffd600);color:#000;font-size:0.6rem;padding:1px 6px;border-radius:4px;font-weight:600;">DRAFT</span> ' : '';
                 const perf = _postingPerformanceData[String(mid)] || {};
