@@ -1754,12 +1754,144 @@
         <div style="position:absolute;inset:0;background:linear-gradient(90deg,transparent,var(--accent,#d4af37),transparent);animation:splashLoad 1.2s ease-in-out infinite;"></div>
     </div>
     <div style="margin-top:16px;font-family:'Inter',sans-serif;font-size:0.7rem;color:var(--text-2,#5c5b57);letter-spacing:2px;text-transform:uppercase;">Market Intelligence</div>
+    <div id="splash-build-stamp" style="margin-top:28px;font-family:monospace;font-size:0.55rem;color:#4a4a52;letter-spacing:1px;"></div>
 </div>
 <style>@keyframes splashLoad{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
 #splash-screen.hide{opacity:0!important;visibility:hidden!important;pointer-events:none!important;}
+/* Always-visible build badge — tiny, bottom-left, doesn't interfere
+   with anything. Exists so the user can screenshot and tell us which
+   deployed build their phone is actually running. Without this, iOS
+   PWA cache bugs are invisible: two devices on the same URL can be
+   days apart and you can't tell. */
+#mk-build-badge {
+    position: fixed; left: 6px; bottom: 6px; z-index: 190;
+    font-family: monospace; font-size: 0.52rem;
+    color: rgba(180,180,200,0.35); background: rgba(0,0,0,0.2);
+    padding: 2px 5px; border-radius: 3px;
+    pointer-events: none; user-select: none;
+    letter-spacing: 0.3px;
+}
+@media (max-width: 768px) {
+    /* On mobile the FAB is bottom-right; badge stays bottom-left so
+       they don't overlap. */
+    #mk-build-badge { font-size: 0.5rem; }
+}
+/* Debug overlay — opt-in via ?debug=1 in the URL. Shows live load
+   state so the user can screenshot it when the page looks broken.
+   Safe in prod: invisible unless the query param is set. */
+#mk-debug-overlay {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 99998;
+    background: rgba(0,0,0,0.92); color: #0f0;
+    font-family: monospace; font-size: 0.62rem;
+    padding: 8px 10px; border-bottom: 1px solid #080;
+    max-height: 40vh; overflow-y: auto; line-height: 1.4;
+}
+#mk-debug-overlay .dbg-err { color: #f66; }
+#mk-debug-overlay .dbg-ok { color: #6f6; }
+#mk-debug-overlay .dbg-warn { color: #fc3; }
+#mk-debug-overlay .dbg-close {
+    position: absolute; top: 4px; right: 8px; color: #aaa;
+    cursor: pointer; font-size: 0.8rem;
+}
 </style>
 <script>
-window.__V = '20260410-1740';
+// Build stamp — update this manually per deploy. The comment above
+// the badge CSS explains why it exists. If the user screenshots a
+// broken state and this stamp is an old value, we know the real
+// problem is an iOS PWA cache that hasn't refreshed, not a code bug.
+window.__V = '20260412-0333';
+window.__BUILD = { commit: '76e50c8', deployedAt: '2026-04-12T03:33Z', version: window.__V };
+
+// Always-visible build badge (bottom-left). Small and dim so it
+// doesn't interfere with the dashboard UI.
+(function(){
+    var el = document.createElement('div');
+    el.id = 'mk-build-badge';
+    el.textContent = 'build ' + window.__BUILD.commit + ' · ' + window.__BUILD.version;
+    // Wait for body to exist (script runs in head, body isn't there yet).
+    if (document.body) document.body.appendChild(el);
+    else document.addEventListener('DOMContentLoaded', function(){ document.body.appendChild(el); });
+    // Also show in the splash so it's visible during the first paint.
+    var splashStamp = document.getElementById('splash-build-stamp');
+    if (splashStamp) splashStamp.textContent = 'build ' + window.__BUILD.commit + ' · ' + window.__BUILD.version;
+})();
+
+// ── Debug overlay (?debug=1) ──
+// Shows runtime state — DATA.refs count, last loadData status, any
+// fetch failures — so a broken screenshot can be diagnosed without
+// needing console access. Every fetch() is wrapped to log to the
+// overlay so we see exactly which request failed.
+(function(){
+    var params;
+    try { params = new URLSearchParams(window.location.search); } catch(_) { return; }
+    if (params.get('debug') !== '1') return;
+
+    window.__MK_DEBUG = { events: [], maxEvents: 40 };
+
+    function emit(level, msg) {
+        window.__MK_DEBUG.events.push({ t: Date.now(), level: level, msg: String(msg).slice(0, 300) });
+        if (window.__MK_DEBUG.events.length > window.__MK_DEBUG.maxEvents) {
+            window.__MK_DEBUG.events.shift();
+        }
+        renderOverlay();
+    }
+    window.__mkDebug = emit;
+
+    function renderOverlay() {
+        var el = document.getElementById('mk-debug-overlay');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'mk-debug-overlay';
+            var onReady = function(){
+                if (document.body) document.body.appendChild(el);
+                else setTimeout(onReady, 50);
+            };
+            onReady();
+        }
+        var b = window.__BUILD || {};
+        var D = window.DATA || {};
+        var refsCount = (D.refs && typeof D.refs === 'object') ? Object.keys(D.refs).length : 0;
+        var topRefsCount = Array.isArray(D.topRefs) ? D.topRefs.length : 0;
+        var dealsCount = Array.isArray(D.deals) ? D.deals.length : 0;
+        var rows = [
+            '<span class="dbg-close" onclick="this.parentNode.remove()">×</span>',
+            '<b>MK DEBUG</b> build=' + (b.commit || '?') + ' ver=' + (b.version || '?'),
+            'URL=' + (location.pathname + location.search).slice(0, 80),
+            'DATA.refs=' + refsCount + ' topRefs=' + topRefsCount + ' deals=' + dealsCount,
+            'UA=' + (navigator.userAgent || '').slice(0, 80),
+            '──────',
+        ];
+        window.__MK_DEBUG.events.slice(-20).forEach(function(e){
+            var cls = e.level === 'err' ? 'dbg-err' : (e.level === 'ok' ? 'dbg-ok' : (e.level === 'warn' ? 'dbg-warn' : ''));
+            var ts = new Date(e.t).toISOString().slice(11, 19);
+            rows.push('<span class="' + cls + '">[' + ts + '] ' + e.msg.replace(/[<>]/g, '') + '</span>');
+        });
+        el.innerHTML = rows.join('<br>');
+    }
+
+    // Wrap fetch to log every request + result to the overlay.
+    // Keep the original so anything already wrapped (ws8-mobile-ux
+    // offline cache) still works — it'll just see our wrapper, which
+    // forwards to the real window.fetch.
+    var _origFetch = window.fetch;
+    window.fetch = function(input, init) {
+        var urlStr = typeof input === 'string' ? input : (input && input.url ? input.url : String(input));
+        var shortUrl = urlStr.replace(location.origin, '').slice(0, 60);
+        emit('info', 'FETCH ' + shortUrl);
+        return _origFetch.apply(this, arguments).then(function(resp){
+            emit(resp.ok ? 'ok' : 'err', (resp.ok ? 'OK ' : 'FAIL ') + resp.status + ' ' + shortUrl);
+            return resp;
+        }).catch(function(err){
+            emit('err', 'NET ' + shortUrl + ' — ' + (err && err.message || err));
+            throw err;
+        });
+    };
+
+    emit('info', 'debug overlay active');
+    // Re-render every second so DATA counts update as loadData runs.
+    setInterval(renderOverlay, 1000);
+})();
+
 // Failsafe: force-dismiss splash after 6s even if JS hasn't loaded yet
 setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.classList.add('hide');setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s);},500);}},6000);
 </script>
