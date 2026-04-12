@@ -4430,13 +4430,24 @@ async function loadData() {
         const [dealsR, arbR, topR, syncR] = await Promise.all([fetch('/api/deals'), fetch('/api/arbitrage'), fetch('/api/top_refs'), fetch('/api/sync_info')]);
         // If any response is 401, redirect to login
         if (dealsR.status === 401) { window.location.href = '/login'; return; }
-        DATA.deals = await dealsR.json();
+        // Every endpoint is wrapped in its own ok/parse guard so a single
+        // 404 (or an HTML error page where JSON was expected) can't take
+        // down the whole loader. Before this guard, if /api/top_refs or
+        // /api/sync_info returned HTML, the json() call threw a
+        // SyntaxError and the entire catch block ran — leaving DATA.refs
+        // undefined and the Price Intelligence page with nothing to
+        // render.
+        const safeJson = async (resp, fallback) => {
+            if (!resp || !resp.ok) return fallback;
+            try { return await resp.json(); } catch(_) { return fallback; }
+        };
+        DATA.deals = await safeJson(dealsR, []);
         if (!Array.isArray(DATA.deals)) { DATA.deals = []; }
-        DATA.arbitrage = arbR.ok ? await arbR.json() : [];
+        DATA.arbitrage = await safeJson(arbR, []);
         if (!Array.isArray(DATA.arbitrage)) DATA.arbitrage = [];
-        DATA.topRefs = topR.ok ? await topR.json() : [];
+        DATA.topRefs = await safeJson(topR, []);
         if (!Array.isArray(DATA.topRefs)) DATA.topRefs = [];
-        try { DATA.syncInfo = await syncR.json(); } catch(e) {}
+        DATA.syncInfo = await safeJson(syncR, null);
         try { const br = await fetch('/data/bundle.json'); if (br.ok) { const b = await br.json(); if (b.refs) DATA.refs=b.refs; if (b.sellers) DATA.sellers=b.sellers; if (b.summary) DATA.summary=b.summary; } } catch(e) {}
         renderAll();
         checkStale();
@@ -6772,7 +6783,29 @@ async function doLookup() {
                 return;
             }
         } catch(_) { /* fallback itself failed — show the original error */ }
-        c.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-2);">${e.message||'No data for "'+q+'"'}</div>`;
+        // Styled error card with Retry. Previously we dropped
+        // e.message straight into the DOM, which surfaced browser-
+        // specific junk ("Load failed", "Unexpected token '<'", etc.)
+        // as opaque user-facing text with no way to recover short of
+        // reloading the whole page. The new card shows a human
+        // message, keeps the raw error in a dim footer for debug,
+        // and wires a Retry button that re-invokes doLookup().
+        const _rawMsg = (e && e.message ? String(e.message) : '').replace(/[<>]/g, '').slice(0, 200);
+        const _qEsc = (q || '').replace(/[<>"']/g, '').slice(0, 80);
+        c.innerHTML = `
+            <div class="card" style="margin-top:12px;padding:20px;text-align:center;">
+                <div style="font-size:0.82rem;color:var(--text-1);font-weight:600;margin-bottom:6px;">
+                    Couldn't load prices for "${_qEsc}"
+                </div>
+                <div style="font-size:0.68rem;color:var(--text-3);margin-bottom:14px;">
+                    The price parser isn't reachable and no cached data was found for this reference.
+                </div>
+                <button class="btn" onclick="doLookup()"
+                        style="background:var(--accent);color:var(--bg-1);font-weight:700;padding:10px 22px;min-height:44px;">
+                    Retry
+                </button>
+                ${_rawMsg ? `<div style="margin-top:12px;font-size:0.58rem;color:var(--text-3);font-family:var(--mono);opacity:0.6;">${_rawMsg}</div>` : ''}
+            </div>`;
     }
 }
 
@@ -8203,6 +8236,35 @@ let _lookupInitialized = false;
 async function initLookupPage() {
     const resultDiv = document.getElementById('lookup-result');
     if (!resultDiv) return;
+
+    // Empty-state guard: if loadData() never completed (offline, CDN
+    // 404, bundle.json broken), DATA.refs / DATA.topRefs are both
+    // empty and this page would otherwise render popular-ref cards
+    // stuck on "Loading..." with no action for the user. That's the
+    // "Failed to load" ghost state the Price Intelligence page was
+    // hitting — technically not an error, but functionally broken.
+    // Render an explicit retry card instead so the user can recover
+    // in one tap.
+    const haveRefs = DATA && DATA.refs && Object.keys(DATA.refs).length > 0;
+    const haveTopRefs = DATA && Array.isArray(DATA.topRefs) && DATA.topRefs.length > 0;
+    if (!haveRefs && !haveTopRefs) {
+        resultDiv.innerHTML = `
+            <div class="card" style="margin-top:16px;padding:24px;text-align:center;">
+                <div style="font-size:0.78rem;color:var(--text-2);margin-bottom:6px;font-weight:600;">Price data hasn't loaded yet</div>
+                <div style="font-size:0.68rem;color:var(--text-3);margin-bottom:14px;">
+                    Check your connection, then tap Retry.
+                </div>
+                <button class="btn" id="lookup-retry-btn"
+                        onclick="(async()=>{const b=this;b.disabled=true;b.textContent='Loading...';try{await loadData();}finally{b.disabled=false;b.textContent='Retry';_lookupInitialized=false;initLookupPage();}})()"
+                        style="background:var(--accent);color:var(--bg-1);font-weight:700;padding:10px 22px;min-height:44px;">
+                    Retry
+                </button>
+            </div>`;
+        const sumDiv = document.getElementById('lookup-market-summary');
+        if (sumDiv) sumDiv.innerHTML = '';
+        _lookupInitialized = true;
+        return;
+    }
 
     const popularRefs = [
         {ref:'126500LN', model:'Daytona Steel', family:'Cosmograph'},
