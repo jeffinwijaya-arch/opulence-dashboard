@@ -86,7 +86,7 @@
             #${FAB_ID} {
                 display: none;
                 position: fixed;
-                bottom: 90px;
+                bottom: calc(90px + env(safe-area-inset-bottom, 0px));
                 right: 16px;
                 width: 56px;
                 height: 56px;
@@ -188,7 +188,7 @@
                 color: var(--text-2, #aaa);
                 font-size: 0.72rem;
                 text-align: center;
-                padding: 6px 16px;
+                padding: max(6px, env(safe-area-inset-top, 6px)) 16px 6px;
                 backdrop-filter: blur(8px);
                 -webkit-backdrop-filter: blur(8px);
                 border-bottom: 1px solid var(--border, #333);

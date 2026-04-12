@@ -34,7 +34,7 @@ All high tasks completed 2026-04-10.
 - [x] Monthly P&L summary — last 12 months table + bar chart on Portfolio page (2026-04-10)
 
 ### General
-- [ ] Test all 10 modules on mobile Safari — fix any layout/interaction bugs
+- [x] Test all 10 modules on mobile Safari — fix any layout/interaction bugs (ws1: @media 768px/390px CSS for score badges, confidence badges, market depth widget; ws8: safe-area-inset-bottom FAB, safe-area-inset-top offline banner) (2026-04-12)
 - [ ] Performance audit — measure module load time, optimize if >500ms
 - [x] Add module error boundary — error boundaries already in module-loader.js: try/catch in _initOne() + renderAll(), failed-module Map, auto-retry after 5s, admin footer indicator (2026-04-11)
 

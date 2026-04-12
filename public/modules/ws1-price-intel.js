@@ -61,7 +61,21 @@
             '  font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:1px;',
             '  color:var(--text-2); margin:10px 0 4px; font-family:var(--mono);',
             '}',
-            '.ws1-depth-section-title:first-child { margin-top:0; }'
+            '.ws1-depth-section-title:first-child { margin-top:0; }',
+            '@media (max-width:768px) {',
+            '  .ws1-score-badge { font-size:0.65rem; padding:2px 6px; min-width:28px; }',
+            '  .ws1-confidence-badge { margin-left:4px; font-size:0.65rem; padding:3px 7px; }',
+            '  .ws1-depth-ref { font-size:0.75rem; }',
+            '  .ws1-depth-model { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px; margin-left:0; margin-top:1px; }',
+            '  .ws1-depth-count { font-size:0.7rem; min-width:28px; }',
+            '  .ws1-depth-section-title { font-size:0.55rem; letter-spacing:0.5px; }',
+            '  #ws1-market-depth { overflow-x:hidden; }',
+            '}',
+            '@media (max-width:390px) {',
+            '  .ws1-confidence-badge { display:block; margin-left:0; margin-top:4px; font-size:0.6rem; }',
+            '  .ws1-depth-model { max-width:110px; font-size:0.65rem; }',
+            '  .ws1-trend { font-size:0.6rem; }',
+            '}'
         ].join('\n');
         document.head.appendChild(style);
     }
