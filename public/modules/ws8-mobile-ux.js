@@ -316,6 +316,31 @@
                     font-size: 0.72rem !important;
                 }
             }
+            /* ── Fix 9: Ticker ↔ page-title gap on mobile (clear separation) ── */
+            @media (max-width: 768px) {
+                .ticker-bar { margin-bottom: 8px !important; }
+            }
+
+            /* ── Fix 5: Filter-bar column stacking — deals / inventory / postings
+               (browse/shipping/payments/crm already handled in index.html;
+                these three pages were missing from that rule) ── */
+            @media (max-width: 768px) {
+                #page-deals > div[style*="display:flex"],
+                #page-inventory > div[style*="display:flex"],
+                #page-postings > div[style*="display:flex"] {
+                    flex-direction: column !important;
+                    gap: 8px !important;
+                }
+                #page-deals > div[style*="display:flex"] > input,
+                #page-deals > div[style*="display:flex"] > select,
+                #page-inventory > div[style*="display:flex"] > input,
+                #page-inventory > div[style*="display:flex"] > select,
+                #page-postings > div[style*="display:flex"] > input,
+                #page-postings > div[style*="display:flex"] > select {
+                    width: 100% !important;
+                    min-height: 44px !important;
+                }
+            }
         `;
         document.head.appendChild(_styleEl);
     }
