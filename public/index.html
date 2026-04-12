@@ -5977,6 +5977,27 @@ function _hitTestRedactRect(rects, x, y) {
     return -1;
 }
 
+function _hitTestResizeHandle(r, x, y) {
+    // Returns which corner handle is hit: 'tl','tr','bl','br' or null
+    if (!r) return null;
+    const hs = 8; // hit zone (slightly larger than visual handle)
+    const corners = {tl:[r.x,r.y], tr:[r.x+r.w,r.y], bl:[r.x,r.y+r.h], br:[r.x+r.w,r.y+r.h]};
+    for (const [key,[cx,cy]] of Object.entries(corners)) {
+        if (Math.abs(x - cx) <= hs && Math.abs(y - cy) <= hs) return key;
+    }
+    return null;
+}
+
+function _applyResize(r, handle, dx, dy) {
+    // Resize rect from a corner handle
+    if (handle === 'br') { r.w = Math.max(10, r.w + dx); r.h = Math.max(10, r.h + dy); }
+    else if (handle === 'bl') { const nw = Math.max(10, r.w - dx); r.x += r.w - nw; r.w = nw; r.h = Math.max(10, r.h + dy); }
+    else if (handle === 'tr') { r.w = Math.max(10, r.w + dx); const nh = Math.max(10, r.h - dy); r.y += r.h - nh; r.h = nh; }
+    else if (handle === 'tl') { const nw = Math.max(10, r.w - dx); r.x += r.w - nw; r.w = nw; const nh = Math.max(10, r.h - dy); r.y += r.h - nh; r.h = nh; }
+}
+
+var _resizeHandle = null, _resizeLastX = 0, _resizeLastY = 0;
+
 function _renderPostingRedactPeek() {
     // Render canvas without redaction rects — "peek at original"
     const canvas = document.getElementById('posting-redact-canvas');
@@ -6112,6 +6133,18 @@ function _drawRedactRects(ctx, rects, opts) {
             ctx.strokeStyle = 'rgba(239,68,68,0.6)';
             ctx.lineWidth = 1.5;
             ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+        }
+        // Resize handles on selected rect (4 corners)
+        if (isSelected) {
+            const hs = 5; // handle half-size
+            ctx.fillStyle = 'rgba(59,130,246,0.95)';
+            const corners = [
+                [r.x, r.y], [r.x + r.w, r.y],
+                [r.x, r.y + r.h], [r.x + r.w, r.y + r.h]
+            ];
+            for (const [cx, cy] of corners) {
+                ctx.fillRect(cx - hs, cy - hs, hs * 2, hs * 2);
+            }
         }
         // Number label (top-left corner)
         if (showNumbers && rects.length > 1) {
@@ -13190,16 +13223,20 @@ async function loadPayments() {
         updateToolButtons();
     }
 
-    // Update cursor to 'move' when hovering over selected rect
+    // Update cursor based on hover context: resize handles > selected rect > default
     function editorUpdateCursor(e) {
-        if (editorTool !== 'redact' || editorSelectedIdx < 0) return;
+        if (editorTool !== 'redact') return;
         const canvas = $('#editor-canvas');
-        const r = editorRedactions[editorSelectedIdx];
-        if (r && e.offsetX >= r.x && e.offsetX <= r.x + r.w && e.offsetY >= r.y && e.offsetY <= r.y + r.h) {
-            canvas.style.cursor = 'move';
-        } else {
-            canvas.style.cursor = 'crosshair';
+        if (editorSelectedIdx >= 0) {
+            const r = editorRedactions[editorSelectedIdx];
+            const handle = _hitTestResizeHandle(r, e.offsetX, e.offsetY);
+            if (handle === 'tl' || handle === 'br') { canvas.style.cursor = 'nwse-resize'; return; }
+            if (handle === 'tr' || handle === 'bl') { canvas.style.cursor = 'nesw-resize'; return; }
+            if (r && e.offsetX >= r.x && e.offsetX <= r.x + r.w && e.offsetY >= r.y && e.offsetY <= r.y + r.h) {
+                canvas.style.cursor = 'move'; return;
+            }
         }
+        canvas.style.cursor = 'crosshair';
     }
     
     function updateToolButtons() {
@@ -13264,6 +13301,14 @@ async function loadPayments() {
     
     function editorMouseDown(e) {
         if (editorTool !== 'redact') return;
+        // Check resize handles first
+        if (editorSelectedIdx >= 0) {
+            const handle = _hitTestResizeHandle(editorRedactions[editorSelectedIdx], e.offsetX, e.offsetY);
+            if (handle) {
+                _resizeHandle = handle; _resizeLastX = e.offsetX; _resizeLastY = e.offsetY;
+                return;
+            }
+        }
         const clickedIdx = _hitTestRedactRect(editorRedactions, e.offsetX, e.offsetY);
         // If clicking the already-selected rect, start drag-to-move
         if (clickedIdx >= 0 && clickedIdx === editorSelectedIdx) {
@@ -13295,6 +13340,13 @@ async function loadPayments() {
     function editorMouseMove(e) {
         editorUpdateCursor(e);
         if (editorPeeking) return;
+        // Resize handle drag
+        if (_resizeHandle && editorSelectedIdx >= 0) {
+            const dx = e.offsetX - _resizeLastX, dy = e.offsetY - _resizeLastY;
+            _applyResize(editorRedactions[editorSelectedIdx], _resizeHandle, dx, dy);
+            _resizeLastX = e.offsetX; _resizeLastY = e.offsetY;
+            renderEditor(); return;
+        }
         // Drag-to-move selected rect
         if (editorDragging && editorSelectedIdx >= 0) {
             const r = editorRedactions[editorSelectedIdx];
@@ -13314,6 +13366,7 @@ async function loadPayments() {
     }
     
     function editorMouseUp(e) {
+        if (_resizeHandle) { _resizeHandle = null; return; }
         if (editorDragging) { editorDragging = false; return; }
         if (editorPeekTimer) { clearTimeout(editorPeekTimer); editorPeekTimer = null; }
         if (editorPeeking) { editorPeeking = false; renderEditor(); return; }
