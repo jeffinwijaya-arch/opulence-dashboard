@@ -3361,6 +3361,14 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                     <!-- Canvas area (takes most space) -->
                     <div id="editor-canvas-wrapper" style="flex:1;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;min-height:0;touch-action:none;">
                         <canvas id="editor-canvas" style="cursor:default;border:2px solid rgba(255,255,255,0.08);border-radius:6px;transition:border-color 0.2s,box-shadow 0.2s;transform-origin:0 0;position:absolute;"></canvas>
+                        <!-- Before/After comparison divider -->
+                        <div id="editor-compare-divider" style="display:none;position:absolute;top:0;height:100%;width:2px;background:white;cursor:ew-resize;z-index:10;pointer-events:auto;box-shadow:0 0 6px rgba(0,0,0,0.6);">
+                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:24px;height:24px;background:white;border-radius:50%;box-shadow:0 0 6px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;">
+                                <span style="color:#333;font-size:10px;font-weight:bold;user-select:none;">&#x21D4;</span>
+                            </div>
+                        </div>
+                        <div id="editor-compare-label-before" style="display:none;position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.5);color:rgba(255,255,255,0.7);padding:2px 8px;border-radius:3px;font-size:0.55rem;pointer-events:none;z-index:11;user-select:none;">Before</div>
+                        <div id="editor-compare-label-after" style="display:none;position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.5);color:rgba(255,255,255,0.7);padding:2px 8px;border-radius:3px;font-size:0.55rem;pointer-events:none;z-index:11;user-select:none;">After</div>
                         <div id="redact-hint" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:var(--text-1);padding:6px 14px;border-radius:6px;font-size:0.68rem;pointer-events:none;display:none;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:opacity 0.3s;">
                             Draw rectangles to redact &middot; <span style="color:var(--text-2);">Ctrl+Z to undo</span>
                         </div>
@@ -13285,6 +13293,7 @@ async function loadPayments() {
         editorTool = 'view';
         editorZoom = 1; editorPanX = 0; editorPanY = 0;
         editorIsPinching = false; editorPinchDist = 0; editorPanStart = null;
+        editorComparePos = 0.5;
         const _hlog = document.getElementById('editor-history-log');
         if (_hlog) _hlog.innerHTML = '';
 
@@ -13480,32 +13489,155 @@ async function loadPayments() {
         const ctx = canvas.getContext('2d');
         if (!editorImage) return;
 
-        // Draw image
-        ctx.drawImage(editorImage, 0, 0, canvas.width, canvas.height);
+        const showCompare = editorRedactions.length > 0 && editorTool === 'view' && !editorPeeking;
 
-        // Draw redaction rectangles with crosshatch + numbers + selection
-        if (!editorPeeking) {
-            _drawRedactRects(ctx, editorRedactions, { showNumbers: true, selectedIdx: editorSelectedIdx });
-        } else {
-            // Peek mode: show "ORIGINAL" label + dashed outlines
-            ctx.fillStyle = 'rgba(0,0,0,0.5)';
-            ctx.fillRect(canvas.width/2 - 30, 6, 60, 20);
-            ctx.font = '600 11px Inter,system-ui,sans-serif';
-            ctx.fillStyle = 'rgba(255,255,255,0.8)';
-            ctx.textAlign = 'center';
-            ctx.fillText('ORIGINAL', canvas.width/2, 20);
-            ctx.textAlign = 'start';
-            ctx.setLineDash([4, 4]);
-            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        if (showCompare) {
+            // Before/After comparison split view
+            const splitX = Math.round(canvas.width * editorComparePos);
+
+            // Left side: "Before" — original image only
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(0, 0, splitX, canvas.height);
+            ctx.clip();
+            ctx.drawImage(editorImage, 0, 0, canvas.width, canvas.height);
+            ctx.restore();
+
+            // Right side: "After" — image with redactions
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(splitX, 0, canvas.width - splitX, canvas.height);
+            ctx.clip();
+            ctx.drawImage(editorImage, 0, 0, canvas.width, canvas.height);
+            _drawRedactRects(ctx, editorRedactions, { showNumbers: false, selectedIdx: -1 });
+            ctx.restore();
+
+            // Draw divider line on canvas
+            ctx.strokeStyle = 'rgba(255,255,255,0.4)';
             ctx.lineWidth = 1;
-            for (const r of editorRedactions) ctx.strokeRect(r.x, r.y, r.w, r.h);
-            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.moveTo(splitX, 0);
+            ctx.lineTo(splitX, canvas.height);
+            ctx.stroke();
+        } else {
+            // Draw image
+            ctx.drawImage(editorImage, 0, 0, canvas.width, canvas.height);
+
+            // Draw redaction rectangles with crosshatch + numbers + selection
+            if (!editorPeeking) {
+                _drawRedactRects(ctx, editorRedactions, { showNumbers: true, selectedIdx: editorSelectedIdx });
+            } else {
+                // Peek mode: show "ORIGINAL" label + dashed outlines
+                ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                ctx.fillRect(canvas.width/2 - 30, 6, 60, 20);
+                ctx.font = '600 11px Inter,system-ui,sans-serif';
+                ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                ctx.textAlign = 'center';
+                ctx.fillText('ORIGINAL', canvas.width/2, 20);
+                ctx.textAlign = 'start';
+                ctx.setLineDash([4, 4]);
+                ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                ctx.lineWidth = 1;
+                for (const r of editorRedactions) ctx.strokeRect(r.x, r.y, r.w, r.h);
+                ctx.setLineDash([]);
+            }
         }
 
         // Coverage overlay as final pass
         if (editorShowCoverage) {
             renderCoverageOverlay();
         }
+
+        updateCompareDivider();
+    }
+
+    function updateCompareDivider() {
+        const divider = $('#editor-compare-divider');
+        const labelBefore = $('#editor-compare-label-before');
+        const labelAfter = $('#editor-compare-label-after');
+        if (!divider) return;
+
+        const showCompare = editorRedactions.length > 0 && editorTool === 'view' && !editorPeeking;
+
+        if (!showCompare) {
+            divider.style.display = 'none';
+            labelBefore.style.display = 'none';
+            labelAfter.style.display = 'none';
+            return;
+        }
+
+        const canvas = $('#editor-canvas');
+        const container = canvas.parentElement;
+        const canvasRect = canvas.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+
+        // Position divider relative to container
+        const canvasLeft = canvasRect.left - containerRect.left;
+        const canvasTop = canvasRect.top - containerRect.top;
+        const canvasW = canvasRect.width;
+        const canvasH = canvasRect.height;
+        const posX = canvasLeft + canvasW * editorComparePos;
+
+        divider.style.display = 'block';
+        divider.style.left = (posX - 1) + 'px';
+        divider.style.top = canvasTop + 'px';
+        divider.style.height = canvasH + 'px';
+
+        // Labels
+        labelBefore.style.display = 'block';
+        labelBefore.style.left = (canvasLeft + 8) + 'px';
+        labelBefore.style.top = (canvasTop + 8) + 'px';
+
+        labelAfter.style.display = 'block';
+        labelAfter.style.left = '';
+        labelAfter.style.right = '';
+        // Position "After" label near right edge of canvas
+        const afterRight = containerRect.width - (canvasLeft + canvasW) + 8;
+        labelAfter.style.right = afterRight + 'px';
+        labelAfter.style.top = (canvasTop + 8) + 'px';
+    }
+
+    function initCompareDividerDrag() {
+        const divider = $('#editor-compare-divider');
+        if (!divider) return;
+        let dragging = false;
+
+        function onDragStart(e) {
+            if (divider.style.display === 'none') return;
+            dragging = true;
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function onDragMove(e) {
+            if (!dragging) return;
+            e.preventDefault();
+            const canvas = $('#editor-canvas');
+            const canvasRect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let pos = (clientX - canvasRect.left) / canvasRect.width;
+            pos = Math.max(0.02, Math.min(0.98, pos));
+            editorComparePos = pos;
+            renderEditor();
+        }
+
+        function onDragEnd() {
+            dragging = false;
+        }
+
+        divider.addEventListener('mousedown', onDragStart);
+        divider.addEventListener('touchstart', onDragStart, { passive: false });
+        document.addEventListener('mousemove', onDragMove);
+        document.addEventListener('touchmove', onDragMove, { passive: false });
+        document.addEventListener('mouseup', onDragEnd);
+        document.addEventListener('touchend', onDragEnd);
+    }
+
+    // Initialize divider drag once DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCompareDividerDrag);
+    } else {
+        initCompareDividerDrag();
     }
 
     function setEditorTool(tool) {
@@ -13526,6 +13658,7 @@ async function loadPayments() {
         hint.style.display = isRedact ? 'block' : 'none';
         if (!isRedact) { editorSelectedIdx = -1; }
         updateToolButtons();
+        renderEditor();
     }
 
     // Update cursor based on hover context: resize handles > selected rect > default
