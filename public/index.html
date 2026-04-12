@@ -1172,17 +1172,19 @@
         }
         .toast {
             background: var(--bg-3); border: 1px solid var(--border-strong); color: var(--text-0);
-            padding: 12px 20px; border-radius: 12px; font-size: 0.82rem; font-weight: 500;
+            padding: 8px 16px; border-radius: 10px; font-size: 0.75rem; font-weight: 500;
             box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
             backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
             animation: toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-            pointer-events: auto; display: flex; align-items: center; gap: 10px;
-            width: fit-content; max-width: 100%;
+            pointer-events: auto; display: flex; align-items: center; gap: 8px;
+            width: fit-content; max-width: 100%; white-space: nowrap;
         }
         .toast.toast-success { border-color: rgba(0,230,118,0.3); }
         .toast.toast-success::before { content: ''; color: var(--green); font-weight: 700; font-size: 1rem; }
         .toast.toast-error { border-color: rgba(255,23,68,0.3); }
         .toast.toast-error::before { content: 'X'; color: var(--red); font-weight: 700; font-size: 1rem; }
+        .toast.toast-warning { border-color: rgba(255,180,0,0.3); }
+        .toast.toast-warning::before { content: '⚠'; color: #ffb400; font-weight: 700; font-size: 1rem; }
         .toast.toast-info { border-color: var(--accent-border); }
         .toast.toast-info::before { content: 'ℹ'; color: var(--accent); font-weight: 700; }
         .toast.toast-out { animation: toastOut 0.25s ease-in forwards; }
@@ -3333,6 +3335,8 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                         <div style="flex:1;"></div>
                         <!-- Save (green, prominent) -->
                         <button class="btn" onclick="saveRedactedPhoto()" id="btn-editor-save" style="padding:6px 14px;font-size:0.75rem;background:var(--green-dim);color:var(--green);border-color:var(--green);font-weight:600;">Save</button>
+                        <!-- Download -->
+                        <button class="btn" onclick="downloadRedactedPhoto()" title="Download redacted image" style="padding:6px 10px;font-size:0.72rem;background:transparent;color:var(--text-2);border-color:var(--border);">Download</button>
                         <!-- Delete (separated, subdued) -->
                         <button class="btn" onclick="confirmDeletePhoto()" title="Delete photo" style="padding:6px 10px;font-size:0.72rem;background:transparent;color:var(--text-2);border-color:var(--border);">Delete</button>
                     </div>
@@ -5667,6 +5671,7 @@ function openPostingRedactEditor(file, row, desc) {
             </div>
             <div style="flex:1;"></div>
             <button onclick="postingRedactSkip()" style="background:rgba(255,255,255,0.06);color:rgba(255,255,255,.4);font-size:13px;padding:8px 14px;border:1px solid rgba(255,255,255,0.08);border-radius:6px;cursor:pointer;min-height:40px;transition:background 0.15s;">Skip</button>
+            <button onclick="downloadPostingRedacted()" title="Download redacted image" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,.85);font-size:13px;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;min-width:44px;min-height:40px;transition:background 0.15s;">Download</button>
             <button onclick="postingRedactSave()" id="posting-done-btn" style="background:rgba(74,222,128,0.2);color:#4ade80;font-size:14px;padding:8px 20px;border:1px solid rgba(74,222,128,0.3);border-radius:8px;cursor:pointer;font-weight:600;min-height:40px;transition:background 0.15s,opacity 0.15s;">Done</button>
         </div>
         ${isMobile ? '' : '<div id="redact-canvas-wrapper" style="flex:1;overflow:hidden;position:relative;"><canvas id="posting-redact-canvas" style="cursor:crosshair;position:absolute;transform-origin:0 0;"></canvas><div id="posting-redact-hint" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.75);color:rgba(255,255,255,0.8);padding:14px 24px;border-radius:12px;font-size:14px;pointer-events:none;text-align:center;transition:opacity 0.4s;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);line-height:1.6;">Draw rectangles to redact<br><span style="font-size:11px;color:rgba(255,255,255,0.4);">Pinch to zoom &middot; hold to peek &middot; tap rect to select</span></div></div>'}
@@ -6417,6 +6422,41 @@ async function postingRedactSave() {
 
     _cleanupPostingRedact();
     await doUploadPostingFile(redactedFile, _postingRedactRow, _postingRedactDesc);
+}
+
+async function downloadPostingRedacted() {
+    if (!_postingRedactImg) return;
+    const displayCanvas = document.getElementById('posting-redact-canvas');
+    const scale = parseFloat(displayCanvas.dataset.scale) || 1;
+    const fullCanvas = document.createElement('canvas');
+    const natW = _postingRedactImg.naturalWidth;
+    const natH = _postingRedactImg.naturalHeight;
+    const isRot = _redactRotation === 90 || _redactRotation === 270;
+    fullCanvas.width = isRot ? natH : natW;
+    fullCanvas.height = isRot ? natW : natH;
+    const ctx = fullCanvas.getContext('2d');
+    if (_redactRotation === 90) {
+        ctx.translate(natH, 0); ctx.rotate(Math.PI/2);
+    } else if (_redactRotation === 180) {
+        ctx.translate(natW, natH); ctx.rotate(Math.PI);
+    } else if (_redactRotation === 270) {
+        ctx.translate(0, natW); ctx.rotate(-Math.PI/2);
+    }
+    ctx.drawImage(_postingRedactImg, 0, 0);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = 'black';
+    for (const r of _postingRedactRects) {
+        ctx.fillRect(r.x / scale, r.y / scale, r.w / scale, r.h / scale);
+    }
+    const blob = await new Promise(resolve => fullCanvas.toBlob(resolve, 'image/jpeg', 0.92));
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'redacted_photo.jpg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 async function doUploadPostingFile(file, row, desc) {
@@ -13012,6 +13052,8 @@ async function loadPayments() {
     let editorDragOffX = 0, editorDragOffY = 0;
     let editorStartX = 0, editorStartY = 0;
     let editorPeeking = false, editorPeekTimer = null;
+    let editorComparePos = 0.5; // before/after divider position (0-1)
+    let editorCompareDragging = false;
     let watchReference = null; // loaded from /api/watch-reference
 
     async function ensureWatchReference() {
@@ -13734,7 +13776,35 @@ async function loadPayments() {
             if (saveBtn) { saveBtn.textContent = origLabel; saveBtn.disabled = false; saveBtn.style.opacity = '1'; }
         }
     }
-    
+
+    async function downloadRedactedPhoto() {
+        if (!editorImage) return;
+        const fullCanvas = document.createElement('canvas');
+        fullCanvas.width = editorImage.naturalWidth;
+        fullCanvas.height = editorImage.naturalHeight;
+        const ctx = fullCanvas.getContext('2d');
+        ctx.drawImage(editorImage, 0, 0);
+        const displayCanvas = $('#editor-canvas');
+        const scale = parseFloat(displayCanvas.dataset.scale) || 1;
+        ctx.fillStyle = 'black';
+        for (const r of editorRedactions) {
+            ctx.fillRect(r.x / scale, r.y / scale, r.w / scale, r.h / scale);
+        }
+        const blob = await new Promise(resolve => fullCanvas.toBlob(resolve, 'image/jpeg', 0.92));
+        const watch = photoLibraryData.find(w => w.watch_id === editorWatchId);
+        const model = (watch && watch.model ? watch.model : 'watch').replace(/[^a-zA-Z0-9]+/g, '_').toLowerCase();
+        const dial = (watch && watch.dial ? watch.dial : '').replace(/[^a-zA-Z0-9]+/g, '_').toLowerCase();
+        const filename = (model + (dial ? '_' + dial : '') + '_redacted.jpg');
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
     function confirmDeletePhoto() {
         const watch = photoLibraryData.find(w => w.watch_id === editorWatchId);
         if (!watch) return;
