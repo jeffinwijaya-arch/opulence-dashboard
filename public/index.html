@@ -681,56 +681,66 @@
             /* Hide footer on mobile */
             .footer { display:none; }
 
-            /* Photo editor toolbar — clean, pill-style buttons */
+            /* Photo editor toolbar — clean, uniform pill buttons */
             #editor-toolbar {
-                gap:6px !important; flex-wrap:nowrap !important;
-                overflow-x:auto !important; -webkit-overflow-scrolling:touch;
-                padding:8px 0 !important; scrollbar-width:none;
+                display:flex; gap:8px; flex-wrap:nowrap;
+                overflow-x:auto; -webkit-overflow-scrolling:touch;
+                padding:10px 0; scrollbar-width:none;
+                margin-bottom:8px; align-items:center;
             }
             #editor-toolbar::-webkit-scrollbar { display:none; }
             #editor-toolbar .btn {
-                background:rgba(255,255,255,0.08) !important;
-                border:1px solid rgba(255,255,255,0.12) !important;
-                color:var(--text-1) !important;
-                border-radius:10px !important;
-                padding:10px 16px !important;
-                font-size:0.75rem !important;
-                font-weight:600 !important;
-                min-height:40px !important;
+                background:rgba(255,255,255,0.08);
+                border:1px solid rgba(255,255,255,0.1);
+                color:var(--text-1);
+                border-radius:10px;
+                padding:10px 16px;
+                font-size:0.78rem;
+                font-weight:600;
+                min-height:42px;
                 white-space:nowrap;
                 flex-shrink:0;
                 -webkit-tap-highlight-color:transparent;
+                transition:transform 80ms ease;
             }
             #editor-toolbar .btn:active {
-                transform:scale(0.94); background:rgba(255,255,255,0.14) !important;
+                transform:scale(0.93);
+                background:rgba(255,255,255,0.14);
             }
-            /* Redact button — subtle red */
             #btn-redact {
-                background:rgba(255,23,68,0.12) !important;
-                color:var(--red) !important;
-                border-color:rgba(255,23,68,0.2) !important;
+                background:rgba(255,23,68,0.1);
+                color:var(--red);
+                border-color:rgba(255,23,68,0.18);
             }
-            /* Save button — subtle green */
-            #editor-toolbar .btn[onclick*="saveRedacted"] {
-                background:rgba(0,230,118,0.12) !important;
-                color:var(--green) !important;
-                border-color:rgba(0,230,118,0.2) !important;
+            #btn-save {
+                background:rgba(0,230,118,0.1);
+                color:var(--green);
+                border-color:rgba(0,230,118,0.18);
             }
-            /* Delete button — subtle red */
-            #editor-toolbar .btn[onclick*="confirmDelete"] {
-                background:rgba(255,23,68,0.08) !important;
-                color:var(--red) !important;
-                border-color:rgba(255,23,68,0.15) !important;
+            #btn-delete-photo {
+                background:rgba(255,23,68,0.06);
+                color:var(--red);
+                border-color:rgba(255,23,68,0.12);
             }
-            /* Photo modal header — more room */
+            #btn-vision-identify {
+                background:rgba(96,165,250,0.1);
+                color:var(--blue);
+                border-color:rgba(96,165,250,0.18);
+            }
+            #btn-vision-card {
+                background:rgba(0,230,118,0.08);
+                color:var(--green);
+                border-color:rgba(0,230,118,0.15);
+            }
+            /* Photo modal — better spacing */
             #photo-modal > div { padding:12px 12px 0 !important; }
-            #modal-title { font-size:0.9rem !important; }
-            /* Close button — bigger tap target */
+            #modal-title { font-size:0.92rem !important; }
             #photo-modal button[onclick*="closePhotoModal"] {
-                width:40px !important; height:40px !important;
-                font-size:24px !important; display:flex;
+                width:40px; height:40px;
+                font-size:24px; display:flex;
                 align-items:center; justify-content:center;
-                border-radius:50%; background:rgba(255,255,255,0.08) !important;
+                border-radius:50%; background:rgba(255,255,255,0.08);
+                border:none; color:white; cursor:pointer;
             }
         }
         /* ══ END MOBILE PREMIUM ══ */
@@ -4384,17 +4394,17 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                         </div>
                     </div>
                     <!-- Toolbar (single compact row) -->
-                    <div id="editor-toolbar" style="display:flex;gap:4px;margin-bottom:4px;flex-wrap:wrap;align-items:center;flex-shrink:0;">
-                        <button class="btn" onclick="setEditorTool('redact')" id="btn-redact" style="padding:2px 8px;font-size:0.65rem;background:var(--red-dim);color:var(--red);border-color:var(--red);">Redact</button>
-                        <button class="btn" onclick="setEditorTool('view')" id="btn-view" style="padding:2px 8px;font-size:0.65rem;">View</button>
-                        <button class="btn" onclick="autoRedactPhoto()" id="btn-auto-redact" style="padding:2px 8px;font-size:0.65rem;">Auto</button>
-                        <button class="btn" onclick="undoRedaction()" style="padding:2px 8px;font-size:0.65rem;">Undo</button>
-                        <button class="btn" onclick="clearRedactions()" style="padding:2px 8px;font-size:0.65rem;">Clear</button>
-                        <button class="btn" onclick="saveRedactedPhoto()" style="padding:2px 8px;font-size:0.65rem;background:var(--green-dim);color:var(--green);border-color:var(--green);">Save</button>
-                        <button class="btn" onclick="visionIdentifyWatch()" id="btn-vision-identify" style="padding:2px 8px;font-size:0.65rem;background:rgba(0,150,255,0.12);color:#0af;border-color:rgba(0,150,255,0.3);">Identify</button>
-                        <button class="btn" onclick="visionReadCard()" id="btn-vision-card" style="padding:2px 8px;font-size:0.65rem;background:rgba(0,230,118,0.12);color:var(--green);border-color:rgba(0,230,118,0.3);">Read Card</button>
+                    <div id="editor-toolbar">
+                        <button class="btn" onclick="setEditorTool('redact')" id="btn-redact">Redact</button>
+                        <button class="btn" onclick="setEditorTool('view')" id="btn-view">View</button>
+                        <button class="btn" onclick="autoRedactPhoto()" id="btn-auto-redact">Auto</button>
+                        <button class="btn" onclick="undoRedaction()">Undo</button>
+                        <button class="btn" onclick="clearRedactions()">Clear</button>
+                        <button class="btn" onclick="saveRedactedPhoto()" id="btn-save">Save</button>
+                        <button class="btn" onclick="visionIdentifyWatch()" id="btn-vision-identify">Identify</button>
+                        <button class="btn" onclick="visionReadCard()" id="btn-vision-card">Read Card</button>
                         <div style="flex:1;"></div>
-                        <button class="btn" onclick="confirmDeletePhoto()" style="padding:2px 8px;font-size:0.65rem;background:var(--red-dim);color:var(--red);border-color:var(--red);"></button>
+                        <button class="btn" onclick="confirmDeletePhoto()" id="btn-delete-photo">Delete</button>
                     </div>
                     <!-- Canvas area (takes most space) -->
                     <div style="flex:1;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;min-height:0;">
