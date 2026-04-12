@@ -13421,6 +13421,7 @@ async function loadPayments() {
                 editorRedoStack = [];
                 editorSelectedIdx = editorRedactions.length - 1;
                 renderEditor(); updateEditorRedactCount(); _hapticTap();
+                showToast('Duplicated rect #' + editorRedactions.length, 'info', 2000);
             }
             else if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key) && editorSelectedIdx >= 0) {
                 e.preventDefault();
@@ -13736,9 +13737,11 @@ async function loadPayments() {
                 editorImage.src = '/api/watch-photos/' + editorWatchId + '/image?t=' + Date.now();
                 editorRedactions = [];
                 setTimeout(() => loadPhotoLibrary(), 500);
+                showToast('Auto-detected ' + result.redaction_count + ' area' + (result.redaction_count !== 1 ? 's' : ''), 'success', 2500);
             } else {
-                statusEl.textContent = 'No serial/date text detected — use manual redact';
+                statusEl.textContent = 'No serial/date text detected \u2014 use manual redact';
                 statusEl.style.color = '#ffb400';
+                showToast('No areas found', 'warning', 2500);
             }
         } catch(e) {
             statusEl.textContent = 'X Auto-redact failed: ' + e.message;
@@ -13835,6 +13838,8 @@ async function loadPayments() {
         renderEditor();
         updateEditorRedactCount();
         _hapticTap();
+        const presetLabels = {'caseback-serial':'caseback serial','caseback-date':'caseback date','card-serial':'card serial','card-date':'card date','rehaut-serial':'rehaut serial','clasp-code':'clasp code'};
+        showToast('Preset: ' + (presetLabels[presetId] || presetId) + ' \u2014 drag to adjust', 'info', 2500);
     }
 
     function editorStartPeek() {
