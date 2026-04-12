@@ -3360,7 +3360,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                     </details>
                     <!-- Canvas area (takes most space) -->
                     <div id="editor-canvas-wrapper" style="flex:1;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;min-height:0;touch-action:none;">
-                        <canvas id="editor-canvas" role="img" aria-label="Photo being edited" style="cursor:default;border:2px solid rgba(255,255,255,0.08);border-radius:6px;transition:border-color 0.2s,box-shadow 0.2s;transform-origin:0 0;position:absolute;"></canvas>
+                        <canvas id="editor-canvas" role="img" aria-label="Photo being edited" style="cursor:default;border:2px solid rgba(255,255,255,0.08);border-radius:6px;transition:border-color 0.2s,box-shadow 0.2s;max-width:100%;max-height:100%;"></canvas>
                         <!-- Before/After comparison divider -->
                         <div id="editor-compare-divider" style="display:none;position:absolute;top:0;height:100%;width:2px;background:white;cursor:ew-resize;z-index:10;pointer-events:auto;box-shadow:0 0 6px rgba(0,0,0,0.6);">
                             <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:24px;height:24px;background:white;border-radius:50%;box-shadow:0 0 6px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;">
@@ -13489,11 +13489,24 @@ async function loadPayments() {
     function _editorApplyTransform() {
         var canvas = $('#editor-canvas');
         if (!canvas) return;
-        var wrapper = $('#editor-canvas-wrapper');
-        var wW = wrapper.clientWidth, wH = wrapper.clientHeight;
-        var centerX = (wW - editorBaseW) / 2;
-        var centerY = (wH - editorBaseH) / 2;
-        canvas.style.transform = 'translate(' + (centerX + editorPanX) + 'px, ' + (centerY + editorPanY) + 'px) scale(' + editorZoom + ')';
+        if (editorZoom <= 1 && editorPanX === 0 && editorPanY === 0) {
+            // At 1x with no pan: let flex centering handle layout
+            canvas.style.position = '';
+            canvas.style.transform = '';
+            canvas.style.maxWidth = '100%';
+            canvas.style.maxHeight = '100%';
+        } else {
+            // Zoomed: switch to absolute + CSS transform
+            var wrapper = $('#editor-canvas-wrapper');
+            var wW = wrapper.clientWidth, wH = wrapper.clientHeight;
+            var centerX = (wW - editorBaseW) / 2;
+            var centerY = (wH - editorBaseH) / 2;
+            canvas.style.position = 'absolute';
+            canvas.style.maxWidth = 'none';
+            canvas.style.maxHeight = 'none';
+            canvas.style.transform = 'translate(' + (centerX + editorPanX) + 'px, ' + (centerY + editorPanY) + 'px) scale(' + editorZoom + ')';
+            canvas.style.transformOrigin = '0 0';
+        }
     }
 
     function _editorClampPan() {
