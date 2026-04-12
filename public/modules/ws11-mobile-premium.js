@@ -319,19 +319,52 @@
         margin-left:auto;font-weight:700;font-size:0.9rem;
       }
 
-      /* Inventory positions table → simplified */
+      /* Inventory positions → full card layout */
+      /* Columns: 1=Ref 2=Details 3=Cost 4=Market 5=P&L 6=% 7=Held 8=Status */
       #dash-inventory tbody tr{
-        display:grid;grid-template-columns:1fr auto;gap:2px 8px;
-        padding:12px 14px;border-bottom:1px solid var(--border);
+        display:grid;
+        grid-template-columns:1fr auto;
+        grid-template-rows:auto auto auto;
+        gap:2px 12px;
+        padding:14px 16px;border-bottom:1px solid var(--border);
       }
       #dash-inventory tbody tr:active{background:var(--bg-hover)}
-      #dash-inventory tbody td{padding:0;border:none;font-size:0.78rem}
-      #dash-inventory tbody td:first-child{
-        font-weight:700;color:var(--accent);font-size:0.85rem;
-        grid-column:1/-1;margin-bottom:2px;
+      #dash-inventory tbody td{padding:0 !important;border:none !important;font-size:0.8rem}
+      /* Row 1: Ref (left) + Details (right, truncated) */
+      #dash-inventory tbody td:nth-child(1){
+        font-weight:700;color:var(--accent);font-size:0.88rem;
+        grid-column:1;grid-row:1;
       }
-      #dash-inventory tbody td.hide-mobile{display:none}
-      #dash-inventory tbody td:last-child{text-align:right}
+      #dash-inventory tbody td:nth-child(2){
+        color:var(--text-2);font-size:0.72rem;
+        grid-column:2;grid-row:1;text-align:right;
+        max-width:140px;overflow:hidden;text-overflow:ellipsis;
+      }
+      /* Row 2: Cost (left) + Market (right) */
+      #dash-inventory tbody td:nth-child(3){
+        grid-column:1;grid-row:2;color:var(--text-1);
+      }
+      #dash-inventory tbody td:nth-child(3)::before{
+        content:'Cost ';font-size:0.6rem;color:var(--text-2);
+        text-transform:uppercase;letter-spacing:0.5px;
+      }
+      #dash-inventory tbody td:nth-child(4){
+        grid-column:2;grid-row:2;text-align:right;color:var(--text-1);
+      }
+      #dash-inventory tbody td:nth-child(4)::before{
+        content:'Mkt ';font-size:0.6rem;color:var(--text-2);
+        text-transform:uppercase;letter-spacing:0.5px;
+      }
+      /* Row 3: P&L (left, colored) + % (right, colored) */
+      #dash-inventory tbody td:nth-child(5){
+        grid-column:1;grid-row:3;font-weight:700;font-size:0.85rem;
+      }
+      #dash-inventory tbody td:nth-child(6){
+        grid-column:2;grid-row:3;text-align:right;font-weight:700;font-size:0.85rem;
+      }
+      /* Hide Held + Status on mobile dashboard */
+      #dash-inventory tbody td:nth-child(7),
+      #dash-inventory tbody td:nth-child(8){display:none}
 
       /* Portfolio snapshot — bigger numbers */
       .pf-grid{
