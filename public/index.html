@@ -525,6 +525,111 @@
             .mobile-nav a { min-width:40px; font-size:0.58rem; }
         }
 
+        /* ══ MOBILE PREMIUM OVERRIDES (inline for immediate effect) ══ */
+        @media(max-width:900px) {
+            /* ALL inline 2-col/3-col grids → 1 column */
+            div[style*="grid-template-columns:1fr 1fr"],
+            div[style*="grid-template-columns: 1fr 1fr"] {
+                grid-template-columns:1fr !important;
+            }
+            div[style*="grid-template-columns:1fr 1fr 1fr"],
+            div[style*="grid-template-columns: 1fr 1fr 1fr"] {
+                grid-template-columns:1fr !important;
+            }
+            /* Flex wrap everywhere */
+            div[style*="display:flex"][style*="gap"] { flex-wrap:wrap !important; }
+
+            /* Dashboard tables → card lists */
+            #dash-deals thead, #dash-arb thead, #dash-inventory thead { display:none; }
+
+            #dash-deals tbody tr, #dash-arb tbody tr {
+                display:flex; flex-wrap:wrap; align-items:baseline;
+                padding:12px 14px; border-bottom:1px solid var(--border); gap:4px 8px;
+            }
+            #dash-deals tbody td, #dash-arb tbody td {
+                padding:0; border:none; white-space:nowrap;
+            }
+            #dash-deals tbody td:first-child, #dash-arb tbody td:first-child {
+                font-weight:700; font-size:0.88rem; color:var(--accent);
+                flex-basis:100%; margin-bottom:2px;
+            }
+            #dash-deals tbody td:last-child, #dash-arb tbody td:last-child {
+                margin-left:auto; font-weight:700; font-size:0.9rem;
+            }
+
+            /* Inventory positions → 3-row card */
+            #dash-inventory tbody tr {
+                display:grid; grid-template-columns:1fr auto;
+                grid-template-rows:auto auto auto;
+                gap:2px 12px; padding:14px 16px; border-bottom:1px solid var(--border);
+            }
+            #dash-inventory tbody td { padding:0 !important; border:none !important; font-size:0.8rem; }
+            #dash-inventory tbody td:nth-child(1) {
+                font-weight:700; color:var(--accent); font-size:0.88rem;
+                grid-column:1; grid-row:1;
+            }
+            #dash-inventory tbody td:nth-child(2) {
+                color:var(--text-2); font-size:0.72rem;
+                grid-column:2; grid-row:1; text-align:right;
+                max-width:140px; overflow:hidden; text-overflow:ellipsis;
+            }
+            #dash-inventory tbody td:nth-child(3) { grid-column:1; grid-row:2; }
+            #dash-inventory tbody td:nth-child(3)::before {
+                content:'Cost '; font-size:0.6rem; color:var(--text-2);
+                text-transform:uppercase; letter-spacing:0.5px;
+            }
+            #dash-inventory tbody td:nth-child(4) { grid-column:2; grid-row:2; text-align:right; }
+            #dash-inventory tbody td:nth-child(4)::before {
+                content:'Mkt '; font-size:0.6rem; color:var(--text-2);
+                text-transform:uppercase; letter-spacing:0.5px;
+            }
+            #dash-inventory tbody td:nth-child(5) {
+                grid-column:1; grid-row:3; font-weight:700; font-size:0.85rem;
+            }
+            #dash-inventory tbody td:nth-child(6) {
+                grid-column:2; grid-row:3; text-align:right; font-weight:700; font-size:0.85rem;
+            }
+            #dash-inventory tbody td:nth-child(7),
+            #dash-inventory tbody td:nth-child(8) { display:none; }
+
+            /* Bigger portfolio numbers */
+            .pf-val { font-size:1.35rem !important; }
+            .pf-grid { grid-template-columns:1fr 1fr !important; gap:12px !important; }
+
+            /* More breathing room */
+            .card { margin-bottom:14px !important; border-radius:16px; }
+            .card-body { padding:14px 16px !important; }
+            .card-head { padding:14px 16px !important; }
+            .main { padding:14px 14px calc(60px + env(safe-area-inset-bottom)) !important; }
+            .tbl td { padding:10px 12px !important; }
+
+            /* Glassmorphic bottom nav */
+            .mobile-nav {
+                background:rgba(8,8,12,0.72) !important;
+                backdrop-filter:blur(24px) saturate(180%) !important;
+                -webkit-backdrop-filter:blur(24px) saturate(180%) !important;
+                height:64px; border-top:0.5px solid rgba(255,255,255,0.08);
+                padding-bottom:max(8px, env(safe-area-inset-bottom));
+                overflow:visible !important; white-space:normal !important;
+            }
+            html.light .mobile-nav {
+                background:rgba(245,244,240,0.78) !important;
+                border-top-color:rgba(0,0,0,0.08);
+            }
+            .mobile-nav a {
+                flex:1; gap:3px; min-width:0; font-size:0.6rem;
+                -webkit-tap-highlight-color:transparent;
+            }
+            .mobile-nav a:active { transform:scale(0.88); }
+            .mobile-nav a.active { color:var(--accent); font-weight:700; }
+
+            /* Hide ticker on mobile */
+            .ticker-bar { display:none; }
+            /* Hide footer on mobile */
+            .footer { display:none; }
+        }
+        /* ══ END MOBILE PREMIUM ══ */
+
         @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
         .fade-in { animation:fadeIn 0.25s ease-out; }
         .refreshing { opacity:0.55; pointer-events:none; filter:blur(1px); transition:opacity 0.3s ease, filter 0.3s ease; }
