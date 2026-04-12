@@ -107,9 +107,9 @@
         /* ── THEME TOGGLE ── */
         .theme-toggle {
             background:var(--bg-3); border:1px solid var(--border); border-radius:var(--radius);
-            width:36px; height:36px; display:flex; align-items:center; justify-content:center;
+            width:44px; height:44px; display:flex; align-items:center; justify-content:center;
             cursor:pointer; font-size:1rem; transition:all 0.2s ease; margin-left:12px;
-            flex-shrink:0;
+            flex-shrink:0; touch-action:manipulation; -webkit-tap-highlight-color:transparent;
         }
         .theme-toggle:hover { border-color:var(--accent); background:var(--bg-4); }
 
@@ -455,7 +455,7 @@
             .mobile-nav { display:flex !important; justify-content:space-around; }
             .page { display:none; }
             .page.active { display:block; animation:pageIn 0.2s ease-out; }
-            .main { padding:16px 20px; max-width:100%; padding-bottom:calc(60px + env(safe-area-inset-bottom)); }
+            .main { padding:16px 20px; max-width:100%; padding-bottom:calc(76px + env(safe-area-inset-bottom)); }
             .metrics { grid-template-columns:repeat(4,1fr); gap:10px; }
             .detail-grid { grid-template-columns:1fr 1fr; gap:14px; }
             .popular-grid { grid-template-columns:repeat(3,1fr); }
@@ -463,7 +463,7 @@
         @media(max-width:900px) {
             .top-bar { display:none; }
             .mobile-nav { display:flex; justify-content:space-around; }
-            .main { padding:10px; padding-bottom:calc(56px + env(safe-area-inset-bottom)); }
+            .main { padding:10px; padding-bottom:calc(76px + env(safe-area-inset-bottom)); }
             .metrics { grid-template-columns:repeat(2,1fr); }
             .detail-grid { grid-template-columns:1fr; }
             .deal-stats { grid-template-columns:repeat(2,1fr); }
@@ -1493,13 +1493,15 @@
             #posting-price-edit-modal > div, #posting-delete-modal > div,
             #post-direct-modal > div, #inv-modal > div, #tracker-form-modal > div,
             #mc-modal-bg > div, #crm-detail-modal > div {
-                max-width:100%!important; max-height:100%!important; width:100%!important;
-                border-radius:0!important; margin:0!important;
+                max-width:100%!important; max-height:100dvh!important; width:100%!important;
+                height:100dvh!important; border-radius:0!important; margin:0!important;
+                overflow-y:auto!important; -webkit-overflow-scrolling:touch;
+                overscroll-behavior:contain;
             }
             #watch-modal, #sell-modal, #ship-modal, #post-modal,
             #posting-price-edit-modal, #posting-delete-modal, #post-direct-modal,
             #inv-modal, #tracker-form-modal, #mc-modal-bg, #crm-detail-modal {
-                padding:0!important;
+                padding:0!important; align-items:flex-start!important;
             }
         }
         /* ── P1: Touch targets — min 44px ── */
@@ -1538,7 +1540,7 @@
 
         /* 1. Bottom content hidden behind nav — ensure padding-bottom */
         @media(max-width:768px) {
-            .main { padding-bottom:80px!important; }
+            .main { padding-bottom:calc(84px + env(safe-area-inset-bottom))!important; }
         }
 
         /* 2. ALL tables get horizontal scroll with momentum */
@@ -1714,15 +1716,25 @@
             }
         }
 
-        /* 21. Better scroll hint — subtle gradient fade on horizontal scrollers */
+        /* 21. Better scroll hint — scroll-shadow via background-attachment:local/scroll */
+        /* Opaque covers (local, scroll WITH content) hide the shadows at each edge;
+           accent-tinted radial shadows (scroll, fixed) are revealed as cover moves away. */
         @media(max-width:768px) {
             .tbl-wrap, #im-table-wrap {
-                position:relative;
+                background:
+                    linear-gradient(to right, var(--bg-2) 0%, transparent 100%) left /28px 100% no-repeat,
+                    linear-gradient(to left,  var(--bg-2) 0%, transparent 100%) right/28px 100% no-repeat,
+                    radial-gradient(farthest-side at 0%   50%, rgba(212,175,55,0.22), transparent) left /14px 100% no-repeat,
+                    radial-gradient(farthest-side at 100% 50%, rgba(212,175,55,0.22), transparent) right/14px 100% no-repeat;
+                background-attachment: local, local, scroll, scroll;
             }
-            .tbl-wrap::after, #im-table-wrap::after {
-                content:''; position:sticky; right:0; top:0; bottom:0; width:24px;
-                background:linear-gradient(to left, var(--bg-2), transparent);
-                pointer-events:none; float:right; margin-top:-100%; height:100%;
+            html.light .tbl-wrap, html.light #im-table-wrap {
+                background:
+                    linear-gradient(to right, var(--bg-2) 0%, transparent 100%) left /28px 100% no-repeat,
+                    linear-gradient(to left,  var(--bg-2) 0%, transparent 100%) right/28px 100% no-repeat,
+                    radial-gradient(farthest-side at 0%   50%, rgba(160,120,32,0.18), transparent) left /14px 100% no-repeat,
+                    radial-gradient(farthest-side at 100% 50%, rgba(160,120,32,0.18), transparent) right/14px 100% no-repeat;
+                background-attachment: local, local, scroll, scroll;
             }
         }
 
@@ -1827,6 +1839,122 @@
         @media(max-width:768px) {
             #ws9-tax-preview { grid-template-columns:1fr 1fr!important; }
             #ws9-weekly-pnl .card-body div[style*="1fr 1fr 1fr"] { grid-template-columns:1fr 1fr!important; }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           MK OPULENCE — MOBILE UX OVERHAUL (7 targeted improvements)
+           Applied on top of existing 34-fix block above.
+           ═══════════════════════════════════════════════════════════════ */
+
+        /* ── A. Touch targets: notif-bell, card links, table refs ── */
+        /* #notif-bell has inline padding:4px making its tap zone only ~26px */
+        #notif-bell {
+            min-width:44px; min-height:44px;
+            display:inline-flex; align-items:center; justify-content:center;
+            padding:0 !important;
+            touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+        }
+        @media(max-width:900px) {
+            .card-head .link {
+                min-height:44px; min-width:44px;
+                display:inline-flex; align-items:center; justify-content:center;
+                padding:0 8px;
+            }
+            .tbl .ref {
+                display:inline-flex; align-items:center;
+                min-height:44px; padding:0 4px; margin:-4px;
+            }
+        }
+
+        /* ── B. Inventory card: prevent text overflow, fix price layout ── */
+        .inv-card-ref  { word-break:break-word; overflow-wrap:break-word; max-width:100%; }
+        .inv-card-desc {
+            overflow:hidden; text-overflow:ellipsis;
+            display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+        }
+        .inv-card-prices { display:flex; flex-wrap:wrap; gap:8px 14px; min-width:0; }
+        .inv-card-price-item { min-width:0; flex:1 1 calc(50% - 7px); }
+        .inv-card-price-val  { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        @media(max-width:400px) {
+            .inv-card-prices { flex-direction:column; gap:5px; }
+            .inv-card-price-item {
+                flex:none; display:flex; align-items:center; justify-content:space-between;
+                border-bottom:1px solid var(--border); padding-bottom:4px;
+            }
+            .inv-card-price-item:last-child { border-bottom:none; padding-bottom:0; }
+            .inv-card-price-label { margin-bottom:0; flex-shrink:0; }
+            .inv-card-price-val   { font-size:0.92rem !important; font-weight:700; }
+        }
+
+        /* ── C. Prevent element overlap on screens < 400px ── */
+        @media(max-width:400px) {
+            .page-context { font-size:0.63rem; padding:6px 10px; gap:3px; flex-wrap:wrap; }
+            .heat-gauge   { flex-wrap:wrap; gap:6px 8px; padding:8px 10px; }
+            .card-head    { flex-wrap:wrap; row-gap:4px; }
+            .nav .badge   { display:none; }
+        }
+
+        /* ── D. Tap feedback: color flash + scale on coarse-pointer (touch) ── */
+        @media(hover:none) and (pointer:coarse) {
+            .deal-card:active {
+                background:var(--bg-3) !important; transform:scale(0.985) !important;
+                transition:transform 0.08s ease, background 0.08s ease !important;
+            }
+            .popular-card:active {
+                background:var(--bg-3) !important; border-color:var(--accent-border) !important;
+                transform:scale(0.97) !important;
+                transition:transform 0.08s ease, background 0.08s ease !important;
+            }
+            .posting-card:active, .inv-card:active {
+                background:var(--bg-3) !important; transform:scale(0.985) !important;
+                transition:transform 0.08s ease, background 0.08s ease !important;
+            }
+            .metric:active {
+                background:var(--bg-3) !important; border-color:var(--accent-border) !important;
+                transform:scale(0.97) !important; transition:transform 0.08s ease !important;
+            }
+            .btn:active, button:active:not(:disabled) {
+                background:var(--bg-4) !important; border-color:var(--accent-border) !important;
+                color:var(--accent) !important; transform:scale(0.95) !important;
+                transition:transform 0.08s ease, color 0.08s, background 0.08s !important;
+            }
+            .tab:active {
+                background:var(--accent-dim) !important; color:var(--accent) !important;
+                transform:scale(0.97) !important;
+            }
+            .mobile-nav a:active {
+                background:var(--accent-dim) !important; color:var(--accent) !important;
+                transform:scale(0.88) !important; transition:transform 0.08s ease !important;
+            }
+            .more-grid-item:active {
+                background:var(--accent-dim) !important; color:var(--accent) !important;
+                transform:scale(0.93) !important;
+            }
+            .tbl .ref:active {
+                color:var(--accent-light) !important;
+                background:var(--accent-dim) !important; border-radius:var(--radius);
+            }
+            .fab-action:active { background:var(--accent-dim) !important; transform:scale(0.95) !important; }
+        }
+
+        /* ── E. Bottom nav: safe-area min-height; FAB + toast clearance ── */
+        @media(max-width:900px) {
+            .mobile-nav { min-height:calc(52px + env(safe-area-inset-bottom)); padding-bottom:max(8px,env(safe-area-inset-bottom)); }
+            .toast-container { bottom:calc(72px + env(safe-area-inset-bottom)) !important; }
+            .fab-menu        { bottom:calc(68px + env(safe-area-inset-bottom)); }
+            .scroll-top-btn  { bottom:calc(72px + env(safe-area-inset-bottom)); }
+        }
+
+        /* ── F. Modals fullscreen: align-items:flex-start + notif/qcmd panels ── */
+        /* (100dvh and overscroll-behavior already applied in P0 block above) */
+        @media(max-width:768px) {
+            #notif-panel {
+                top:0 !important; right:0; left:0;
+                width:100% !important; max-width:100% !important;
+                border-radius:0 0 var(--radius-lg) var(--radius-lg) !important;
+                max-height:72vh;
+            }
+            #qcmd-panel { max-width:100%; margin:0; border-radius:0 0 var(--radius-lg) var(--radius-lg); }
         }
     </style>
 </head>
