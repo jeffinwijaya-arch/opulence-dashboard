@@ -1573,16 +1573,7 @@
                 max-width:100%!important; width:100%!important; border-radius:0!important; margin:0!important;
             }
             #photo-modal > div { overflow:hidden!important; }
-            /* Photo editor: compact on mobile to maximize canvas space */
-            #editor-toolbar { gap:2px!important; }
-            #editor-toolbar .btn { padding:4px 6px!important; font-size:0.62rem!important; }
-            #editor-toolbar select.btn { padding:4px 4px!important; font-size:0.6rem!important; }
-            #editor-shortcut-bar { display:none!important; }
-            #editor-history-panel { display:none!important; }
-            #btn-coverage { display:none!important; }
-            #editor-preset-select { display:none!important; }
-            #photo-modal > div { padding:4px!important; }
-            #photo-modal > div > div:first-child { margin-bottom:2px!important; }
+            #photo-modal > div { overflow:hidden!important; }
         }
 
         /* 5. Filter bars — stack vertically on mobile */
@@ -3304,7 +3295,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
 
             <!-- Photo Modal -->
             <!-- Photo Editor Modal -->
-            <div id="photo-modal" role="dialog" aria-label="Photo redaction editor" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.95);z-index:9999;overflow:hidden;" onclick="if(event.target===this) { if(typeof closePhotoModal==='function') closePhotoModal(); }">
+            <div id="photo-modal" role="dialog" aria-label="Photo redaction editor" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.95);z-index:9999;overflow:auto;" onclick="if(event.target===this) { if(typeof closePhotoModal==='function') closePhotoModal(); }">
                 <div style="max-width:900px;margin:auto;padding:8px;height:100%;display:flex;flex-direction:column;">
                     <!-- Header + status (compact) -->
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;color:white;flex-shrink:0;">
@@ -3314,57 +3305,21 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                             <button onclick="closePhotoModal()" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;line-height:1;">×</button>
                         </div>
                     </div>
-                    <!-- Toolbar -->
-                    <div id="editor-toolbar" style="display:flex;gap:4px;margin-bottom:4px;flex-wrap:wrap;align-items:center;flex-shrink:0;">
-                        <!-- Mode toggle group -->
-                        <div style="display:inline-flex;border-radius:6px;overflow:hidden;border:1px solid var(--border);">
-                            <button class="btn" onclick="setEditorTool('redact')" id="btn-redact" aria-label="Redact" style="padding:6px 12px;font-size:0.72rem;border:none;border-radius:0;background:var(--red-dim);color:var(--red);font-weight:600;">Redact</button>
-                            <button class="btn" onclick="setEditorTool('view')" id="btn-view" aria-label="View" style="padding:6px 12px;font-size:0.72rem;border:none;border-radius:0;background:var(--bg-2);color:var(--text-2);">View</button>
-                        </div>
-                        <!-- Auto-detect + presets -->
-                        <button class="btn" onclick="autoRedactPhoto()" id="btn-auto-redact" aria-label="Auto-Detect" style="padding:6px 12px;font-size:0.72rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">Auto-Detect</button>
-                        <select class="btn" id="editor-preset-select" onchange="applyRedactPreset(this.value);this.value='';" title="Quick-redact presets for common watch photo areas" style="padding:5px 6px;font-size:0.68rem;background:var(--bg-2);color:var(--text-2);border-color:var(--border);cursor:pointer;min-width:0;width:auto;">
-                            <option value="">Presets</option>
-                            <option value="caseback-serial">Caseback serial</option>
-                            <option value="caseback-date">Caseback date stamp</option>
-                            <option value="card-serial">Card serial number</option>
-                            <option value="card-date">Card date</option>
-                            <option value="rehaut-serial">Rehaut serial (6 o'clock)</option>
-                            <option value="clasp-code">Clasp code</option>
-                        </select>
-                        <button class="btn" onclick="toggleCoverage()" id="btn-coverage" style="padding:6px 10px;font-size:0.72rem;background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.15);color:var(--text-2);">Coverage</button>
-                        <!-- Edit actions -->
-                        <div style="display:inline-flex;gap:3px;">
-                            <button class="btn" onclick="undoRedaction()" id="btn-editor-undo" aria-label="Undo" title="Undo (Ctrl+Z)" style="padding:6px 10px;font-size:0.72rem;">Undo</button>
-                            <button class="btn" onclick="editorRedo()" id="btn-editor-redo" aria-label="Redo" title="Redo (Ctrl+Shift+Z)" style="padding:6px 10px;font-size:0.72rem;opacity:0.35;">Redo</button>
-                            <button class="btn" onpointerdown="editorStartPeek()" onpointerup="editorStopPeek()" onpointerleave="editorStopPeek()" id="btn-editor-peek" aria-label="Peek" title="Hold to see original" style="padding:6px 10px;font-size:0.72rem;opacity:0.5;user-select:none;-webkit-user-select:none;">Peek</button>
-                            <button class="btn" onclick="confirmClearRedactions()" aria-label="Clear" title="Remove all redactions" style="padding:6px 10px;font-size:0.72rem;">Clear</button>
-                        </div>
-                        <!-- Redaction count / selection badge -->
-                        <span id="editor-redact-count" style="display:none;font-size:0.65rem;color:var(--text-2);background:var(--bg-2);padding:2px 8px;border-radius:10px;font-variant-numeric:tabular-nums;"></span>
-                        <span id="editor-selection-badge" style="display:none;font-size:0.65rem;color:var(--accent);background:var(--accent-dim);padding:2px 8px;border-radius:10px;cursor:pointer;" onclick="editorDeleteSelected()" title="Click to remove selected rect"></span>
+                    <!-- Toolbar (single compact row) -->
+                    <div id="editor-toolbar" style="display:flex;gap:4px;margin-bottom:4px;align-items:center;flex-shrink:0;overflow-x:auto;flex-wrap:nowrap;">
+                        <button class="btn" onclick="setEditorTool('redact')" id="btn-redact" aria-label="Redact" style="padding:2px 8px;font-size:0.65rem;background:var(--red-dim);color:var(--red);border-color:var(--red);white-space:nowrap;">Redact</button>
+                        <button class="btn" onclick="setEditorTool('view')" id="btn-view" aria-label="View" style="padding:2px 8px;font-size:0.65rem;white-space:nowrap;">View</button>
+                        <button class="btn" onclick="autoRedactPhoto()" id="btn-auto-redact" aria-label="Auto-Detect" style="padding:2px 8px;font-size:0.65rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;white-space:nowrap;">Auto</button>
+                        <button class="btn" onclick="undoRedaction()" id="btn-editor-undo" aria-label="Undo" style="padding:2px 8px;font-size:0.65rem;white-space:nowrap;">Undo</button>
+                        <button class="btn" onclick="confirmClearRedactions()" aria-label="Clear" style="padding:2px 8px;font-size:0.65rem;white-space:nowrap;">X</button>
+                        <button class="btn" onclick="saveRedactedPhoto()" id="btn-editor-save" aria-label="Save" style="padding:2px 8px;font-size:0.65rem;background:var(--green-dim);color:var(--green);border-color:var(--green);white-space:nowrap;">Save</button>
                         <div style="flex:1;"></div>
-                        <!-- Save (green, prominent) -->
-                        <button class="btn" onclick="saveRedactedPhoto()" id="btn-editor-save" aria-label="Save" style="padding:6px 14px;font-size:0.75rem;background:var(--green-dim);color:var(--green);border-color:var(--green);font-weight:600;">Save</button>
-                        <!-- Download -->
-                        <button class="btn" onclick="downloadRedactedPhoto()" title="Download redacted image" style="padding:6px 10px;font-size:0.72rem;background:transparent;color:var(--text-2);border-color:var(--border);">Download</button>
-                        <!-- Delete (separated, subdued) -->
-                        <button class="btn" onclick="confirmDeletePhoto()" aria-label="Delete" title="Delete photo" style="padding:6px 10px;font-size:0.72rem;background:transparent;color:var(--text-2);border-color:var(--border);">Delete</button>
+                        <button class="btn" onclick="confirmDeletePhoto()" aria-label="Delete" style="padding:2px 8px;font-size:0.65rem;background:var(--red-dim);color:var(--red);border-color:var(--red);white-space:nowrap;">Del</button>
                     </div>
-                    <!-- Shortcut hint bar (appears on hover/focus) -->
-                    <div id="editor-shortcut-bar" style="display:none;font-size:0.6rem;color:var(--text-2);padding:0 2px 4px;flex-shrink:0;">
-                        <kbd style="padding:1px 4px;background:var(--bg-2);border-radius:3px;font-family:inherit;">R</kbd> toggle
-                        &middot; <kbd style="padding:1px 4px;background:var(--bg-2);border-radius:3px;font-family:inherit;">Ctrl+Z</kbd> undo
-                        &middot; <kbd style="padding:1px 4px;background:var(--bg-2);border-radius:3px;font-family:inherit;">Ctrl+Shift+Z</kbd> redo
-                        &middot; <kbd style="padding:1px 4px;background:var(--bg-2);border-radius:3px;font-family:inherit;">Ctrl+S</kbd> save
-                        &middot; <kbd style="padding:1px 4px;background:var(--bg-2);border-radius:3px;font-family:inherit;">Ctrl+D</kbd> duplicate
-                        &middot; <kbd style="padding:1px 4px;background:var(--bg-2);border-radius:3px;font-family:inherit;">&uarr;&darr;&larr;&rarr;</kbd> nudge
-                        &middot; hold to peek
-                    </div>
-                    <details id="editor-history-panel" style="flex-shrink:0;margin-bottom:2px;">
-                        <summary style="color:var(--text-2);font-size:0.62rem;cursor:pointer;padding:2px 0;">History</summary>
-                        <div id="editor-history-log" style="max-height:80px;overflow-y:auto;font-size:0.6rem;color:var(--text-2);background:var(--bg-2);padding:4px 8px;border-radius:4px;font-family:var(--mono);"></div>
-                    </details>
+                    <span id="editor-redact-count" style="display:none;"></span>
+                    <span id="editor-selection-badge" style="display:none;" onclick="editorDeleteSelected()"></span>
+                    <div id="editor-shortcut-bar" style="display:none;"></div>
+                    <div id="editor-history-panel" style="display:none;"><div id="editor-history-log"></div></div>
                     <!-- Canvas area (takes most space) -->
                     <div id="editor-canvas-wrapper" style="flex:1;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;min-height:0;">
                         <canvas id="editor-canvas" role="img" aria-label="Photo being edited" style="max-width:100%;max-height:100%;cursor:default;border:2px solid rgba(255,255,255,0.08);border-radius:6px;transition:border-color 0.2s,box-shadow 0.2s;"></canvas>
@@ -13351,7 +13306,7 @@ async function loadPayments() {
         img.onload = function() {
             editorImage = img;
             const maxW = Math.min(860, window.innerWidth - 16);
-            const maxH = window.innerHeight - 200;
+            const maxH = window.innerHeight - 90;
             const scale = Math.min(maxW / img.width, maxH / img.height, 1);
             canvas.width = img.width * scale;
             canvas.height = img.height * scale;
