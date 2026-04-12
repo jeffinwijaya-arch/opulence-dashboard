@@ -103,15 +103,32 @@
     /* === 4. Typography === */
     @media(max-width:900px){
       .page-head h1{font-size:1.65rem;font-weight:800;letter-spacing:-0.03em;line-height:1.15}
-      .page-head p{font-size:0.82rem;line-height:1.4}
-      .metric .val{font-size:1.4rem}
-      .metric .label{font-size:0.6rem;letter-spacing:1px}
+      .page-head p{font-size:0.85rem;line-height:1.5;color:var(--text-1)}
+      .metric .val{font-size:1.5rem}
+      .metric .label{font-size:0.62rem;letter-spacing:1px}
+      .metric .sub{font-size:0.68rem;line-height:1.3}
+      /* Card headers — bigger, cleaner */
+      .card-head{
+        padding:14px 16px !important;font-size:0.72rem !important;
+        letter-spacing:1.2px !important;
+      }
+      .card-head .link{font-size:0.78rem !important;padding:8px 12px;margin:-8px -12px}
+      /* Table base — larger font, more padding */
+      .tbl{font-size:0.82rem !important}
+      .tbl th{padding:10px 12px !important;font-size:0.65rem !important}
+      .tbl td{padding:10px 12px !important;font-size:0.8rem !important}
+      /* Spacing between cards */
+      .card{margin-bottom:14px !important}
+      /* Page head spacing */
+      .page-head{margin-bottom:20px !important}
+      /* Main content padding */
+      .main{padding:14px 14px calc(76px + env(safe-area-inset-bottom)) !important}
     }
-    
+
     /* === 5. Card & Metric Polish === */
     @media(max-width:900px){
       .card{border-radius:16px;overflow:hidden}
-      .metric{border-radius:14px}
+      .metric{border-radius:14px;padding:16px !important}
       .card[onclick]:active,.deal-card:active{transform:scale(0.985);transition:transform 100ms ease}
     }
     
@@ -257,31 +274,77 @@
 
     /* === 15. Inline Grid Layout Fixes === */
     @media(max-width:900px){
-      /* Dashboard 2-col grids → stack on mobile */
-      #page-dashboard div[style*="grid-template-columns:1fr 1fr"],
-      #page-dashboard div[style*="grid-template-columns: 1fr 1fr"]{
-        display:block !important;
-      }
-      #page-dashboard div[style*="grid-template-columns:1fr 1fr"] > .card,
-      #page-dashboard div[style*="grid-template-columns: 1fr 1fr"] > .card{
-        margin-bottom:10px;
-      }
-      /* Shipping 3-col form → 1-col */
-      #page-shipping div[style*="grid-template-columns:1fr 1fr 1fr"],
-      #page-shipping div[style*="grid-template-columns: 1fr 1fr 1fr"]{
+      /* NUCLEAR: ALL inline 2-col grids → 1-col on mobile */
+      div[style*="grid-template-columns:1fr 1fr"],
+      div[style*="grid-template-columns: 1fr 1fr"]{
         grid-template-columns:1fr !important;
       }
-      /* Shipping 2-col form → 1-col */
-      #page-shipping div[style*="grid-template-columns:1fr 1fr"],
-      #page-shipping div[style*="grid-template-columns: 1fr 1fr"]{
+      /* ALL inline 3-col grids → 1-col */
+      div[style*="grid-template-columns:1fr 1fr 1fr"],
+      div[style*="grid-template-columns: 1fr 1fr 1fr"]{
         grid-template-columns:1fr !important;
       }
-      /* All flex containers: allow wrapping */
+      /* ALL flex containers: allow wrapping */
       div[style*="display:flex"][style*="gap"]{flex-wrap:wrap !important}
-      /* FX calculator grid → stack on small screens */
-      #fx-result div[style*="grid-template-columns:1fr 1fr"]{
+      /* FX calculator grid → stack */
+      #fx-result div[style*="grid-template-columns"]{
         grid-template-columns:1fr !important;
       }
+    }
+
+    /* === 15b. Dashboard Tables → Mobile Card Lists === */
+    @media(max-width:900px){
+      /* Top Deals table → card list */
+      #dash-deals thead,#dash-arb thead,#dash-inventory thead{display:none}
+
+      #dash-deals tbody tr,#dash-arb tbody tr{
+        display:flex;flex-wrap:wrap;align-items:baseline;
+        padding:12px 14px;border-bottom:1px solid var(--border);gap:4px 8px;
+      }
+      #dash-deals tbody tr:active,#dash-arb tbody tr:active{background:var(--bg-hover)}
+      #dash-deals tbody td,#dash-arb tbody td{
+        padding:0;border:none;white-space:nowrap;
+      }
+      /* Ref column — bold accent */
+      #dash-deals tbody td:first-child,#dash-arb tbody td:first-child{
+        font-weight:700;font-size:0.88rem;color:var(--accent);
+        flex-basis:100%;margin-bottom:2px;
+      }
+      /* Other columns */
+      #dash-deals tbody td:not(:first-child),#dash-arb tbody td:not(:first-child){
+        font-size:0.8rem;
+      }
+      /* Last column (price/profit) — push right */
+      #dash-deals tbody td:last-child,#dash-arb tbody td:last-child{
+        margin-left:auto;font-weight:700;font-size:0.9rem;
+      }
+
+      /* Inventory positions table → simplified */
+      #dash-inventory tbody tr{
+        display:grid;grid-template-columns:1fr auto;gap:2px 8px;
+        padding:12px 14px;border-bottom:1px solid var(--border);
+      }
+      #dash-inventory tbody tr:active{background:var(--bg-hover)}
+      #dash-inventory tbody td{padding:0;border:none;font-size:0.78rem}
+      #dash-inventory tbody td:first-child{
+        font-weight:700;color:var(--accent);font-size:0.85rem;
+        grid-column:1/-1;margin-bottom:2px;
+      }
+      #dash-inventory tbody td.hide-mobile{display:none}
+      #dash-inventory tbody td:last-child{text-align:right}
+
+      /* Portfolio snapshot — bigger numbers */
+      .pf-grid{
+        grid-template-columns:1fr 1fr !important;gap:12px !important;
+      }
+      .pf-val{font-size:1.35rem !important}
+      .pf-label{font-size:0.65rem !important}
+
+      /* Increase card body padding */
+      .card-body{padding:14px 16px !important}
+
+      /* Deal discount — larger on mobile */
+      .deal-discount{font-size:1.6rem !important}
     }
 
     /* === 16. Toast Conflict Resolution === */
