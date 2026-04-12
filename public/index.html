@@ -5632,10 +5632,10 @@ function renderDashboard() {
     const _metCapital = DATA.portfolio?.total_invested || 0;
     const _metPositions = DATA.portfolio?.total_pieces || 0;
     $('#metrics-grid').innerHTML = `
-        <div class="metric" style="background:linear-gradient(135deg,var(--bg-2) 0%,rgba(212,175,55,0.06) 100%);border-color:rgba(212,175,55,0.12);"><div class="label">Capital Deployed</div><div class="val counter-val" style="color:var(--accent)" data-target="${_metCapital}" data-format="dollar">${fmt(_metCapital)}</div><div class="sub">${_metPositions} unsold positions</div></div>
+        <div class="metric" style="background:linear-gradient(135deg,var(--bg-2) 0%,rgba(212,175,55,0.06) 100%);border-color:rgba(212,175,55,0.12);"><div class="label">Capital Deployed</div><div class="val counter-val" style="color:var(--accent)" data-target="${_metCapital}" data-format="dollar">${fmt(_metCapital)}</div><div class="sub">${_metPositions} unsold positions</div><div class="sparkline-wrap"><canvas class="metric-spark" data-key="capital"></canvas></div></div>
         <div class="metric" id="dash-ship-metric" style="background:linear-gradient(135deg,var(--bg-2) 0%,rgba(255,23,68,0.06) 100%);border-color:rgba(255,23,68,0.12);"><div class="label">Watches to Ship</div><div class="val" id="dash-ship-val" style="color:var(--red);font-size:1.8rem;">--</div><div class="sub" id="dash-ship-sub">loading...</div></div>
         <div class="metric" style="background:linear-gradient(135deg,var(--bg-2) 0%,rgba(0,230,118,0.05) 100%);border-color:rgba(0,230,118,0.12);"><div class="label">Active Deals</div><div class="val counter-val" style="color:var(--green)" data-target="${nDeals}" data-format="num">${nDeals}</div><div class="sub">below market</div><div class="sparkline-wrap"><canvas class="metric-spark" data-key="deals"></canvas></div></div>
-        <div class="metric" id="dash-pnl-metric" style="display:none;"><div class="label">Total P&L</div><div class="val" id="dash-pnl-val">--</div><div class="sub" id="dash-pnl-sub"></div></div>
+        <div class="metric" style="background:linear-gradient(135deg,var(--bg-2) 0%,rgba(96,165,250,0.05) 100%);border-color:rgba(96,165,250,0.12);"><div class="label">Arb Potential</div><div class="val counter-val" style="color:var(--blue)" data-target="${nArb}" data-format="num">${nArb}</div><div class="sub">cross-market ops</div><div class="sparkline-wrap"><canvas class="metric-spark" data-key="arb"></canvas></div></div>
     `;
     // Populate watches-to-ship count async
     fetchWithTimeout('/api/inventory/all', null, 15000).then(r=>r.ok?r.json():[]).then(items=>{
@@ -8082,9 +8082,43 @@ function renderPfSummary(c, p, items) {
             </div></div>
         </div>
     </div>`;
-    // Draw donut chart
+    // Draw donut chart with hover tooltips
     if (brandSegments.length) {
-        setTimeout(() => drawDonutChart('brand-donut', brandSegments, {size: 160}), 100);
+        setTimeout(() => {
+            drawDonutChart('brand-donut', brandSegments, {size: 160});
+            const canvas = document.getElementById('brand-donut');
+            if (canvas) {
+                let tt = document.getElementById('brand-donut-tt');
+                if (!tt) { tt = document.createElement('div'); tt.id = 'brand-donut-tt'; tt.className = 'chart-tooltip'; document.body.appendChild(tt); }
+                canvas.style.cursor = 'crosshair';
+                canvas.onmousemove = function(e) {
+                    const rect = canvas.getBoundingClientRect();
+                    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+                    const cx = rect.width / 2, cy = rect.height / 2;
+                    const dx = mx - cx, dy = my - cy;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const outerR = (rect.width / 2) - 4, innerR = outerR * 0.62;
+                    if (dist < innerR || dist > outerR) { tt.classList.remove('visible'); return; }
+                    let angle = Math.atan2(dy, dx) + Math.PI / 2;
+                    if (angle < 0) angle += Math.PI * 2;
+                    const total = brandSegments.reduce((s, seg) => s + seg.value, 0);
+                    let cum = 0;
+                    for (const seg of brandSegments) {
+                        cum += (seg.value / total) * Math.PI * 2;
+                        if (angle <= cum) {
+                            const pct = (seg.value / total * 100).toFixed(1);
+                            tt.innerHTML = `<div class="tt-date">${seg.name} (${seg.count}x)</div><div class="tt-val" style="color:${seg.color};">${fmt(seg.value)} · ${pct}%</div>`;
+                            tt.style.left = (e.clientX + 12) + 'px';
+                            tt.style.top = (e.clientY - 40) + 'px';
+                            tt.classList.add('visible');
+                            return;
+                        }
+                    }
+                    tt.classList.remove('visible');
+                };
+                canvas.onmouseleave = () => { const t = document.getElementById('brand-donut-tt'); if (t) t.classList.remove('visible'); };
+            }
+        }, 100);
     }
     // Animate portfolio counters
     requestAnimationFrame(() => animateAllCounters());
@@ -8197,7 +8231,7 @@ function renderPosTable(items) {
         const hkN=i.hk_count||0, usN=i.us_count||0;
         const sparkCanvasId = 'pos-spark-' + String(i.ref).replace(/[^a-zA-Z0-9]/g,'') + '-' + i.row;
         const spark = _sparkData[i.ref]
-            ? `<canvas id="${sparkCanvasId}" width="60" height="20" style="display:block;cursor:crosshair;" title="${i.ref} 14d trend"></canvas>`
+            ? `<div style="width:80px;min-width:80px;display:inline-block;"><canvas id="${sparkCanvasId}" style="display:block;cursor:crosshair;" title="${i.ref} 14d trend"></canvas></div>`
             : '<span class="dim" style="font-size:0.62rem;">—</span>';
         const askPrice = i.sale_price ? fmt(parseFloat(String(i.sale_price).replace(/[$,]/g, ''))) : '<span class="dim">—</span>';
         return `<tr style="cursor:pointer;" onclick="showWatchDetail(${i.row})">
@@ -8238,7 +8272,7 @@ function drawPosTableSparklines(items) {
         const id = 'pos-spark-' + String(i.ref).replace(/[^a-zA-Z0-9]/g,'') + '-' + i.row;
         const canvas = document.getElementById(id);
         if (!canvas) return;
-        drawCanvasSparkline(canvas, vals, {height: 20});
+        drawCanvasSparkline(canvas, vals, {height: 40});
         canvas.onclick = e => { e.stopPropagation(); };
         canvas.onmousemove = function(e) {
             const rect = canvas.getBoundingClientRect();
@@ -9194,6 +9228,7 @@ function drawMonthlyProfitChart(months) {
 
     // Draw profit bars
     const monthAbbrs = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const _profitHitAreas = [];
     months.forEach((m, i) => {
         const profit = m.profit || 0;
         const x = pad.left + i * spacing + (spacing - barW) / 2;
@@ -9221,7 +9256,32 @@ function drawMonthlyProfitChart(months) {
         ctx.font = `9px 'JetBrains Mono', monospace`;
         ctx.textAlign = 'center';
         ctx.fillText(monthAbbrs[mn] || '', x + barW / 2, H - 8);
+
+        _profitHitAreas.push({x, barW, profit, margin: m.margin || 0, pieces: m.pieces || 0, month: m.month, revenue: m.revenue || 0});
     });
+
+    // Hover tooltip for profit bars
+    let profitTt = document.getElementById('monthly-profit-tt');
+    if (!profitTt) { profitTt = document.createElement('div'); profitTt.id = 'monthly-profit-tt'; profitTt.className = 'chart-tooltip'; document.body.appendChild(profitTt); }
+    canvas.style.cursor = 'crosshair';
+    canvas.onmousemove = function(e) {
+        const rect = canvas.getBoundingClientRect();
+        const mx = (e.clientX - rect.left) * (W / rect.width);
+        let hit = null;
+        for (const h of _profitHitAreas) { if (mx >= h.x && mx <= h.x + h.barW) { hit = h; break; } }
+        if (!hit) { profitTt.classList.remove('visible'); return; }
+        const mo = hit.month ? hit.month.replace('-', '/') : '';
+        const pColor = hit.profit >= 0 ? 'var(--green)' : 'var(--red)';
+        const mColor = hit.margin >= 10 ? 'var(--green)' : hit.margin >= 5 ? 'var(--text-0)' : 'var(--red)';
+        profitTt.innerHTML = `<div class="tt-date">${mo} · ${hit.pieces} sold</div>
+            <div class="tt-val" style="color:${pColor};">${hit.profit >= 0 ? '+' : ''}$${Math.round(hit.profit).toLocaleString()}</div>
+            <div style="font-size:0.7rem;color:var(--text-2);">Revenue: $${Math.round(hit.revenue).toLocaleString()}</div>
+            <div style="font-size:0.7rem;color:${mColor};">Margin: ${hit.margin}%</div>`;
+        profitTt.style.left = (e.clientX + 12) + 'px';
+        profitTt.style.top = (e.clientY - 80) + 'px';
+        profitTt.classList.add('visible');
+    };
+    canvas.onmouseleave = () => { const t = document.getElementById('monthly-profit-tt'); if (t) t.classList.remove('visible'); };
 
     // Margin % overlay line
     const margins = months.map(m => m.margin || 0);
@@ -9385,10 +9445,11 @@ function drawMetricSparklines() {
         'listings': generateTrend(DATA.summary?.total_listings || 5000, 14, 0.02),
         'refs': generateTrend(DATA.summary?.unique_refs || Object.keys(DATA.refs).length || 200, 14, 0.01),
         'deals': generateTrend(DATA.deals?.length || 5, 14, 0.15),
-        'arb': generateTrend(DATA.arbitrage?.reduce((a,x)=>a+(x.profit||0),0) || 1000, 14, 0.1),
+        'arb': generateTrend(DATA.arbitrage?.length || 10, 14, 0.12),
+        'capital': generateTrend(DATA.portfolio?.total_invested || 50000, 14, 0.008),
     };
-    const labels = {listings:'Listings',refs:'References',deals:'Deals',arb:'Arb Potential'};
-    const formats = {listings:'num',refs:'num',deals:'num',arb:'dollar'};
+    const labels = {listings:'Listings',refs:'References',deals:'Deals',arb:'Arb Ops',capital:'Capital'};
+    const formats = {listings:'num',refs:'num',deals:'num',arb:'num',capital:'dollar'};
     document.querySelectorAll('.metric-spark').forEach(canvas => {
         const key = canvas.dataset.key;
         if (sparkData[key]) {
