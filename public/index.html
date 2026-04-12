@@ -3351,8 +3351,8 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                         &middot; hold to peek
                     </div>
                     <!-- Canvas area (takes most space) -->
-                    <div style="flex:1;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;min-height:0;">
-                        <canvas id="editor-canvas" style="max-width:100%;max-height:100%;cursor:default;border:2px solid rgba(255,255,255,0.08);border-radius:6px;transition:border-color 0.2s,box-shadow 0.2s;"></canvas>
+                    <div id="editor-canvas-wrapper" style="flex:1;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;min-height:0;touch-action:none;">
+                        <canvas id="editor-canvas" style="cursor:default;border:2px solid rgba(255,255,255,0.08);border-radius:6px;transition:border-color 0.2s,box-shadow 0.2s;transform-origin:0 0;position:absolute;"></canvas>
                         <div id="redact-hint" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:var(--text-1);padding:6px 14px;border-radius:6px;font-size:0.68rem;pointer-events:none;display:none;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:opacity 0.3s;">
                             Draw rectangles to redact &middot; <span style="color:var(--text-2);">Ctrl+Z to undo</span>
                         </div>
@@ -13051,6 +13051,10 @@ async function loadPayments() {
     let editorDragging = false; // drag-to-move selected rect
     let editorDragOffX = 0, editorDragOffY = 0;
     let editorStartX = 0, editorStartY = 0;
+    let editorZoom = 1, editorPanX = 0, editorPanY = 0;
+    let editorPinchDist = 0, editorIsPinching = false, editorPanStart = null;
+    let editorBaseW = 0, editorBaseH = 0;
+    let editorLastTap = 0;
     let editorPeeking = false, editorPeekTimer = null;
     let editorComparePos = 0.5; // before/after divider position (0-1)
     let editorCompareDragging = false;
@@ -13243,6 +13247,8 @@ async function loadPayments() {
         editorSelectedIdx = -1;
         editorPeeking = false;
         editorTool = 'view';
+        editorZoom = 1; editorPanX = 0; editorPanY = 0;
+        editorIsPinching = false; editorPinchDist = 0; editorPanStart = null;
 
         ensureWatchReference();
         
@@ -13278,8 +13284,13 @@ async function loadPayments() {
             const scale = Math.min(maxW / img.width, maxH / img.height, 1);
             canvas.width = img.width * scale;
             canvas.height = img.height * scale;
+            canvas.style.width = canvas.width + 'px';
+            canvas.style.height = canvas.height + 'px';
             canvas.dataset.scale = scale;
+            editorBaseW = canvas.width;
+            editorBaseH = canvas.height;
             renderEditor();
+            _editorApplyTransform();
             // Auto-enter redact mode if watch needs redaction (has serial but not yet redacted)
             if (watch.serial && !watch.redacted && !watch.redacted_at) {
                 setEditorTool('redact');
@@ -13304,10 +13315,59 @@ async function loadPayments() {
         canvas.onmousemove = editorMouseMove;
         canvas.onmouseup = editorMouseUp;
         canvas.onmouseleave = editorMouseUp;
-        // Touch support
-        canvas.ontouchstart = function(e) { e.preventDefault(); editorMouseDown(touchToMouse(e)); };
-        canvas.ontouchmove = function(e) { e.preventDefault(); editorMouseMove(touchToMouse(e)); };
-        canvas.ontouchend = function(e) { e.preventDefault(); editorMouseUp(touchToMouse(e)); };
+        // Touch: 1 finger = draw, 2 fingers = pinch zoom + pan
+        canvas.ontouchstart = function(e) {
+            e.preventDefault();
+            if (e.touches.length === 2) {
+                editorPinchDist = _pinchDist(e.touches);
+                editorIsPinching = true;
+                editorPanStart = { x: (e.touches[0].clientX + e.touches[1].clientX) / 2, y: (e.touches[0].clientY + e.touches[1].clientY) / 2 };
+                editorDrawing = false;
+            } else if (e.touches.length === 1) {
+                // Double-tap detection
+                var now = Date.now();
+                if (now - editorLastTap < 300) {
+                    editorZoom = editorZoom > 1.5 ? 1 : 3;
+                    editorPanX = 0; editorPanY = 0;
+                    _editorClampPan();
+                    _editorApplyTransform();
+                    editorLastTap = 0;
+                    return;
+                }
+                editorLastTap = now;
+                var m = _editorTouchCoord(e, canvas);
+                editorMouseDown(m);
+            }
+        };
+        canvas.ontouchmove = function(e) {
+            e.preventDefault();
+            if (e.touches.length === 2 && editorIsPinching) {
+                var newDist = _pinchDist(e.touches);
+                var ratio = newDist / editorPinchDist;
+                editorZoom = Math.max(1, Math.min(8, editorZoom * ratio));
+                editorPinchDist = newDist;
+                var mid = { x: (e.touches[0].clientX + e.touches[1].clientX) / 2, y: (e.touches[0].clientY + e.touches[1].clientY) / 2 };
+                editorPanX += mid.x - editorPanStart.x;
+                editorPanY += mid.y - editorPanStart.y;
+                editorPanStart = mid;
+                _editorClampPan();
+                _editorApplyTransform();
+            } else if (e.touches.length === 1 && editorDrawing) {
+                var m = _editorTouchCoord(e, canvas);
+                editorMouseMove(m);
+            }
+        };
+        canvas.ontouchend = function(e) {
+            e.preventDefault();
+            if (editorIsPinching && e.touches.length < 2) {
+                editorIsPinching = false;
+                return;
+            }
+            if (editorDrawing) {
+                var m = _editorTouchCoord(e, canvas);
+                editorMouseUp(m);
+            }
+        };
 
         // Keyboard shortcuts
         window._editorKeyHandler = function(e) {
@@ -13346,11 +13406,34 @@ async function loadPayments() {
         window.addEventListener('keydown', window._editorKeyHandler);
     }
     
-    function touchToMouse(e) {
-        const touch = e.touches[0] || e.changedTouches[0];
-        const canvas = $('#editor-canvas');
-        const rect = canvas.getBoundingClientRect();
-        return { offsetX: touch.clientX - rect.left, offsetY: touch.clientY - rect.top };
+    function _editorTouchCoord(e, canvas) {
+        var t = e.touches[0] || e.changedTouches[0];
+        var r = canvas.getBoundingClientRect();
+        // getBoundingClientRect includes CSS transform, so un-scale
+        var scaleX = parseFloat(canvas.style.width) / r.width;
+        var scaleY = parseFloat(canvas.style.height) / r.height;
+        return { offsetX: (t.clientX - r.left) * scaleX, offsetY: (t.clientY - r.top) * scaleY };
+    }
+
+    function _editorApplyTransform() {
+        var canvas = $('#editor-canvas');
+        if (!canvas) return;
+        var wrapper = $('#editor-canvas-wrapper');
+        var wW = wrapper.clientWidth, wH = wrapper.clientHeight;
+        var centerX = (wW - editorBaseW) / 2;
+        var centerY = (wH - editorBaseH) / 2;
+        canvas.style.transform = 'translate(' + (centerX + editorPanX) + 'px, ' + (centerY + editorPanY) + 'px) scale(' + editorZoom + ')';
+    }
+
+    function _editorClampPan() {
+        var wrapper = $('#editor-canvas-wrapper');
+        if (!wrapper) return;
+        var wW = wrapper.clientWidth, wH = wrapper.clientHeight;
+        var cW = editorBaseW * editorZoom, cH = editorBaseH * editorZoom;
+        var maxPanX = Math.max(0, (cW - wW) / 2 + 20);
+        var maxPanY = Math.max(0, (cH - wH) / 2 + 20);
+        editorPanX = Math.max(-maxPanX, Math.min(maxPanX, editorPanX));
+        editorPanY = Math.max(-maxPanY, Math.min(maxPanY, editorPanY));
     }
     
     function renderEditor() {
@@ -13840,6 +13923,8 @@ async function loadPayments() {
         editorDrawing = false;
         editorDragging = false;
         editorPeeking = false;
+        editorZoom = 1; editorPanX = 0; editorPanY = 0;
+        editorIsPinching = false; editorPinchDist = 0; editorPanStart = null;
         if (editorPeekTimer) { clearTimeout(editorPeekTimer); editorPeekTimer = null; }
         if (window._editorKeyHandler) { window.removeEventListener('keydown', window._editorKeyHandler); window._editorKeyHandler = null; }
     }
