@@ -6458,6 +6458,7 @@ async function downloadPostingRedacted() {
         ctx.fillRect(r.x / scale, r.y / scale, r.w / scale, r.h / scale);
     }
     const blob = await new Promise(resolve => fullCanvas.toBlob(resolve, 'image/jpeg', 0.92));
+    if (!blob) return;
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -13948,6 +13949,7 @@ async function loadPayments() {
             ctx.fillRect(r.x / scale, r.y / scale, r.w / scale, r.h / scale);
         }
         const blob = await new Promise(resolve => fullCanvas.toBlob(resolve, 'image/jpeg', 0.92));
+        if (!blob) return;
         const watch = photoLibraryData.find(w => w.watch_id === editorWatchId);
         const model = (watch && watch.model ? watch.model : 'watch').replace(/[^a-zA-Z0-9]+/g, '_').toLowerCase();
         const dial = (watch && watch.dial ? watch.dial : '').replace(/[^a-zA-Z0-9]+/g, '_').toLowerCase();
