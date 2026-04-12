@@ -512,6 +512,125 @@
         border-radius:10px;flex:1;text-align:center;
       }
     }
+
+    /* === 29. Mobile Theme Toggle === */
+    @media(max-width:900px){
+      .ws11-theme-fab{
+        position:fixed;top:12px;right:12px;
+        top:calc(12px + env(safe-area-inset-top));
+        width:40px;height:40px;border-radius:50%;
+        background:rgba(8,8,12,0.65);backdrop-filter:blur(16px);
+        -webkit-backdrop-filter:blur(16px);
+        border:1px solid rgba(255,255,255,0.08);
+        display:flex;align-items:center;justify-content:center;
+        z-index:150;cursor:pointer;
+        transition:transform 120ms cubic-bezier(0.2,0,0,1),background 200ms ease;
+        -webkit-tap-highlight-color:transparent;
+        box-shadow:0 2px 12px rgba(0,0,0,0.3);
+      }
+      html.light .ws11-theme-fab{
+        background:rgba(245,244,240,0.7);
+        border-color:rgba(0,0,0,0.06);
+        box-shadow:0 2px 12px rgba(0,0,0,0.08);
+      }
+      .ws11-theme-fab:active{transform:scale(0.88)}
+      .ws11-theme-fab svg{width:18px;height:18px;stroke:var(--text-1);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    }
+
+    /* === 30. Scrollable Tabs === */
+    @media(max-width:900px){
+      .tabs{
+        overflow-x:auto;-webkit-overflow-scrolling:touch;
+        scrollbar-width:none;flex-wrap:nowrap;gap:0;
+        padding:0 4px;
+      }
+      .tabs::-webkit-scrollbar{display:none}
+      .tab{
+        white-space:nowrap;flex-shrink:0;
+        padding:10px 16px;font-size:0.78rem;
+        border-radius:8px 8px 0 0;min-height:44px;
+      }
+    }
+
+    /* === 31. Metric Count-Up Animation === */
+    @media(prefers-reduced-motion:no-preference){
+      @media(max-width:900px){
+        .ws11-counting .val{
+          transition:none;
+        }
+      }
+    }
+
+    /* === 32. Deal Discount Ticker === */
+    @media(prefers-reduced-motion:no-preference){
+      @media(max-width:900px){
+        .deal-discount{
+          transition:color 200ms ease;
+        }
+        .deal-card.ws11-revealed .deal-discount{
+          animation:ws11DiscountPop 400ms cubic-bezier(0.22,1,0.36,1) both;
+        }
+      }
+    }
+    @keyframes ws11DiscountPop{
+      0%{transform:scale(0.7);opacity:0}
+      60%{transform:scale(1.08)}
+      100%{transform:scale(1);opacity:1}
+    }
+
+    /* === 33. Smooth Theme Transition === */
+    html.ws11-transitioning *{
+      transition:background-color 300ms ease,color 200ms ease,
+                 border-color 300ms ease,box-shadow 300ms ease !important;
+    }
+
+    /* === 34. Image Loading Placeholder === */
+    @media(max-width:900px){
+      img.ws11-lazy{
+        opacity:0;transition:opacity 300ms ease;
+      }
+      img.ws11-lazy.ws11-loaded{opacity:1}
+      .ws11-img-placeholder{
+        background:linear-gradient(90deg,var(--bg-3) 25%,var(--bg-4) 50%,var(--bg-3) 75%);
+        background-size:200% 100%;animation:shimmer 1.5s infinite;
+        display:block;border-radius:var(--radius);
+      }
+    }
+
+    /* === 35. Heat Gauge Touch === */
+    @media(max-width:900px){
+      .heat-gauge{
+        padding:10px 16px;cursor:pointer;
+        -webkit-tap-highlight-color:transparent;
+      }
+      .heat-gauge:active{opacity:0.8;transition:opacity 80ms ease}
+      .heat-bar{min-height:8px;border-radius:4px}
+    }
+
+    /* === 36. Devotion Card Mobile === */
+    @media(max-width:900px){
+      #devotion-card{
+        border-radius:16px !important;padding:14px 16px !important;
+      }
+      #devotion-card #devotion-verse{
+        font-size:0.95rem !important;line-height:1.65 !important;
+      }
+    }
+
+    /* === 37. Notification Panel Mobile === */
+    @media(max-width:900px){
+      #notif-panel{
+        position:fixed !important;bottom:0 !important;left:0 !important;right:0 !important;
+        top:auto !important;width:100% !important;max-width:100% !important;
+        border-radius:20px 20px 0 0 !important;max-height:70vh !important;
+        box-shadow:0 -8px 40px rgba(0,0,0,0.5) !important;
+      }
+    }
+
+    /* === 38. Footer Hide on Mobile === */
+    @media(max-width:900px){
+      .footer{display:none}
+    }
     `; }
 
     // ── JS Behavior Layer ──
@@ -1040,6 +1159,170 @@
       setTimeout(checkDeals, 2000);
     }
 
+    // ── Mobile Theme Toggle FAB ──
+    function ws11InitThemeToggle() {
+      if (window.innerWidth >= 900) return;
+      if (document.getElementById('ws11-theme-fab')) return;
+
+      const fab = document.createElement('button');
+      fab.id = 'ws11-theme-fab';
+      fab.className = 'ws11-theme-fab';
+      fab.setAttribute('aria-label', 'Toggle dark/light mode');
+      fab.setAttribute('role', 'switch');
+
+      function updateIcon() {
+        const isLight = document.documentElement.classList.contains('light');
+        fab.setAttribute('aria-checked', String(isLight));
+        fab.innerHTML = isLight
+          ? '<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
+          : '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+      }
+
+      fab.addEventListener('click', () => {
+        MK.Haptic?.medium();
+        // Add smooth transition class
+        document.documentElement.classList.add('ws11-transitioning');
+        if (typeof window.toggleTheme === 'function') {
+          window.toggleTheme();
+        } else {
+          document.documentElement.classList.toggle('light');
+          localStorage.setItem('mk-theme', document.documentElement.classList.contains('light') ? 'light' : 'dark');
+        }
+        updateIcon();
+        setTimeout(() => document.documentElement.classList.remove('ws11-transitioning'), 350);
+      });
+
+      updateIcon();
+      document.body.appendChild(fab);
+
+      // Watch for external theme changes
+      const observer = new MutationObserver(() => updateIcon());
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    // ── Lazy Load Images ──
+    function ws11InitLazyImages() {
+      if (window.innerWidth >= 900) return;
+
+      // Add loading="lazy" to all images that don't have it
+      document.querySelectorAll('img:not([loading])').forEach(img => {
+        img.setAttribute('loading', 'lazy');
+      });
+
+      // Observe for dynamically added images
+      const obs = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          m.addedNodes.forEach(node => {
+            if (node.nodeType !== 1) return;
+            if (node.tagName === 'IMG' && !node.getAttribute('loading')) {
+              node.setAttribute('loading', 'lazy');
+            }
+            if (node.querySelectorAll) {
+              node.querySelectorAll('img:not([loading])').forEach(img => {
+                img.setAttribute('loading', 'lazy');
+              });
+            }
+          });
+        }
+      });
+      obs.observe(document.body, { childList: true, subtree: true });
+    }
+
+    // ── Metric Count-Up Animation ──
+    function ws11InitCountUp() {
+      if (window.innerWidth >= 900) return;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+      function animateValue(el, endVal, duration) {
+        const isPrice = endVal.startsWith('$') || endVal.startsWith('-$');
+        const prefix = isPrice ? (endVal.startsWith('-') ? '-$' : '$') : '';
+        const suffix = endVal.endsWith('%') ? '%' : '';
+        const numStr = endVal.replace(/[^0-9.-]/g, '');
+        const end = parseFloat(numStr);
+        if (isNaN(end)) return;
+
+        const start = 0;
+        const startTime = performance.now();
+        el.classList.add('ws11-counting');
+
+        function tick(now) {
+          const progress = Math.min((now - startTime) / duration, 1);
+          // Ease out cubic
+          const eased = 1 - Math.pow(1 - progress, 3);
+          const current = start + (end - start) * eased;
+
+          if (Math.abs(end) >= 100) {
+            el.textContent = prefix + Math.round(current).toLocaleString() + suffix;
+          } else {
+            el.textContent = prefix + current.toFixed(1) + suffix;
+          }
+
+          if (progress < 1) {
+            requestAnimationFrame(tick);
+          } else {
+            el.textContent = endVal; // Ensure exact final value
+            el.classList.remove('ws11-counting');
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+
+      // Observe metric values for initial appearance
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const val = entry.target;
+            const text = val.textContent.trim();
+            if (text && text !== '--' && !val.dataset.ws11Counted) {
+              val.dataset.ws11Counted = '1';
+              animateValue(val, text, 600);
+            }
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.3 });
+
+      function observeMetrics() {
+        document.querySelectorAll('.metric .val').forEach(el => {
+          if (!el.dataset.ws11Counted) observer.observe(el);
+        });
+      }
+
+      observeMetrics();
+      // Re-observe after page changes
+      document.addEventListener('mk:page-changed', () => setTimeout(observeMetrics, 300));
+    }
+
+    // ── Sparkline Touch Handler ──
+    function ws11InitSparklineTouch() {
+      if (window.innerWidth >= 900) return;
+
+      document.addEventListener('touchstart', (e) => {
+        const canvas = e.target.closest('.sparkline-wrap canvas');
+        if (!canvas) return;
+
+        // Show value tooltip on touch
+        const rect = canvas.getBoundingClientRect();
+        const x = e.touches[0].clientX - rect.left;
+        const ratio = x / rect.width;
+
+        // Trigger the existing mousemove handler if present
+        const mouseEvent = new MouseEvent('mousemove', {
+          clientX: e.touches[0].clientX,
+          clientY: e.touches[0].clientY
+        });
+        canvas.dispatchEvent(mouseEvent);
+        MK.Haptic?.selection();
+      }, { passive: true });
+
+      document.addEventListener('touchend', (e) => {
+        const canvas = e.target.closest('.sparkline-wrap canvas');
+        if (canvas) {
+          canvas.dispatchEvent(new MouseEvent('mouseleave'));
+        }
+      }, { passive: true });
+    }
+
     // ── Form InputMode Fixes ──
     function ws11FixInputModes() {
       if (window.innerWidth >= 900) return;
@@ -1134,7 +1417,7 @@
         const el = document.getElementById(id);
         if (el) el.remove();
       });
-      document.querySelectorAll('.ws11-sheet-backdrop, .ws11-sheet, .ws11-offline-badge, .ws11-ctx-menu, .ws11-swipe-indicator').forEach(el => el.remove());
+      document.querySelectorAll('.ws11-sheet-backdrop, .ws11-sheet, .ws11-offline-badge, .ws11-ctx-menu, .ws11-swipe-indicator, #ws11-theme-fab').forEach(el => el.remove());
       document.body.classList.remove('ws11-chrome-hidden');
       document.body.style.overflow = '';
     }
@@ -1176,6 +1459,10 @@
             ws11FixInputModes();
             ws11InitTableScroll();
             ws11InitKeyboardDismiss();
+            ws11InitThemeToggle();
+            ws11InitLazyImages();
+            ws11InitCountUp();
+            ws11InitSparklineTouch();
 
             const elapsed = (performance.now() - t0).toFixed(1);
             console.log(`[MK] ${MOD_ID}: Premium mobile layer active (${elapsed}ms) — ` +
