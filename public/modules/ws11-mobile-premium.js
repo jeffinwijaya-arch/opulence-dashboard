@@ -248,6 +248,105 @@
       }
       .more-grid-item{border-radius:14px;min-height:64px}
     }
+
+    /* === 15. Inline Grid Layout Fixes === */
+    @media(max-width:900px){
+      /* Dashboard 2-col grids → stack on mobile */
+      #page-dashboard div[style*="grid-template-columns:1fr 1fr"],
+      #page-dashboard div[style*="grid-template-columns: 1fr 1fr"]{
+        display:block !important;
+      }
+      #page-dashboard div[style*="grid-template-columns:1fr 1fr"] > .card,
+      #page-dashboard div[style*="grid-template-columns: 1fr 1fr"] > .card{
+        margin-bottom:10px;
+      }
+      /* Shipping 3-col form → 1-col */
+      #page-shipping div[style*="grid-template-columns:1fr 1fr 1fr"],
+      #page-shipping div[style*="grid-template-columns: 1fr 1fr 1fr"]{
+        grid-template-columns:1fr !important;
+      }
+      /* Shipping 2-col form → 1-col */
+      #page-shipping div[style*="grid-template-columns:1fr 1fr"],
+      #page-shipping div[style*="grid-template-columns: 1fr 1fr"]{
+        grid-template-columns:1fr !important;
+      }
+      /* All flex containers: allow wrapping */
+      div[style*="display:flex"][style*="gap"]{flex-wrap:wrap !important}
+      /* FX calculator grid → stack on small screens */
+      #fx-result div[style*="grid-template-columns:1fr 1fr"]{
+        grid-template-columns:1fr !important;
+      }
+    }
+
+    /* === 16. Toast Conflict Resolution === */
+    @media(max-width:900px){
+      /* Hide legacy toast container on mobile — ws11 toast takes over */
+      .toast-container{display:none !important}
+    }
+
+    /* === 17. Page Context Bar Polish === */
+    @media(max-width:900px){
+      .page-context{
+        padding:10px 16px;background:rgba(8,8,12,0.85);
+        backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+        border-bottom:1px solid rgba(255,255,255,0.04);
+        position:sticky;top:0;z-index:50;
+      }
+      html.light .page-context{
+        background:rgba(245,244,240,0.85);
+        border-bottom-color:rgba(0,0,0,0.04);
+      }
+      .page-context .pc-name{font-size:0.72rem;letter-spacing:1.2px}
+    }
+
+    /* === 18. Ticker Hide on Mobile === */
+    @media(max-width:900px){
+      .ticker-bar{display:none}
+    }
+
+    /* === 19. Long-press Context Menu === */
+    @media(max-width:900px){
+      .ws11-ctx-menu{
+        position:fixed;bottom:0;left:0;right:0;z-index:10002;
+        background:var(--bg-1);border-radius:20px 20px 0 0;
+        padding:12px 16px 20px;padding-bottom:calc(20px + env(safe-area-inset-bottom));
+        transform:translateY(100%);transition:transform 280ms cubic-bezier(0.22,1,0.36,1);
+        box-shadow:0 -8px 40px rgba(0,0,0,0.5);
+      }
+      .ws11-ctx-menu.ws11-visible{transform:translateY(0)}
+      .ws11-ctx-menu-handle{width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,0.18);margin:0 auto 12px}
+      html.light .ws11-ctx-menu-handle{background:rgba(0,0,0,0.15)}
+      .ws11-ctx-menu-title{font-size:0.85rem;font-weight:700;color:var(--accent);margin-bottom:4px;font-family:var(--mono)}
+      .ws11-ctx-menu-sub{font-size:0.7rem;color:var(--text-2);margin-bottom:14px}
+      .ws11-ctx-action{
+        display:flex;align-items:center;gap:14px;padding:14px 12px;
+        border-radius:12px;font-size:0.88rem;font-weight:500;color:var(--text-0);
+        transition:background 120ms ease;cursor:pointer;border:none;
+        background:none;width:100%;text-align:left;font-family:var(--font);
+      }
+      .ws11-ctx-action:active{background:var(--accent-dim)}
+      .ws11-ctx-action-icon{width:20px;height:20px;color:var(--accent);flex-shrink:0}
+      .ws11-ctx-action + .ws11-ctx-action{border-top:1px solid var(--border)}
+    }
+
+    /* === 20. Swipe Hint Indicator === */
+    @media(max-width:900px){
+      .ws11-swipe-indicator{
+        position:fixed;bottom:calc(76px + env(safe-area-inset-bottom));
+        left:50%;transform:translateX(-50%);
+        font-size:0.6rem;color:var(--text-3);font-family:var(--mono);
+        letter-spacing:0.5px;text-transform:uppercase;
+        opacity:0;transition:opacity 400ms ease;pointer-events:none;
+      }
+      .ws11-swipe-indicator.ws11-visible{opacity:1}
+    }
+
+    /* === 21. Active State Feedback === */
+    @media(max-width:900px){
+      .btn:active,button:active{transform:scale(0.96) !important;transition:transform 80ms ease !important}
+      .tag:active{transform:scale(0.94);transition:transform 80ms ease}
+      .tab:active{transform:scale(0.97);transition:transform 80ms ease}
+    }
     `; }
 
     // ── JS Behavior Layer ──
@@ -629,12 +728,159 @@
       }
     }
     
+    // ── Long-press Context Menu for Deal Cards ──
+    function ws11InitLongPress() {
+      if (window.innerWidth >= 900) return;
+
+      let pressTimer = null;
+      let ctxMenu = null;
+      let ctxBackdrop = null;
+
+      function createCtxMenu() {
+        if (ctxMenu) return;
+        ctxBackdrop = document.createElement('div');
+        ctxBackdrop.className = 'ws11-sheet-backdrop';
+        ctxBackdrop.addEventListener('click', closeCtxMenu);
+        document.body.appendChild(ctxBackdrop);
+
+        ctxMenu = document.createElement('div');
+        ctxMenu.className = 'ws11-ctx-menu';
+        ctxMenu.setAttribute('role', 'menu');
+        ctxMenu.setAttribute('aria-label', 'Deal actions');
+        ctxMenu.innerHTML =
+          '<div class="ws11-ctx-menu-handle"></div>' +
+          '<div class="ws11-ctx-menu-title" id="ws11-ctx-title"></div>' +
+          '<div class="ws11-ctx-menu-sub" id="ws11-ctx-sub"></div>' +
+          '<div id="ws11-ctx-actions"></div>';
+        document.body.appendChild(ctxMenu);
+      }
+
+      function openCtxMenu(card) {
+        createCtxMenu();
+        const ref = card.querySelector('.ref, [style*="color:var(--accent)"]')?.textContent || 'Item';
+        const price = card.querySelector('.green, .profit-badge')?.textContent || '';
+        document.getElementById('ws11-ctx-title').textContent = ref.trim();
+        document.getElementById('ws11-ctx-sub').textContent = price ? `${price}` : 'Deal card';
+
+        const actions = document.getElementById('ws11-ctx-actions');
+        actions.innerHTML = [
+          { label: 'Look up price', icon: 'M11 11V5H13V11H19V13H13V19H11V13H5V11H11Z', action: () => { closeCtxMenu(); if (window.showPage) showPage('lookup'); }},
+          { label: 'Copy reference', icon: 'M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z', action: () => {
+            navigator.clipboard?.writeText(ref.trim());
+            closeCtxMenu();
+            if (window.MK?.Toast) MK.Toast.show('Copied: ' + ref.trim(), { type: 'success' });
+            else if (window.showToast) showToast('Copied!', 'success');
+          }},
+          { label: 'Save to watchlist', icon: 'M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z', action: () => {
+            closeCtxMenu();
+            MK.Haptic?.success();
+            if (window.MK?.Toast) MK.Toast.show('Saved to watchlist', { type: 'success' });
+          }}
+        ].map(a =>
+          `<button class="ws11-ctx-action" role="menuitem">` +
+          `<svg class="ws11-ctx-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="${a.icon}"/></svg>` +
+          `${a.label}</button>`
+        ).join('');
+
+        // Re-bind click events
+        const actionBtns = actions.querySelectorAll('.ws11-ctx-action');
+        const actionData = [
+          () => { closeCtxMenu(); if (window.showPage) showPage('lookup'); },
+          () => {
+            navigator.clipboard?.writeText(ref.trim());
+            closeCtxMenu();
+            if (window.MK?.Toast) MK.Toast.show('Copied: ' + ref.trim(), { type: 'success' });
+          },
+          () => { closeCtxMenu(); MK.Haptic?.success(); if (window.MK?.Toast) MK.Toast.show('Saved to watchlist', { type: 'success' }); }
+        ];
+        actionBtns.forEach((btn, i) => btn.addEventListener('click', actionData[i]));
+
+        requestAnimationFrame(() => {
+          ctxBackdrop.classList.add('ws11-visible');
+          ctxMenu.classList.add('ws11-visible');
+        });
+        MK.Haptic?.heavy();
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeCtxMenu() {
+        if (!ctxMenu) return;
+        ctxBackdrop.classList.remove('ws11-visible');
+        ctxMenu.classList.remove('ws11-visible');
+        document.body.style.overflow = '';
+        MK.Haptic?.light();
+      }
+
+      // Delegate long-press on deal cards
+      document.addEventListener('touchstart', (e) => {
+        const card = e.target.closest('.deal-card');
+        if (!card) return;
+        pressTimer = setTimeout(() => openCtxMenu(card), 500);
+      }, { passive: true });
+
+      document.addEventListener('touchmove', () => {
+        if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+      }, { passive: true });
+
+      document.addEventListener('touchend', () => {
+        if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+      }, { passive: true });
+    }
+
+    // ── More Menu → Sheet upgrade ──
+    function ws11UpgradeMoreMenu() {
+      if (window.innerWidth >= 900) return;
+      // Patch toggleMobileMore to add haptic feedback
+      const _origToggle = window.toggleMobileMore;
+      if (_origToggle && !window.__ws11MorePatched) {
+        window.toggleMobileMore = function() {
+          MK.Haptic?.light();
+          _origToggle.call(window);
+        };
+        window.__ws11MorePatched = true;
+      }
+      // Patch mobileNav to add haptic
+      const _origMobileNav = window.mobileNav;
+      if (_origMobileNav && !window.__ws11MobileNavPatched) {
+        window.mobileNav = function(page) {
+          MK.Haptic?.selection();
+          _origMobileNav.call(window, page);
+        };
+        window.__ws11MobileNavPatched = true;
+      }
+    }
+
+    // ── First-visit swipe hint ──
+    function ws11InitSwipeHint() {
+      if (window.innerWidth >= 900) return;
+      if (localStorage.getItem('ws11-hint-shown')) return;
+
+      const hint = document.createElement('div');
+      hint.className = 'ws11-swipe-indicator';
+      hint.textContent = 'Swipe deal cards to save or dismiss';
+      document.body.appendChild(hint);
+
+      // Show hint when user first visits deals page
+      const checkDeals = () => {
+        if (document.querySelector('#page-deals.active')) {
+          requestAnimationFrame(() => hint.classList.add('ws11-visible'));
+          setTimeout(() => {
+            hint.classList.remove('ws11-visible');
+            setTimeout(() => hint.remove(), 400);
+          }, 4000);
+          localStorage.setItem('ws11-hint-shown', '1');
+        }
+      };
+      document.addEventListener('mk:page-changed', checkDeals);
+      setTimeout(checkDeals, 2000);
+    }
+
     function ws11Cleanup() {
       ['ws11-mobile-premium-styles', 'ws11-toast-container', 'ws11-ptr'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.remove();
       });
-      document.querySelectorAll('.ws11-sheet-backdrop, .ws11-sheet, .ws11-offline-badge').forEach(el => el.remove());
+      document.querySelectorAll('.ws11-sheet-backdrop, .ws11-sheet, .ws11-offline-badge, .ws11-ctx-menu, .ws11-swipe-indicator').forEach(el => el.remove());
       document.body.classList.remove('ws11-chrome-hidden');
       document.body.style.overflow = '';
     }
@@ -670,6 +916,9 @@
             ws11InitInputFocus();
             ws11InitOffline();
             ws11InitRevealOnScroll();
+            ws11InitLongPress();
+            ws11UpgradeMoreMenu();
+            ws11InitSwipeHint();
 
             const elapsed = (performance.now() - t0).toFixed(1);
             console.log(`[MK] ${MOD_ID}: Premium mobile layer active (${elapsed}ms) — ` +
