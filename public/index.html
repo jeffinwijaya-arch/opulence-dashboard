@@ -13300,7 +13300,8 @@ async function loadPayments() {
         img.onload = function() {
             editorImage = img;
             const maxW = Math.min(860, window.innerWidth - 16);
-            const maxH = window.innerHeight - 90;
+            const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+            const maxH = vh * 0.65;
             const scale = Math.min(maxW / img.width, maxH / img.height, 1);
             canvas.width = img.width * scale;
             canvas.height = img.height * scale;
