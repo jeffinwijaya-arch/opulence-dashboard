@@ -3287,7 +3287,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
 
             <!-- Photo Modal -->
             <!-- Photo Editor Modal -->
-            <div id="photo-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.95);z-index:9999;overflow:auto;" onclick="if(event.target===this) closePhotoModal()">
+            <div id="photo-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.95);z-index:9999;overflow:auto;" onclick="if(event.target===this) { if(typeof closePhotoModal==='function') closePhotoModal(); }">
                 <div style="max-width:900px;margin:auto;padding:8px;height:100%;display:flex;flex-direction:column;">
                     <!-- Header + status (compact) -->
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;color:white;flex-shrink:0;">
@@ -5605,6 +5605,8 @@ let _postingRedactRects = [];
 let _postingRedactRedoStack = [];
 let _postingRedactSelected = -1; // index of selected rect, -1 = none
 let _postingRedactDrawing = false;
+let _postingRedactDragging = false;
+let _postingRedactDragOff = {x:0,y:0};
 let _postingRedactStart = {x:0,y:0};
 let _postingRedactImg = null;
 let _postingRedactOrigImg = null; // Original image before auto-redact
@@ -5688,14 +5690,22 @@ function openPostingRedactEditor(file, row, desc) {
     };
     reader.readAsDataURL(file);
 
-    // Mouse drawing with hold-to-peek + tap-to-select
+    // Mouse drawing with hold-to-peek + tap-to-select + drag-to-move
     canvas.onmousedown = function(e) {
         const p = _redactCanvasCoord(e.offsetX, e.offsetY);
-        // Check for click on existing rect (tap-to-select)
         const clickedIdx = _hitTestRedactRect(_postingRedactRects, p.x, p.y);
+        // Drag-to-move already-selected rect
+        if (clickedIdx >= 0 && clickedIdx === _postingRedactSelected) {
+            _postingRedactDragging = true;
+            const r = _postingRedactRects[clickedIdx];
+            _postingRedactDragOff = {x: p.x - r.x, y: p.y - r.y};
+            return;
+        }
+        // Tap-to-select
         if (clickedIdx >= 0 && !e.shiftKey) {
             _postingRedactSelected = (_postingRedactSelected === clickedIdx) ? -1 : clickedIdx;
             postingRedactRender();
+            _updatePostingRedactCount();
             return;
         }
         _postingRedactSelected = -1;
@@ -5712,6 +5722,17 @@ function openPostingRedactEditor(file, row, desc) {
     };
     canvas.onmousemove = function(e) {
         if (_postingRedactPeeking) return;
+        // Drag-to-move
+        if (_postingRedactDragging && _postingRedactSelected >= 0) {
+            const p = _redactCanvasCoord(e.offsetX, e.offsetY);
+            const r = _postingRedactRects[_postingRedactSelected];
+            const cssW = parseFloat(document.getElementById('posting-redact-canvas').style.width);
+            const cssH = parseFloat(document.getElementById('posting-redact-canvas').style.height);
+            r.x = Math.max(0, Math.min(p.x - _postingRedactDragOff.x, cssW - r.w));
+            r.y = Math.max(0, Math.min(p.y - _postingRedactDragOff.y, cssH - r.h));
+            postingRedactRender();
+            return;
+        }
         if (_postingRedactPeekTimer && _postingRedactDrawing) {
             // If moved more than a few px, cancel peek — user is drawing
             const p = _redactCanvasCoord(e.offsetX, e.offsetY);
@@ -5725,6 +5746,7 @@ function openPostingRedactEditor(file, row, desc) {
         _drawLiveRedactRect(document.getElementById('posting-redact-canvas').getContext('2d'), _postingRedactStart, p);
     };
     canvas.onmouseup = function(e) {
+        if (_postingRedactDragging) { _postingRedactDragging = false; return; }
         if (_postingRedactPeekTimer) { clearTimeout(_postingRedactPeekTimer); _postingRedactPeekTimer = null; }
         if (_postingRedactPeeking) { _postingRedactPeeking = false; postingRedactRender(); return; }
         if (!_postingRedactDrawing) return;
@@ -12847,6 +12869,8 @@ async function loadPayments() {
     let editorRedoStack = [];
     let editorSelectedIdx = -1;
     let editorDrawing = false;
+    let editorDragging = false; // drag-to-move selected rect
+    let editorDragOffX = 0, editorDragOffY = 0;
     let editorStartX = 0, editorStartY = 0;
     let editorPeeking = false, editorPeekTimer = null;
     let watchReference = null; // loaded from /api/watch-reference
@@ -13162,7 +13186,20 @@ async function loadPayments() {
         canvas.style.boxShadow = isRedact ? '0 0 12px rgba(239,68,68,0.15)' : 'none';
         const hint = $('#redact-hint');
         hint.style.display = isRedact ? 'block' : 'none';
+        if (!isRedact) { editorSelectedIdx = -1; }
         updateToolButtons();
+    }
+
+    // Update cursor to 'move' when hovering over selected rect
+    function editorUpdateCursor(e) {
+        if (editorTool !== 'redact' || editorSelectedIdx < 0) return;
+        const canvas = $('#editor-canvas');
+        const r = editorRedactions[editorSelectedIdx];
+        if (r && e.offsetX >= r.x && e.offsetX <= r.x + r.w && e.offsetY >= r.y && e.offsetY <= r.y + r.h) {
+            canvas.style.cursor = 'move';
+        } else {
+            canvas.style.cursor = 'crosshair';
+        }
     }
     
     function updateToolButtons() {
@@ -13227,11 +13264,20 @@ async function loadPayments() {
     
     function editorMouseDown(e) {
         if (editorTool !== 'redact') return;
-        // Tap-to-select existing rect
         const clickedIdx = _hitTestRedactRect(editorRedactions, e.offsetX, e.offsetY);
+        // If clicking the already-selected rect, start drag-to-move
+        if (clickedIdx >= 0 && clickedIdx === editorSelectedIdx) {
+            editorDragging = true;
+            const r = editorRedactions[clickedIdx];
+            editorDragOffX = e.offsetX - r.x;
+            editorDragOffY = e.offsetY - r.y;
+            return;
+        }
+        // Tap-to-select existing rect
         if (clickedIdx >= 0 && !e.shiftKey) {
             editorSelectedIdx = (editorSelectedIdx === clickedIdx) ? -1 : clickedIdx;
             renderEditor();
+            updateEditorRedactCount();
             return;
         }
         editorSelectedIdx = -1;
@@ -13247,7 +13293,16 @@ async function loadPayments() {
     }
     
     function editorMouseMove(e) {
+        editorUpdateCursor(e);
         if (editorPeeking) return;
+        // Drag-to-move selected rect
+        if (editorDragging && editorSelectedIdx >= 0) {
+            const r = editorRedactions[editorSelectedIdx];
+            r.x = Math.max(0, Math.min(e.offsetX - editorDragOffX, $('#editor-canvas').width - r.w));
+            r.y = Math.max(0, Math.min(e.offsetY - editorDragOffY, $('#editor-canvas').height - r.h));
+            renderEditor();
+            return;
+        }
         if (editorPeekTimer && editorDrawing) {
             if (Math.abs(e.offsetX - editorStartX) > 4 || Math.abs(e.offsetY - editorStartY) > 4) {
                 clearTimeout(editorPeekTimer); editorPeekTimer = null;
@@ -13259,6 +13314,7 @@ async function loadPayments() {
     }
     
     function editorMouseUp(e) {
+        if (editorDragging) { editorDragging = false; return; }
         if (editorPeekTimer) { clearTimeout(editorPeekTimer); editorPeekTimer = null; }
         if (editorPeeking) { editorPeeking = false; renderEditor(); return; }
         if (!editorDrawing) return;
@@ -13286,16 +13342,38 @@ async function loadPayments() {
         _hapticTap();
     }
     
+    var _editorScanAnim = null;
+    function _startEditorScanAnim() {
+        const container = $('#editor-canvas')?.parentElement;
+        if (!container) return;
+        let line = container.querySelector('.editor-scan-line');
+        if (!line) {
+            line = document.createElement('div');
+            line.className = 'editor-scan-line';
+            line.style.cssText = 'position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(138,43,226,0.5),rgba(138,43,226,0.8),rgba(138,43,226,0.5),transparent);pointer-events:none;z-index:2;';
+            container.appendChild(line);
+        }
+        let y = 0;
+        _editorScanAnim = setInterval(function() { y = (y + 2) % (container.clientHeight || 300); line.style.top = y + 'px'; }, 16);
+    }
+    function _stopEditorScanAnim() {
+        if (_editorScanAnim) { clearInterval(_editorScanAnim); _editorScanAnim = null; }
+        const line = document.querySelector('.editor-scan-line');
+        if (line) line.remove();
+    }
+
     async function autoRedactPhoto() {
         if (!editorWatchId) return;
         const statusEl = $('#editor-status');
         const btn = $('#btn-auto-redact');
-        btn.textContent = 'Detecting...';
+        btn.textContent = 'Scanning...';
         btn.disabled = true;
         btn.style.opacity = '0.6';
         statusEl.textContent = ' Running Vision detection...';
         statusEl.style.display = 'inline';
         statusEl.style.color = 'var(--accent)';
+        // Scan line animation on the canvas area
+        _startEditorScanAnim();
         
         try {
             // Get the watch's serial for better detection
@@ -13327,6 +13405,7 @@ async function loadPayments() {
             statusEl.style.color = 'var(--red)';
         }
         
+        _stopEditorScanAnim();
         btn.textContent = 'Auto-Detect';
         btn.disabled = false;
         btn.style.opacity = '1';
@@ -13463,6 +13542,7 @@ async function loadPayments() {
         editorRedoStack = [];
         editorSelectedIdx = -1;
         editorDrawing = false;
+        editorDragging = false;
         editorPeeking = false;
         if (editorPeekTimer) { clearTimeout(editorPeekTimer); editorPeekTimer = null; }
         if (window._editorKeyHandler) { window.removeEventListener('keydown', window._editorKeyHandler); window._editorKeyHandler = null; }
