@@ -5588,10 +5588,14 @@ let _postingRedactOrigFile = null; // Keep original for undo/skip
 let _postingRedactRow = null;
 let _postingRedactDesc = '';
 let _postingRedactRects = [];
+let _postingRedactRedoStack = [];
+let _postingRedactSelected = -1; // index of selected rect, -1 = none
 let _postingRedactDrawing = false;
 let _postingRedactStart = {x:0,y:0};
 let _postingRedactImg = null;
 let _postingRedactOrigImg = null; // Original image before auto-redact
+let _postingRedactPeeking = false;
+let _postingRedactPeekTimer = null;
 
 var _redactZoom = 1, _redactPanX = 0, _redactPanY = 0, _redactBaseW = 0, _redactBaseH = 0;
 var _redactPinchDist = 0, _redactPanning = false, _redactPanStart = null, _redactRotation = 0;
@@ -5603,6 +5607,9 @@ function openPostingRedactEditor(file, row, desc) {
     _postingRedactRow = row;
     _postingRedactDesc = desc;
     _postingRedactRects = [];
+    _postingRedactRedoStack = [];
+    _postingRedactSelected = -1;
+    _postingRedactPeeking = false;
     _redactZoom = 1; _redactPanX = 0; _redactPanY = 0; _redactRotation = 0;
 
     const overlay = document.createElement('div');
@@ -5665,22 +5672,45 @@ function openPostingRedactEditor(file, row, desc) {
     };
     reader.readAsDataURL(file);
 
-    // Mouse drawing
-    // Hide hint on first draw
+    // Mouse drawing with hold-to-peek + tap-to-select
     canvas.onmousedown = function(e) {
-        _postingRedactDrawing = true;
         const p = _redactCanvasCoord(e.offsetX, e.offsetY);
+        // Check for click on existing rect (tap-to-select)
+        const clickedIdx = _hitTestRedactRect(_postingRedactRects, p.x, p.y);
+        if (clickedIdx >= 0 && !e.shiftKey) {
+            _postingRedactSelected = (_postingRedactSelected === clickedIdx) ? -1 : clickedIdx;
+            postingRedactRender();
+            return;
+        }
+        _postingRedactSelected = -1;
+        _postingRedactDrawing = true;
         _postingRedactStart = p;
         const hint = document.getElementById('posting-redact-hint');
         if (hint) hint.style.opacity = '0';
+        // Hold-to-peek: start timer
+        _postingRedactPeekTimer = setTimeout(function() {
+            _postingRedactPeeking = true;
+            _postingRedactDrawing = false;
+            _renderPostingRedactPeek();
+        }, 500);
     };
     canvas.onmousemove = function(e) {
+        if (_postingRedactPeeking) return;
+        if (_postingRedactPeekTimer && _postingRedactDrawing) {
+            // If moved more than a few px, cancel peek — user is drawing
+            const p = _redactCanvasCoord(e.offsetX, e.offsetY);
+            if (Math.abs(p.x - _postingRedactStart.x) > 4 || Math.abs(p.y - _postingRedactStart.y) > 4) {
+                clearTimeout(_postingRedactPeekTimer); _postingRedactPeekTimer = null;
+            }
+        }
         if (!_postingRedactDrawing) return;
         const p = _redactCanvasCoord(e.offsetX, e.offsetY);
         postingRedactRender();
         _drawLiveRedactRect(document.getElementById('posting-redact-canvas').getContext('2d'), _postingRedactStart, p);
     };
     canvas.onmouseup = function(e) {
+        if (_postingRedactPeekTimer) { clearTimeout(_postingRedactPeekTimer); _postingRedactPeekTimer = null; }
+        if (_postingRedactPeeking) { _postingRedactPeeking = false; postingRedactRender(); return; }
         if (!_postingRedactDrawing) return;
         _postingRedactDrawing = false;
         const p = _redactCanvasCoord(e.offsetX, e.offsetY);
@@ -5692,12 +5722,14 @@ function openPostingRedactEditor(file, row, desc) {
             y: h < 0 ? _postingRedactStart.y + h : _postingRedactStart.y,
             w: Math.abs(w), h: Math.abs(h)
         });
+        _postingRedactRedoStack = [];
         postingRedactRender();
         _updatePostingRedactCount();
+        _hapticTap();
     };
     canvas.onmouseleave = canvas.onmouseup;
 
-    // Touch: 1 finger = draw, 2 fingers = pinch zoom + pan
+    // Touch: 1 finger = draw (hold = peek), 2 fingers = pinch zoom + pan
     canvas.ontouchstart = function(e) {
         e.preventDefault();
         if (e.touches.length === 2) {
@@ -5705,16 +5737,25 @@ function openPostingRedactEditor(file, row, desc) {
             _redactPanning = true;
             _redactPanStart = { x: (e.touches[0].clientX+e.touches[1].clientX)/2, y: (e.touches[0].clientY+e.touches[1].clientY)/2 };
             _postingRedactDrawing = false;
+            if (_postingRedactPeekTimer) { clearTimeout(_postingRedactPeekTimer); _postingRedactPeekTimer = null; }
         } else if (e.touches.length === 1) {
             const m = _redactTouchCoord(e, canvas);
             _postingRedactDrawing = true;
             _postingRedactStart = m;
             const hint = document.getElementById('posting-redact-hint');
             if (hint) hint.style.opacity = '0';
+            // Hold-to-peek on touch
+            _postingRedactPeekTimer = setTimeout(function() {
+                _postingRedactPeeking = true;
+                _postingRedactDrawing = false;
+                _renderPostingRedactPeek();
+                _hapticTap();
+            }, 500);
         }
     };
     canvas.ontouchmove = function(e) {
         e.preventDefault();
+        if (_postingRedactPeeking) return;
         if (e.touches.length === 2 && _redactPanning) {
             const newDist = _pinchDist(e.touches);
             const ratio = newDist / _redactPinchDist;
@@ -5727,6 +5768,13 @@ function openPostingRedactEditor(file, row, desc) {
             _redactClampPan();
             _redactApplyTransform();
         } else if (e.touches.length === 1 && _postingRedactDrawing) {
+            // Cancel peek if user is dragging
+            if (_postingRedactPeekTimer) {
+                const m = _redactTouchCoord(e, canvas);
+                if (Math.abs(m.x - _postingRedactStart.x) > 4 || Math.abs(m.y - _postingRedactStart.y) > 4) {
+                    clearTimeout(_postingRedactPeekTimer); _postingRedactPeekTimer = null;
+                }
+            }
             const m = _redactTouchCoord(e, canvas);
             postingRedactRender();
             _drawLiveRedactRect(canvas.getContext('2d'), _postingRedactStart, m);
@@ -5734,6 +5782,8 @@ function openPostingRedactEditor(file, row, desc) {
     };
     canvas.ontouchend = function(e) {
         e.preventDefault();
+        if (_postingRedactPeekTimer) { clearTimeout(_postingRedactPeekTimer); _postingRedactPeekTimer = null; }
+        if (_postingRedactPeeking) { _postingRedactPeeking = false; postingRedactRender(); return; }
         if (_redactPanning && e.touches.length < 2) {
             _redactPanning = false;
             return;
@@ -5749,8 +5799,10 @@ function openPostingRedactEditor(file, row, desc) {
                 y: h < 0 ? _postingRedactStart.y + h : _postingRedactStart.y,
                 w: Math.abs(w), h: Math.abs(h)
             });
+            _postingRedactRedoStack = [];
             postingRedactRender();
             _updatePostingRedactCount();
+            _hapticTap();
         }
     };
 
@@ -5761,13 +5813,24 @@ function openPostingRedactEditor(file, row, desc) {
     };
     window.addEventListener('resize', window._redactResizeHandler);
 
-    // Keyboard shortcuts: Ctrl+Z undo, Escape close, +/- zoom
+    // Keyboard shortcuts: Ctrl+Z undo, Ctrl+Shift+Z redo, Escape close, +/- zoom, Delete selected
     window._redactKeyHandler = function(e) {
         if (!document.getElementById('posting-redact-modal')) return;
-        if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); postingRedactUndo(); }
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z') { e.preventDefault(); postingRedactRedo(); }
+        else if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); postingRedactUndo(); }
         else if (e.key === 'Escape') { e.preventDefault(); postingRedactSkip(); }
         else if (e.key === '=' || e.key === '+') { e.preventDefault(); redactZoomIn(); }
         else if (e.key === '-') { e.preventDefault(); redactZoomOut(); }
+        else if ((e.key === 'Delete' || e.key === 'Backspace') && _postingRedactSelected >= 0) {
+            e.preventDefault();
+            _postingRedactRedoStack.push(_postingRedactRects.splice(_postingRedactSelected, 1)[0]);
+            _postingRedactSelected = -1;
+            postingRedactRender(); _updatePostingRedactCount();
+        }
+        else if (e.key === 'a' && !e.ctrlKey && !e.metaKey) {
+            // 'a' for auto-redact
+            e.preventDefault(); postingAutoRedact();
+        }
     };
     window.addEventListener('keydown', window._redactKeyHandler);
 
@@ -5863,6 +5926,58 @@ function redactZoomOut() {
     _redactApplyTransform();
 }
 
+function _hapticTap() {
+    if (navigator.vibrate) navigator.vibrate(15);
+}
+
+function _hitTestRedactRect(rects, x, y) {
+    // Return index of the topmost rect that contains (x,y), or -1
+    for (let i = rects.length - 1; i >= 0; i--) {
+        const r = rects[i];
+        if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) return i;
+    }
+    return -1;
+}
+
+function _renderPostingRedactPeek() {
+    // Render canvas without redaction rects — "peek at original"
+    const canvas = document.getElementById('posting-redact-canvas');
+    if (!canvas || !_postingRedactImg) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = parseFloat(canvas.dataset.dpr) || 1;
+    const cssW = parseFloat(canvas.style.width);
+    const cssH = parseFloat(canvas.style.height);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.save();
+    if (_redactRotation === 90) { ctx.translate(cssW, 0); ctx.rotate(Math.PI/2); ctx.drawImage(_postingRedactImg, 0, 0, cssH, cssW); }
+    else if (_redactRotation === 180) { ctx.translate(cssW, cssH); ctx.rotate(Math.PI); ctx.drawImage(_postingRedactImg, 0, 0, cssW, cssH); }
+    else if (_redactRotation === 270) { ctx.translate(0, cssH); ctx.rotate(-Math.PI/2); ctx.drawImage(_postingRedactImg, 0, 0, cssH, cssW); }
+    else { ctx.drawImage(_postingRedactImg, 0, 0, cssW, cssH); }
+    ctx.restore();
+    // "PEEK" label
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(cssW/2 - 30, 6, 60, 20);
+    ctx.font = '600 11px Inter,system-ui,sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.textAlign = 'center';
+    ctx.fillText('ORIGINAL', cssW/2, 20);
+    ctx.textAlign = 'start';
+    // Dashed outlines where rects would be
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 1;
+    for (const r of _postingRedactRects) ctx.strokeRect(r.x, r.y, r.w, r.h);
+    ctx.setLineDash([]);
+}
+
+function postingRedactRedo() {
+    if (_postingRedactRedoStack.length > 0) {
+        _postingRedactRects.push(_postingRedactRedoStack.pop());
+        postingRedactRender();
+        _updatePostingRedactCount();
+    }
+}
+
 function _drawLiveRedactRect(ctx, start, end) {
     // Semi-transparent fill + animated dashed red border
     const x = Math.min(start.x, end.x), y = Math.min(start.y, end.y);
@@ -5902,10 +6017,12 @@ function _updatePostingRedactCount() {
 }
 
 function _drawRedactRects(ctx, rects, opts) {
-    // Draw redaction rectangles with crosshatch pattern + numbered labels
+    // Draw redaction rectangles with crosshatch pattern + numbered labels + selection
     const showNumbers = opts && opts.showNumbers;
+    const selectedIdx = (opts && opts.selectedIdx !== undefined) ? opts.selectedIdx : -1;
     for (let i = 0; i < rects.length; i++) {
         const r = rects[i];
+        const isSelected = i === selectedIdx;
         // Solid black fill
         ctx.fillStyle = '#000';
         ctx.fillRect(r.x, r.y, r.w, r.h);
@@ -5914,7 +6031,7 @@ function _drawRedactRects(ctx, rects, opts) {
         ctx.beginPath();
         ctx.rect(r.x, r.y, r.w, r.h);
         ctx.clip();
-        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.strokeStyle = isSelected ? 'rgba(59,130,246,0.12)' : 'rgba(255,255,255,0.06)';
         ctx.lineWidth = 1;
         const step = 8;
         for (let d = -Math.max(r.w, r.h); d < Math.max(r.w, r.h); d += step) {
@@ -5924,10 +6041,18 @@ function _drawRedactRects(ctx, rects, opts) {
             ctx.stroke();
         }
         ctx.restore();
-        // Red border
-        ctx.strokeStyle = 'rgba(239,68,68,0.6)';
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+        // Border: blue for selected, red for normal
+        if (isSelected) {
+            ctx.strokeStyle = 'rgba(59,130,246,0.9)';
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([6, 3]);
+            ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+            ctx.setLineDash([]);
+        } else {
+            ctx.strokeStyle = 'rgba(239,68,68,0.6)';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+        }
         // Number label (top-left corner)
         if (showNumbers && rects.length > 1) {
             const label = String(i + 1);
@@ -5968,12 +6093,36 @@ function postingRedactRender() {
         ctx.drawImage(_postingRedactImg, 0, 0, cssW, cssH);
     }
     ctx.restore();
-    _drawRedactRects(ctx, _postingRedactRects, { showNumbers: true });
+    _drawRedactRects(ctx, _postingRedactRects, { showNumbers: true, selectedIdx: _postingRedactSelected });
 }
+var _redactScanAnim = null;
+function _startRedactScanAnim() {
+    const wrapper = document.getElementById('redact-canvas-wrapper');
+    if (!wrapper) return;
+    let line = wrapper.querySelector('.redact-scan-line');
+    if (!line) {
+        line = document.createElement('div');
+        line.className = 'redact-scan-line';
+        line.style.cssText = 'position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(138,43,226,0.6),rgba(138,43,226,0.9),rgba(138,43,226,0.6),transparent);pointer-events:none;z-index:2;transition:none;';
+        wrapper.appendChild(line);
+    }
+    let y = 0;
+    _redactScanAnim = setInterval(function() {
+        y = (y + 2) % (wrapper.clientHeight || 300);
+        line.style.top = y + 'px';
+    }, 16);
+}
+function _stopRedactScanAnim() {
+    if (_redactScanAnim) { clearInterval(_redactScanAnim); _redactScanAnim = null; }
+    const line = document.querySelector('.redact-scan-line');
+    if (line) line.remove();
+}
+
 async function postingAutoRedact() {
     if (!_postingRedactFile) return;
     const autoBtn = document.getElementById('posting-auto-btn');
-    if (autoBtn) { autoBtn.textContent = 'Detecting...'; autoBtn.disabled = true; autoBtn.style.opacity = '0.6'; }
+    if (autoBtn) { autoBtn.textContent = 'Scanning...'; autoBtn.disabled = true; autoBtn.style.opacity = '0.6'; }
+    _startRedactScanAnim();
     try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 90000);
@@ -5995,19 +6144,23 @@ async function postingAutoRedact() {
                 _postingRedactRects = [];
                 postingRedactRender();
                 _updatePostingRedactCount();
+                _stopRedactScanAnim();
                 if (autoBtn) {
                     autoBtn.textContent = count === '0' ? 'None found' : count + ' redacted';
                     autoBtn.style.opacity = '1';
                     autoBtn.disabled = false;
                 }
+                _hapticTap();
             };
             img.onerror = function() {
+                _stopRedactScanAnim();
                 if (autoBtn) { autoBtn.textContent = 'Load failed'; autoBtn.style.opacity = '1'; autoBtn.disabled = false; }
             };
             img.src = ev2.target.result;
         };
         rd.readAsDataURL(blob);
     } catch(e) {
+        _stopRedactScanAnim();
         if (autoBtn) {
             autoBtn.textContent = e.name === 'AbortError' ? 'Timed out' : 'Failed';
             autoBtn.style.opacity = '1'; autoBtn.disabled = false;
@@ -6015,15 +6168,16 @@ async function postingAutoRedact() {
     }
 }
 function postingRedactUndo() {
+    _postingRedactSelected = -1;
     if (_postingRedactRects.length > 0) {
-        _postingRedactRects.pop();
+        _postingRedactRedoStack.push(_postingRedactRects.pop());
         postingRedactRender();
         _updatePostingRedactCount();
     } else if (_postingRedactOrigImg && _postingRedactImg !== _postingRedactOrigImg) {
-        // Undo auto-redact: restore original image
         _postingRedactImg = _postingRedactOrigImg;
         _postingRedactFile = _postingRedactOrigFile;
         _postingRedactRects = [];
+        _postingRedactRedoStack = [];
         postingRedactRender();
         _updatePostingRedactCount();
         const autoBtn = document.getElementById('posting-auto-btn');
@@ -12648,8 +12802,11 @@ async function loadPayments() {
     let editorWatchId = null;
     let editorImage = null;
     let editorRedactions = []; // [{x,y,w,h}, ...]
+    let editorRedoStack = [];
+    let editorSelectedIdx = -1;
     let editorDrawing = false;
     let editorStartX = 0, editorStartY = 0;
+    let editorPeeking = false, editorPeekTimer = null;
     let watchReference = null; // loaded from /api/watch-reference
 
     async function ensureWatchReference() {
@@ -12835,6 +12992,9 @@ async function loadPayments() {
         
         editorWatchId = watchId;
         editorRedactions = [];
+        editorRedoStack = [];
+        editorSelectedIdx = -1;
+        editorPeeking = false;
         editorTool = 'view';
 
         ensureWatchReference();
@@ -12901,10 +13061,17 @@ async function loadPayments() {
         // Keyboard shortcuts
         window._editorKeyHandler = function(e) {
             if ($('#photo-modal').style.display === 'none') return;
-            if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoRedaction(); }
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z') { e.preventDefault(); editorRedo(); }
+            else if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoRedaction(); }
             else if (e.key === 'Escape') { e.preventDefault(); closePhotoModal(); }
             else if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveRedactedPhoto(); }
             else if (e.key === 'r') { if (!e.ctrlKey && !e.metaKey && document.activeElement.tagName !== 'INPUT') { setEditorTool(editorTool === 'redact' ? 'view' : 'redact'); } }
+            else if ((e.key === 'Delete' || e.key === 'Backspace') && editorSelectedIdx >= 0) {
+                e.preventDefault();
+                editorRedoStack.push(editorRedactions.splice(editorSelectedIdx, 1)[0]);
+                editorSelectedIdx = -1;
+                renderEditor(); updateEditorRedactCount();
+            }
         };
         window.addEventListener('keydown', window._editorKeyHandler);
     }
@@ -12924,8 +13091,24 @@ async function loadPayments() {
         // Draw image
         ctx.drawImage(editorImage, 0, 0, canvas.width, canvas.height);
 
-        // Draw redaction rectangles with crosshatch + numbers
-        _drawRedactRects(ctx, editorRedactions, { showNumbers: true });
+        // Draw redaction rectangles with crosshatch + numbers + selection
+        if (!editorPeeking) {
+            _drawRedactRects(ctx, editorRedactions, { showNumbers: true, selectedIdx: editorSelectedIdx });
+        } else {
+            // Peek mode: show "ORIGINAL" label + dashed outlines
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(canvas.width/2 - 30, 6, 60, 20);
+            ctx.font = '600 11px Inter,system-ui,sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.8)';
+            ctx.textAlign = 'center';
+            ctx.fillText('ORIGINAL', canvas.width/2, 20);
+            ctx.textAlign = 'start';
+            ctx.setLineDash([4, 4]);
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+            ctx.lineWidth = 1;
+            for (const r of editorRedactions) ctx.strokeRect(r.x, r.y, r.w, r.h);
+            ctx.setLineDash([]);
+        }
     }
     
     function setEditorTool(tool) {
@@ -12974,28 +13157,50 @@ async function loadPayments() {
     
     function editorMouseDown(e) {
         if (editorTool !== 'redact') return;
+        // Tap-to-select existing rect
+        const clickedIdx = _hitTestRedactRect(editorRedactions, e.offsetX, e.offsetY);
+        if (clickedIdx >= 0 && !e.shiftKey) {
+            editorSelectedIdx = (editorSelectedIdx === clickedIdx) ? -1 : clickedIdx;
+            renderEditor();
+            return;
+        }
+        editorSelectedIdx = -1;
         editorDrawing = true;
         editorStartX = e.offsetX;
         editorStartY = e.offsetY;
+        // Hold-to-peek
+        editorPeekTimer = setTimeout(function() {
+            editorPeeking = true;
+            editorDrawing = false;
+            renderEditor();
+        }, 500);
     }
     
     function editorMouseMove(e) {
+        if (editorPeeking) return;
+        if (editorPeekTimer && editorDrawing) {
+            if (Math.abs(e.offsetX - editorStartX) > 4 || Math.abs(e.offsetY - editorStartY) > 4) {
+                clearTimeout(editorPeekTimer); editorPeekTimer = null;
+            }
+        }
         if (!editorDrawing || editorTool !== 'redact') return;
         renderEditor();
         _drawLiveRedactRect($('#editor-canvas').getContext('2d'), {x: editorStartX, y: editorStartY}, {x: e.offsetX, y: e.offsetY});
     }
     
     function editorMouseUp(e) {
+        if (editorPeekTimer) { clearTimeout(editorPeekTimer); editorPeekTimer = null; }
+        if (editorPeeking) { editorPeeking = false; renderEditor(); return; }
         if (!editorDrawing) return;
         editorDrawing = false;
         if (editorTool !== 'redact') return;
-        
+
         const w = e.offsetX - editorStartX;
         const h = e.offsetY - editorStartY;
-        
+
         // Ignore tiny accidental clicks
         if (Math.abs(w) < 5 || Math.abs(h) < 5) return;
-        
+
         // Normalize negative dimensions
         const rect = {
             x: w < 0 ? editorStartX + w : editorStartX,
@@ -13003,10 +13208,12 @@ async function loadPayments() {
             w: Math.abs(w),
             h: Math.abs(h)
         };
-        
+
         editorRedactions.push(rect);
+        editorRedoStack = [];
         renderEditor();
         updateEditorRedactCount();
+        _hapticTap();
     }
     
     async function autoRedactPhoto() {
@@ -13056,8 +13263,17 @@ async function loadPayments() {
     }
     
     function undoRedaction() {
+        editorSelectedIdx = -1;
         if (editorRedactions.length > 0) {
-            editorRedactions.pop();
+            editorRedoStack.push(editorRedactions.pop());
+            renderEditor();
+            updateEditorRedactCount();
+        }
+    }
+
+    function editorRedo() {
+        if (editorRedoStack.length > 0) {
+            editorRedactions.push(editorRedoStack.pop());
             renderEditor();
             updateEditorRedactCount();
         }
@@ -13171,7 +13387,11 @@ async function loadPayments() {
         editorWatchId = null;
         editorImage = null;
         editorRedactions = [];
+        editorRedoStack = [];
+        editorSelectedIdx = -1;
         editorDrawing = false;
+        editorPeeking = false;
+        if (editorPeekTimer) { clearTimeout(editorPeekTimer); editorPeekTimer = null; }
         if (window._editorKeyHandler) { window.removeEventListener('keydown', window._editorKeyHandler); window._editorKeyHandler = null; }
     }
     
