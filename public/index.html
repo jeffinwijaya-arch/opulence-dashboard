@@ -3303,7 +3303,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
 
             <!-- Photo Modal -->
             <!-- Photo Editor Modal -->
-            <div id="photo-modal" role="dialog" aria-label="Photo redaction editor" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.95);z-index:9999;overflow:auto;" onclick="if(event.target===this) { if(typeof closePhotoModal==='function') closePhotoModal(); }">
+            <div id="photo-modal" role="dialog" aria-label="Photo redaction editor" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.95);z-index:9999;overflow:hidden;" onclick="if(event.target===this) { if(typeof closePhotoModal==='function') closePhotoModal(); }">
                 <div style="max-width:900px;margin:auto;padding:8px;height:100%;display:flex;flex-direction:column;">
                     <!-- Header + status (compact) -->
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;color:white;flex-shrink:0;">
