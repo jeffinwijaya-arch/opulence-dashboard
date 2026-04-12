@@ -13797,6 +13797,7 @@ async function loadPayments() {
             editorRedoStack.push(editorRedactions.pop());
             renderEditor();
             updateEditorRedactCount();
+            showToast('Undone \u2014 ' + editorRedactions.length + ' remaining', 'info', 2000);
         }
     }
 
@@ -13805,6 +13806,7 @@ async function loadPayments() {
             editorRedactions.push(editorRedoStack.pop());
             renderEditor();
             updateEditorRedactCount();
+            showToast('Redone \u2014 ' + editorRedactions.length + ' total', 'info', 2000);
         }
     }
 
@@ -13915,8 +13917,10 @@ async function loadPayments() {
 
             // Reload the image to show saved version
             editorImage.src = '/api/watch-photos/' + editorWatchId + '/image?t=' + Date.now();
+            const _savedN = editorRedactions.length;
             editorRedactions = [];
             updateEditorRedactCount();
+            showToast('Saved with ' + _savedN + ' redaction' + (_savedN !== 1 ? 's' : ''), 'success');
 
             // Refresh gallery thumbnails
             setTimeout(() => loadPhotoLibrary(), 500);
