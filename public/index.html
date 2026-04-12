@@ -3232,7 +3232,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                 </div>
                 <div class="metric">
                     <div class="label">Redacted & Safe</div>
-                    <div class="val" style="color:var(--green);"></div>
+                    <div class="val" id="redacted-count" style="color:var(--green);">0</div>
                 </div>
                 <div class="metric">
                     <div class="label">Grail Pieces</div>
@@ -5529,7 +5529,7 @@ async function loadPostingPhotoPreviews(row) {
             `<div style="position:relative;display:inline-block;">
                 <img src="/api/watch-photos/${row}/images/${p.filename}" style="width:140px;height:140px;object-fit:cover;border-radius:6px;border:1px solid var(--border);" />
                 <button onclick="event.stopPropagation();deletePostingPhoto(${row},'${p.filename}')" style="position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;background:var(--red);color:#fff;border:2px solid var(--bg-1);font-size:0.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;z-index:10;touch-action:manipulation;">x</button>
-                <button onclick="redactPostingPhoto(${row},'${p.filename}','')" style="position:absolute;bottom:4px;left:4px;font-size:0.55rem;padding:2px 6px;background:rgba(0,0,0,0.7);color:#fff;border:none;border-radius:4px;cursor:pointer;">Redact</button>
+                <button onclick="redactPostingPhoto(${row},'${p.filename}','')" style="position:absolute;bottom:4px;left:4px;font-size:0.68rem;padding:4px 10px;background:rgba(0,0,0,0.75);color:#fff;border:none;border-radius:5px;cursor:pointer;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);min-height:28px;">Redact</button>
             </div>`
         ).join('');
     } catch(e) { console.error(e); }
@@ -5792,7 +5792,7 @@ function openPostingRedactEditor(file, row, desc) {
     };
     canvas.onmouseleave = canvas.onmouseup;
 
-    // Touch: 1 finger = draw (hold = peek), 2 fingers = pinch zoom + pan
+    // Touch: 1 finger = draw/select/drag/resize (hold = peek), 2 fingers = pinch zoom + pan
     canvas.ontouchstart = function(e) {
         e.preventDefault();
         if (e.touches.length === 2) {
@@ -5803,10 +5803,30 @@ function openPostingRedactEditor(file, row, desc) {
             if (_postingRedactPeekTimer) { clearTimeout(_postingRedactPeekTimer); _postingRedactPeekTimer = null; }
         } else if (e.touches.length === 1) {
             const m = _redactTouchCoord(e, canvas);
-            _postingRedactDrawing = true;
-            _postingRedactStart = m;
+            // Any touch interaction hides the onboarding hint
             const hint = document.getElementById('posting-redact-hint');
             if (hint) hint.style.opacity = '0';
+            // Check resize handles
+            if (_postingRedactSelected >= 0) {
+                const handle = _hitTestResizeHandle(_postingRedactRects[_postingRedactSelected], m.x, m.y);
+                if (handle) { _resizeHandle = handle; _resizeLastX = m.x; _resizeLastY = m.y; return; }
+            }
+            // Check tap-to-select / drag-to-move
+            const clickedIdx = _hitTestRedactRect(_postingRedactRects, m.x, m.y);
+            if (clickedIdx >= 0 && clickedIdx === _postingRedactSelected) {
+                _postingRedactDragging = true;
+                const r = _postingRedactRects[clickedIdx];
+                _postingRedactDragOff = {x: m.x - r.x, y: m.y - r.y};
+                return;
+            }
+            if (clickedIdx >= 0) {
+                _postingRedactSelected = (_postingRedactSelected === clickedIdx) ? -1 : clickedIdx;
+                postingRedactRender(); _updatePostingRedactCount();
+                return;
+            }
+            _postingRedactSelected = -1;
+            _postingRedactDrawing = true;
+            _postingRedactStart = m;
             // Hold-to-peek on touch
             _postingRedactPeekTimer = setTimeout(function() {
                 _postingRedactPeeking = true;
@@ -5830,23 +5850,40 @@ function openPostingRedactEditor(file, row, desc) {
             _redactPanStart = mid;
             _redactClampPan();
             _redactApplyTransform();
-        } else if (e.touches.length === 1 && _postingRedactDrawing) {
-            // Cancel peek if user is dragging
-            if (_postingRedactPeekTimer) {
-                const m = _redactTouchCoord(e, canvas);
-                if (Math.abs(m.x - _postingRedactStart.x) > 4 || Math.abs(m.y - _postingRedactStart.y) > 4) {
-                    clearTimeout(_postingRedactPeekTimer); _postingRedactPeekTimer = null;
-                }
-            }
+        } else if (e.touches.length === 1) {
             const m = _redactTouchCoord(e, canvas);
-            postingRedactRender();
-            _drawLiveRedactRect(canvas.getContext('2d'), _postingRedactStart, m);
+            // Resize
+            if (_resizeHandle && _postingRedactSelected >= 0) {
+                _applyResize(_postingRedactRects[_postingRedactSelected], _resizeHandle, m.x - _resizeLastX, m.y - _resizeLastY);
+                _resizeLastX = m.x; _resizeLastY = m.y;
+                postingRedactRender(); return;
+            }
+            // Drag-to-move
+            if (_postingRedactDragging && _postingRedactSelected >= 0) {
+                const r = _postingRedactRects[_postingRedactSelected];
+                const cssW = parseFloat(canvas.style.width), cssH = parseFloat(canvas.style.height);
+                r.x = Math.max(0, Math.min(m.x - _postingRedactDragOff.x, cssW - r.w));
+                r.y = Math.max(0, Math.min(m.y - _postingRedactDragOff.y, cssH - r.h));
+                postingRedactRender(); return;
+            }
+            // Drawing
+            if (_postingRedactDrawing) {
+                if (_postingRedactPeekTimer) {
+                    if (Math.abs(m.x - _postingRedactStart.x) > 4 || Math.abs(m.y - _postingRedactStart.y) > 4) {
+                        clearTimeout(_postingRedactPeekTimer); _postingRedactPeekTimer = null;
+                    }
+                }
+                postingRedactRender();
+                _drawLiveRedactRect(canvas.getContext('2d'), _postingRedactStart, m);
+            }
         }
     };
     canvas.ontouchend = function(e) {
         e.preventDefault();
         if (_postingRedactPeekTimer) { clearTimeout(_postingRedactPeekTimer); _postingRedactPeekTimer = null; }
         if (_postingRedactPeeking) { _postingRedactPeeking = false; postingRedactRender(); return; }
+        if (_resizeHandle) { _resizeHandle = null; return; }
+        if (_postingRedactDragging) { _postingRedactDragging = false; return; }
         if (_redactPanning && e.touches.length < 2) {
             _redactPanning = false;
             return;
@@ -12833,6 +12870,10 @@ async function loadPayments() {
         const uniqueModels = new Set(withPhotos.map(w => w.model).filter(Boolean));
         $('#model-count').textContent = uniqueModels.size || Object.keys(stats.models || {}).length || 0;
         $('#grail-count').textContent = (stats.models?.['126509'] || 0) + (stats.models?.['126515LN'] || 0) || 0;
+        // Redacted & Safe count: watches flagged as redacted or with redacted_at timestamp
+        const redactedCount = photoLibraryData.filter(w => w.redacted || w.redacted_at).length;
+        const redEl = $('#redacted-count');
+        if (redEl) redEl.textContent = redactedCount || (stats.redacted_count ?? 0);
     }
     
     function filterPhotoLibrary() {
@@ -12903,15 +12944,22 @@ async function loadPayments() {
             else if (model.includes('126610') || model.includes('124060')) modelColor = 'var(--green)'; // Sub
             else if (model.includes('126509') || model.includes('126515')) modelColor = 'var(--accent)'; // Daytona
             else if (model.includes('278')) modelColor = 'var(--blue)'; // Ladies
-            
+
+            // Redaction status badge
+            const isRedacted = watch.redacted || watch.redacted_at;
+            const redactBadge = isRedacted
+                ? '<div style="position:absolute;bottom:4px;right:4px;background:rgba(34,197,94,0.85);color:#fff;padding:2px 6px;border-radius:3px;font-size:0.58rem;font-weight:600;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);">SAFE</div>'
+                : (watch.serial ? '<div style="position:absolute;bottom:4px;right:4px;background:rgba(239,68,68,0.8);color:#fff;padding:2px 6px;border-radius:3px;font-size:0.58rem;font-weight:600;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);cursor:pointer;" onclick="event.stopPropagation();openPhotoModal(\'' + watch.watch_id + '\')" title="Serial visible — tap to redact">NEEDS REDACT</div>' : '');
+
             html += `
-                <div style="background:var(--bg-2);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);cursor:pointer;position:relative;transition:all 0.2s ease;" 
+                <div style="background:var(--bg-2);border-radius:var(--radius);overflow:hidden;border:1px solid ${isRedacted ? 'rgba(34,197,94,0.2)' : 'var(--border)'};cursor:pointer;position:relative;transition:all 0.2s ease;"
                      onclick="openPhotoModal('${watch.watch_id}')"
                      onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='var(--shadow-md)'"
                      onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
                     ${grailBadge}
                     <div style="height:160px;background:var(--bg-3);overflow:hidden;position:relative;">
                         <div style="position:absolute;top:4px;left:4px;background:rgba(0,0,0,0.7);padding:2px 6px;border-radius:3px;font-size:0.6rem;color:white;font-weight:600;">${condition}</div>
+                        ${redactBadge}
                         <img src="/api/watch-photos/${watch.watch_id}/image?thumb=true" loading="lazy"
                              style="width:100%;height:100%;object-fit:cover;transition:transform 0.2s ease;" 
                              onerror="this.style.display='none'; this.parentElement.insertAdjacentHTML('beforeend', '<div style=\\'display:flex;align-items:center;justify-content:center;position:absolute;top:0;left:0;width:100%;height:100%;color:var(--text-2);font-size:0.8rem;\\'>Photo: ${model}</div>')"
