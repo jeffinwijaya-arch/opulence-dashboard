@@ -7743,6 +7743,7 @@ async function doLookup() {
                 ${signalHtml}
                 ${relatedHtml}
             </div></div>
+            ${usB25 && hkB25 ? `<div class="card" style="margin-top:8px;"><div class="card-head"><span>Regional Price Spread</span><span style="font-size:0.62rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;">US vs HK B25 comparison</span></div><div class="card-body" style="padding:8px 12px;"><canvas id="region-spread-chart"></canvas></div></div>` : ''}
             <div class="card" style="margin-top:8px;" id="lookup-chart-card"><div class="card-head"><span>Price History (14d)</span></div><div class="card-body" style="padding:8px;"><canvas id="lookup-chart" aria-label="Price history chart"></canvas><div id="lookup-chart-empty" class="dim" style="text-align:center;padding:12px;display:none;">No history available</div></div></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
                 <div class="card"><div class="card-head"><span>US Listings (${_allListingsData.filter(l=>(l.region||'').toUpperCase()==='US').length})</span></div><div class="card-body" style="max-height:400px;overflow-y:auto;"><div id="cheapest-us">${(()=>{const usL=_allListingsData.filter(l=>(l.region||'').toUpperCase()==='US');if(!usL.length)return'<div style="color:var(--text-2);padding:8px;">No US listings</div>';return usL.map((l,i)=>{const srcText=String(l.source_text||'').replace(/\+?\s*label\s+gambar tidak disertakan/gi,'').replace(/gambar tidak disertakan/gi,'').replace(/\(file terlampir\)/gi,'').trim().split('<').join('&lt;').split('>').join('&gt;');const phoneClean=(l.phone||'').replace(/[^0-9]/g,'');const waBtn=phoneClean?' <a href="https://wa.me/'+phoneClean+'" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);text-decoration:none;font-weight:700;">WA</a>':'';const ts=l.ts||'';let card='<div class="listing-card">';card+='<div style="display:flex;justify-content:space-between;align-items:center;">';const _lp=l.price_usd||l.price;const _pct=b25>0&&_lp>0?((_lp-b25)/b25*100):null;const _vb=_pct!=null?'<span style="font-size:0.6rem;font-weight:600;padding:1px 6px;border-radius:3px;margin-left:5px;background:'+(_pct<-2?'rgba(0,230,118,0.12)':_pct>5?'rgba(255,23,68,0.1)':'rgba(255,255,255,0.04)')+';color:'+(_pct<-2?'var(--green)':_pct>5?'var(--red)':'var(--text-2)')+';border:1px solid '+(_pct<-2?'rgba(0,230,118,0.2)':_pct>5?'rgba(255,23,68,0.2)':'rgba(255,255,255,0.06)')+';">'+(_pct>=0?'+':'')+_pct.toFixed(1)+'%</span>':'';card+='<span style="font-family:var(--mono);font-weight:700;color:var(--green)">'+fmt(_lp)+_vb+'</span>';card+='<span><span class="tag '+condTag(l.condition)+'">'+(l.condition||'\u2014')+'</span></span>';card+='</div>';card+='<div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">'+(l.dial||'')+' '+(l.bracelet||'')+' '+(l.year?'('+l.year+')':'')+' · '+(l.seller||'?')+waBtn+'</div>';if(ts)card+='<div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">'+ts+'</div>';if(srcText)card+='<div style="font-size:0.70rem;color:var(--text-1);margin-top:4px;padding:6px 8px;background:rgba(255,255,255,0.04);border-radius:4px;border-left:2px solid var(--green);font-family:var(--mono);white-space:pre-wrap;word-break:break-all;line-height:1.4;">'+srcText+'</div>';card+='</div>';return card;}).join('');})()}</div></div></div>
@@ -7780,6 +7781,19 @@ async function doLookup() {
 
         // Track recently viewed
         addRecentView(ref, model, b25);
+
+        // Draw regional price spread chart
+        if (usB25 && hkB25) {
+            setTimeout(() => {
+                const usListings = _allListingsData.filter(l => (l.region||'').toUpperCase() === 'US').map(l => l.price_usd||l.price).filter(v => v > 0);
+                const hkListings = _allListingsData.filter(l => (l.region||'').toUpperCase() === 'HK').map(l => l.price_usd||l.price).filter(v => v > 0);
+                const usLow = usListings.length ? Math.min(...usListings) : 0;
+                const usHigh = usListings.length ? Math.max(...usListings) : 0;
+                const hkLow = hkListings.length ? Math.min(...hkListings) : 0;
+                const hkHigh = hkListings.length ? Math.max(...hkListings) : 0;
+                drawRegionSpreadChart('region-spread-chart', usB25, hkB25, usLow, hkLow, usHigh, hkHigh);
+            }, 80);
+        }
 
         // Load price history chart
         try {
@@ -8143,6 +8157,7 @@ function renderPfPositions(c, p, items) {
         <div style="margin-bottom:8px;">${viewBar}</div>
         ${body}
     </div>`;
+    if (posView === 'table') requestAnimationFrame(() => drawPosTableSparklines(items));
 }
 
 function setPosView(v) { posView = v; renderPortfolio(); }
@@ -8180,7 +8195,10 @@ function renderPosTable(items) {
         const hkLow=i.hk_lowest?fmt(i.hk_lowest):'—';
         const usLow=i.us_lowest?fmt(i.us_lowest):'—';
         const hkN=i.hk_count||0, usN=i.us_count||0;
-        const spark = _sparkData[i.ref] ? sparkline(_sparkData[i.ref], 56, 18) : '';
+        const sparkCanvasId = 'pos-spark-' + String(i.ref).replace(/[^a-zA-Z0-9]/g,'') + '-' + i.row;
+        const spark = _sparkData[i.ref]
+            ? `<canvas id="${sparkCanvasId}" width="60" height="20" style="display:block;cursor:crosshair;" title="${i.ref} 14d trend"></canvas>`
+            : '<span class="dim" style="font-size:0.62rem;">—</span>';
         const askPrice = i.sale_price ? fmt(parseFloat(String(i.sale_price).replace(/[$,]/g, ''))) : '<span class="dim">—</span>';
         return `<tr style="cursor:pointer;" onclick="showWatchDetail(${i.row})">
             <td class="ref"><span onclick="event.stopPropagation();lookupRef('${i.ref}','${(i.dial||'').replace(/'/g,"\\'")}')" style="cursor:pointer;text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:2px;">${i.ref}</span> <span onclick="event.stopPropagation();showWatchDetail(${i.row})" style="cursor:pointer;font-size:0.6rem;color:var(--text-2);border:1px solid var(--border);border-radius:3px;padding:1px 4px;margin-left:2px;" title="Watch Details">i</span></td>
@@ -8208,6 +8226,33 @@ function renderPosTable(items) {
                 return '<th '+styles[i]+' style="cursor:pointer;user-select:none;'+(posSortField===f?'color:var(--accent);':'')+'" onclick="sortPfBy(\''+f+'\')">'+labels[i]+(arrow?' '+arrow:'')+'</th>';
             }).join('')}
         </tr></thead><tbody>${rows||'<tr><td colspan="11" class="dim" style="text-align:center;padding:16px;">No data</td></tr>'}</tbody></table></div></div>`;
+}
+
+// ── POSITION TABLE CANVAS SPARKLINES ──
+function drawPosTableSparklines(items) {
+    let tt = document.getElementById('pos-spark-tt');
+    if (!tt) { tt = document.createElement('div'); tt.id = 'pos-spark-tt'; tt.className = 'chart-tooltip'; document.body.appendChild(tt); }
+    items.forEach(i => {
+        const vals = _sparkData[i.ref];
+        if (!vals || vals.length < 2) return;
+        const id = 'pos-spark-' + String(i.ref).replace(/[^a-zA-Z0-9]/g,'') + '-' + i.row;
+        const canvas = document.getElementById(id);
+        if (!canvas) return;
+        drawCanvasSparkline(canvas, vals, {height: 20});
+        canvas.onclick = e => { e.stopPropagation(); };
+        canvas.onmousemove = function(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const idx = Math.round((x / rect.width) * (vals.length - 1));
+            const val = vals[Math.max(0, Math.min(idx, vals.length-1))];
+            const daysAgo = vals.length - 1 - idx;
+            tt.innerHTML = `<div class="tt-date">${daysAgo === 0 ? 'today' : daysAgo + 'd ago'}</div><div class="tt-val" style="color:${val >= vals[0] ? 'var(--green)' : 'var(--red)'};">${'$' + Math.round(val).toLocaleString()}</div>`;
+            tt.style.left = (e.clientX + 12) + 'px';
+            tt.style.top = (e.clientY - 44) + 'px';
+            tt.classList.add('visible');
+        };
+        canvas.onmouseleave = () => tt.classList.remove('visible');
+    });
 }
 
 // ── CARD VIEW ──
@@ -8352,6 +8397,25 @@ function renderPosGrouped(items) {
 }
 
 function renderPfExposure(c, p, items) {
+    // Brand allocation donut
+    const brandAlloc = {};
+    items.forEach(i => {
+        if (i.sold) return;
+        const brand = detectBrand(i.ref);
+        if (!brandAlloc[brand]) brandAlloc[brand] = {cost: 0, count: 0};
+        brandAlloc[brand].cost += (i.cost_price || 0);
+        brandAlloc[brand].count++;
+    });
+    const brandColors = {'Rolex':'#00e676','Patek Philippe':'#d4af37','Audemars Piguet':'#60a5fa','Tudor':'#fb923c','Other':'#8b5cf6'};
+    const brandSegments = Object.entries(brandAlloc).sort((a,b) => b[1].cost - a[1].cost).map(([name, data]) => ({
+        name, value: data.cost, count: data.count, color: brandColors[name] || '#8b5cf6'
+    }));
+    const totalBrandCost = brandSegments.reduce((s, seg) => s + seg.value, 0);
+    const brandLegend = brandSegments.map(seg => {
+        const pctVal = totalBrandCost > 0 ? (seg.value / totalBrandCost * 100).toFixed(0) : 0;
+        return `<div class="donut-legend-item"><div class="donut-legend-dot" style="background:${seg.color}"></div><span style="color:var(--text-1);">${seg.name}</span><span style="color:var(--text-2);">${seg.count}x · ${pctVal}%</span></div>`;
+    }).join('');
+
     // Group by reference
     const byRef = {};
     items.forEach(i => {
@@ -8381,11 +8445,81 @@ function renderPfExposure(c, p, items) {
     }).join('');
 
     c.innerHTML = `<div class="fade-in">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+            <div class="card"><div class="card-head"><span>Brand Exposure</span><span style="font-size:0.62rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;">by capital deployed</span></div>
+                <div class="card-body" style="display:flex;flex-direction:column;align-items:center;padding:12px;">
+                    <div class="donut-wrap" id="exposure-donut-wrap">
+                        <canvas id="exposure-brand-donut" aria-label="Brand exposure donut chart"></canvas>
+                        <div class="donut-center"><div class="dc-val">${fmt(totalBrandCost)}</div><div class="dc-label">deployed</div></div>
+                    </div>
+                    <div class="donut-legend">${brandLegend}</div>
+                </div>
+            </div>
+            <div class="card"><div class="card-head"><span>Top Holdings</span><span style="font-size:0.62rem;color:var(--text-2);font-weight:400;text-transform:none;letter-spacing:0;">by reference weight</span></div>
+                <div class="card-body" style="padding:8px 12px;">
+                    ${sorted.slice(0, 8).map(r => {
+                        const pct = totalCapital > 0 ? (r.totalCost / totalCapital * 100) : 0;
+                        const pnlClr = r.totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
+                        return `<div style="margin-bottom:10px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+                                <span class="ref" onclick="lookupRef('${r.ref}')" style="font-size:0.8rem;cursor:pointer;">${r.ref}</span>
+                                <span style="font-family:var(--mono);font-size:0.72rem;color:var(--accent);">${fmt(r.totalCost)}</span>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <div style="flex:1;background:var(--bg-4);border-radius:2px;height:5px;overflow:hidden;">
+                                    <div style="background:var(--accent);height:5px;border-radius:2px;width:${pct.toFixed(1)}%;transition:width 0.4s ease;"></div>
+                                </div>
+                                <span style="font-size:0.62rem;color:var(--text-2);font-family:var(--mono);min-width:32px;text-align:right;">${pct.toFixed(0)}%</span>
+                                <span style="font-size:0.62rem;font-family:var(--mono);color:${pnlClr};">${r.totalPnl?(r.totalPnl>0?'+':'')+fmt(r.totalPnl):'—'}</span>
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>
+        </div>
         <div class="card"><div class="card-head"><span>Capital Concentration by Reference</span></div>
         <div class="tbl-wrap"><table class="tbl"><thead><tr>
             <th>Ref</th><th class="right">Qty</th><th class="right">Capital</th><th class="right">Market</th><th class="right">P&L</th><th class="right">% of Port</th><th>Weight</th>
         </tr></thead><tbody>${rows}</tbody></table></div></div>
     </div>`;
+
+    if (brandSegments.length) {
+        setTimeout(() => {
+            drawDonutChart('exposure-brand-donut', brandSegments, {size: 160});
+            const canvas = document.getElementById('exposure-brand-donut');
+            if (canvas) {
+                let tt = document.getElementById('exposure-donut-tt');
+                if (!tt) { tt = document.createElement('div'); tt.id = 'exposure-donut-tt'; tt.className = 'chart-tooltip'; document.body.appendChild(tt); }
+                canvas.style.cursor = 'crosshair';
+                canvas.onmousemove = function(e) {
+                    const rect = canvas.getBoundingClientRect();
+                    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+                    const cx = rect.width/2, cy = rect.height/2;
+                    const dx = mx - cx, dy = my - cy;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    const outerR = (rect.width/2) - 4, innerR = outerR * 0.62;
+                    if (dist < innerR || dist > outerR) { tt.classList.remove('visible'); return; }
+                    let angle = Math.atan2(dy, dx) + Math.PI/2;
+                    if (angle < 0) angle += Math.PI * 2;
+                    const total = brandSegments.reduce((s,seg)=>s+seg.value,0);
+                    let cum = 0;
+                    for (const seg of brandSegments) {
+                        cum += (seg.value / total) * Math.PI * 2;
+                        if (angle <= cum) {
+                            const pct = (seg.value/total*100).toFixed(1);
+                            tt.innerHTML = `<div class="tt-date">${seg.name}</div><div class="tt-val" style="color:${seg.color};">${fmt(seg.value)} (${pct}%)</div>`;
+                            tt.style.left = (e.clientX + 12) + 'px';
+                            tt.style.top = (e.clientY - 40) + 'px';
+                            tt.classList.add('visible');
+                            return;
+                        }
+                    }
+                    tt.classList.remove('visible');
+                };
+                canvas.onmouseleave = () => { const t=document.getElementById('exposure-donut-tt'); if(t) t.classList.remove('visible'); };
+            }
+        }, 100);
+    }
 }
 
 function renderPfPipeline(c, p, items) {
@@ -8963,7 +9097,10 @@ async function renderPfMonthly(c) {
         html += '</tbody></table></div></div>';
         html += '</div>';  // end 2-col grid
         
+        html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">`;
         html += `<div class="card"><div class="card-head"><span>Monthly Profit Trend</span><span style="display:flex;align-items:center;gap:12px;font-size:0.62rem;font-weight:400;text-transform:none;letter-spacing:0;"><span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:rgba(0,230,118,0.7);border-radius:2px;display:inline-block;"></span>Profit</span><span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:16px;height:2px;background:rgba(212,175,55,0.7);display:inline-block;border-radius:1px;"></span>Margin %</span></span></div><div class="card-body" style="padding:8px 12px 4px;"><canvas id="monthly-profit-chart"></canvas></div></div>`;
+        html += `<div class="card"><div class="card-head"><span>Revenue vs Cost</span><span style="display:flex;align-items:center;gap:12px;font-size:0.62rem;font-weight:400;text-transform:none;letter-spacing:0;"><span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:rgba(0,230,118,0.7);border-radius:2px;display:inline-block;"></span>Revenue</span><span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:rgba(212,175,55,0.7);border-radius:2px;display:inline-block;"></span>Cost</span></span></div><div class="card-body" style="padding:8px 12px 4px;"><canvas id="monthly-sales-chart"></canvas></div></div>`;
+        html += `</div>`;
         html += '<div class="card"><div class="card-head">Monthly Breakdown</div><div class="card-body">';
         html += '<table class="tbl"><thead><tr><th>Month</th><th>Pieces</th><th class="hide-mobile">Revenue</th><th class="hide-mobile">Cost</th><th>Profit</th><th>Margin</th></tr></thead><tbody>';
         for (const m of months) {
@@ -8987,7 +9124,7 @@ async function renderPfMonthly(c) {
         }
         html += '</tbody></table></div></div>';
         c.innerHTML = html;
-        setTimeout(() => drawMonthlyProfitChart(months), 50);
+        setTimeout(() => { drawMonthlyProfitChart(months); drawMonthlySalesChart('monthly-sales-chart', months); }, 50);
     } catch(e) { c.innerHTML = '<p style="color:var(--red);">Failed to load monthly performance.</p>'; }
 }
 function toggleMonthDeals(row) {
@@ -9289,6 +9426,202 @@ function generateTrend(currentValue, days, volatility) {
         values.unshift(Math.max(0, values[0] - change));
     }
     return values;
+}
+
+// ═══ REGION SPREAD BAR CHART (US vs HK) ═══
+function drawRegionSpreadChart(canvasId, usB25, hkB25, usLow, hkLow, usHigh, hkHigh) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || (!usB25 && !hkB25)) return;
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.parentElement.offsetWidth || 400;
+    const H = 120;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = '100%';
+    canvas.style.height = H + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    const pad = {top: 16, right: 16, bottom: 28, left: 16};
+    const cW = W - pad.left - pad.right;
+    const cH = H - pad.top - pad.bottom;
+
+    const allVals = [usB25, hkB25, usLow||0, hkLow||0, usHigh||0, hkHigh||0].filter(v => v > 0);
+    if (!allVals.length) return;
+    const minV = Math.min(...allVals) * 0.97;
+    const maxV = Math.max(...allVals) * 1.03;
+    const range = maxV - minV || 1;
+    const toY = v => pad.top + cH - ((v - minV) / range) * cH;
+
+    ctx.clearRect(0, 0, W, H);
+
+    const regions = [
+        {label: 'US', b25: usB25, low: usLow, high: usHigh, color: '#00e676', x: pad.left + cW * 0.15},
+        {label: 'HK', b25: hkB25, low: hkLow, high: hkHigh, color: '#d4af37', x: pad.left + cW * 0.55},
+    ].filter(r => r.b25 > 0);
+
+    const barW = Math.min(80, cW * 0.25);
+
+    regions.forEach(r => {
+        if (r.low && r.high) {
+            const yTop = toY(r.high), yBot = toY(r.low);
+            ctx.fillStyle = r.color + '22';
+            ctx.fillRect(r.x, yTop, barW, yBot - yTop);
+            ctx.strokeStyle = r.color + '44';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(r.x, yTop, barW, yBot - yTop);
+            [r.low, r.high].forEach(v => {
+                const y = toY(v);
+                ctx.strokeStyle = r.color + '66';
+                ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(r.x - 3, y); ctx.lineTo(r.x + barW + 3, y); ctx.stroke();
+            });
+        }
+        const yB = toY(r.b25);
+        const barH = Math.max(3, pad.top + cH - yB);
+        const grad = ctx.createLinearGradient(0, yB, 0, pad.top + cH);
+        grad.addColorStop(0, r.color + 'cc');
+        grad.addColorStop(1, r.color + '44');
+        ctx.fillStyle = grad;
+        ctx.fillRect(r.x, yB, barW, barH);
+        ctx.strokeStyle = r.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(r.x, yB); ctx.lineTo(r.x + barW, yB); ctx.stroke();
+        ctx.font = 'bold 11px JetBrains Mono, monospace';
+        ctx.fillStyle = r.color;
+        ctx.textAlign = 'center';
+        ctx.fillText('$' + (r.b25/1000).toFixed(0) + 'k', r.x + barW/2, yB - 4);
+        ctx.font = '10px JetBrains Mono, monospace';
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.fillText(r.label, r.x + barW/2, H - 6);
+    });
+
+    if (regions.length === 2 && regions[0].b25 && regions[1].b25) {
+        const spread = ((regions[0].b25 - regions[1].b25) / regions[1].b25 * 100).toFixed(1);
+        const midX = (regions[0].x + barW + regions[1].x) / 2;
+        const midY = H / 2;
+        ctx.font = 'bold 10px JetBrains Mono, monospace';
+        ctx.fillStyle = parseFloat(spread) > 0 ? '#00e676' : '#ff1744';
+        ctx.textAlign = 'center';
+        ctx.fillText((parseFloat(spread) > 0 ? '+' : '') + spread + '%', midX, midY - 6);
+        ctx.font = '8px JetBrains Mono, monospace';
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.fillText('spread', midX, midY + 6);
+    }
+
+    let tt = document.getElementById('region-spread-tt');
+    if (!tt) { tt = document.createElement('div'); tt.id = 'region-spread-tt'; tt.className = 'chart-tooltip'; document.body.appendChild(tt); }
+    canvas.style.cursor = 'crosshair';
+    canvas.onmousemove = function(e) {
+        const rect = canvas.getBoundingClientRect();
+        const mx = (e.clientX - rect.left) * (W / rect.width);
+        let hit = null;
+        for (const r of regions) { if (mx >= r.x && mx <= r.x + barW) { hit = r; break; } }
+        if (!hit) { tt.classList.remove('visible'); return; }
+        let html = `<div class="tt-date">${hit.label} Market</div><div class="tt-val" style="color:${hit.color};">B25: $${Math.round(hit.b25).toLocaleString()}</div>`;
+        if (hit.low) html += `<div style="font-size:0.62rem;color:var(--text-2);">Low: $${Math.round(hit.low).toLocaleString()}</div>`;
+        if (hit.high) html += `<div style="font-size:0.62rem;color:var(--text-2);">High: $${Math.round(hit.high).toLocaleString()}</div>`;
+        tt.innerHTML = html;
+        tt.style.left = (e.clientX + 12) + 'px';
+        tt.style.top = (e.clientY - 60) + 'px';
+        tt.classList.add('visible');
+    };
+    canvas.onmouseleave = () => { const t = document.getElementById('region-spread-tt'); if(t) t.classList.remove('visible'); };
+}
+
+// ═══ MONTHLY SALES/PURCHASES GROUPED BAR CHART ═══
+function drawMonthlySalesChart(canvasId, months) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || !months || months.length < 1) return;
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.parentElement.offsetWidth || 600;
+    const H = 160;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = '100%';
+    canvas.style.maxWidth = '100%';
+    canvas.style.height = H + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    const isLight = document.documentElement.classList.contains('light');
+    const textAlpha = isLight ? '0,0,0' : '255,255,255';
+    const pad = {top: 16, right: 16, bottom: 30, left: 60};
+    const cW = W - pad.left - pad.right;
+    const cH = H - pad.top - pad.bottom;
+
+    const revenues = months.map(m => m.revenue || 0);
+    const costs = months.map(m => m.cost || 0);
+    const maxVal = Math.max(...revenues, ...costs, 1);
+    const spacing = cW / months.length;
+    const groupW = spacing * 0.8;
+    const barW = groupW / 2 - 1;
+    const monthAbbrs = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    ctx.clearRect(0, 0, W, H);
+
+    for (let i = 0; i <= 3; i++) {
+        const val = maxVal * (1 - i / 3);
+        const y = pad.top + (cH / 3) * i;
+        ctx.strokeStyle = `rgba(${textAlpha},0.05)`;
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+        ctx.fillStyle = `rgba(${textAlpha},0.2)`;
+        ctx.font = `10px 'JetBrains Mono', monospace`;
+        ctx.textAlign = 'right';
+        ctx.fillText(val >= 1000 ? '$' + (val/1000).toFixed(0) + 'k' : '$' + Math.round(val), pad.left - 4, y + 3);
+    }
+
+    const _hitAreas = [];
+    months.forEach((m, i) => {
+        const rev = m.revenue || 0;
+        const cost = m.cost || 0;
+        const xGroup = pad.left + i * spacing + (spacing - groupW) / 2;
+
+        const revH = Math.max(2, (rev / maxVal) * cH);
+        const revY = pad.top + cH - revH;
+        const revGrad = ctx.createLinearGradient(0, revY, 0, pad.top + cH);
+        revGrad.addColorStop(0, 'rgba(0,230,118,0.85)');
+        revGrad.addColorStop(1, 'rgba(0,230,118,0.3)');
+        ctx.fillStyle = revGrad;
+        ctx.fillRect(xGroup, revY, barW, revH);
+
+        const costH = Math.max(2, (cost / maxVal) * cH);
+        const costY = pad.top + cH - costH;
+        const costGrad = ctx.createLinearGradient(0, costY, 0, pad.top + cH);
+        costGrad.addColorStop(0, 'rgba(212,175,55,0.85)');
+        costGrad.addColorStop(1, 'rgba(212,175,55,0.3)');
+        ctx.fillStyle = costGrad;
+        ctx.fillRect(xGroup + barW + 2, costY, barW, costH);
+
+        const mn = parseInt((m.month || '').split('-')[1]) || 0;
+        ctx.fillStyle = `rgba(${textAlpha},0.25)`;
+        ctx.font = `9px 'JetBrains Mono', monospace`;
+        ctx.textAlign = 'center';
+        ctx.fillText(monthAbbrs[mn] || '', xGroup + groupW / 2, H - 8);
+        _hitAreas.push({x: xGroup, rev, cost, pieces: m.pieces || 0, month: m.month, groupW});
+    });
+
+    let tt = document.getElementById('monthly-sales-tt');
+    if (!tt) { tt = document.createElement('div'); tt.id = 'monthly-sales-tt'; tt.className = 'chart-tooltip'; document.body.appendChild(tt); }
+    canvas.style.cursor = 'crosshair';
+    canvas.onmousemove = function(e) {
+        const rect = canvas.getBoundingClientRect();
+        const mx = (e.clientX - rect.left) * (W / rect.width);
+        let hit = null;
+        for (const h of _hitAreas) { if (mx >= h.x && mx <= h.x + h.groupW) { hit = h; break; } }
+        if (!hit) { tt.classList.remove('visible'); return; }
+        const mo = hit.month ? hit.month.replace('-', '/') : '';
+        const profit = hit.rev - hit.cost;
+        tt.innerHTML = `<div class="tt-date">${mo} \u00b7 ${hit.pieces} sold</div>
+            <div class="tt-val" style="color:#00e676;">Revenue: $${Math.round(hit.rev).toLocaleString()}</div>
+            <div style="font-size:0.7rem;color:#d4af37;">Cost: $${Math.round(hit.cost).toLocaleString()}</div>
+            <div style="font-size:0.7rem;color:${profit>=0?'var(--green)':'var(--red)'};">Profit: ${profit>=0?'+':''}$${Math.round(profit).toLocaleString()}</div>`;
+        tt.style.left = (e.clientX + 12) + 'px';
+        tt.style.top = (e.clientY - 80) + 'px';
+        tt.classList.add('visible');
+    };
+    canvas.onmouseleave = () => { const t=document.getElementById('monthly-sales-tt'); if(t) t.classList.remove('visible'); };
 }
 
 // ═══ DONUT CHART (Canvas, animated) ═══
