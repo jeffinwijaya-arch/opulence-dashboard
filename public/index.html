@@ -4701,11 +4701,14 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                 @media(max-width:768px){
                     .kanban-board{grid-template-columns:1fr !important;gap:12px;}
                     .mc-tab-nav{flex-wrap:wrap;border-radius:12px;}
-                    .mc-tab-btn{flex:0 0 calc(33.33% - 4px);font-size:0.6rem;padding:6px 4px;}
+                    .mc-tab-btn{flex:0 0 calc(33.33% - 4px);font-size:0.68rem;padding:0 4px;min-height:44px;display:flex;align-items:center;justify-content:center;text-align:center;}
                     .health-grid{grid-template-columns:1fr 1fr !important;}
                     .schedule-card{flex-direction:column;align-items:flex-start;}
                     .schedule-actions{align-self:flex-end;}
                     .backlog-card{padding:12px;}
+                    .mc-btn{min-height:44px!important;padding:10px 16px!important;font-size:0.78rem!important;}
+                    .schedule-actions{gap:8px!important;width:100%!important;}
+                    .schedule-actions .mc-btn{width:100%!important;justify-content:center!important;}
                 }
                 .mc-empty{text-align:center;color:var(--text-2);padding:40px 20px;font-size:0.8rem;}
                 .mc-btn{background:var(--accent);color:var(--bg-1);border:none;padding:6px 12px;border-radius:6px;font-size:0.7rem;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:0.5px;}
@@ -8244,6 +8247,34 @@ function renderPfSummary(c, p, items) {
                     tt.classList.remove('visible');
                 };
                 canvas.onmouseleave = () => { const t = document.getElementById('brand-donut-tt'); if (t) t.classList.remove('visible'); };
+                canvas.ontouchstart = function(e) {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const rect = canvas.getBoundingClientRect();
+                    const mx = touch.clientX - rect.left, my = touch.clientY - rect.top;
+                    const cx = rect.width / 2, cy = rect.height / 2;
+                    const dx = mx - cx, dy = my - cy;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const outerR = (rect.width / 2) - 4, innerR = outerR * 0.62;
+                    if (dist < innerR || dist > outerR) { tt.classList.remove('visible'); return; }
+                    let angle = Math.atan2(dy, dx) + Math.PI / 2;
+                    if (angle < 0) angle += Math.PI * 2;
+                    const total = brandSegments.reduce((s, seg) => s + seg.value, 0);
+                    let cum = 0;
+                    for (const seg of brandSegments) {
+                        cum += (seg.value / total) * Math.PI * 2;
+                        if (angle <= cum) {
+                            const pct = (seg.value / total * 100).toFixed(1);
+                            tt.innerHTML = `<div class="tt-date">${seg.name} (${seg.count}x)</div><div class="tt-val" style="color:${seg.color};">${fmt(seg.value)} · ${pct}%</div>`;
+                            tt.style.left = Math.min(touch.clientX + 12, window.innerWidth - 160) + 'px';
+                            tt.style.top = Math.max(touch.clientY - 40, 10) + 'px';
+                            tt.classList.add('visible');
+                            setTimeout(() => tt.classList.remove('visible'), 2000);
+                            return;
+                        }
+                    }
+                    tt.classList.remove('visible');
+                };
             }
         }, 100);
     }
@@ -8678,6 +8709,34 @@ function renderPfExposure(c, p, items) {
                     tt.classList.remove('visible');
                 };
                 canvas.onmouseleave = () => { const t=document.getElementById('exposure-donut-tt'); if(t) t.classList.remove('visible'); };
+                canvas.ontouchstart = function(e) {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const rect = canvas.getBoundingClientRect();
+                    const mx = touch.clientX - rect.left, my = touch.clientY - rect.top;
+                    const cx = rect.width/2, cy = rect.height/2;
+                    const dx = mx - cx, dy = my - cy;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    const outerR = (rect.width/2) - 4, innerR = outerR * 0.62;
+                    if (dist < innerR || dist > outerR) { tt.classList.remove('visible'); return; }
+                    let angle = Math.atan2(dy, dx) + Math.PI/2;
+                    if (angle < 0) angle += Math.PI * 2;
+                    const total = brandSegments.reduce((s,seg)=>s+seg.value,0);
+                    let cum = 0;
+                    for (const seg of brandSegments) {
+                        cum += (seg.value / total) * Math.PI * 2;
+                        if (angle <= cum) {
+                            const pct = (seg.value/total*100).toFixed(1);
+                            tt.innerHTML = `<div class="tt-date">${seg.name}</div><div class="tt-val" style="color:${seg.color};">${fmt(seg.value)} (${pct}%)</div>`;
+                            tt.style.left = Math.min(touch.clientX + 12, window.innerWidth - 160) + 'px';
+                            tt.style.top = Math.max(touch.clientY - 40, 10) + 'px';
+                            tt.classList.add('visible');
+                            setTimeout(() => tt.classList.remove('visible'), 2000);
+                            return;
+                        }
+                    }
+                    tt.classList.remove('visible');
+                };
             }
         }, 100);
     }
