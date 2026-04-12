@@ -13369,15 +13369,28 @@ async function loadPayments() {
             }
         };
         img.onerror = function() {
-            canvas.width = 400; canvas.height = 300;
+            canvas.width = 300; canvas.height = 200;
             const ctx2 = canvas.getContext('2d');
-            ctx2.fillStyle = '#222';
-            ctx2.fillRect(0,0,400,300);
-            ctx2.fillStyle = '#666';
-            ctx2.font = '14px Inter';
+            ctx2.fillStyle = '#1a1a2e';
+            ctx2.fillRect(0, 0, 300, 200);
+            ctx2.fillStyle = '#e74c3c';
+            ctx2.font = 'bold 14px Inter, system-ui, sans-serif';
             ctx2.textAlign = 'center';
-            ctx2.fillText('Failed to load image', 200, 150);
+            ctx2.fillText('Image failed to load', 150, 90);
+            ctx2.fillStyle = '#888';
+            ctx2.font = '11px Inter, system-ui, sans-serif';
+            ctx2.fillText(watchId || 'unknown', 150, 115);
+            ctx2.fillText('Check network or try again', 150, 135);
         };
+        // Show loading state while image fetches
+        canvas.width = 300; canvas.height = 200;
+        const _lctx = canvas.getContext('2d');
+        _lctx.fillStyle = '#111';
+        _lctx.fillRect(0, 0, 300, 200);
+        _lctx.fillStyle = '#555';
+        _lctx.font = '12px Inter, system-ui, sans-serif';
+        _lctx.textAlign = 'center';
+        _lctx.fillText('Loading...', 150, 105);
         img.src = '/api/watch-photos/' + watchId + '/image?t=' + Date.now();
         
         $('#photo-modal').style.display = 'block';
