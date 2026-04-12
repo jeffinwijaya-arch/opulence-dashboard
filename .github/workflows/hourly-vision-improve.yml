@@ -1,0 +1,97 @@
+name: "Vision: Hourly improvement cycle"
+
+# Runs Claude Code every hour to improve the watch recognition system.
+# Scoped strictly to vision code — will NOT touch unrelated files.
+#
+# Kill switch: create .github/vision-agent/DISABLED
+# Budget cap: 10-minute timeout per run
+# Branch: all changes land on `vision-improvements` branch, never main
+
+on:
+  schedule:
+    - cron: "30 * * * *"    # :30 past every hour (offset from audit at :00)
+  workflow_dispatch:         # manual trigger for testing
+
+concurrency:
+  group: vision-improve
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  improve:
+    name: Vision improvement cycle
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 5
+
+      - name: Kill switch
+        id: killswitch
+        run: |
+          if [ -f .github/vision-agent/DISABLED ]; then
+            echo "disabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "disabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Python
+        if: steps.killswitch.outputs.disabled != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install deps
+        if: steps.killswitch.outputs.disabled != 'true'
+        run: |
+          pip install pytest jsonschema anthropic
+          npm ci
+
+      - name: Create/switch to improvement branch
+        if: steps.killswitch.outputs.disabled != 'true'
+        run: |
+          git fetch origin vision-improvements 2>/dev/null || true
+          git checkout vision-improvements 2>/dev/null || git checkout -b vision-improvements
+          git merge main --no-edit || true
+
+      - name: Run Claude Code improvement agent
+        if: steps.killswitch.outputs.disabled != 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          claude --print --output-format text "$(cat .github/vision-agent/PROMPT.md)"
+
+      - name: Run tests to verify no regressions
+        if: steps.killswitch.outputs.disabled != 'true'
+        run: |
+          python3 -m pytest tests/test_watch_recognition.py -v --tb=short
+          npx vitest run tests/js/worker.test.js
+
+      - name: Commit and push if tests pass
+        if: steps.killswitch.outputs.disabled != 'true'
+        run: |
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No changes — nothing to commit."
+            exit 0
+          fi
+          git config user.name "vision-agent"
+          git config user.email "vision-agent@users.noreply.github.com"
+          git add -A
+          TS=$(date -u +"%Y-%m-%dT%H:%MZ")
+          git commit -m "vision(auto): hourly improvement — ${TS}
+
+          Automated improvement by .github/workflows/hourly-vision-improve.yml
+          See .github/vision-agent/PROMPT.md for the agent's instructions."
+          for i in 1 2 3; do
+            if git push -u origin vision-improvements; then exit 0; fi
+            echo "push retry $i..."
+            sleep $i
+          done
+          exit 1
