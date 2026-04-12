@@ -107,9 +107,9 @@
         /* ── THEME TOGGLE ── */
         .theme-toggle {
             background:var(--bg-3); border:1px solid var(--border); border-radius:var(--radius);
-            width:36px; height:36px; display:flex; align-items:center; justify-content:center;
+            width:44px; height:44px; display:flex; align-items:center; justify-content:center;
             cursor:pointer; font-size:1rem; transition:all 0.2s ease; margin-left:12px;
-            flex-shrink:0;
+            flex-shrink:0; touch-action:manipulation; -webkit-tap-highlight-color:transparent;
         }
         .theme-toggle:hover { border-color:var(--accent); background:var(--bg-4); }
 
@@ -468,7 +468,7 @@
             .mobile-nav { display:flex !important; justify-content:space-around; }
             .page { display:none; }
             .page.active { display:block; animation:pageIn 0.2s ease-out; }
-            .main { padding:16px 20px; max-width:100%; padding-bottom:calc(60px + env(safe-area-inset-bottom)); }
+            .main { padding:16px 20px; max-width:100%; padding-bottom:calc(76px + env(safe-area-inset-bottom)); }
             .metrics { grid-template-columns:repeat(4,1fr); gap:10px; }
             .detail-grid { grid-template-columns:1fr 1fr; gap:14px; }
             .popular-grid { grid-template-columns:repeat(3,1fr); }
@@ -476,7 +476,7 @@
         @media(max-width:900px) {
             .top-bar { display:none; }
             .mobile-nav { display:flex; justify-content:space-around; }
-            .main { padding:10px; padding-bottom:calc(56px + env(safe-area-inset-bottom)); }
+            .main { padding:10px; padding-bottom:calc(76px + env(safe-area-inset-bottom)); }
             .metrics { grid-template-columns:repeat(2,1fr); }
             .detail-grid { grid-template-columns:1fr; }
             .deal-stats { grid-template-columns:repeat(2,1fr); }
@@ -1524,13 +1524,15 @@
             #posting-price-edit-modal > div, #posting-delete-modal > div,
             #post-direct-modal > div, #inv-modal > div, #tracker-form-modal > div,
             #mc-modal-bg > div, #crm-detail-modal > div {
-                max-width:100%!important; max-height:100%!important; width:100%!important;
-                border-radius:0!important; margin:0!important;
+                max-width:100%!important; max-height:100dvh!important; width:100%!important;
+                height:100dvh!important; border-radius:0!important; margin:0!important;
+                overflow-y:auto!important; -webkit-overflow-scrolling:touch;
+                overscroll-behavior:contain;
             }
             #watch-modal, #sell-modal, #ship-modal, #post-modal,
             #posting-price-edit-modal, #posting-delete-modal, #post-direct-modal,
             #inv-modal, #tracker-form-modal, #mc-modal-bg, #crm-detail-modal {
-                padding:0!important;
+                padding:0!important; align-items:flex-start!important;
             }
         }
         /* ── P1: Touch targets — min 44px ── */
@@ -2169,12 +2171,144 @@
         <div style="position:absolute;inset:0;background:linear-gradient(90deg,transparent,var(--accent,#d4af37),transparent);animation:splashLoad 1.2s ease-in-out infinite;"></div>
     </div>
     <div style="margin-top:16px;font-family:'Inter',sans-serif;font-size:0.7rem;color:var(--text-2,#5c5b57);letter-spacing:2px;text-transform:uppercase;">Market Intelligence</div>
+    <div id="splash-build-stamp" style="margin-top:28px;font-family:monospace;font-size:0.55rem;color:#4a4a52;letter-spacing:1px;"></div>
 </div>
 <style>@keyframes splashLoad{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
 #splash-screen.hide{opacity:0!important;visibility:hidden!important;pointer-events:none!important;}
+/* Always-visible build badge — tiny, bottom-left, doesn't interfere
+   with anything. Exists so the user can screenshot and tell us which
+   deployed build their phone is actually running. Without this, iOS
+   PWA cache bugs are invisible: two devices on the same URL can be
+   days apart and you can't tell. */
+#mk-build-badge {
+    position: fixed; left: 6px; bottom: 6px; z-index: 190;
+    font-family: monospace; font-size: 0.52rem;
+    color: rgba(180,180,200,0.35); background: rgba(0,0,0,0.2);
+    padding: 2px 5px; border-radius: 3px;
+    pointer-events: none; user-select: none;
+    letter-spacing: 0.3px;
+}
+@media (max-width: 768px) {
+    /* On mobile the FAB is bottom-right; badge stays bottom-left so
+       they don't overlap. */
+    #mk-build-badge { font-size: 0.5rem; }
+}
+/* Debug overlay — opt-in via ?debug=1 in the URL. Shows live load
+   state so the user can screenshot it when the page looks broken.
+   Safe in prod: invisible unless the query param is set. */
+#mk-debug-overlay {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 99998;
+    background: rgba(0,0,0,0.92); color: #0f0;
+    font-family: monospace; font-size: 0.62rem;
+    padding: 8px 10px; border-bottom: 1px solid #080;
+    max-height: 40vh; overflow-y: auto; line-height: 1.4;
+}
+#mk-debug-overlay .dbg-err { color: #f66; }
+#mk-debug-overlay .dbg-ok { color: #6f6; }
+#mk-debug-overlay .dbg-warn { color: #fc3; }
+#mk-debug-overlay .dbg-close {
+    position: absolute; top: 4px; right: 8px; color: #aaa;
+    cursor: pointer; font-size: 0.8rem;
+}
 </style>
 <script>
-window.__V = '20260410-1740';
+// Build stamp — update this manually per deploy. The comment above
+// the badge CSS explains why it exists. If the user screenshots a
+// broken state and this stamp is an old value, we know the real
+// problem is an iOS PWA cache that hasn't refreshed, not a code bug.
+window.__V = '20260412-0333';
+window.__BUILD = { commit: '76e50c8', deployedAt: '2026-04-12T03:33Z', version: window.__V };
+
+// Always-visible build badge (bottom-left). Small and dim so it
+// doesn't interfere with the dashboard UI.
+(function(){
+    var el = document.createElement('div');
+    el.id = 'mk-build-badge';
+    el.textContent = 'build ' + window.__BUILD.commit + ' · ' + window.__BUILD.version;
+    // Wait for body to exist (script runs in head, body isn't there yet).
+    if (document.body) document.body.appendChild(el);
+    else document.addEventListener('DOMContentLoaded', function(){ document.body.appendChild(el); });
+    // Also show in the splash so it's visible during the first paint.
+    var splashStamp = document.getElementById('splash-build-stamp');
+    if (splashStamp) splashStamp.textContent = 'build ' + window.__BUILD.commit + ' · ' + window.__BUILD.version;
+})();
+
+// ── Debug overlay (?debug=1) ──
+// Shows runtime state — DATA.refs count, last loadData status, any
+// fetch failures — so a broken screenshot can be diagnosed without
+// needing console access. Every fetch() is wrapped to log to the
+// overlay so we see exactly which request failed.
+(function(){
+    var params;
+    try { params = new URLSearchParams(window.location.search); } catch(_) { return; }
+    if (params.get('debug') !== '1') return;
+
+    window.__MK_DEBUG = { events: [], maxEvents: 40 };
+
+    function emit(level, msg) {
+        window.__MK_DEBUG.events.push({ t: Date.now(), level: level, msg: String(msg).slice(0, 300) });
+        if (window.__MK_DEBUG.events.length > window.__MK_DEBUG.maxEvents) {
+            window.__MK_DEBUG.events.shift();
+        }
+        renderOverlay();
+    }
+    window.__mkDebug = emit;
+
+    function renderOverlay() {
+        var el = document.getElementById('mk-debug-overlay');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'mk-debug-overlay';
+            var onReady = function(){
+                if (document.body) document.body.appendChild(el);
+                else setTimeout(onReady, 50);
+            };
+            onReady();
+        }
+        var b = window.__BUILD || {};
+        var D = window.DATA || {};
+        var refsCount = (D.refs && typeof D.refs === 'object') ? Object.keys(D.refs).length : 0;
+        var topRefsCount = Array.isArray(D.topRefs) ? D.topRefs.length : 0;
+        var dealsCount = Array.isArray(D.deals) ? D.deals.length : 0;
+        var rows = [
+            '<span class="dbg-close" onclick="this.parentNode.remove()">×</span>',
+            '<b>MK DEBUG</b> build=' + (b.commit || '?') + ' ver=' + (b.version || '?'),
+            'URL=' + (location.pathname + location.search).slice(0, 80),
+            'DATA.refs=' + refsCount + ' topRefs=' + topRefsCount + ' deals=' + dealsCount,
+            'UA=' + (navigator.userAgent || '').slice(0, 80),
+            '──────',
+        ];
+        window.__MK_DEBUG.events.slice(-20).forEach(function(e){
+            var cls = e.level === 'err' ? 'dbg-err' : (e.level === 'ok' ? 'dbg-ok' : (e.level === 'warn' ? 'dbg-warn' : ''));
+            var ts = new Date(e.t).toISOString().slice(11, 19);
+            rows.push('<span class="' + cls + '">[' + ts + '] ' + e.msg.replace(/[<>]/g, '') + '</span>');
+        });
+        el.innerHTML = rows.join('<br>');
+    }
+
+    // Wrap fetch to log every request + result to the overlay.
+    // Keep the original so anything already wrapped (ws8-mobile-ux
+    // offline cache) still works — it'll just see our wrapper, which
+    // forwards to the real window.fetch.
+    var _origFetch = window.fetch;
+    window.fetch = function(input, init) {
+        var urlStr = typeof input === 'string' ? input : (input && input.url ? input.url : String(input));
+        var shortUrl = urlStr.replace(location.origin, '').slice(0, 60);
+        emit('info', 'FETCH ' + shortUrl);
+        return _origFetch.apply(this, arguments).then(function(resp){
+            emit(resp.ok ? 'ok' : 'err', (resp.ok ? 'OK ' : 'FAIL ') + resp.status + ' ' + shortUrl);
+            return resp;
+        }).catch(function(err){
+            emit('err', 'NET ' + shortUrl + ' — ' + (err && err.message || err));
+            throw err;
+        });
+    };
+
+    emit('info', 'debug overlay active');
+    // Re-render every second so DATA counts update as loadData runs.
+    setInterval(renderOverlay, 1000);
+})();
+
 // Failsafe: force-dismiss splash after 6s even if JS hasn't loaded yet
 setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.classList.add('hide');setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s);},500);}},6000);
 </script>
@@ -2310,7 +2444,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
 
             <!-- Aging mobile nav removed -->
             <!-- Briefing mobile nav removed -->
-            <a class="more-grid-item" onclick="mobileNav('mission-control')"><span class="mgi-icon"></span>Mission Control</a>
+            <a class="more-grid-item" onclick="mobileNav('mission-control')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Mission Control</a>
             <a class="more-grid-item" onclick="mobileNav('dashboard');openUnifiedSearch()"><span class="mgi-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>Search</a>
             <a class="more-grid-item" onclick="mobileNav('ad-crm')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span>AD CRM</a>
         </div>
@@ -4502,7 +4636,9 @@ window.__BUILD__ = {
 };
 try { console.info('%c[MK build]', 'color:#d4af37;font-weight:700', window.__BUILD__); } catch(e) {}
 // ── Force clear stale service workers + cache on version mismatch ──
-(function(){const V='v3';if(navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(regs=>{regs.forEach(r=>{r.unregister();});});caches.keys().then(ks=>ks.forEach(k=>{if(!k.includes(V))caches.delete(k);}));}})();
+// Removed: v3 self-destruct (was unregistering all SWs on every load).
+// The sw.js v6 network-first caching service worker now handles cache
+// hygiene in its own activate event.
 // ── Skeleton loader helpers ──
 function skelRows(n=4){let h='';for(let i=0;i<n;i++){const w1=['w30','w40','w50'][i%3],w2=['w20','w30','w40'][i%3];h+=`<div class="skel-row"><div class="skel-line ${w1}"></div><div class="skel-line ${w2}"></div><div class="skel-line w20"></div></div>`;}return h;}
 function skelTable(cols=5,rows=5){let h='<table class="tbl"><tbody>';for(let r=0;r<rows;r++){h+='<tr>';for(let c=0;c<cols;c++){const w=['w40','w30','w20','w50','w60'][c%5];h+=`<td><div class="skel-line ${w}" style="min-width:40px;"></div></td>`;}h+='</tr>';}return h+'</tbody></table>';}
@@ -4873,17 +5009,57 @@ function showPage(name, pushState=true) {
 // ── DATA ──
 async function loadData() {
     try {
-        const [dealsR, arbR, topR, syncR] = await Promise.all([fetch('/api/deals'), fetch('/api/arbitrage'), fetch('/api/top_refs'), fetch('/api/sync_info')]);
-        // If any response is 401, redirect to login
-        if (dealsR.status === 401) { window.location.href = '/login'; return; }
-        DATA.deals = await dealsR.json();
-        if (!Array.isArray(DATA.deals)) { DATA.deals = []; }
-        DATA.arbitrage = arbR.ok ? await arbR.json() : [];
+        // CRITICAL: Fetch bundle.json FIRST. It's a static file that
+        // always works on the Pages deploy, and it contains everything
+        // the dashboard needs for its core views (refs, deals, arb,
+        // sellers, summary). The /api/* calls below are for live
+        // backend data — they can fail (backend down, network blip,
+        // no worker deployed) and the dashboard should still render
+        // from the static bundle rather than showing a blank page.
+        //
+        // Before this reorder, bundle.json was fetched AFTER
+        //   DATA.deals = await dealsR.json()
+        // which meant any /api/ failure crashed the whole pipeline
+        // before the bundle ever loaded — the #1 cause of the "Price
+        // Intelligence shows nothing" bug.
+        try {
+            const br = await fetch('/data/bundle.json');
+            if (br.ok) {
+                const b = await br.json();
+                if (b.refs) DATA.refs = b.refs;
+                if (b.sellers) DATA.sellers = b.sellers;
+                if (b.summary) DATA.summary = b.summary;
+                if (b.deals && Array.isArray(b.deals)) DATA.deals = b.deals;
+                if (b.arbitrage && Array.isArray(b.arbitrage)) DATA.arbitrage = b.arbitrage;
+                if (b.movers) DATA.movers = b.movers;
+            }
+        } catch(e) { console.warn('bundle.json failed:', e); }
+
+        // Now try the live /api/* endpoints. These overlay the static
+        // bundle with fresher data from the backend. Each is guarded
+        // so a single failure can't crash the loader.
+        const safeJson = async (resp, fallback) => {
+            if (!resp || !resp.ok) return fallback;
+            try { return await resp.json(); } catch(_) { return fallback; }
+        };
+        try {
+            const [dealsR, arbR, topR, syncR] = await Promise.all([
+                fetch('/api/deals'), fetch('/api/arbitrage'),
+                fetch('/api/top_refs'), fetch('/api/sync_info'),
+            ]);
+            if (dealsR.status === 401) { window.location.href = '/login'; return; }
+            const liveDealsParsed = await safeJson(dealsR, null);
+            if (liveDealsParsed && Array.isArray(liveDealsParsed)) DATA.deals = liveDealsParsed;
+            const liveArbParsed = await safeJson(arbR, null);
+            if (liveArbParsed && Array.isArray(liveArbParsed)) DATA.arbitrage = liveArbParsed;
+            const liveTopRefs = await safeJson(topR, null);
+            if (liveTopRefs && Array.isArray(liveTopRefs)) DATA.topRefs = liveTopRefs;
+            DATA.syncInfo = await safeJson(syncR, null);
+        } catch(e) { console.warn('Live API overlay failed (using bundle):', e); }
+
+        if (!Array.isArray(DATA.deals)) DATA.deals = [];
         if (!Array.isArray(DATA.arbitrage)) DATA.arbitrage = [];
-        DATA.topRefs = topR.ok ? await topR.json() : [];
         if (!Array.isArray(DATA.topRefs)) DATA.topRefs = [];
-        try { DATA.syncInfo = await syncR.json(); } catch(e) {}
-        try { const br = await fetch('/data/bundle.json'); if (br.ok) { const b = await br.json(); if (b.refs) DATA.refs=b.refs; if (b.sellers) DATA.sellers=b.sellers; if (b.summary) DATA.summary=b.summary; } } catch(e) {}
         renderAll();
         checkStale();
         dismissSplash();
@@ -7253,7 +7429,29 @@ async function doLookup() {
                 return;
             }
         } catch(_) { /* fallback itself failed — show the original error */ }
-        c.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-2);">${e.message||'No data for "'+q+'"'}</div>`;
+        // Styled error card with Retry. Previously we dropped
+        // e.message straight into the DOM, which surfaced browser-
+        // specific junk ("Load failed", "Unexpected token '<'", etc.)
+        // as opaque user-facing text with no way to recover short of
+        // reloading the whole page. The new card shows a human
+        // message, keeps the raw error in a dim footer for debug,
+        // and wires a Retry button that re-invokes doLookup().
+        const _rawMsg = (e && e.message ? String(e.message) : '').replace(/[<>]/g, '').slice(0, 200);
+        const _qEsc = (q || '').replace(/[<>"']/g, '').slice(0, 80);
+        c.innerHTML = `
+            <div class="card" style="margin-top:12px;padding:20px;text-align:center;">
+                <div style="font-size:0.82rem;color:var(--text-1);font-weight:600;margin-bottom:6px;">
+                    Couldn't load prices for "${_qEsc}"
+                </div>
+                <div style="font-size:0.68rem;color:var(--text-3);margin-bottom:14px;">
+                    The price parser isn't reachable and no cached data was found for this reference.
+                </div>
+                <button class="btn" onclick="doLookup()"
+                        style="background:var(--accent);color:var(--bg-1);font-weight:700;padding:10px 22px;min-height:44px;">
+                    Retry
+                </button>
+                ${_rawMsg ? `<div style="margin-top:12px;font-size:0.58rem;color:var(--text-3);font-family:var(--mono);opacity:0.6;">${_rawMsg}</div>` : ''}
+            </div>`;
     }
 }
 
@@ -8715,6 +8913,35 @@ let _lookupInitialized = false;
 async function initLookupPage() {
     const resultDiv = document.getElementById('lookup-result');
     if (!resultDiv) return;
+
+    // Empty-state guard: if loadData() never completed (offline, CDN
+    // 404, bundle.json broken), DATA.refs / DATA.topRefs are both
+    // empty and this page would otherwise render popular-ref cards
+    // stuck on "Loading..." with no action for the user. That's the
+    // "Failed to load" ghost state the Price Intelligence page was
+    // hitting — technically not an error, but functionally broken.
+    // Render an explicit retry card instead so the user can recover
+    // in one tap.
+    const haveRefs = DATA && DATA.refs && Object.keys(DATA.refs).length > 0;
+    const haveTopRefs = DATA && Array.isArray(DATA.topRefs) && DATA.topRefs.length > 0;
+    if (!haveRefs && !haveTopRefs) {
+        resultDiv.innerHTML = `
+            <div class="card" style="margin-top:16px;padding:24px;text-align:center;">
+                <div style="font-size:0.78rem;color:var(--text-2);margin-bottom:6px;font-weight:600;">Price data hasn't loaded yet</div>
+                <div style="font-size:0.68rem;color:var(--text-3);margin-bottom:14px;">
+                    Check your connection, then tap Retry.
+                </div>
+                <button class="btn" id="lookup-retry-btn"
+                        onclick="(async()=>{const b=this;b.disabled=true;b.textContent='Loading...';try{await loadData();}finally{b.disabled=false;b.textContent='Retry';_lookupInitialized=false;initLookupPage();}})()"
+                        style="background:var(--accent);color:var(--bg-1);font-weight:700;padding:10px 22px;min-height:44px;">
+                    Retry
+                </button>
+            </div>`;
+        const sumDiv = document.getElementById('lookup-market-summary');
+        if (sumDiv) sumDiv.innerHTML = '';
+        _lookupInitialized = true;
+        return;
+    }
 
     const popularRefs = [
         {ref:'126500LN', model:'Daytona Steel', family:'Cosmograph'},
@@ -16509,21 +16736,24 @@ async function loadPayments() {
 
 <!-- PWA Service Worker Registration -->
 <script>
-if ('serviceWorker' in navigator && false) {
+// Re-enabled in v6. The old SW (v1-v5) was disabled because it
+// aggressively cached stale HTML. v6 uses network-first for the
+// shell (always gets the newest deploy) and stale-while-revalidate
+// for data (snappy + fresh). The activate handler in sw.js v6
+// deletes old caches from previous versions.
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then(registration => {
-        console.log('SW registered:', registration);
+        console.log('SW registered:', registration.scope);
       })
       .catch(error => {
-        console.log('SW registration failed:', error);
+        console.warn('SW registration failed:', error);
       });
   });
 }
 </script>
 <script>
-// SW disabled — was causing stale cache issues
-if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(regs=>regs.forEach(r=>r.unregister()));
 window.addEventListener('offline', () => {
   let b = document.getElementById('offline-banner');
   if (!b) { b = document.createElement('div'); b.id = 'offline-banner';

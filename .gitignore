@@ -30,6 +30,11 @@ Thumbs.db
 # Logs
 *.log
 
+# Test artifacts
+.pytest_cache/
+coverage/
+.vitest-cache/
+
 # Local databases (the sqlite files in public/ are committed, but ignore
 # any local copies agents might create while experimenting)
 *.db-journal

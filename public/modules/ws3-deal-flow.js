@@ -155,6 +155,19 @@
                 font-weight: 600;
                 color: var(--accent);
             }
+
+        @media (max-width:768px) {
+            .ws3-snipes-btn { min-height:44px; padding:10px 16px; }
+            .arb-cost-tooltip .cost-tip {
+                white-space: normal;
+                min-width: 0;
+                max-width: min(200px, calc(100vw - 40px));
+                left: auto;
+                right: 0;
+                transform: none;
+            }
+            .arb-cost-tooltip .cost-tip::after { left: auto; right: 12px; }
+        }
         `;
         document.head.appendChild(style);
     }

@@ -267,6 +267,13 @@
                 line-height: 1.4;
                 display: none;
             }
+
+        @media (max-width:768px) {
+            .ws2-aging-badges { flex-wrap:wrap; gap:6px; }
+            .ws2-capital-grid { grid-template-columns:1fr 1fr!important; }
+            .ws2-pnl-trend-canvas { height:auto!important; max-height:72px; }
+            .ws2-capital-wrap, .ws2-pnl-trend-wrap, .ws2-heatmap-wrap { margin-bottom:12px; }
+        }
         `;
         document.head.appendChild(style);
     }

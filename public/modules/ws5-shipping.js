@@ -520,9 +520,28 @@
         }
     }
 
+    // ── Mobile styles ────────────────────────────────────────────
+    function injectStyles() {
+        if (document.getElementById('ws5-styles')) return;
+        var style = document.createElement('style');
+        style.id = 'ws5-styles';
+        style.textContent = [
+            '@media (max-width:768px) {',
+            '    #ws5-batch-prefill, #ws5-batch-create {',
+            '        min-height:44px!important;',
+            '        font-size:0.75rem!important;',
+            '        padding:10px 14px!important;',
+            '    }',
+            '    .ws5-batch-chk { width:24px!important; height:24px!important; }',
+            '}'
+        ].join('\n');
+        document.head.appendChild(style);
+    }
+
     // ── Module lifecycle ────────────────────────────────────────────
     function init() {
         console.log('[' + MOD_ID + '] Initializing...');
+        injectStyles();
 
         // Listen for form changes that affect cost estimator
         ['ship-value', 'ship-weight'].forEach(function(id) {
