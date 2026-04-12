@@ -3325,6 +3325,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                             <option value="rehaut-serial">Rehaut serial (6 o'clock)</option>
                             <option value="clasp-code">Clasp code</option>
                         </select>
+                        <button class="btn" onclick="toggleCoverage()" id="btn-coverage" style="padding:6px 10px;font-size:0.72rem;background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.15);color:var(--text-2);">Coverage</button>
                         <!-- Edit actions -->
                         <div style="display:inline-flex;gap:3px;">
                             <button class="btn" onclick="undoRedaction()" id="btn-editor-undo" title="Undo (Ctrl+Z)" style="padding:6px 10px;font-size:0.72rem;">Undo</button>
@@ -13078,6 +13079,7 @@ async function loadPayments() {
     let editorRedoStack = [];
     let editorSelectedIdx = -1;
     let editorDrawing = false;
+    let editorShowCoverage = false;
     let editorDragging = false; // drag-to-move selected rect
     let editorDragOffX = 0, editorDragOffY = 0;
     let editorStartX = 0, editorStartY = 0;
@@ -13493,10 +13495,22 @@ async function loadPayments() {
             for (const r of editorRedactions) ctx.strokeRect(r.x, r.y, r.w, r.h);
             ctx.setLineDash([]);
         }
+
+        // Coverage overlay as final pass
+        if (editorShowCoverage) {
+            renderCoverageOverlay();
+        }
     }
-    
+
     function setEditorTool(tool) {
         editorTool = tool;
+        editorShowCoverage = false;
+        const coverageBtn = $('#btn-coverage');
+        if (coverageBtn) {
+            coverageBtn.style.background = 'rgba(255,255,255,0.06)';
+            coverageBtn.style.color = 'var(--text-2)';
+            coverageBtn.style.borderColor = 'rgba(255,255,255,0.15)';
+        }
         const canvas = $('#editor-canvas');
         const isRedact = tool === 'redact';
         canvas.style.cursor = isRedact ? 'crosshair' : 'default';
@@ -13870,7 +13884,83 @@ async function loadPayments() {
         renderEditor();
         updateEditorRedactCount();
     }
-    
+
+    function toggleCoverage() {
+        editorShowCoverage = !editorShowCoverage;
+        const btn = $('#btn-coverage');
+        if (btn) {
+            btn.style.background = editorShowCoverage ? 'rgba(48,209,88,0.2)' : 'rgba(255,255,255,0.06)';
+            btn.style.color = editorShowCoverage ? '#30d158' : 'var(--text-2)';
+            btn.style.borderColor = editorShowCoverage ? '#30d158' : 'rgba(255,255,255,0.15)';
+        }
+        renderEditor();
+    }
+
+    function renderCoverageOverlay() {
+        const canvas = $('#editor-canvas');
+        const ctx = canvas.getContext('2d');
+        const cw = canvas.width;
+        const ch = canvas.height;
+
+        // Draw semi-transparent green over the entire canvas (exposed areas)
+        ctx.fillStyle = 'rgba(48,209,88,0.25)';
+        ctx.fillRect(0, 0, cw, ch);
+
+        // Cut out redacted areas — these are "safe" (already redacted)
+        ctx.globalCompositeOperation = 'destination-out';
+        for (const r of editorRedactions) {
+            ctx.fillStyle = 'rgba(0,0,0,1)';
+            ctx.fillRect(r.x, r.y, r.w, r.h);
+        }
+        ctx.globalCompositeOperation = 'source-over';
+
+        // Highlight common sensitive regions with red tint
+        // Uses the same proportional positions from applyRedactPreset's presets
+        // plus additional common text/date locations on watch photos
+        const sensitiveRegions = [
+            { x: 0.28, y: 0.40, w: 0.44, h: 0.12, label: 'Serial/Caseback' },
+            { x: 0.30, y: 0.55, w: 0.40, h: 0.08, label: 'Caseback Date' },
+            { x: 0.10, y: 0.30, w: 0.45, h: 0.08, label: 'Card Serial' },
+            { x: 0.10, y: 0.42, w: 0.30, h: 0.07, label: 'Card Date' },
+            { x: 0.30, y: 0.72, w: 0.40, h: 0.06, label: 'Rehaut Serial' },
+            { x: 0.35, y: 0.45, w: 0.30, h: 0.08, label: 'Clasp Code' },
+            { x: 0.05, y: 0.88, w: 0.90, h: 0.08, label: 'Footer Text' }
+        ];
+
+        ctx.font = `${Math.max(10, Math.round(cw * 0.018))}px sans-serif`;
+        for (const region of sensitiveRegions) {
+            const rx = Math.round(region.x * cw);
+            const ry = Math.round(region.y * ch);
+            const rw = Math.round(region.w * cw);
+            const rh = Math.round(region.h * ch);
+
+            // Check if this region is already fully covered by redactions
+            let covered = false;
+            for (const red of editorRedactions) {
+                if (red.x <= rx && red.y <= ry &&
+                    (red.x + red.w) >= (rx + rw) &&
+                    (red.y + red.h) >= (ry + rh)) {
+                    covered = true;
+                    break;
+                }
+            }
+            if (covered) continue;
+
+            // Draw red-tinted highlight for exposed sensitive region
+            ctx.fillStyle = 'rgba(255,69,58,0.18)';
+            ctx.fillRect(rx, ry, rw, rh);
+            ctx.strokeStyle = 'rgba(255,69,58,0.5)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 3]);
+            ctx.strokeRect(rx, ry, rw, rh);
+            ctx.setLineDash([]);
+
+            // Label
+            ctx.fillStyle = 'rgba(255,69,58,0.75)';
+            ctx.fillText(region.label, rx + 4, ry + rh - 4);
+        }
+    }
+
     async function saveRedactedPhoto() {
         if (!editorWatchId || !editorImage) return;
         if (editorRedactions.length === 0) {
@@ -14002,6 +14092,7 @@ async function loadPayments() {
         editorRedoStack = [];
         editorSelectedIdx = -1;
         editorDrawing = false;
+        editorShowCoverage = false;
         editorDragging = false;
         editorPeeking = false;
         editorZoom = 1; editorPanX = 0; editorPanY = 0;
