@@ -631,6 +631,115 @@
     @media(max-width:900px){
       .footer{display:none}
     }
+
+    /* === 39. Sticky Card Headers === */
+    @media(max-width:900px){
+      .page.active .card-head{
+        position:sticky;top:0;z-index:8;
+        background:var(--bg-2);
+        backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+        border-bottom:1px solid var(--border-strong);
+      }
+      html.light .page.active .card-head{
+        background:var(--bg-2);
+      }
+    }
+
+    /* === 40. Swipe Page Indicator === */
+    @media(max-width:900px){
+      .ws11-swipe-edge{
+        position:fixed;top:50%;z-index:80;
+        width:24px;height:48px;
+        display:flex;align-items:center;justify-content:center;
+        opacity:0;transition:opacity 200ms ease;
+        pointer-events:none;
+      }
+      .ws11-swipe-edge-left{left:2px;transform:translateY(-50%)}
+      .ws11-swipe-edge-right{right:2px;transform:translateY(-50%)}
+      .ws11-swipe-edge.ws11-visible{opacity:0.4}
+      .ws11-swipe-edge svg{width:16px;height:16px;stroke:var(--text-2);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+    }
+
+    /* === 41. Onboarding Coach Marks === */
+    @media(max-width:900px){
+      .ws11-coach-overlay{
+        position:fixed;inset:0;z-index:30000;
+        background:rgba(0,0,0,0.7);
+        display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+        padding:24px 20px calc(90px + env(safe-area-inset-bottom));
+        animation:ws11PageFade 300ms ease both;
+      }
+      .ws11-coach-card{
+        background:var(--bg-1);border:1px solid var(--accent-border);
+        border-radius:20px;padding:24px;max-width:320px;width:100%;
+        text-align:center;box-shadow:0 16px 64px rgba(0,0,0,0.5);
+        animation:ws11CoachBounce 400ms cubic-bezier(0.22,1,0.36,1) both;
+      }
+      .ws11-coach-title{
+        font-size:1.1rem;font-weight:700;color:var(--text-0);margin-bottom:6px;
+      }
+      .ws11-coach-desc{
+        font-size:0.82rem;color:var(--text-2);line-height:1.5;margin-bottom:18px;
+      }
+      .ws11-coach-dots{
+        display:flex;gap:6px;justify-content:center;margin-bottom:16px;
+      }
+      .ws11-coach-dot{
+        width:6px;height:6px;border-radius:50%;background:var(--text-3);
+        transition:all 200ms ease;
+      }
+      .ws11-coach-dot.ws11-active{
+        background:var(--accent);width:20px;border-radius:3px;
+      }
+      .ws11-coach-btn{
+        background:var(--accent);color:#000;border:none;
+        border-radius:12px;padding:14px 28px;font-size:0.88rem;
+        font-weight:700;cursor:pointer;font-family:var(--font);
+        min-height:48px;width:100%;
+        transition:transform 100ms ease;
+        -webkit-tap-highlight-color:transparent;
+      }
+      .ws11-coach-btn:active{transform:scale(0.97)}
+      .ws11-coach-skip{
+        background:none;border:none;color:var(--text-2);
+        font-size:0.75rem;cursor:pointer;margin-top:10px;
+        padding:8px 16px;font-family:var(--font);
+      }
+    }
+    @keyframes ws11CoachBounce{
+      0%{opacity:0;transform:translateY(30px) scale(0.95)}
+      100%{opacity:1;transform:none}
+    }
+
+    /* === 42. Nav Badge Sync === */
+    @media(max-width:900px){
+      .ws11-nav-badge{
+        position:absolute;top:4px;right:50%;transform:translateX(calc(50% + 10px));
+        min-width:16px;height:16px;border-radius:8px;
+        background:var(--accent);color:#000;
+        font-size:0.5rem;font-weight:800;font-family:var(--mono);
+        display:flex;align-items:center;justify-content:center;
+        padding:0 4px;line-height:1;
+        box-shadow:0 1px 4px rgba(0,0,0,0.3);
+      }
+      .ws11-nav-badge:empty{display:none}
+    }
+
+    /* === 43. Scroll Position Memory Indicator === */
+    @media(max-width:900px){
+      .ws11-scroll-progress{
+        position:fixed;top:0;left:0;right:0;height:2px;z-index:200;
+        background:transparent;pointer-events:none;
+      }
+      .ws11-scroll-progress-bar{
+        height:100%;background:var(--accent);
+        width:0%;transition:width 100ms ease;
+        box-shadow:0 0 6px rgba(212,175,55,0.4);
+      }
+    }
+
+    /* === 44. Status Bar Theme Color === */
+    /* Handled via JS — meta[name="theme-color"] updated on toggle */
     `; }
 
     // ── JS Behavior Layer ──
@@ -839,6 +948,11 @@
     }
     
     function ws11InitPullToRefresh() {
+      // Skip if the app already has its own PTR (index.html #ptr-indicator)
+      if (document.getElementById('ptr-indicator')) {
+        console.log('[MK] ws11: Existing PTR detected, skipping ws11 PTR');
+        return;
+      }
       const main = document.querySelector('.main');
       if (!main) return;
     
@@ -1412,12 +1526,247 @@
       }, { passive: true });
     }
 
+    // ── Swipe Page Edge Indicators ──
+    function ws11InitSwipeIndicators() {
+      if (window.innerWidth >= 900) return;
+
+      const pages = ['dashboard','inventory','jam','lookup','deals','portfolio','invoices','shipping','payments','postings','photos'];
+
+      const leftEl = document.createElement('div');
+      leftEl.className = 'ws11-swipe-edge ws11-swipe-edge-left';
+      leftEl.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>';
+
+      const rightEl = document.createElement('div');
+      rightEl.className = 'ws11-swipe-edge ws11-swipe-edge-right';
+      rightEl.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>';
+
+      document.body.appendChild(leftEl);
+      document.body.appendChild(rightEl);
+
+      // Show indicators briefly on page change
+      function flashIndicators() {
+        const cur = document.querySelector('.page.active')?.id?.replace('page-', '');
+        const allowed = window.__USER_ROLE?.allowedPages || pages;
+        const idx = allowed.indexOf(cur);
+
+        if (idx > 0) leftEl.classList.add('ws11-visible');
+        if (idx < allowed.length - 1 && idx >= 0) rightEl.classList.add('ws11-visible');
+
+        setTimeout(() => {
+          leftEl.classList.remove('ws11-visible');
+          rightEl.classList.remove('ws11-visible');
+        }, 1200);
+      }
+
+      // Patch showPage to flash indicators
+      const _orig = window.showPage;
+      if (_orig && !window.__ws11SwipeIndPatched) {
+        const __prevShowPage = window.showPage;
+        window.showPage = function(name, ps) {
+          __prevShowPage.call(window, name, ps);
+          setTimeout(flashIndicators, 350);
+        };
+        window.__ws11SwipeIndPatched = true;
+      }
+    }
+
+    // ── Onboarding Coach Marks ──
+    function ws11InitOnboarding() {
+      if (window.innerWidth >= 900) return;
+      if (localStorage.getItem('ws11-onboarded')) return;
+
+      const steps = [
+        {
+          title: 'Welcome to MK Opulence',
+          desc: 'Your luxury watch market intelligence dashboard, now optimized for mobile. Let\'s show you around.'
+        },
+        {
+          title: 'Swipe Between Pages',
+          desc: 'Swipe left or right anywhere to navigate between pages. The bottom bar gives you quick access to your most-used screens.'
+        },
+        {
+          title: 'Quick Commands',
+          desc: 'Tap the Quick button in the nav bar to instantly record buys, sells, and shipments — no forms needed.'
+        },
+        {
+          title: 'Long-press Deal Cards',
+          desc: 'Press and hold any deal card for quick actions: look up prices, copy references, or save to your watchlist.'
+        },
+        {
+          title: 'Pull to Refresh',
+          desc: 'Pull down from the top to sync the latest market data. You\'re all set — happy trading!'
+        }
+      ];
+
+      let currentStep = 0;
+      let overlay = null;
+
+      function show(idx) {
+        if (idx >= steps.length) {
+          dismiss();
+          return;
+        }
+        currentStep = idx;
+        const step = steps[idx];
+        const isLast = idx === steps.length - 1;
+
+        if (!overlay) {
+          overlay = document.createElement('div');
+          overlay.className = 'ws11-coach-overlay';
+          overlay.setAttribute('role', 'dialog');
+          overlay.setAttribute('aria-modal', 'true');
+          overlay.setAttribute('aria-label', 'Onboarding');
+          document.body.appendChild(overlay);
+        }
+
+        const dots = steps.map((_, i) =>
+          `<div class="ws11-coach-dot ${i === idx ? 'ws11-active' : ''}"></div>`
+        ).join('');
+
+        overlay.innerHTML =
+          `<div class="ws11-coach-card">` +
+          `<div class="ws11-coach-title">${step.title}</div>` +
+          `<div class="ws11-coach-desc">${step.desc}</div>` +
+          `<div class="ws11-coach-dots">${dots}</div>` +
+          `<button class="ws11-coach-btn" id="ws11-coach-next">${isLast ? 'Get Started' : 'Next'}</button>` +
+          `<button class="ws11-coach-skip" id="ws11-coach-skip">${isLast ? '' : 'Skip tour'}</button>` +
+          `</div>`;
+
+        overlay.querySelector('#ws11-coach-next').addEventListener('click', () => {
+          MK.Haptic?.light();
+          show(idx + 1);
+        });
+        const skipBtn = overlay.querySelector('#ws11-coach-skip');
+        if (skipBtn) skipBtn.addEventListener('click', dismiss);
+      }
+
+      function dismiss() {
+        if (overlay) {
+          overlay.style.opacity = '0';
+          overlay.style.transition = 'opacity 200ms ease';
+          setTimeout(() => { overlay?.remove(); overlay = null; }, 220);
+        }
+        localStorage.setItem('ws11-onboarded', '1');
+        MK.Haptic?.success();
+      }
+
+      // Start onboarding after a brief delay
+      setTimeout(() => show(0), 2000);
+    }
+
+    // ── Nav Badge Sync ──
+    function ws11InitNavBadges() {
+      if (window.innerWidth >= 900) return;
+
+      function syncBadges() {
+        // Map desktop nav badge IDs to mobile nav data-page
+        const badgeMap = {
+          'deals-count': 'deals',
+          'payments-count': 'payments'
+        };
+
+        for (const [badgeId, page] of Object.entries(badgeMap)) {
+          const desktop = document.getElementById(badgeId);
+          if (!desktop) continue;
+          const count = desktop.textContent.trim();
+          const mobileLink = document.querySelector(`#mobile-nav a[data-page="${page}"], .more-grid-item[onclick*="${page}"]`);
+          if (!mobileLink) continue;
+
+          // Find or create badge
+          let badge = mobileLink.querySelector('.ws11-nav-badge');
+          if (count && count !== '0') {
+            if (!badge) {
+              badge = document.createElement('span');
+              badge.className = 'ws11-nav-badge';
+              mobileLink.style.position = 'relative';
+              mobileLink.appendChild(badge);
+            }
+            badge.textContent = count;
+          } else if (badge) {
+            badge.remove();
+          }
+        }
+      }
+
+      // Sync periodically (badges update on data refresh)
+      syncBadges();
+      setInterval(syncBadges, 5000);
+      document.addEventListener('mk:data-loaded', syncBadges);
+    }
+
+    // ── Scroll Progress Bar ──
+    function ws11InitScrollProgress() {
+      if (window.innerWidth >= 900) return;
+
+      const bar = document.createElement('div');
+      bar.className = 'ws11-scroll-progress';
+      bar.innerHTML = '<div class="ws11-scroll-progress-bar"></div>';
+      document.body.appendChild(bar);
+      const fill = bar.querySelector('.ws11-scroll-progress-bar');
+
+      let ticking = false;
+      window.addEventListener('scroll', () => {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => {
+          const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+          const progress = scrollHeight > 0 ? (window.scrollY / scrollHeight) * 100 : 0;
+          fill.style.width = progress + '%';
+          ticking = false;
+        });
+      }, { passive: true });
+    }
+
+    // ── Status Bar Theme Color Sync ──
+    function ws11InitThemeColorSync() {
+      if (window.innerWidth >= 900) return;
+
+      function syncColor() {
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (!meta) return;
+        const isLight = document.documentElement.classList.contains('light');
+        meta.setAttribute('content', isLight ? '#f5f4f0' : '#08080c');
+      }
+
+      syncColor();
+      // Watch for class changes on html
+      const obs = new MutationObserver(syncColor);
+      obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    // ── Scroll Position Memory ──
+    function ws11InitScrollMemory() {
+      if (window.innerWidth >= 900) return;
+
+      const positions = {};
+
+      // Save scroll position before page change
+      const _orig = window.showPage;
+      if (_orig && !window.__ws11ScrollMemPatched) {
+        const __prev = window.showPage;
+        window.showPage = function(name, ps) {
+          // Save current page scroll
+          const cur = document.querySelector('.page.active')?.id?.replace('page-', '');
+          if (cur) positions[cur] = window.scrollY;
+          __prev.call(window, name, ps);
+          // Restore saved position (after page renders)
+          requestAnimationFrame(() => {
+            const saved = positions[name];
+            if (saved && saved > 0) {
+              window.scrollTo(0, saved);
+            }
+          });
+        };
+        window.__ws11ScrollMemPatched = true;
+      }
+    }
+
     function ws11Cleanup() {
       ['ws11-mobile-premium-styles', 'ws11-toast-container', 'ws11-ptr'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.remove();
       });
-      document.querySelectorAll('.ws11-sheet-backdrop, .ws11-sheet, .ws11-offline-badge, .ws11-ctx-menu, .ws11-swipe-indicator, #ws11-theme-fab').forEach(el => el.remove());
+      document.querySelectorAll('.ws11-sheet-backdrop, .ws11-sheet, .ws11-offline-badge, .ws11-ctx-menu, .ws11-swipe-indicator, #ws11-theme-fab, .ws11-swipe-edge, .ws11-coach-overlay, .ws11-scroll-progress').forEach(el => el.remove());
       document.body.classList.remove('ws11-chrome-hidden');
       document.body.style.overflow = '';
     }
@@ -1463,6 +1812,12 @@
             ws11InitLazyImages();
             ws11InitCountUp();
             ws11InitSparklineTouch();
+            ws11InitSwipeIndicators();
+            ws11InitOnboarding();
+            ws11InitNavBadges();
+            ws11InitScrollProgress();
+            ws11InitThemeColorSync();
+            ws11InitScrollMemory();
 
             const elapsed = (performance.now() - t0).toFixed(1);
             console.log(`[MK] ${MOD_ID}: Premium mobile layer active (${elapsed}ms) — ` +
