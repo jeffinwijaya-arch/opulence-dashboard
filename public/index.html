@@ -1227,7 +1227,7 @@
                 position:relative; overflow:hidden;
                 transition:transform 0.15s, box-shadow 0.15s;
             }
-            .inv-card:active { transform:scale(0.99); }
+            .inv-card:active { transform:scale(0.98); background:var(--bg-3); transition:transform 0.08s ease, background 0.08s ease; }
             .inv-card-header { display:flex; align-items:flex-start; gap:10px; margin-bottom:8px; }
             .inv-card-ref { font-family:var(--mono); font-weight:700; font-size:1rem; color:var(--accent); }
             .inv-card-desc { font-size:0.72rem; color:var(--text-1); line-height:1.4; margin-top:2px; }
@@ -1248,7 +1248,7 @@
                 display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;
                 border-top:1px solid var(--border); padding-top:10px;
             }
-            .inv-card-actions .btn { flex:1; min-height:40px; font-size:0.72rem; text-align:center; }
+            .inv-card-actions .btn { flex:1; min-height:44px; font-size:0.72rem; text-align:center; display:inline-flex; align-items:center; justify-content:center; }
 
             /* Swipeable actions */
             .inv-card-swipe-wrap { position:relative; overflow:hidden; border-radius:var(--radius-lg); margin-bottom:10px; }
@@ -1852,16 +1852,11 @@
             }
         }
 
-        /* 21. Better scroll hint — subtle gradient fade on horizontal scrollers */
+        /* 21. Better scroll hint — right-edge fade handled by .tbl-scroll-wrap
+               box-shadow in section 7 (the old position:sticky + float hack is removed
+               because ::after on an overflow:auto container scrolls with the content) */
         @media(max-width:768px) {
-            .tbl-wrap, #im-table-wrap {
-                position:relative;
-            }
-            .tbl-wrap::after, #im-table-wrap::after {
-                content:''; position:sticky; right:0; top:0; bottom:0; width:24px;
-                background:linear-gradient(to left, var(--bg-2), transparent);
-                pointer-events:none; float:right; margin-top:-100%; height:100%;
-            }
+            .tbl-wrap, #im-table-wrap { position:relative; }
         }
 
         /* 22. Pull-to-refresh — respect notch on iPhone */
@@ -2538,6 +2533,40 @@
             }
         }
 
+        /* ── 6b. MODAL ENTRANCE — slide up from bottom on mobile (native feel) ── */
+        @keyframes mobileSlideUp {
+            from { transform:translateY(60px); opacity:0; }
+            to   { transform:translateY(0);    opacity:1; }
+        }
+        @media(max-width:768px) {
+            /* Override the center-fade-in animation with a bottom-up slide */
+            #watch-modal[style*="flex"] > div,
+            #sell-modal[style*="flex"] > div,
+            #ship-modal[style*="flex"] > div,
+            #post-modal[style*="flex"] > div {
+                animation:mobileSlideUp 0.32s cubic-bezier(0.16,1,0.3,1) !important;
+                will-change:transform,opacity;
+            }
+            /* Close button in modal headers — ensure 44px hit area */
+            #watch-modal button[aria-label="Close watch details"],
+            #sell-modal button[aria-label="Close sell dialog"],
+            #ship-modal button[onclick*="closeShipModal"],
+            #post-modal button[onclick*="closePostModal"] {
+                min-height:44px !important;
+                min-width:44px !important;
+                display:inline-flex !important;
+                align-items:center !important;
+                justify-content:center !important;
+                border-radius:var(--radius) !important;
+                padding:0 8px !important;
+            }
+            #watch-modal button[aria-label="Close watch details"]:active,
+            #sell-modal button[aria-label="Close sell dialog"]:active {
+                background:var(--red-dim) !important;
+                color:var(--red) !important;
+            }
+        }
+
         /* ── 7. TABLE SCROLL INDICATOR — visible scrollbar + fade hint ── */
         @media(max-width:900px) {
             /* Show a thin gold-tinted scrollbar on scrollable table wrappers */
@@ -2567,25 +2596,22 @@
                 background:rgba(212,175,55,0.65) !important;
             }
 
-            /* Right-edge fade gradient — indicates more content to scroll */
+            /* Right-edge fade — inset box-shadow on the scroll container itself.
+               Unlike position:absolute ::after, box-shadow applies to the BORDER BOX
+               (the visible viewport area), so the gradient always appears at the right
+               edge of the visible table regardless of scroll position. */
             .tbl-scroll-wrap {
-                position:relative;
+                box-shadow: inset -28px 0 20px -8px var(--bg-2);
+                transition: box-shadow 0.3s ease;
             }
-            .tbl-scroll-wrap::after {
-                content:'';
-                position:absolute; top:0; right:0; bottom:4px;
-                width:32px; pointer-events:none;
-                background:linear-gradient(to left, var(--bg-2) 0%, transparent 100%);
-                border-radius:0 var(--radius) var(--radius) 0;
-                transition:opacity 0.2s ease;
-            }
-            .tbl-scroll-wrap.scrolled-end::after {
-                opacity:0;
+            .tbl-scroll-wrap.scrolled-end {
+                box-shadow: none;
             }
 
-            /* "Scroll" hint chip shown below scrollable tables */
+            /* "Scroll →" hint chip shown below scrollable tables.
+               display is controlled by JS (flex when scrollable, none otherwise).
+               Do NOT add display:flex !important here — it would override JS's display:none. */
             .tbl-scroll-hint {
-                display:flex !important;
                 align-items:center; gap:4px; justify-content:center;
                 font-family:var(--mono); font-size:0.6rem;
                 color:var(--text-2); padding:4px 0 2px;
@@ -2662,8 +2688,8 @@
 // the badge CSS explains why it exists. If the user screenshots a
 // broken state and this stamp is an old value, we know the real
 // problem is an iOS PWA cache that hasn't refreshed, not a code bug.
-window.__V = '20260412-0333';
-window.__BUILD = { commit: '76e50c8', deployedAt: '2026-04-12T03:33Z', version: window.__V };
+window.__V = '20260412-mobile-ux-v4';
+window.__BUILD = { commit: 'pending', deployedAt: '2026-04-12T00:00Z', version: window.__V };
 
 // Always-visible build badge (bottom-left). Small and dim so it
 // doesn't interfere with the dashboard UI.
