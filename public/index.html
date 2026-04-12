@@ -3280,10 +3280,12 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                     <h3 style="margin:0;">Gallery</h3>
                     <div style="display:flex;gap:8px;align-items:center;">
                         <span id="photo-results" style="color:var(--text-2);font-size:0.8rem;">49 photos</span>
+                        <span id="photo-redact-warning" style="color:var(--red);font-size:0.75rem;font-weight:600;display:none;"></span>
                         <select class="input" id="sort-order" onchange="filterPhotoLibrary()" style="width:120px;">
                             <option value="model">By Model</option>
                             <option value="date">By Date</option>
                             <option value="condition">By Condition</option>
+                            <option value="redact">By Redact Status</option>
                         </select>
                         <button class="btn" onclick="batchAutoRedact()" id="btn-batch-redact" style="padding:4px 12px;font-size:0.75rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">Batch Auto-Redact</button>
                     </div>
@@ -12964,9 +12966,29 @@ async function loadPayments() {
             if (sortOrder === 'model') return (a.model || '').localeCompare(b.model || '');
             if (sortOrder === 'date') return (b.card_date || '').localeCompare(a.card_date || '');
             if (sortOrder === 'condition') return (a.condition || '').localeCompare(b.condition || '');
+            if (sortOrder === 'redact') {
+                // Redact status priority: 0 = has serial & not redacted (NEEDS REDACT), 1 = redacted, 2 = no serial
+                const redactPriority = (w) => {
+                    if (w.serial && !w.redacted) return 0; // NEEDS REDACT — actionable
+                    if (w.serial && w.redacted) return 1;  // Already redacted
+                    return 2;                                // No serial
+                };
+                const diff = redactPriority(a) - redactPriority(b);
+                return diff !== 0 ? diff : (a.model || '').localeCompare(b.model || '');
+            }
             return 0;
         });
-        
+
+        // Calculate redaction warning count
+        const needRedactCount = photoLibraryData.filter(w => w.serial && !w.redacted).length;
+        const redactWarningEl = $('#photo-redact-warning');
+        if (needRedactCount > 0) {
+            redactWarningEl.textContent = `${needRedactCount} need redaction`;
+            redactWarningEl.style.display = '';
+        } else {
+            redactWarningEl.style.display = 'none';
+        }
+
         $('#photo-results').textContent = `${filtered.length} of ${photoLibraryData.length} photos`;
         console.log('Rendering', filtered.length, 'photos');
         renderPhotoLibrary(filtered);
