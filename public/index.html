@@ -5690,9 +5690,14 @@ function openPostingRedactEditor(file, row, desc) {
     };
     reader.readAsDataURL(file);
 
-    // Mouse drawing with hold-to-peek + tap-to-select + drag-to-move
+    // Mouse drawing with hold-to-peek + tap-to-select + drag-to-move + resize
     canvas.onmousedown = function(e) {
         const p = _redactCanvasCoord(e.offsetX, e.offsetY);
+        // Resize handle first
+        if (_postingRedactSelected >= 0) {
+            const handle = _hitTestResizeHandle(_postingRedactRects[_postingRedactSelected], p.x, p.y);
+            if (handle) { _resizeHandle = handle; _resizeLastX = p.x; _resizeLastY = p.y; return; }
+        }
         const clickedIdx = _hitTestRedactRect(_postingRedactRects, p.x, p.y);
         // Drag-to-move already-selected rect
         if (clickedIdx >= 0 && clickedIdx === _postingRedactSelected) {
@@ -5722,6 +5727,13 @@ function openPostingRedactEditor(file, row, desc) {
     };
     canvas.onmousemove = function(e) {
         if (_postingRedactPeeking) return;
+        // Resize
+        if (_resizeHandle && _postingRedactSelected >= 0) {
+            const p = _redactCanvasCoord(e.offsetX, e.offsetY);
+            _applyResize(_postingRedactRects[_postingRedactSelected], _resizeHandle, p.x - _resizeLastX, p.y - _resizeLastY);
+            _resizeLastX = p.x; _resizeLastY = p.y;
+            postingRedactRender(); return;
+        }
         // Drag-to-move
         if (_postingRedactDragging && _postingRedactSelected >= 0) {
             const p = _redactCanvasCoord(e.offsetX, e.offsetY);
@@ -5746,6 +5758,7 @@ function openPostingRedactEditor(file, row, desc) {
         _drawLiveRedactRect(document.getElementById('posting-redact-canvas').getContext('2d'), _postingRedactStart, p);
     };
     canvas.onmouseup = function(e) {
+        if (_resizeHandle) { _resizeHandle = null; return; }
         if (_postingRedactDragging) { _postingRedactDragging = false; return; }
         if (_postingRedactPeekTimer) { clearTimeout(_postingRedactPeekTimer); _postingRedactPeekTimer = null; }
         if (_postingRedactPeeking) { _postingRedactPeeking = false; postingRedactRender(); return; }
@@ -5866,8 +5879,17 @@ function openPostingRedactEditor(file, row, desc) {
             postingRedactRender(); _updatePostingRedactCount();
         }
         else if (e.key === 'a' && !e.ctrlKey && !e.metaKey) {
-            // 'a' for auto-redact
             e.preventDefault(); postingAutoRedact();
+        }
+        else if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key) && _postingRedactSelected >= 0) {
+            e.preventDefault();
+            const step = e.shiftKey ? 10 : 1;
+            const r = _postingRedactRects[_postingRedactSelected];
+            if (e.key === 'ArrowUp') r.y = Math.max(0, r.y - step);
+            else if (e.key === 'ArrowDown') r.y += step;
+            else if (e.key === 'ArrowLeft') r.x = Math.max(0, r.x - step);
+            else if (e.key === 'ArrowRight') r.x += step;
+            postingRedactRender();
         }
     };
     window.addEventListener('keydown', window._redactKeyHandler);
@@ -13170,6 +13192,16 @@ async function loadPayments() {
                 editorRedoStack.push(editorRedactions.splice(editorSelectedIdx, 1)[0]);
                 editorSelectedIdx = -1;
                 renderEditor(); updateEditorRedactCount();
+            }
+            else if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key) && editorSelectedIdx >= 0) {
+                e.preventDefault();
+                const step = e.shiftKey ? 10 : 1;
+                const r = editorRedactions[editorSelectedIdx];
+                if (e.key === 'ArrowUp') r.y = Math.max(0, r.y - step);
+                else if (e.key === 'ArrowDown') r.y += step;
+                else if (e.key === 'ArrowLeft') r.x = Math.max(0, r.x - step);
+                else if (e.key === 'ArrowRight') r.x += step;
+                renderEditor();
             }
         };
         window.addEventListener('keydown', window._editorKeyHandler);
