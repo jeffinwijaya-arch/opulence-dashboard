@@ -1,6 +1,36 @@
 {
   "articles": [
     {
+      "id": "1b7e6c226ce5",
+      "title": "Introducing: The Singer Reimagined DualTrack \u2014 A GMT Based On The Calibre-4 Solotempo",
+      "link": "https://www.fratellowatches.com/introduction-the-singer-dualtrack-a-gmt-based-on-the-calibre-4-solotempo-movement/",
+      "desc": "Just before the doors to Watches and Wonders open, several brands not officially part of the event are also launching new watches. One release I\u2019m very excited to see in person this week is the new Si",
+      "date": "2026-04-12T11:59:02+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 10
+    },
+    {
+      "id": "2d1c47c0ea74",
+      "title": "Recap \u2013 Turning Back The Clock, With Our Favourite Watches From Watches & Wonders 2025",
+      "link": "https://monochrome-watches.com/recap-monochrome-favourite-watches-and-wonders-novelties-2025-rolex-patek-philippe-zenith-nomos-ferdinand-berthoud/",
+      "desc": "For a change in our regular Sunday programming, we\u2019re not looking at specific watches selected for a shared theme or feature, but rather turning back the clock a year. With the 2026 edition of Watches",
+      "date": "2026-04-12T09:00:17+00:00",
+      "source": "MONOCHROME",
+      "image": "https://monochrome-watches.com/app/uploads/2025/07/Rolex-Land-Dweller-36mm-is-the-best-version-opinion-review-7-600x237.jpg",
+      "relevance": 0
+    },
+    {
+      "id": "2209ad4b1919",
+      "title": "Sunday Morning Showdown: Citizen Tsuyosa 37 Vs. Casio Edifice EFK-110",
+      "link": "https://www.fratellowatches.com/sunday-morning-showdown-citizen-tsuyosa-37-vs-casio-edifice-efk-110/",
+      "desc": "It\u2019s Sunday morning, which means it\u2019s time for another installment of Sunday Morning Showdown. It is the last showdown before Watches and Wonders 2026 starts on Tuesday. During the event, we will see ",
+      "date": "2026-04-12T05:00:52+00:00",
+      "source": "FRATELLO",
+      "image": "",
+      "relevance": 10
+    },
+    {
       "id": "ac928230c302",
       "title": "Introducing \u2013 The Norqain Wild ONE Skeleton X-Lite, a 45g Ultra-Light Sports Watch",
       "link": "https://monochrome-watches.com/norqain-wild-one-skeleton-x-lite-a-45g-ultra-light-sports-watch-introducing-price/",
@@ -271,16 +301,6 @@
       "relevance": 0
     },
     {
-      "id": "3b17ccb48fd4",
-      "title": "The New WRK ACF-03 Is Cleaner Than I Expected And Better For It",
-      "link": "https://www.fratellowatches.com/the-new-wrk-acf-03-is-cleaner-than-i-expected-and-better-for-it/",
-      "desc": "When I recently wrote the story of why WRK\u2019s ACF-03 needed to happen, the watch itself was still mostly a question mark. There was enough there to suggest where WRK was heading but not enough to prope",
-      "date": "2026-04-10T03:00:22+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 0
-    },
-    {
       "id": "9a6b0a8c1f10",
       "title": "Hands-On: Dominique Renaud Pulse60 Balancier Ultra Amplitude",
       "link": "https://www.hodinkee.com/articles/dominique-renaud-pulse60-balancier-ultra-amplitude",
@@ -301,16 +321,6 @@
       "relevance": 0
     },
     {
-      "id": "04cee672365e",
-      "title": "First Look \u2013 The Tangens Komposition Automatic, an Accessible Automatic Sports Watch from Denmark",
-      "link": "https://monochrome-watches.com/tangens-komposition-automatic-accessible-automatic-sports-watch-from-denmark-review-price/",
-      "desc": "Danish microbrand Tangens was founded in 2023, and it did not take long for it to get going. A year later, it introduced the Komposition, a watch that quietly found its audience thanks to its neat, ge",
-      "date": "2026-04-09T14:00:53+00:00",
-      "source": "MONOCHROME",
-      "image": "https://monochrome-watches.com/app/uploads/2026/04/Tangens-Komposition-Automatic-review-accessible-automatic-watch-1-600x237.jpg",
-      "relevance": 0
-    },
-    {
       "id": "2c6a3cf3cf73",
       "title": "Introducing: The TIMEX\u00ae IRONMAN\u00ae 8-Lap Limited Edition For Hodinkee",
       "link": "https://www.hodinkee.com/articles/the-timex-ironman-8-lap-limited-edition-for-hodinkee",
@@ -319,16 +329,6 @@
       "source": "HODINKEE",
       "image": "https://hodinkee.imgix.net/uploads/images/67814cd2-2aa0-46fc-af6d-5dd21ef4e957/ArticleHeroImage.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
       "relevance": 0
-    },
-    {
-      "id": "439dd121d1b4",
-      "title": "Introducing: The Demilitarized Hamilton Khaki Field King Day-Date Automatic",
-      "link": "https://www.fratellowatches.com/introducing-the-demilitarized-hamilton-khaki-field-king-day-date-automatic/",
-      "desc": "The Khaki Field King Day-Date Automatic is one of Hamilton\u2019s more popular models. No wonder, as its distinct styling and comprehensive feature set provide a lot of bang for your buck. Today, we get a ",
-      "date": "2026-04-09T10:00:29+00:00",
-      "source": "FRATELLO",
-      "image": "",
-      "relevance": 10
     },
     {
       "id": "f2ce3a0e7071",
@@ -361,7 +361,7 @@
       "relevance": 10
     }
   ],
-  "fetched_at": "2026-04-11T22:00:04.081188+00:00",
+  "fetched_at": "2026-04-12T13:00:04.336619+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",

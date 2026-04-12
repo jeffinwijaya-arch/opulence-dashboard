@@ -4643,29 +4643,8 @@ try { console.info('%c[MK build]', 'color:#d4af37;font-weight:700', window.__BUI
 function skelRows(n=4){let h='';for(let i=0;i<n;i++){const w1=['w30','w40','w50'][i%3],w2=['w20','w30','w40'][i%3];h+=`<div class="skel-row"><div class="skel-line ${w1}"></div><div class="skel-line ${w2}"></div><div class="skel-line w20"></div></div>`;}return h;}
 function skelTable(cols=5,rows=5){let h='<table class="tbl"><tbody>';for(let r=0;r<rows;r++){h+='<tr>';for(let c=0;c<cols;c++){const w=['w40','w30','w20','w50','w60'][c%5];h+=`<td><div class="skel-line ${w}" style="min-width:40px;"></div></td>`;}h+='</tr>';}return h+'</tbody></table>';}
 function skelCards(n=3){let h='';for(let i=0;i<n;i++)h+=`<div class="skel-card"><div class="skel-line w60 h16"></div><div class="skel-line w80 h8"></div><div class="skel-line w40 h8"></div></div>`;return h;}
-// ── Skeleton timeout safety net: replace stuck skeletons after 10s ──
-(function(){
-    var SKEL_TIMEOUT=10000;
-    var _skelTimers=new WeakMap();
-    function watchSkeleton(el){
-        if(_skelTimers.has(el))clearTimeout(_skelTimers.get(el));
-        _skelTimers.set(el,setTimeout(function(){
-            if(el.isConnected&&el.querySelector&&el.querySelector('.skel-card,.skel-row,.skel-line')){
-                el.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-2);font-size:0.82rem;">Failed to load<br><button onclick="location.reload()" style="margin-top:10px;padding:6px 16px;border-radius:6px;border:1px solid var(--border);background:var(--bg-3);color:var(--text-0);cursor:pointer;font-size:0.78rem;">Retry</button></div>';
-            }
-            _skelTimers.delete(el);
-        },SKEL_TIMEOUT));
-    }
-    var _mo=new MutationObserver(function(mutations){
-        for(var i=0;i<mutations.length;i++){
-            var m=mutations[i];
-            if(m.type==='childList'&&m.target&&m.target.querySelector){
-                if(m.target.querySelector('.skel-card,.skel-row,.skel-line'))watchSkeleton(m.target);
-            }
-        }
-    });
-    _mo.observe(document.documentElement,{childList:true,subtree:true});
-})();
+// Skeleton timeout safety net DISABLED — was replacing entire page content with "Failed to load"
+// when module skeletons hadn't cleared in 10s. The cure was worse than the disease.
 // ── Fetch with timeout (15s default) ──
 function fetchWithTimeout(url, opts, ms) {
     if (ms === undefined) ms = 15000;
