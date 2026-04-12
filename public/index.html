@@ -1941,12 +1941,12 @@
             }
         }
 
-        /* E6. Photo slots (WATCH/LABEL/BOX/RECEIPT) in Operations — 56x56 min */
+        /* E6. Photo slots (WATCH/LABEL/BOX/RECEIPT) in Operations — 60x60 min */
         @media(max-width:768px) {
             .jam-card div[onclick*="jamUploadShipPhoto"],
             .jam-card div[onclick*="showShipPhotoLightbox"] {
-                min-width:56px!important; min-height:56px!important;
-                width:56px!important; height:56px!important;
+                min-width:60px!important; min-height:60px!important;
+                width:60px!important; height:60px!important;
             }
             .jam-card div[onclick*="jamUploadShipPhoto"] span {
                 font-size:0.65rem!important;
@@ -1965,6 +1965,24 @@
                 padding:10px 14px!important;
             }
         }
+
+        /* E9. ws10 automation banners — mobile touch targets & layout */
+        @media(max-width:768px) {
+            #ws10-autoprice-banner { flex-direction:column!important; align-items:stretch!important; }
+            #ws10-autoprice-btn {
+                width:100%!important; min-height:44px!important;
+                font-size:0.82rem!important; padding:10px 14px!important; white-space:normal!important;
+            }
+            #ws10-stale-review-btn, #ws10-clean-sold-btn, #ws10-autotag-btn {
+                min-height:44px!important; width:100%!important; margin-top:8px!important;
+                font-size:0.82rem!important; padding:10px 14px!important; white-space:normal!important;
+            }
+            #ws10-c24-download, #ws10-c24-preview {
+                width:100%!important; min-height:44px!important; justify-content:center!important;
+                font-size:0.82rem!important; padding:10px 14px!important;
+            }
+        }
+
 
 
 

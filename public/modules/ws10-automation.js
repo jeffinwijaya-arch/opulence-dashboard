@@ -703,11 +703,38 @@
         }
     }
 
+    // ── Mobile UX Styles ──
+
+    function injectMobileStyles() {
+        if (document.getElementById('ws10-mobile-styles')) return;
+        var s = document.createElement('style');
+        s.id = 'ws10-mobile-styles';
+        s.textContent = [
+            '@media(max-width:768px) {',
+            '    /* Autoprice banner: vertical stack so button gets full width */',
+            '    #ws10-autoprice-banner { flex-direction:column!important; align-items:stretch!important; }',
+            '    #ws10-autoprice-btn { width:100%!important; min-height:44px!important;',
+            '        font-size:0.82rem!important; padding:10px 14px!important; white-space:normal!important; }',
+            '    #ws10-autoprice-dismiss { align-self:flex-end!important; }',
+            '    /* Stale / sold-detect / phototag banner action buttons: 44px touch targets */',
+            '    #ws10-stale-review-btn, #ws10-clean-sold-btn, #ws10-autotag-btn {',
+            '        min-height:44px!important; width:100%!important; margin-top:8px!important;',
+            '        font-size:0.82rem!important; padding:10px 14px!important; white-space:normal!important; }',
+            '    /* Chrono24 export card buttons: full-width on mobile */',
+            '    #ws10-c24-download, #ws10-c24-preview {',
+            '        width:100%!important; min-height:44px!important; justify-content:center!important;',
+            '        font-size:0.82rem!important; padding:10px 14px!important; }',
+            '}'
+        ].join('\n');
+        document.head.appendChild(s);
+    }
+
     // ── Module Lifecycle ──
 
     async function init() {
         console.log('[' + MOD_ID + '] Initializing...');
         _initialized = true;
+        injectMobileStyles();
 
         // Listen for data refreshes
         MK.on('data-loaded', () => {
