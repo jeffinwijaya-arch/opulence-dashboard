@@ -2284,6 +2284,329 @@
         /* ── Textarea auto-resize ── */
         textarea.auto-resize { overflow:hidden; resize:none !important; min-height:60px; }
 
+        /* ══════════════════════════════════════════════════════════
+           MOBILE UX OVERHAUL v3 — MK OPULENCE
+           1. Touch targets ≥44px   2. Inventory card overflow fix
+           3. Sub-400px overlap fix  4. Tap feedback
+           5. Bottom nav clearance  6. Full-screen modals
+           7. Table scroll indicator
+           ══════════════════════════════════════════════════════════ */
+
+        /* ── 1. TOUCH TARGETS — every interactive element ≥44px ── */
+        @media(max-width:900px) {
+            /* Card header links/actions */
+            .card-head .link, .card-head a, .card-head [onclick] {
+                min-height:44px; display:inline-flex; align-items:center;
+                padding:0 10px; margin:-6px -6px; border-radius:6px;
+                -webkit-tap-highlight-color:transparent;
+            }
+            .card-head .link:active, .card-head a:active, .card-head [onclick]:active {
+                background:var(--accent-dim);
+            }
+            /* Inline table action links */
+            .tbl td a, .tbl td [onclick] {
+                min-height:44px; min-width:44px;
+                display:inline-flex; align-items:center; justify-content:center;
+                padding:4px 8px;
+            }
+            /* Notification items */
+            .notif-item { min-height:52px; display:flex; flex-direction:column; justify-content:center; }
+            /* Tab elements */
+            .tab, .jam-tab { min-height:44px !important; }
+            /* More menu grid items */
+            .more-grid-item { min-height:56px !important; min-width:56px !important; }
+        }
+
+        /* ── 2. INVENTORY CARD — prevent text overflow, readable prices ── */
+        @media(max-width:900px) {
+            .inv-card-ref {
+                overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+                max-width:calc(100vw - 100px);
+            }
+            .inv-card-desc {
+                overflow:hidden; text-overflow:ellipsis;
+                display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+            }
+            .inv-card-price-val {
+                font-size:0.92rem !important; white-space:nowrap;
+                overflow:hidden; text-overflow:ellipsis;
+            }
+            .inv-card-actions .btn {
+                min-height:44px !important; flex:1;
+            }
+        }
+        /* Stack prices vertically on very narrow screens */
+        @media(max-width:380px) {
+            .inv-card-prices { flex-direction:column !important; gap:6px !important; }
+            .inv-card-price-item { display:flex; align-items:center; justify-content:space-between; }
+            .inv-card-price-val { font-size:0.85rem !important; }
+            .inv-card-header { flex-wrap:wrap; }
+        }
+        /* Inventory stats bar — 2 cols on narrow screens */
+        @media(max-width:480px) {
+            #inventory-stats {
+                grid-template-columns:repeat(2,1fr) !important;
+                gap:8px !important; padding:10px 12px !important;
+            }
+            #inventory-stats .stat-item { border-left:none !important; padding-left:0 !important; }
+            #inventory-stats .stat-item > div:last-child { font-size:1rem !important; }
+        }
+
+        /* ── 3. OVERLAP FIX — screens narrower than 400px ── */
+        @media(max-width:400px) {
+            /* Card heads: title + action wrap gracefully */
+            .card-head {
+                flex-wrap:wrap; row-gap:4px; padding:10px 12px !important;
+            }
+            .card-head > span:first-child { flex:1 1 auto; min-width:0; }
+            .card-head .link { font-size:0.65rem; padding:0 6px; margin:-4px -4px; }
+
+            /* Metric values: never let numbers overflow the card */
+            .metric .val {
+                font-size:1rem !important; word-break:break-all; overflow-wrap:break-word;
+            }
+            .metric { padding:10px !important; }
+
+            /* Page header h1 — prevent wrapping issues */
+            .page-head h1 { font-size:1.1rem !important; }
+
+            /* Filter controls stack cleanly */
+            #page-inventory > div[style*="display:flex"],
+            #page-deals > div[style*="display:flex"],
+            #page-postings > div[style*="display:flex"] {
+                flex-direction:column !important; gap:6px !important;
+            }
+
+            /* Bottom nav: compress labels, never overflow */
+            .mobile-nav a {
+                font-size:0.52rem !important;
+                padding:4px 2px !important;
+                min-width:0 !important;
+                gap:1px !important;
+            }
+            .mn-icon svg { width:18px !important; height:18px !important; }
+
+            /* Posting cards: stack meta row */
+            .posting-card-meta { flex-direction:column; align-items:flex-start; gap:4px; }
+            .posting-card { gap:8px; }
+            .posting-card img { width:50px; height:50px; }
+        }
+
+        /* ── 4. TAP FEEDBACK — visible active states on all interactive elements ── */
+        @media(hover:none) and (pointer:coarse) {
+            /* Cards and list items */
+            .popular-card:active {
+                transform:scale(0.97) !important;
+                background:var(--bg-3) !important;
+                border-color:var(--accent-border) !important;
+                transition:transform 0.1s ease, background 0.1s ease !important;
+            }
+            .deal-card:active {
+                transform:scale(0.99) !important;
+                border-color:var(--accent-border) !important;
+                transition:transform 0.1s ease !important;
+            }
+            .posting-card:active {
+                background:var(--bg-3) !important;
+                transform:scale(0.99) !important;
+            }
+            .jam-card:active {
+                transform:scale(0.99) !important;
+                border-color:var(--accent-border) !important;
+            }
+            /* Notification + search result items */
+            .notif-item:active { background:var(--bg-3) !important; }
+            .usearch-item:active { background:var(--bg-3) !important; }
+            /* Clickable table rows */
+            .tbl tbody tr[onclick]:active td,
+            .tbl tbody tr[style*="cursor"]:active td {
+                background:var(--bg-3) !important;
+            }
+            /* Generic links and role=button */
+            a:active { opacity:0.75; }
+            [role="button"]:active { opacity:0.75; }
+            /* More menu items */
+            .more-grid-item:active {
+                background:var(--accent-dim) !important;
+                color:var(--accent) !important;
+                transform:scale(0.95) !important;
+            }
+        }
+
+        /* ── 5. BOTTOM NAV — consistent height, guaranteed content clearance ── */
+        @media(max-width:900px) {
+            /* Fixed nav height variable */
+            :root { --mnav-h: 64px; }
+
+            .mobile-nav {
+                height:var(--mnav-h) !important;
+                min-height:var(--mnav-h) !important;
+                padding-bottom:max(8px, env(safe-area-inset-bottom)) !important;
+                box-sizing:border-box !important;
+                /* Always on top */
+                z-index:200 !important;
+            }
+            .mobile-nav a {
+                min-height:44px !important;
+                /* evenly fill the nav */
+                flex:1 1 0 !important;
+                min-width:0 !important;
+            }
+
+            /* Content padding — nav height + extra breathing room */
+            .main {
+                padding-bottom:calc(var(--mnav-h) + max(20px, env(safe-area-inset-bottom))) !important;
+            }
+
+            /* FAB and scroll-top button sit above nav */
+            .fab-menu {
+                bottom:calc(var(--mnav-h) + 10px) !important;
+            }
+            .scroll-top-btn {
+                bottom:calc(var(--mnav-h) + 10px) !important;
+            }
+
+            /* Toast notifications above nav */
+            .toast-container {
+                bottom:calc(var(--mnav-h) + max(16px, env(safe-area-inset-bottom))) !important;
+            }
+
+            /* More menu opens just above nav */
+            #mobile-more-menu {
+                bottom:calc(var(--mnav-h) - 2px) !important;
+            }
+        }
+
+        /* ── 6. MODALS — full-screen on mobile ── */
+        @media(max-width:768px) {
+            /* Named modals already in DOM */
+            #watch-modal, #sell-modal, #ship-modal, #post-modal,
+            #posting-price-edit-modal, #posting-delete-modal,
+            #post-direct-modal, #inv-modal, #tracker-form-modal,
+            #mc-modal-bg, #crm-detail-modal,
+            #new-package-modal, #move-watch-modal {
+                align-items:flex-start !important;
+                justify-content:flex-start !important;
+                padding:0 !important;
+            }
+            #watch-modal > div, #sell-modal > div, #ship-modal > div,
+            #post-modal > div, #posting-price-edit-modal > div,
+            #posting-delete-modal > div, #post-direct-modal > div,
+            #inv-modal > div, #tracker-form-modal > div,
+            #mc-modal-bg > div, #crm-detail-modal > div,
+            #new-package-modal > div, #move-watch-modal > div {
+                width:100% !important;
+                max-width:100% !important;
+                min-height:100dvh !important;
+                height:auto !important;
+                border-radius:0 !important;
+                margin:0 !important;
+                overflow-y:auto !important;
+                -webkit-overflow-scrolling:touch !important;
+                overscroll-behavior:contain !important;
+            }
+
+            /* Dynamically-created modals (JS-injected) */
+            #pkg-modal, #jam-picker-modal, #jam-schedule-modal,
+            #jam-local-modal, #jam-label-modal {
+                align-items:flex-start !important;
+                justify-content:flex-start !important;
+                padding:0 !important;
+            }
+            #pkg-modal > div, #jam-picker-modal > div,
+            #jam-schedule-modal > div, #jam-local-modal > div,
+            #jam-label-modal > div {
+                width:100% !important;
+                max-width:100% !important;
+                min-height:100dvh !important;
+                border-radius:0 !important;
+                margin:0 !important;
+                overflow-y:auto !important;
+                -webkit-overflow-scrolling:touch !important;
+            }
+
+            /* Catch-all for any future fixed overlay > first-div patterns */
+            .modal-overlay > div:first-child,
+            [id$="-modal"] > div:only-child,
+            [id*="modal-bg"] > div:only-child {
+                max-width:100% !important;
+                width:100% !important;
+                min-height:100dvh !important;
+                border-radius:0 !important;
+                margin:0 !important;
+                overflow-y:auto !important;
+            }
+        }
+
+        /* ── 7. TABLE SCROLL INDICATOR — visible scrollbar + fade hint ── */
+        @media(max-width:900px) {
+            /* Show a thin gold-tinted scrollbar on scrollable table wrappers */
+            .tbl-wrap,
+            #im-table-wrap {
+                /* Override the global hide-all-scrollbars rule for these specific containers */
+                scrollbar-width:thin !important;
+                scrollbar-color:rgba(212,175,55,0.4) rgba(255,255,255,0.05) !important;
+            }
+            .tbl-wrap::-webkit-scrollbar,
+            #im-table-wrap::-webkit-scrollbar {
+                display:block !important;
+                height:4px !important;
+            }
+            .tbl-wrap::-webkit-scrollbar-track,
+            #im-table-wrap::-webkit-scrollbar-track {
+                background:rgba(255,255,255,0.04) !important;
+                border-radius:4px !important;
+            }
+            .tbl-wrap::-webkit-scrollbar-thumb,
+            #im-table-wrap::-webkit-scrollbar-thumb {
+                background:rgba(212,175,55,0.4) !important;
+                border-radius:4px !important;
+            }
+            .tbl-wrap::-webkit-scrollbar-thumb:active,
+            #im-table-wrap::-webkit-scrollbar-thumb:active {
+                background:rgba(212,175,55,0.65) !important;
+            }
+
+            /* Right-edge fade gradient — indicates more content to scroll */
+            .tbl-scroll-wrap {
+                position:relative;
+            }
+            .tbl-scroll-wrap::after {
+                content:'';
+                position:absolute; top:0; right:0; bottom:4px;
+                width:32px; pointer-events:none;
+                background:linear-gradient(to left, var(--bg-2) 0%, transparent 100%);
+                border-radius:0 var(--radius) var(--radius) 0;
+                transition:opacity 0.2s ease;
+            }
+            .tbl-scroll-wrap.scrolled-end::after {
+                opacity:0;
+            }
+
+            /* "Scroll" hint chip shown below scrollable tables */
+            .tbl-scroll-hint {
+                display:flex !important;
+                align-items:center; gap:4px; justify-content:center;
+                font-family:var(--mono); font-size:0.6rem;
+                color:var(--text-2); padding:4px 0 2px;
+                letter-spacing:0.5px; opacity:0.7;
+                user-select:none;
+            }
+            .tbl-scroll-hint svg {
+                width:10px; height:10px; stroke:currentColor;
+                fill:none; stroke-width:2; flex-shrink:0;
+            }
+        }
+        /* Light mode scrollbar tint */
+        html.light .tbl-wrap,
+        html.light #im-table-wrap {
+            scrollbar-color:rgba(160,120,32,0.4) rgba(0,0,0,0.05) !important;
+        }
+        html.light .tbl-wrap::-webkit-scrollbar-thumb,
+        html.light #im-table-wrap::-webkit-scrollbar-thumb {
+            background:rgba(160,120,32,0.4) !important;
+        }
+
     </style>
 </head>
 <body>
@@ -21033,6 +21356,103 @@ if (_userRole.allowedPages) {
             e.target.classList.remove('input-error');
         }
     }, true);
+})();
+
+// ── MOBILE TABLE SCROLL INDICATORS ──
+// Wraps scrollable tables with a fade-right gradient and adds a
+// "scroll →" hint chip below tables that overflow their container.
+(function initTableScrollIndicators() {
+    if (window.innerWidth > 900) return;
+
+    function setupTableWrap(wrap) {
+        if (!wrap || wrap.dataset.scrollInit) return;
+        wrap.dataset.scrollInit = '1';
+
+        // Add wrapper class for CSS right-fade gradient
+        wrap.classList.add('tbl-scroll-wrap');
+
+        // Create the hint chip
+        var hint = document.createElement('div');
+        hint.className = 'tbl-scroll-hint';
+        hint.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg> scroll for more <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>';
+        hint.style.display = 'none';
+        wrap.parentNode.insertBefore(hint, wrap.nextSibling);
+
+        function update() {
+            var canScroll = wrap.scrollWidth > wrap.clientWidth + 4;
+            hint.style.display = canScroll ? 'flex' : 'none';
+            var atEnd = wrap.scrollLeft + wrap.clientWidth >= wrap.scrollWidth - 8;
+            wrap.classList.toggle('scrolled-end', atEnd);
+        }
+
+        wrap.addEventListener('scroll', update, {passive: true});
+        window.addEventListener('resize', update, {passive: true});
+        // Observe table content changes
+        if (window.ResizeObserver) {
+            new ResizeObserver(update).observe(wrap);
+        }
+        setTimeout(update, 200);
+    }
+
+    function scanWraps() {
+        document.querySelectorAll('.tbl-wrap, #im-table-wrap').forEach(setupTableWrap);
+    }
+
+    // Initial scan after page load
+    document.addEventListener('DOMContentLoaded', scanWraps);
+    setTimeout(scanWraps, 800);
+
+    // Re-scan when pages change (SPA navigation)
+    document.addEventListener('mk:page-changed', scanWraps);
+    document.addEventListener('mk:data-loaded', function() { setTimeout(scanWraps, 300); });
+})();
+
+// ── MOBILE MODAL FULLSCREEN PATCH ──
+// Dynamically-created modals use inline styles that can't be overridden
+// by normal CSS selectors. This observer finds them and patches the outer
+// container so the inner div fills the viewport on mobile.
+(function initMobileModalPatch() {
+    if (window.innerWidth > 768) return;
+
+    var MODAL_IDS = ['pkg-modal', 'jam-picker-modal', 'jam-schedule-modal',
+                     'jam-local-modal', 'jam-label-modal', 'move-watch-modal'];
+
+    function patchModal(el) {
+        if (!el || el.dataset.mobilePatch) return;
+        el.dataset.mobilePatch = '1';
+        // Make outer overlay full-screen, no padding
+        el.style.padding = '0';
+        el.style.alignItems = 'flex-start';
+        el.style.justifyContent = 'flex-start';
+        // Patch first child (the actual modal card)
+        var inner = el.firstElementChild;
+        if (inner) {
+            inner.style.width = '100%';
+            inner.style.maxWidth = '100%';
+            inner.style.minHeight = '100dvh';
+            inner.style.borderRadius = '0';
+            inner.style.margin = '0';
+            inner.style.overflowY = 'auto';
+        }
+    }
+
+    var observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(m) {
+            m.addedNodes.forEach(function(node) {
+                if (node.nodeType !== 1) return;
+                if (MODAL_IDS.indexOf(node.id) !== -1) {
+                    patchModal(node);
+                } else {
+                    MODAL_IDS.forEach(function(id) {
+                        var found = node.querySelector && node.querySelector('#' + id);
+                        if (found) patchModal(found);
+                    });
+                }
+            });
+        });
+    });
+
+    observer.observe(document.body, {childList: true, subtree: true});
 })();
 
 </script>
