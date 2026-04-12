@@ -13345,18 +13345,17 @@ async function loadPayments() {
         img.onload = function() {
             editorImage = img;
             // Scale canvas to fit while preserving aspect ratio
-            // On mobile: use nearly full viewport, minimal chrome
-            const maxW = Math.min(860, window.innerWidth - 16);
-            const maxH = window.innerHeight - 90; // just header + toolbar
+            const wrapper = $('#editor-canvas-wrapper');
+            const maxW = Math.min(860, wrapper.clientWidth || (window.innerWidth - 16));
+            const maxH = wrapper.clientHeight || (window.innerHeight - 200);
             const scale = Math.min(maxW / img.width, maxH / img.height, 1);
-            canvas.width = img.width * scale;
-            canvas.height = img.height * scale;
-            canvas.style.width = canvas.width + 'px';
-            canvas.style.height = canvas.height + 'px';
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
             canvas.dataset.scale = scale;
             editorBaseW = canvas.width;
             editorBaseH = canvas.height;
             renderEditor();
+            editorZoom = 1; editorPanX = 0; editorPanY = 0;
             _editorApplyTransform();
             // Auto-enter redact mode if watch needs redaction (has serial but not yet redacted)
             if (watch.serial && !watch.redacted && !watch.redacted_at) {
@@ -13490,20 +13489,19 @@ async function loadPayments() {
         var canvas = $('#editor-canvas');
         if (!canvas) return;
         if (editorZoom <= 1 && editorPanX === 0 && editorPanY === 0) {
-            // At 1x with no pan: let flex centering handle layout
+            // At 1x: natural flex layout, no transform
             canvas.style.position = '';
             canvas.style.transform = '';
-            canvas.style.maxWidth = '100%';
-            canvas.style.maxHeight = '100%';
         } else {
-            // Zoomed: switch to absolute + CSS transform
+            // Zoomed/panned: absolute + CSS transform
             var wrapper = $('#editor-canvas-wrapper');
             var wW = wrapper.clientWidth, wH = wrapper.clientHeight;
-            var centerX = (wW - editorBaseW) / 2;
-            var centerY = (wH - editorBaseH) / 2;
+            var cw = canvas.width, ch = canvas.height;
+            // Canvas may be scaled down by max-width/max-height; use actual display size
+            var dispW = canvas.offsetWidth || cw, dispH = canvas.offsetHeight || ch;
+            var centerX = (wW - dispW) / 2;
+            var centerY = (wH - dispH) / 2;
             canvas.style.position = 'absolute';
-            canvas.style.maxWidth = 'none';
-            canvas.style.maxHeight = 'none';
             canvas.style.transform = 'translate(' + (centerX + editorPanX) + 'px, ' + (centerY + editorPanY) + 'px) scale(' + editorZoom + ')';
             canvas.style.transformOrigin = '0 0';
         }
