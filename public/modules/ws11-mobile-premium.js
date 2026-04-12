@@ -31,6 +31,12 @@
     const MOD_ID = 'ws11-mobile-premium';
     const MOBILE_BP = 900;
 
+    // ── Private API references (module-scoped, not on window) ──
+    let _haptic = null;
+    let _toast = null;
+    let _sheet = null;
+    let _share = null;
+
     // ── Feature Detection ──
     function isMobile() {
         return window.innerWidth < MOBILE_BP;
@@ -887,8 +893,8 @@
 
     // ── JS Behavior Layer ──
     function ws11InitHaptic() {
-      window.MK = window.MK || {};
-      MK.Haptic = {
+      
+      _haptic = {
         light()    { navigator.vibrate?.(6); },
         medium()   { navigator.vibrate?.(12); },
         heavy()    { navigator.vibrate?.(20); },
@@ -907,14 +913,14 @@
     }
     
     function ws11InitToast() {
-      window.MK = window.MK || {};
+      
     
       const container = document.createElement('div');
       container.className = 'ws11-toast-container';
       container.id = 'ws11-toast-container';
       document.body.appendChild(container);
     
-      MK.Toast = {
+      _toast = {
         _container: container,
         _queue: [],
         show(msg, opts = {}) {
@@ -939,7 +945,7 @@
           }, {passive:true});
     
           this._container.appendChild(toast);
-          MK.Haptic?.light();
+          _haptic?.light();
     
           while (this._container.children.length > 3) {
             dismissToast(this._container.firstChild);
@@ -952,8 +958,8 @@
     
       const _origShowToast = window.showToast;
       window.showToast = function(message, type, duration) {
-        if (window.innerWidth < 900 && MK.Toast._container) {
-          MK.Toast.show(message, { type: type || 'info', duration: duration || 3000 });
+        if (window.innerWidth < 900 && _toast._container) {
+          _toast.show(message, { type: type || 'info', duration: duration || 3000 });
         } else if (_origShowToast) {
           _origShowToast.call(window, message, type, duration);
         }
@@ -992,7 +998,7 @@
     }
     
     function ws11InitSheet() {
-      window.MK = window.MK || {};
+      
     
       let backdrop = document.querySelector('.ws11-sheet-backdrop');
       if (!backdrop) {
@@ -1017,7 +1023,7 @@
     
       const sheetBody = sheet.querySelector('.ws11-sheet-body');
     
-      MK.Sheet = {
+      _sheet = {
         _backdrop: backdrop,
         _sheet: sheet,
         _sheetBody: sheetBody,
@@ -1038,7 +1044,7 @@
             this._sheet.classList.add('ws11-visible');
             this._sheet.setAttribute('aria-hidden', 'false');
             document.body.style.overflow = 'hidden';
-            MK.Haptic?.medium();
+            _haptic?.medium();
           });
     
           this._setupFocusTrap();
@@ -1054,7 +1060,7 @@
           document.body.style.overflow = '';
           document.removeEventListener('keydown', this._escHandler);
           if (this._focusTrap) document.removeEventListener('keydown', this._focusTrap);
-          MK.Haptic?.light();
+          _haptic?.light();
           if (this._onDismiss) this._onDismiss();
           if (this._triggerEl) {
             try { this._triggerEl.focus(); } catch(e) {}
@@ -1074,8 +1080,8 @@
         }
       };
     
-      backdrop.addEventListener('click', () => MK.Sheet.close());
-      ws11SetupSheetDrag(sheet, () => MK.Sheet.close());
+      backdrop.addEventListener('click', () => _sheet.close());
+      ws11SetupSheetDrag(sheet, () => _sheet.close());
     }
     
     function ws11InitPageTransitions() {
@@ -1084,7 +1090,7 @@
       if (!_orig) return;
     
       window.showPage = function(name, pushState) {
-        MK.Haptic?.selection();
+        _haptic?.selection();
         _orig.call(window, name, pushState);
       };
       window.__ws11PagePatched = true;
@@ -1126,7 +1132,7 @@
           ptr.querySelector('.ws11-ptr-spinner').style.transform = `rotate(${progress * 360}deg)`;
           if (dy >= THRESHOLD && !ptr.dataset.crossed) {
             ptr.dataset.crossed = '1';
-            MK.Haptic?.medium();
+            _haptic?.medium();
           }
         }
       }, {passive:true});
@@ -1141,7 +1147,7 @@
         if (currentOffset > 10) {
           refreshing = true;
           ptr.classList.add('ws11-refreshing');
-          MK.Haptic?.success();
+          _haptic?.success();
     
           const done = () => {
             refreshing = false;
@@ -1193,14 +1199,14 @@
           const now = Date.now();
           if (now - lastHomeTap < 400 && document.querySelector('#page-dashboard.active')) {
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            MK.Haptic?.medium();
+            _haptic?.medium();
           }
           lastHomeTap = now;
         });
       }
     
       nav.querySelectorAll('a').forEach(a => {
-        a.addEventListener('touchstart', () => MK.Haptic?.selection(), {passive:true});
+        a.addEventListener('touchstart', () => _haptic?.selection(), {passive:true});
       });
     }
     
@@ -1309,17 +1315,17 @@
           { label: 'Copy reference', icon: 'M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z', action: () => {
             navigator.clipboard?.writeText(ref.trim());
             closeCtxMenu();
-            if (window.MK?.Toast) MK.Toast.show('Copied: ' + ref.trim(), { type: 'success' });
+            if (_toast) _toast.show('Copied: ' + ref.trim(), { type: 'success' });
             else if (window.showToast) showToast('Copied!', 'success');
           }},
           { label: 'Save to watchlist', icon: 'M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z', action: () => {
             closeCtxMenu();
-            MK.Haptic?.success();
-            if (window.MK?.Toast) MK.Toast.show('Saved to watchlist', { type: 'success' });
+            _haptic?.success();
+            if (_toast) _toast.show('Saved to watchlist', { type: 'success' });
           }},
           ...(navigator.share ? [{ label: 'Share deal', icon: 'M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13', action: () => {
             closeCtxMenu();
-            if (window.MK?.Share) MK.Share.deal(ref.trim(), price, '');
+            if (_share) _share.deal(ref.trim(), price, '');
           }}] : [])
         ].map(a =>
           `<button class="ws11-ctx-action" role="menuitem">` +
@@ -1334,10 +1340,10 @@
           () => {
             navigator.clipboard?.writeText(ref.trim());
             closeCtxMenu();
-            if (window.MK?.Toast) MK.Toast.show('Copied: ' + ref.trim(), { type: 'success' });
+            if (_toast) _toast.show('Copied: ' + ref.trim(), { type: 'success' });
           },
-          () => { closeCtxMenu(); MK.Haptic?.success(); if (window.MK?.Toast) MK.Toast.show('Saved to watchlist', { type: 'success' }); },
-          ...(navigator.share ? [() => { closeCtxMenu(); if (window.MK?.Share) MK.Share.deal(ref.trim(), price, ''); }] : [])
+          () => { closeCtxMenu(); _haptic?.success(); if (_toast) _toast.show('Saved to watchlist', { type: 'success' }); },
+          ...(navigator.share ? [() => { closeCtxMenu(); if (_share) _share.deal(ref.trim(), price, ''); }] : [])
         ];
         actionBtns.forEach((btn, i) => btn.addEventListener('click', actionData[i]));
 
@@ -1345,7 +1351,7 @@
           ctxBackdrop.classList.add('ws11-visible');
           ctxMenu.classList.add('ws11-visible');
         });
-        MK.Haptic?.heavy();
+        _haptic?.heavy();
         document.body.style.overflow = 'hidden';
       }
 
@@ -1354,7 +1360,7 @@
         ctxBackdrop.classList.remove('ws11-visible');
         ctxMenu.classList.remove('ws11-visible');
         document.body.style.overflow = '';
-        MK.Haptic?.light();
+        _haptic?.light();
       }
 
       // Delegate long-press on deal cards
@@ -1380,7 +1386,7 @@
       const _origToggle = window.toggleMobileMore;
       if (_origToggle && !window.__ws11MorePatched) {
         window.toggleMobileMore = function() {
-          MK.Haptic?.light();
+          _haptic?.light();
           _origToggle.call(window);
         };
         window.__ws11MorePatched = true;
@@ -1389,7 +1395,7 @@
       const _origMobileNav = window.mobileNav;
       if (_origMobileNav && !window.__ws11MobileNavPatched) {
         window.mobileNav = function(page) {
-          MK.Haptic?.selection();
+          _haptic?.selection();
           _origMobileNav.call(window, page);
         };
         window.__ws11MobileNavPatched = true;
@@ -1441,7 +1447,7 @@
       }
 
       fab.addEventListener('click', () => {
-        MK.Haptic?.medium();
+        _haptic?.medium();
         // Add smooth transition class
         document.documentElement.classList.add('ws11-transitioning');
         if (typeof window.toggleTheme === 'function') {
@@ -1574,7 +1580,7 @@
           clientY: e.touches[0].clientY
         });
         canvas.dispatchEvent(mouseEvent);
-        MK.Haptic?.selection();
+        _haptic?.selection();
       }, { passive: true });
 
       document.addEventListener('touchend', (e) => {
@@ -1781,7 +1787,7 @@
           `</div>`;
 
         overlay.querySelector('#ws11-coach-next').addEventListener('click', () => {
-          MK.Haptic?.light();
+          _haptic?.light();
           show(idx + 1);
         });
         const skipBtn = overlay.querySelector('#ws11-coach-skip');
@@ -1795,7 +1801,7 @@
           setTimeout(() => { overlay?.remove(); overlay = null; }, 220);
         }
         localStorage.setItem('ws11-onboarded', '1');
-        MK.Haptic?.success();
+        _haptic?.success();
       }
 
       // Start onboarding after a brief delay
@@ -1914,9 +1920,9 @@
       if (window.innerWidth >= 900) return;
       if (!navigator.share) return; // Not supported
 
-      // Expose MK.Share for use in context menus
-      window.MK = window.MK || {};
-      MK.Share = {
+      // Web Share API wrapper (module-private)
+      
+      _share = {
         async deal(ref, price, discount) {
           try {
             await navigator.share({
@@ -1924,7 +1930,7 @@
               text: `${ref} at ${price} (${discount} below market)`,
               url: window.location.origin + '?p=deals'
             });
-            MK.Haptic?.success();
+            _haptic?.success();
           } catch (e) {
             if (e.name !== 'AbortError') console.warn('[MK] Share failed:', e);
           }
@@ -1932,7 +1938,7 @@
         async text(title, text) {
           try {
             await navigator.share({ title, text });
-            MK.Haptic?.success();
+            _haptic?.success();
           } catch (e) {
             if (e.name !== 'AbortError') console.warn('[MK] Share failed:', e);
           }
