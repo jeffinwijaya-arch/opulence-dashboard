@@ -347,6 +347,171 @@
       .tag:active{transform:scale(0.94);transition:transform 80ms ease}
       .tab:active{transform:scale(0.97);transition:transform 80ms ease}
     }
+
+    /* === 22. Shipping Tracker Table → Mobile Cards === */
+    @media(max-width:900px){
+      #tracker-table thead{display:none}
+      #tracker-table tbody tr{
+        display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;
+        padding:14px 16px;border-bottom:1px solid var(--border);
+        position:relative;
+      }
+      #tracker-table tbody tr:active{background:var(--bg-hover)}
+      #tracker-table tbody td{
+        padding:2px 0;border:none;white-space:normal;font-size:0.78rem;
+      }
+      /* Watch/Ref — spans full width, bold */
+      #tracker-table tbody td:nth-child(1){
+        grid-column:1/-1;font-weight:700;font-size:0.88rem;
+        color:var(--accent);margin-bottom:4px;
+      }
+      /* Tracking # */
+      #tracker-table tbody td:nth-child(2)::before{
+        content:'Tracking';display:block;font-size:0.55rem;
+        color:var(--text-2);text-transform:uppercase;letter-spacing:0.8px;
+        font-weight:700;margin-bottom:1px;
+      }
+      /* From */
+      #tracker-table tbody td:nth-child(3)::before{
+        content:'From';display:block;font-size:0.55rem;
+        color:var(--text-2);text-transform:uppercase;letter-spacing:0.8px;
+        font-weight:700;margin-bottom:1px;
+      }
+      /* To */
+      #tracker-table tbody td:nth-child(4)::before{
+        content:'To';display:block;font-size:0.55rem;
+        color:var(--text-2);text-transform:uppercase;letter-spacing:0.8px;
+        font-weight:700;margin-bottom:1px;
+      }
+      /* Ship Date */
+      #tracker-table tbody td:nth-child(5)::before{
+        content:'Shipped';display:block;font-size:0.55rem;
+        color:var(--text-2);text-transform:uppercase;letter-spacing:0.8px;
+        font-weight:700;margin-bottom:1px;
+      }
+      /* Status — spans full width with tag styling */
+      #tracker-table tbody td:nth-child(6){
+        grid-column:1/-1;margin-top:6px;
+      }
+      #tracker-table tbody td:nth-child(6)::before{
+        content:'Status';display:inline;font-size:0.55rem;
+        color:var(--text-2);text-transform:uppercase;letter-spacing:0.8px;
+        font-weight:700;margin-right:8px;
+      }
+      /* ETA */
+      #tracker-table tbody td:nth-child(7)::before{
+        content:'ETA';display:block;font-size:0.55rem;
+        color:var(--text-2);text-transform:uppercase;letter-spacing:0.8px;
+        font-weight:700;margin-bottom:1px;
+      }
+      /* Last Update */
+      #tracker-table tbody td:nth-child(8)::before{
+        content:'Updated';display:block;font-size:0.55rem;
+        color:var(--text-2);text-transform:uppercase;letter-spacing:0.8px;
+        font-weight:700;margin-bottom:1px;
+      }
+      /* Actions */
+      #tracker-table tbody td:nth-child(9){
+        grid-column:1/-1;margin-top:6px;display:flex;gap:8px;
+      }
+      /* Loading/empty row stays single-column */
+      #tracker-table tbody tr td[colspan]{
+        grid-column:1/-1;text-align:center;
+      }
+    }
+
+    /* === 23. Table Scroll Indicator === */
+    @media(max-width:900px){
+      .tbl-wrap{
+        position:relative;overflow-x:auto;-webkit-overflow-scrolling:touch;
+      }
+      .tbl-wrap::after{
+        content:'';position:absolute;top:0;right:0;bottom:0;width:28px;
+        background:linear-gradient(to right,transparent,var(--bg-2));
+        pointer-events:none;opacity:1;transition:opacity 300ms ease;
+        border-radius:0 var(--radius) var(--radius) 0;
+      }
+      .tbl-wrap.ws11-scrolled-end::after{opacity:0}
+      /* Don't show indicator on tracker table (it uses card layout) */
+      #page-shipping .tbl-wrap::after{display:none}
+    }
+
+    /* === 24. Modal → Mobile Full Sheet === */
+    @media(max-width:900px){
+      #watch-modal > div,
+      #qcmd-panel,
+      #usearch-overlay .usearch-panel{
+        position:fixed !important;bottom:0 !important;left:0 !important;right:0 !important;
+        top:auto !important;max-width:100% !important;width:100% !important;
+        border-radius:20px 20px 0 0 !important;max-height:90vh !important;
+        overflow-y:auto !important;-webkit-overflow-scrolling:touch;
+        transform:none !important;margin:0 !important;
+        padding-bottom:calc(20px + env(safe-area-inset-bottom)) !important;
+      }
+      #watch-modal{align-items:flex-end !important}
+      #usearch-overlay{align-items:flex-end !important}
+    }
+
+    /* === 25. Form Label Improvements === */
+    @media(max-width:900px){
+      #watch-modal label,
+      #page-postings label{
+        font-size:0.75rem !important;font-weight:600;color:var(--text-1);
+        margin-bottom:4px;display:block;
+      }
+      /* Grid forms inside modals → stack */
+      #watch-modal div[style*="grid-template-columns:1fr 1fr"]{
+        grid-template-columns:1fr !important;gap:10px !important;
+      }
+    }
+
+    /* === 26. Empty State Polish === */
+    @media(max-width:900px){
+      .empty-state,.mc-empty,.notif-empty{
+        padding:40px 24px !important;text-align:center;
+      }
+      .empty-state svg,.mc-empty svg{
+        width:48px !important;height:48px !important;opacity:0.3;margin-bottom:12px;
+      }
+    }
+
+    /* === 27. Search Page Mobile === */
+    @media(max-width:900px){
+      #page-lookup > div:nth-child(2){
+        max-width:100% !important;flex-direction:column !important;
+      }
+      #ref-search{
+        width:100% !important;font-size:17px !important;
+        padding:14px 16px !important;border-radius:14px !important;
+        min-height:52px;
+      }
+      #ref-autocomplete{
+        max-width:100% !important;width:calc(100% - 20px) !important;
+        border-radius:0 0 14px 14px !important;
+        max-height:50vh !important;
+      }
+      #compare-panel{border-radius:14px !important}
+      #compare-panel > div:first-child{flex-direction:column !important}
+      #compare-panel input{width:100% !important}
+    }
+
+    /* === 28. Improved Posting Cards Mobile === */
+    @media(max-width:480px){
+      .posting-card{
+        padding:14px;border-radius:14px;
+      }
+      .posting-card img{
+        width:72px;height:72px;border-radius:10px;
+      }
+      .posting-card-ref{font-size:0.92rem}
+      .posting-card-desc{font-size:0.75rem;line-height:1.4}
+      .posting-card-price{font-size:0.92rem}
+      .posting-card-actions{margin-top:10px}
+      .posting-card-actions .btn{
+        min-height:40px;font-size:0.75rem;padding:8px 14px;
+        border-radius:10px;flex:1;text-align:center;
+      }
+    }
     `; }
 
     // ── JS Behavior Layer ──
@@ -875,6 +1040,95 @@
       setTimeout(checkDeals, 2000);
     }
 
+    // ── Form InputMode Fixes ──
+    function ws11FixInputModes() {
+      if (window.innerWidth >= 900) return;
+
+      // Add inputmode="decimal" to all type="number" inputs (triggers numeric keyboard)
+      document.querySelectorAll('input[type="number"]').forEach(input => {
+        if (!input.getAttribute('inputmode')) {
+          input.setAttribute('inputmode', 'decimal');
+        }
+      });
+
+      // Add inputmode="search" to search inputs (adds Search key on keyboard)
+      ['ref-search', 'compare-ref-a', 'compare-ref-b', 'im-search', 'usearch-input'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && !el.getAttribute('inputmode')) {
+          el.setAttribute('inputmode', 'search');
+          el.setAttribute('enterkeyhint', 'search');
+        }
+      });
+
+      // Add enterkeyhint="done" to form inputs in modals
+      document.querySelectorAll('#watch-modal input, #tracker-form-modal input').forEach(input => {
+        if (!input.getAttribute('enterkeyhint')) {
+          input.setAttribute('enterkeyhint', 'done');
+        }
+      });
+
+      // Observe for dynamically added inputs
+      const obs = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          m.addedNodes.forEach(node => {
+            if (node.nodeType !== 1) return;
+            const inputs = node.querySelectorAll ? node.querySelectorAll('input[type="number"]:not([inputmode])') : [];
+            inputs.forEach(input => input.setAttribute('inputmode', 'decimal'));
+          });
+        }
+      });
+      obs.observe(document.body, { childList: true, subtree: true });
+    }
+
+    // ── Table Scroll Indicator ──
+    function ws11InitTableScroll() {
+      if (window.innerWidth >= 900) return;
+
+      document.querySelectorAll('.tbl-wrap').forEach(wrap => {
+        // Skip shipping tracker (uses card layout on mobile)
+        if (wrap.closest('#page-shipping')) return;
+
+        wrap.addEventListener('scroll', () => {
+          const atEnd = wrap.scrollLeft + wrap.clientWidth >= wrap.scrollWidth - 4;
+          wrap.classList.toggle('ws11-scrolled-end', atEnd);
+        }, { passive: true });
+
+        // Initial check
+        requestAnimationFrame(() => {
+          if (wrap.scrollWidth <= wrap.clientWidth) {
+            wrap.classList.add('ws11-scrolled-end');
+          }
+        });
+      });
+    }
+
+    // ── Keyboard Dismiss on Scroll ──
+    function ws11InitKeyboardDismiss() {
+      if (window.innerWidth >= 900) return;
+
+      let activeInput = null;
+      document.addEventListener('focusin', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+          activeInput = e.target;
+        }
+      });
+
+      // Blur input on scroll start (dismiss keyboard like native apps)
+      let scrollTimeout = null;
+      window.addEventListener('scroll', () => {
+        if (!activeInput) return;
+        if (scrollTimeout) return; // Debounce
+        scrollTimeout = setTimeout(() => {
+          scrollTimeout = null;
+        }, 200);
+        // Only dismiss if significant scroll
+        if (document.activeElement === activeInput) {
+          activeInput.blur();
+          activeInput = null;
+        }
+      }, { passive: true });
+    }
+
     function ws11Cleanup() {
       ['ws11-mobile-premium-styles', 'ws11-toast-container', 'ws11-ptr'].forEach(id => {
         const el = document.getElementById(id);
@@ -919,6 +1173,9 @@
             ws11InitLongPress();
             ws11UpgradeMoreMenu();
             ws11InitSwipeHint();
+            ws11FixInputModes();
+            ws11InitTableScroll();
+            ws11InitKeyboardDismiss();
 
             const elapsed = (performance.now() - t0).toFixed(1);
             console.log(`[MK] ${MOD_ID}: Premium mobile layer active (${elapsed}ms) — ` +
