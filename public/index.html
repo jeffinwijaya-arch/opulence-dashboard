@@ -3354,6 +3354,10 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                         &middot; <kbd style="padding:1px 4px;background:var(--bg-2);border-radius:3px;font-family:inherit;">&uarr;&darr;&larr;&rarr;</kbd> nudge
                         &middot; hold to peek
                     </div>
+                    <details id="editor-history-panel" style="flex-shrink:0;margin-bottom:2px;">
+                        <summary style="color:var(--text-2);font-size:0.62rem;cursor:pointer;padding:2px 0;">History</summary>
+                        <div id="editor-history-log" style="max-height:80px;overflow-y:auto;font-size:0.6rem;color:var(--text-2);background:var(--bg-2);padding:4px 8px;border-radius:4px;font-family:var(--mono);"></div>
+                    </details>
                     <!-- Canvas area (takes most space) -->
                     <div id="editor-canvas-wrapper" style="flex:1;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;min-height:0;touch-action:none;">
                         <canvas id="editor-canvas" style="cursor:default;border:2px solid rgba(255,255,255,0.08);border-radius:6px;transition:border-color 0.2s,box-shadow 0.2s;transform-origin:0 0;position:absolute;"></canvas>
@@ -13281,6 +13285,8 @@ async function loadPayments() {
         editorTool = 'view';
         editorZoom = 1; editorPanX = 0; editorPanY = 0;
         editorIsPinching = false; editorPinchDist = 0; editorPanStart = null;
+        const _hlog = document.getElementById('editor-history-log');
+        if (_hlog) _hlog.innerHTML = '';
 
         ensureWatchReference();
         
@@ -13594,10 +13600,12 @@ async function loadPayments() {
 
     function editorDeleteSelected() {
         if (editorSelectedIdx >= 0 && editorSelectedIdx < editorRedactions.length) {
-            editorRedoStack.push(editorRedactions.splice(editorSelectedIdx, 1)[0]);
+            const idx = editorSelectedIdx;
+            editorRedoStack.push(editorRedactions.splice(idx, 1)[0]);
             editorSelectedIdx = -1;
             renderEditor();
             updateEditorRedactCount();
+            _logEditorAction('Deleted rect #' + (idx + 1));
         }
     }
     
@@ -13695,6 +13703,7 @@ async function loadPayments() {
         renderEditor();
         updateEditorRedactCount();
         _hapticTap();
+        _logEditorAction('Drew rect #' + editorRedactions.length + ' (' + Math.round(rect.w) + 'x' + Math.round(rect.h) + ')');
     }
     
     var _editorScanAnim = null;
@@ -13747,6 +13756,7 @@ async function loadPayments() {
             if (result.redaction_count > 0) {
                 statusEl.textContent = ` Auto-redacted ${result.redaction_count} area${result.redaction_count > 1 ? 's' : ''}: ${result.detections.map(d => d.type).join(', ')}`;
                 statusEl.style.color = 'var(--green)';
+                _logEditorAction('Auto-detect: ' + result.redaction_count + ' areas found');
                 // Reload the image
                 editorImage.src = '/api/watch-photos/' + editorWatchId + '/image?t=' + Date.now();
                 editorRedactions = [];
@@ -13809,6 +13819,20 @@ async function loadPayments() {
         loadPhotoLibrary();
     }
 
+    function _logEditorAction(action) {
+        const log = document.getElementById('editor-history-log');
+        if (!log) return;
+        const now = new Date();
+        const ts = [now.getHours(), now.getMinutes(), now.getSeconds()].map(n => String(n).padStart(2, '0')).join(':');
+        const entry = document.createElement('div');
+        entry.textContent = ts + ' ' + action;
+        log.prepend(entry);
+        while (log.children.length > 20) {
+            log.removeChild(log.lastChild);
+        }
+        log.scrollTop = 0;
+    }
+
     function undoRedaction() {
         editorSelectedIdx = -1;
         if (editorRedactions.length > 0) {
@@ -13816,6 +13840,7 @@ async function loadPayments() {
             renderEditor();
             updateEditorRedactCount();
             showToast('Undone \u2014 ' + editorRedactions.length + ' remaining', 'info', 2000);
+            _logEditorAction('Undo \u2192 ' + editorRedactions.length + ' remaining');
         }
     }
 
@@ -13825,6 +13850,7 @@ async function loadPayments() {
             renderEditor();
             updateEditorRedactCount();
             showToast('Redone \u2014 ' + editorRedactions.length + ' total', 'info', 2000);
+            _logEditorAction('Redo \u2192 ' + editorRedactions.length + ' total');
         }
     }
 
@@ -13854,6 +13880,7 @@ async function loadPayments() {
         _hapticTap();
         const presetLabels = {'caseback-serial':'caseback serial','caseback-date':'caseback date','card-serial':'card serial','card-date':'card date','rehaut-serial':'rehaut serial','clasp-code':'clasp code'};
         showToast('Preset: ' + (presetLabels[presetId] || presetId) + ' \u2014 drag to adjust', 'info', 2500);
+        _logEditorAction('Preset: ' + presetId);
     }
 
     function editorStartPeek() {
@@ -13881,6 +13908,7 @@ async function loadPayments() {
 
     function clearRedactions() {
         editorRedactions = [];
+        editorRedoStack = [];
         renderEditor();
         updateEditorRedactCount();
     }
@@ -13961,6 +13989,24 @@ async function loadPayments() {
         }
     }
 
+    // Keyboard shortcuts for photo editor
+    document.addEventListener('keydown', function(e) {
+        if (!editorWatchId) return; // editor not open
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+        // Ctrl+D: duplicate selected rect
+        if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+            e.preventDefault();
+            if (editorSelectedIdx >= 0 && editorSelectedIdx < editorRedactions.length) {
+                const src = editorRedactions[editorSelectedIdx];
+                const dup = { x: src.x + 10, y: src.y + 10, w: src.w, h: src.h };
+                editorRedactions.push(dup);
+                editorSelectedIdx = editorRedactions.length - 1;
+                renderEditor();
+                _logEditorAction('Duplicated rect #' + editorRedactions.length);
+            }
+        }
+    });
+
     async function saveRedactedPhoto() {
         if (!editorWatchId || !editorImage) return;
         if (editorRedactions.length === 0) {
@@ -14010,6 +14056,7 @@ async function loadPayments() {
 
             statusEl.textContent = ' Saved!';
             statusEl.style.color = 'var(--green)';
+            _logEditorAction('Saved with ' + editorRedactions.length + ' redactions');
 
             // Reload the image to show saved version
             editorImage.src = '/api/watch-photos/' + editorWatchId + '/image?t=' + Date.now();
@@ -14099,6 +14146,8 @@ async function loadPayments() {
         editorIsPinching = false; editorPinchDist = 0; editorPanStart = null;
         if (editorPeekTimer) { clearTimeout(editorPeekTimer); editorPeekTimer = null; }
         if (window._editorKeyHandler) { window.removeEventListener('keydown', window._editorKeyHandler); window._editorKeyHandler = null; }
+        const _hlog = document.getElementById('editor-history-log');
+        if (_hlog) _hlog.innerHTML = '';
     }
     
     function copyPhotoInfo(watchId) {
