@@ -20,39 +20,114 @@
 // Vision prompts
 // ─────────────────────────────────────────────────────────────
 
-const IDENTIFY_PROMPT = `You are an expert luxury watch appraiser. Analyze this watch photo and identify the exact model.
+const IDENTIFY_PROMPT = `You are a world-class luxury watch appraiser with 20 years of experience identifying Rolex, Patek Philippe, Audemars Piguet, and Tudor watches. Analyze this photo and identify the exact reference.
 
 Return ONLY a JSON object:
 {
-  "reference": "exact reference number (e.g. 126610LN, 5711/1A-010)",
-  "brand": "Rolex | Patek Philippe | Audemars Piguet | Tudor | etc.",
+  "reference": "exact reference (e.g. 126610LN, 5711/1A-010, 15500ST.OO.1220ST.01)",
+  "brand": "Rolex | Patek Philippe | Audemars Piguet | Tudor | Omega | Other",
   "model": "model name (e.g. Submariner Date, Nautilus, Royal Oak)",
-  "dial": "dial color/description (e.g. Black, Blue Sunburst, Wimbledon)",
-  "bracelet": "bracelet type (e.g. Oyster, Jubilee, President, Rubber)",
-  "bezel": "bezel description (e.g. Black Ceramic, Pepsi, Fluted)",
+  "dial": "exact dial (e.g. Black Sunburst, Wimbledon, Ice Blue, Meteorite, Tiffany)",
+  "bracelet": "bracelet type (e.g. Oyster, Jubilee, President, Rubber, Leather)",
+  "bezel": "bezel (e.g. Black Ceramic, Pepsi Red/Blue, Root Beer, Fluted WG)",
   "condition": "BNIB | Like New | Pre-owned | Unknown",
   "confidence": 0.0 to 1.0,
-  "reasoning": "key identifying features used"
+  "reasoning": "2-3 key features that confirmed your identification"
 }
 
-Be precise with reference suffixes (LN, LV, BLNR, BLRO for Rolex; full material code for AP). If uncertain, give best guess with lower confidence.`;
+BRAND-SPECIFIC IDENTIFICATION CUES:
 
-const WARRANTY_CARD_PROMPT = `You are an expert at reading luxury watch warranty cards. Extract all information.
+ROLEX — Look for: crown logo at 12 o'clock, Cyclops magnification over date, case-back is ALWAYS solid (never see-through). Reference suffixes are critical:
+  LN = black cerachrom bezel (Submariner 126610LN)
+  LV = green cerachrom bezel (Submariner 126610LV "Starbucks")
+  BLNR = blue/black "Batman" bezel (GMT 126710BLNR)
+  BLRO = blue/red "Pepsi" bezel (GMT 126710BLRO)
+  No suffix = no bezel insert or older model
+Common confusion pairs:
+  126610LN vs 124060 — both black Sub, but 124060 is NO DATE (no Cyclops, no date window)
+  126710BLNR vs 126710BLRO — Batman is blue/BLACK, Pepsi is blue/RED
+  126334 vs 126234 — both Datejust but 41mm vs 36mm (check proportions to wrist/lugs)
+  228238 vs 228235 — Day-Date 40 but yellow gold vs rose gold (color!)
+
+Dial color precision — these are NOT interchangeable:
+  Wimbledon = slate with green Roman numerals (Datejust only)
+  Champagne = warm gold/yellow tone (NOT the same as gold hour markers)
+  Slate = dark grey with green accents (Datejust specific)
+  Rhodium = light silvery-grey (different from silver, more metallic sheen)
+  Ice Blue = light blue, EXCLUSIVE to platinum cases
+  Tiffany = turquoise blue-green (OP 41 specific, extremely rare)
+  Meteorite = textured grey with crystalline pattern (actual meteorite slice)
+  MOP = mother of pearl (iridescent, often with diamond indices)
+
+PATEK PHILIPPE — Look for: Calatrava cross logo, usually at 12 o'clock. Many have see-through casebacks showing the movement. Reference format: XXXX/XX-XXX (e.g. 5711/1A-010).
+  5711 = Nautilus (octagonal bezel with rounded ears, integrated bracelet)
+  5167 = Aquanaut (rounded octagonal, rubber strap standard)
+  5905 = Annual Calendar Complications
+  Suffix: 1A = steel, 1R = rose gold, 1G = white gold, 1J = yellow gold
+
+AUDEMARS PIGUET — Look for: octagonal bezel with 8 hexagonal screws (THE defining feature). Reference format: XXXXXST.OO.XXXXST.XX
+  15500ST = Royal Oak 41mm steel (current gen)
+  15202ST = Royal Oak "Jumbo" Extra-Thin (discontinued, legendary)
+  26470ST = Royal Oak Offshore Chrono steel
+  Material codes: ST = steel, OR = rose gold, BA = yellow gold, BC = white gold
+
+TUDOR — Look for: Tudor shield or rose logo. Similar cases to Rolex but different dials/movements. References: 79XXX series.
+  79360N = Black Bay Chrono
+  M79360N-0002 = Panda dial Black Bay Chrono
+  79230 = Black Bay (various dial colors by suffix)
+
+CONDITION ASSESSMENT:
+  BNIB = stickers visible, unworn bracelet (no stretch/desk-diving marks), factory plastic on clasp
+  Like New = minimal wear, strong AR coating on crystal, original finish on case/bracelet
+  Pre-owned = visible wear marks, bracelet stretch, polishing marks, scratches on clasp
+
+If the image is blurry, a partial view, or has strong reflections, note this in reasoning and lower confidence accordingly.`;
+
+const WARRANTY_CARD_PROMPT = `You are an expert at reading luxury watch warranty cards and international guarantee certificates. Extract ALL information with perfect accuracy.
 
 Return ONLY a JSON object:
 {
   "reference": "reference number exactly as printed",
   "serial_number": "serial number exactly as printed",
-  "purchase_date": "date as MM/YYYY or DD/MM/YYYY",
-  "dealer": "dealer name as printed",
+  "purchase_date": "date as MM/YYYY or DD/MM/YYYY as printed",
+  "dealer": "authorized dealer name as printed",
   "brand": "watch brand",
-  "model": "model name if visible",
+  "model": "model name if printed on card",
   "confidence": 0.0 to 1.0,
-  "raw_text": "all readable text, line by line",
-  "reasoning": "what you can/cannot read clearly"
+  "raw_text": "all readable text on the card, line by line",
+  "reasoning": "what you can/cannot read clearly, any ambiguous characters"
 }
 
-Read EVERY character carefully. A single wrong digit in a serial number makes it useless.`;
+BRAND-SPECIFIC CARD FORMATS:
+
+ROLEX — Green plastic card with white text. Fields:
+  - Top: "ROLEX" logo + "OYSTER PERPETUAL" or model name
+  - Reference: printed as "REF." followed by reference number (e.g. 126610LN)
+  - Serial: 8-character alphanumeric (random since 2010, e.g. 94J8Z397)
+  - Dealer: stamped or printed dealer name + city
+  - Date: typically MM/YYYY format
+  - Card number: separate from serial, usually on the back
+
+PATEK PHILIPPE — White/cream certificate with blue accents. Fields:
+  - Reference: "Ref." format XXXX/XX-XXX
+  - Movement number: separate from case number
+  - Case number: stamped into caseback
+  - Date of sale: DD.MM.YYYY or written month
+
+AUDEMARS PIGUET — White card with AP logo. Fields:
+  - Reference: full format XXXXXST.OO.XXXXST.XX
+  - Serial number: typically on a separate line
+  - Dealer stamp: often hand-stamped, may be hard to read
+
+TUDOR — Similar format to Rolex but blue-grey card.
+
+CRITICAL: Serial numbers and reference numbers must be EXACT. Common OCR confusions to watch for:
+  0 (zero) vs O (letter O) — in Rolex serials, both can appear
+  1 (one) vs I (letter I) vs l (lowercase L)
+  5 vs S, 8 vs B, 2 vs Z
+  If a character is genuinely ambiguous, note it in reasoning.
+
+Read the ENTIRE card surface including any stamps, stickers, or handwriting.`;
 
 
 // ─────────────────────────────────────────────────────────────
