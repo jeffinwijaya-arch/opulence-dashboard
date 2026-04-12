@@ -557,20 +557,58 @@
             #dash-deals thead, #dash-arb thead, #dash-inventory thead { display:none !important; }
             #dash-deals tbody, #dash-arb tbody, #dash-inventory tbody { display:block !important; }
 
-            #dash-deals tbody tr, #dash-arb tbody tr {
-                display:flex !important; flex-wrap:wrap; align-items:baseline;
-                padding:12px 14px; border-bottom:1px solid var(--border); gap:4px 8px;
+            /* Top Deals: cols = ref, color/desc, price */
+            #dash-deals tbody tr {
+                display:flex !important; flex-wrap:wrap; align-items:center;
+                padding:14px 16px; border-bottom:1px solid var(--border); gap:2px 10px;
             }
-            #dash-deals tbody td, #dash-arb tbody td {
-                display:block !important; padding:0; border:none; white-space:nowrap;
+            #dash-deals tbody td {
+                display:block !important; padding:0 !important; border:none !important; white-space:nowrap;
             }
-            #dash-deals tbody td:first-child, #dash-arb tbody td:first-child {
-                font-weight:700; font-size:0.88rem; color:var(--accent);
-                flex-basis:100%; margin-bottom:2px;
+            #dash-deals tbody td:first-child {
+                font-weight:700; font-size:0.9rem; color:var(--accent);
             }
-            #dash-deals tbody td:last-child, #dash-arb tbody td:last-child {
-                margin-left:auto; font-weight:700; font-size:0.9rem;
+            #dash-deals tbody td:nth-child(2) {
+                color:var(--text-2); font-size:0.78rem;
             }
+            #dash-deals tbody td:last-child {
+                margin-left:auto; font-weight:700; font-size:0.92rem;
+            }
+
+            /* Arbitrage: cols = ref, model, profit, pct, direction */
+            #dash-arb tbody tr {
+                display:grid !important; grid-template-columns:1fr auto;
+                grid-template-rows:auto auto;
+                gap:2px 10px; padding:14px 16px; border-bottom:1px solid var(--border);
+            }
+            #dash-arb tbody td {
+                display:block !important; padding:0 !important; border:none !important;
+            }
+            /* Row 1: Ref (left) + Profit (right, green) */
+            #dash-arb tbody td:nth-child(1) {
+                grid-column:1; grid-row:1;
+                font-weight:700; font-size:0.9rem; color:var(--accent);
+            }
+            #dash-arb tbody td:nth-child(3) {
+                grid-column:2; grid-row:1; text-align:right;
+                font-weight:700; font-size:0.92rem;
+            }
+            /* Row 2: Model (left) + Direction+% (right) */
+            #dash-arb tbody td:nth-child(2) {
+                grid-column:1; grid-row:2;
+                color:var(--text-2); font-size:0.72rem;
+                overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+            }
+            #dash-arb tbody td:nth-child(4) {
+                grid-column:2; grid-row:2; text-align:right;
+                font-size:0.72rem;
+            }
+            /* Hide direction column on mobile (redundant) */
+            #dash-arb tbody td:nth-child(5) { display:none !important; }
+
+            /* Remove stuck hover bar on all tables */
+            .tbl tr:hover td:first-child { box-shadow:none !important; }
+            .tbl tr:nth-child(even) td { background:none !important; }
 
             /* Inventory positions → 3-row card */
             #dash-inventory tbody tr {
