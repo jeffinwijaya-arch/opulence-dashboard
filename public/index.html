@@ -3827,6 +3827,8 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                         <button class="btn" onclick="undoRedaction()" style="padding:2px 8px;font-size:0.65rem;">↩</button>
                         <button class="btn" onclick="clearRedactions()" style="padding:2px 8px;font-size:0.65rem;">X</button>
                         <button class="btn" onclick="saveRedactedPhoto()" style="padding:2px 8px;font-size:0.65rem;background:var(--green-dim);color:var(--green);border-color:var(--green);"> Save</button>
+                        <button class="btn" onclick="visionIdentifyWatch()" id="btn-vision-identify" style="padding:2px 8px;font-size:0.65rem;background:rgba(0,150,255,0.12);color:#0af;border-color:rgba(0,150,255,0.3);">Identify</button>
+                        <button class="btn" onclick="visionReadCard()" id="btn-vision-card" style="padding:2px 8px;font-size:0.65rem;background:rgba(0,230,118,0.12);color:var(--green);border-color:rgba(0,230,118,0.3);">Read Card</button>
                         <div style="flex:1;"></div>
                         <button class="btn" onclick="confirmDeletePhoto()" style="padding:2px 8px;font-size:0.65rem;background:var(--red-dim);color:var(--red);border-color:var(--red);"></button>
                     </div>
@@ -3838,6 +3840,9 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                         </div>
                     </div>
                     <!-- Details (collapsible on mobile) -->
+                    <!-- Vision recognition result panel -->
+                    <div id="vision-result-panel" style="display:none;flex-shrink:0;margin-top:4px;padding:8px 10px;background:rgba(0,150,255,0.06);border:1px solid rgba(0,150,255,0.2);border-radius:var(--radius);font-size:0.72rem;color:var(--text-0);"></div>
+
                     <details id="modal-details-wrap" style="flex-shrink:0;margin-top:4px;">
                         <summary style="color:var(--text-2);font-size:0.65rem;cursor:pointer;padding:4px 0;">Edit Info ▾</summary>
                         <div id="modal-details" style="background:var(--bg-2);padding:8px;border-radius:var(--radius);color:var(--text-0);font-size:0.75rem;">
@@ -13673,12 +13678,187 @@ async function loadPayments() {
         }
     }
     
+    // ── Vision Recognition Integration ──
+    // Sends the current photo to /api/vision/identify or /api/vision/warranty-card
+    // and renders the result in the vision-result-panel. On success, offers to
+    // auto-fill the metadata fields (model, dial, bracelet, condition, card_date).
+
+    const VISION_API_BASE = '/api/vision';
+
+    async function _getEditorImageBlob() {
+        // Get the original (unredacted) image as a blob from the canvas.
+        if (!editorImage) throw new Error('No image loaded');
+        const c = document.createElement('canvas');
+        c.width = editorImage.naturalWidth;
+        c.height = editorImage.naturalHeight;
+        c.getContext('2d').drawImage(editorImage, 0, 0);
+        return new Promise(resolve => c.toBlob(resolve, 'image/jpeg', 0.90));
+    }
+
+    function _visionPanel() { return document.getElementById('vision-result-panel'); }
+
+    function _showVisionLoading(msg) {
+        const p = _visionPanel();
+        p.style.display = 'block';
+        p.innerHTML = `<div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:14px;height:14px;border:2px solid #0af;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+            <span style="color:#0af;">${msg}</span>
+        </div>`;
+    }
+
+    async function visionIdentifyWatch() {
+        if (!editorWatchId || !editorImage) return;
+        _showVisionLoading('Identifying watch...');
+        try {
+            const blob = await _getEditorImageBlob();
+            const fd = new FormData();
+            fd.append('photo', blob, 'watch.jpg');
+            const r = await fetch(VISION_API_BASE + '/identify', { method: 'POST', body: fd });
+            const d = await r.json();
+            if (!d.success) throw new Error(d.error || 'Identification failed');
+            _renderIdentifyResult(d.result, d.elapsed_ms);
+        } catch (e) {
+            _visionPanel().innerHTML = `<div style="color:var(--red);">Identification failed: ${e.message}</div>
+                <div style="font-size:0.6rem;color:var(--text-3);margin-top:4px;">Make sure the recognition server is running: <code>python3 scripts/watch_recognition_server.py</code></div>`;
+        }
+    }
+
+    async function visionReadCard() {
+        if (!editorWatchId || !editorImage) return;
+        _showVisionLoading('Reading warranty card...');
+        try {
+            const blob = await _getEditorImageBlob();
+            const fd = new FormData();
+            fd.append('photo', blob, 'card.jpg');
+            const r = await fetch(VISION_API_BASE + '/warranty-card', { method: 'POST', body: fd });
+            const d = await r.json();
+            if (!d.success) throw new Error(d.error || 'Card reading failed');
+            _renderCardResult(d.result, d.elapsed_ms);
+        } catch (e) {
+            _visionPanel().innerHTML = `<div style="color:var(--red);">Card reading failed: ${e.message}</div>
+                <div style="font-size:0.6rem;color:var(--text-3);margin-top:4px;">Make sure the recognition server is running: <code>python3 scripts/watch_recognition_server.py</code></div>`;
+        }
+    }
+
+    function _renderIdentifyResult(r, elapsed) {
+        const p = _visionPanel();
+        const conf = r.confidence || 0;
+        const confColor = conf >= 0.8 ? 'var(--green)' : conf >= 0.5 ? 'var(--orange)' : 'var(--red)';
+        const confLabel = conf >= 0.8 ? 'HIGH' : conf >= 0.5 ? 'MEDIUM' : 'LOW';
+        const price = r.market_price_b25 ? '$' + r.market_price_b25.toLocaleString() : '—';
+        const range = (r.market_price_low && r.market_price_high)
+            ? '$' + r.market_price_low.toLocaleString() + ' – $' + r.market_price_high.toLocaleString() : '';
+        const premium = r.dial_premium ? ` <span style="color:var(--accent);font-size:0.65rem;">(${r.dial_premium} dial premium)</span>` : '';
+
+        let altsHtml = '';
+        if (r.alternates && r.alternates.length > 0) {
+            altsHtml = '<div style="margin-top:6px;font-size:0.65rem;color:var(--text-2);">Also possible: ' +
+                r.alternates.map(a => `<span style="color:var(--accent);cursor:pointer;" onclick="visionApplyFields({reference:'${a.ref}',model:'${a.model||''}'})"> ${a.ref}</span>`).join(', ') + '</div>';
+        }
+
+        p.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <div style="font-weight:700;color:#0af;font-size:0.72rem;">WATCH IDENTIFIED</div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <span style="font-size:0.6rem;color:var(--text-3);">${elapsed}ms</span>
+                    <span style="font-size:0.65rem;font-weight:700;color:${confColor};padding:2px 6px;border:1px solid ${confColor};border-radius:4px;">${confLabel} ${(conf*100).toFixed(0)}%</span>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:0.72rem;">
+                <div><span style="color:var(--text-2);">Ref:</span> <strong>${r.reference || '?'}</strong></div>
+                <div><span style="color:var(--text-2);">Brand:</span> ${r.brand || '?'}</div>
+                <div><span style="color:var(--text-2);">Model:</span> ${r.model || '?'}</div>
+                <div><span style="color:var(--text-2);">Dial:</span> ${r.dial || '?'}</div>
+                <div><span style="color:var(--text-2);">Bracelet:</span> ${r.bracelet || '?'}</div>
+                <div><span style="color:var(--text-2);">Bezel:</span> ${r.bezel || '?'}</div>
+                <div><span style="color:var(--text-2);">Condition:</span> ${r.condition || '?'}</div>
+                <div><span style="color:var(--text-2);">Market:</span> <strong style="color:var(--accent);">${price}</strong>${premium}</div>
+            </div>
+            ${range ? `<div style="margin-top:4px;font-size:0.65rem;color:var(--text-2);">Range: ${range} · ${r.market_listings || 0} listings</div>` : ''}
+            ${r.reasoning ? `<div style="margin-top:4px;font-size:0.62rem;color:var(--text-3);font-style:italic;">${r.reasoning}</div>` : ''}
+            ${altsHtml}
+            <div style="margin-top:8px;display:flex;gap:6px;">
+                <button class="btn" onclick="visionApplyFields(${JSON.stringify({reference:r.reference,model:r.model,dial:r.dial,bracelet:r.bracelet,condition:r.condition}).replace(/"/g,'&quot;')})"
+                    style="padding:3px 10px;font-size:0.65rem;background:rgba(0,150,255,0.12);color:#0af;border-color:rgba(0,150,255,0.3);">
+                    Apply to Fields
+                </button>
+                <button class="btn" onclick="_visionPanel().style.display='none'"
+                    style="padding:3px 10px;font-size:0.65rem;">Dismiss</button>
+            </div>`;
+    }
+
+    function _renderCardResult(c, elapsed) {
+        const p = _visionPanel();
+        const conf = c.confidence || 0;
+        const confColor = conf >= 0.8 ? 'var(--green)' : conf >= 0.5 ? 'var(--orange)' : 'var(--red)';
+        const refValid = c.reference_valid ? '<span style="color:var(--green);font-size:0.6rem;"> IN DB</span>' : '<span style="color:var(--red);font-size:0.6rem;"> NOT IN DB</span>';
+        const serialValid = c.serial_format_valid ? '<span style="color:var(--green);font-size:0.6rem;"> OK</span>' : '<span style="color:var(--orange);font-size:0.6rem;"> FORMAT?</span>';
+        const price = c.market_price_b25 ? ' · Market: $' + c.market_price_b25.toLocaleString() : '';
+
+        p.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <div style="font-weight:700;color:var(--green);font-size:0.72rem;">WARRANTY CARD READ</div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <span style="font-size:0.6rem;color:var(--text-3);">${elapsed}ms</span>
+                    <span style="font-size:0.65rem;font-weight:700;color:${confColor};padding:2px 6px;border:1px solid ${confColor};border-radius:4px;">${(conf*100).toFixed(0)}%</span>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:0.72rem;">
+                <div><span style="color:var(--text-2);">Ref:</span> <strong>${c.reference || '?'}</strong> ${refValid}</div>
+                <div><span style="color:var(--text-2);">Serial:</span> <strong style="font-family:var(--mono);">${c.serial_number || '?'}</strong> ${serialValid}</div>
+                <div><span style="color:var(--text-2);">Date:</span> <strong>${c.purchase_date || '?'}</strong></div>
+                <div><span style="color:var(--text-2);">Dealer:</span> ${c.dealer || '?'}</div>
+                <div><span style="color:var(--text-2);">Brand:</span> ${c.brand || '?'}</div>
+                <div><span style="color:var(--text-2);">Model:</span> ${c.model || '?'}${price}</div>
+            </div>
+            ${c.reasoning ? `<div style="margin-top:4px;font-size:0.62rem;color:var(--text-3);font-style:italic;">${c.reasoning}</div>` : ''}
+            <div style="margin-top:8px;display:flex;gap:6px;">
+                <button class="btn" onclick="visionApplyFields(${JSON.stringify({reference:c.reference,model:c.model||c.brand,card_date:c.purchase_date,condition:'BNIB'}).replace(/"/g,'&quot;')})"
+                    style="padding:3px 10px;font-size:0.65rem;background:rgba(0,230,118,0.12);color:var(--green);border-color:rgba(0,230,118,0.3);">
+                    Apply to Fields
+                </button>
+                <button class="btn" onclick="_visionPanel().style.display='none'"
+                    style="padding:3px 10px;font-size:0.65rem;">Dismiss</button>
+            </div>`;
+    }
+
+    function visionApplyFields(data) {
+        // Auto-fill the metadata editor fields from the recognition result.
+        // Only fills fields that have a value in the recognition result.
+        const fieldMap = {
+            reference: 'model', // ref goes into model field (that's what the editor calls it)
+            model: 'model',
+            dial: 'dial',
+            bracelet: 'bracelet',
+            condition: 'condition',
+            card_date: 'card_date',
+        };
+        let filled = 0;
+        for (const [key, fieldName] of Object.entries(fieldMap)) {
+            if (!data[key]) continue;
+            const input = document.querySelector(`[data-field="${fieldName}"]`);
+            if (input) {
+                input.value = data[key];
+                markFieldDirty(input);
+                filled++;
+            }
+        }
+        // Open the edit info panel so the user can see what was filled
+        const details = document.getElementById('modal-details-wrap');
+        if (details) details.open = true;
+
+        if (filled > 0) {
+            const s = document.getElementById('editor-status');
+            if (s) { s.textContent = ` ${filled} field${filled>1?'s':''} auto-filled`; s.style.color = '#0af'; s.style.display = 'inline'; }
+        }
+    }
+
     function confirmDeletePhoto() {
         const watch = photoLibraryData.find(w => w.watch_id === editorWatchId);
         if (!watch) return;
-        
+
         if (!confirm(`Delete this photo?\n\n${watch.model} ${watch.dial} ${watch.bracelet}\n\nThis cannot be undone.`)) return;
-        
+
         deletePhoto(editorWatchId);
     }
     
