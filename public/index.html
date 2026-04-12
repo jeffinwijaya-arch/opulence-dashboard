@@ -5039,6 +5039,13 @@ async function loadData() {
         if (!Array.isArray(DATA.deals)) DATA.deals = [];
         if (!Array.isArray(DATA.arbitrage)) DATA.arbitrage = [];
         if (!Array.isArray(DATA.topRefs)) DATA.topRefs = [];
+
+        // Load portfolio for Capital Deployed on dashboard
+        try {
+            const pr = await fetch('/api/portfolio_insights');
+            if (pr.ok) DATA.portfolio = await pr.json();
+        } catch(e) { console.warn('Portfolio load failed:', e); }
+
         renderAll();
         checkStale();
         dismissSplash();
