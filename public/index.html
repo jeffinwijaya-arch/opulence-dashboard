@@ -553,14 +553,16 @@
             div[style*="display:flex"][style*="gap"] { flex-wrap:wrap !important; }
 
             /* Dashboard tables → card lists */
-            #dash-deals thead, #dash-arb thead, #dash-inventory thead { display:none; }
+            #dash-deals, #dash-arb, #dash-inventory { display:block !important; }
+            #dash-deals thead, #dash-arb thead, #dash-inventory thead { display:none !important; }
+            #dash-deals tbody, #dash-arb tbody, #dash-inventory tbody { display:block !important; }
 
             #dash-deals tbody tr, #dash-arb tbody tr {
-                display:flex; flex-wrap:wrap; align-items:baseline;
+                display:flex !important; flex-wrap:wrap; align-items:baseline;
                 padding:12px 14px; border-bottom:1px solid var(--border); gap:4px 8px;
             }
             #dash-deals tbody td, #dash-arb tbody td {
-                padding:0; border:none; white-space:nowrap;
+                display:block !important; padding:0; border:none; white-space:nowrap;
             }
             #dash-deals tbody td:first-child, #dash-arb tbody td:first-child {
                 font-weight:700; font-size:0.88rem; color:var(--accent);
@@ -572,11 +574,11 @@
 
             /* Inventory positions → 3-row card */
             #dash-inventory tbody tr {
-                display:grid; grid-template-columns:1fr auto;
+                display:grid !important; grid-template-columns:1fr auto;
                 grid-template-rows:auto auto auto;
                 gap:2px 12px; padding:14px 16px; border-bottom:1px solid var(--border);
             }
-            #dash-inventory tbody td { padding:0 !important; border:none !important; font-size:0.8rem; }
+            #dash-inventory tbody td { display:block !important; padding:0 !important; border:none !important; font-size:0.8rem; }
             #dash-inventory tbody td:nth-child(1) {
                 font-weight:700; color:var(--accent); font-size:0.88rem;
                 grid-column:1; grid-row:1;
