@@ -3285,6 +3285,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                             <option value="date">By Date</option>
                             <option value="condition">By Condition</option>
                         </select>
+                        <button class="btn" onclick="batchAutoRedact()" id="btn-batch-redact" style="padding:4px 12px;font-size:0.75rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">Batch Auto-Redact</button>
                     </div>
                 </div>
                 <div id="photo-library-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;">
@@ -13720,7 +13721,48 @@ async function loadPayments() {
         btn.disabled = false;
         btn.style.opacity = '1';
     }
-    
+
+    async function batchAutoRedact() {
+        const btn = $('#btn-batch-redact');
+        const candidates = photoLibraryData.filter(w => w.serial && !w.redacted && !w.redacted_at);
+        if (candidates.length === 0) {
+            btn.textContent = 'No unredacted photos found';
+            setTimeout(() => { btn.textContent = 'Batch Auto-Redact'; }, 3000);
+            return;
+        }
+        if (!confirm(`Run auto-redact on ${candidates.length} photo(s) with serials?`)) return;
+        btn.disabled = true;
+        let successes = 0;
+        let failures = 0;
+        for (let i = 0; i < candidates.length; i++) {
+            const watch = candidates[i];
+            btn.textContent = `Processing ${i + 1}/${candidates.length}...`;
+            try {
+                const resp = await fetch(`/api/watch-photos/${watch.watch_id}/auto-redact`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ serial: watch.serial })
+                });
+                if (!resp.ok) throw new Error(await resp.text());
+                const result = await resp.json();
+                if (result.redaction_count > 0) {
+                    successes++;
+                } else {
+                    failures++;
+                }
+            } catch(e) {
+                console.error(`Batch redact failed for ${watch.watch_id}:`, e);
+                failures++;
+            }
+        }
+        btn.textContent = `Done: ${successes} redacted, ${failures} failed`;
+        setTimeout(() => {
+            btn.textContent = 'Batch Auto-Redact';
+            btn.disabled = false;
+        }, 3000);
+        loadPhotoLibrary();
+    }
+
     function undoRedaction() {
         editorSelectedIdx = -1;
         if (editorRedactions.length > 0) {
