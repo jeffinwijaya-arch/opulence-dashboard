@@ -1572,8 +1572,8 @@
             #photo-modal > div, #posting-redact-modal > div {
                 max-width:100%!important; width:100%!important; border-radius:0!important; margin:0!important;
             }
-            #photo-modal > div { overflow:hidden!important; }
-            #photo-modal > div { overflow:hidden!important; }
+
+
         }
 
         /* 5. Filter bars — stack vertically on mobile */
@@ -3295,56 +3295,50 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
 
             <!-- Photo Modal -->
             <!-- Photo Editor Modal -->
-            <div id="photo-modal" role="dialog" aria-label="Photo redaction editor" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.95);z-index:9999;overflow:auto;" onclick="if(event.target===this) { if(typeof closePhotoModal==='function') closePhotoModal(); }">
+            <div id="photo-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.95);z-index:9999;overflow:auto;" onclick="if(event.target===this) closePhotoModal()">
                 <div style="max-width:900px;margin:auto;padding:8px;height:100%;display:flex;flex-direction:column;">
                     <!-- Header + status (compact) -->
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;color:white;flex-shrink:0;">
                         <h3 id="modal-title" style="margin:0;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%;"></h3>
                         <div style="display:flex;gap:6px;align-items:center;">
                             <span id="editor-status" style="font-size:0.65rem;color:var(--green);display:none;"> Saved</span>
-                            <button onclick="closePhotoModal()" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;line-height:1;">×</button>
+                            <button onclick="closePhotoModal()" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;line-height:1;">x</button>
                         </div>
                     </div>
                     <!-- Toolbar (single compact row) -->
-                    <div id="editor-toolbar" style="display:flex;gap:4px;margin-bottom:4px;align-items:center;flex-shrink:0;overflow-x:auto;flex-wrap:nowrap;">
-                        <button class="btn" onclick="setEditorTool('redact')" id="btn-redact" aria-label="Redact" style="padding:2px 8px;font-size:0.65rem;background:var(--red-dim);color:var(--red);border-color:var(--red);white-space:nowrap;">Redact</button>
-                        <button class="btn" onclick="setEditorTool('view')" id="btn-view" aria-label="View" style="padding:2px 8px;font-size:0.65rem;white-space:nowrap;">View</button>
-                        <button class="btn" onclick="autoRedactPhoto()" id="btn-auto-redact" aria-label="Auto-Detect" style="padding:2px 8px;font-size:0.65rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;white-space:nowrap;">Auto</button>
-                        <button class="btn" onclick="undoRedaction()" id="btn-editor-undo" aria-label="Undo" style="padding:2px 8px;font-size:0.65rem;white-space:nowrap;">Undo</button>
-                        <button class="btn" onclick="confirmClearRedactions()" aria-label="Clear" style="padding:2px 8px;font-size:0.65rem;white-space:nowrap;">X</button>
-                        <button class="btn" onclick="saveRedactedPhoto()" id="btn-editor-save" aria-label="Save" style="padding:2px 8px;font-size:0.65rem;background:var(--green-dim);color:var(--green);border-color:var(--green);white-space:nowrap;">Save</button>
+                    <div id="editor-toolbar" style="display:flex;gap:4px;margin-bottom:4px;flex-wrap:wrap;align-items:center;flex-shrink:0;">
+                        <button class="btn" onclick="setEditorTool('redact')" id="btn-redact" style="padding:2px 8px;font-size:0.65rem;background:var(--red-dim);color:var(--red);border-color:var(--red);">Redact</button>
+                        <button class="btn" onclick="setEditorTool('view')" id="btn-view" style="padding:2px 8px;font-size:0.65rem;">View</button>
+                        <button class="btn" onclick="autoRedactPhoto()" id="btn-auto-redact" style="padding:2px 8px;font-size:0.65rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">Auto</button>
+                        <button class="btn" onclick="undoRedaction()" id="btn-editor-undo" style="padding:2px 8px;font-size:0.65rem;">Undo</button>
+                        <button class="btn" onclick="clearRedactions()" style="padding:2px 8px;font-size:0.65rem;">X</button>
+                        <button class="btn" onclick="saveRedactedPhoto()" id="btn-editor-save" style="padding:2px 8px;font-size:0.65rem;background:var(--green-dim);color:var(--green);border-color:var(--green);">Save</button>
                         <div style="flex:1;"></div>
-                        <button class="btn" onclick="confirmDeletePhoto()" aria-label="Delete" style="padding:2px 8px;font-size:0.65rem;background:var(--red-dim);color:var(--red);border-color:var(--red);white-space:nowrap;">Del</button>
+                        <button class="btn" onclick="confirmDeletePhoto()" style="padding:2px 8px;font-size:0.65rem;background:var(--red-dim);color:var(--red);border-color:var(--red);">Del</button>
                     </div>
-                    <span id="editor-redact-count" style="display:none;"></span>
-                    <span id="editor-selection-badge" style="display:none;" onclick="editorDeleteSelected()"></span>
-                    <div id="editor-shortcut-bar" style="display:none;"></div>
-                    <div id="editor-history-panel" style="display:none;"><div id="editor-history-log"></div></div>
                     <!-- Canvas area (takes most space) -->
-                    <div id="editor-canvas-wrapper" style="flex:1;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;min-height:0;">
-                        <canvas id="editor-canvas" role="img" aria-label="Photo being edited" style="max-width:100%;max-height:100%;cursor:default;border:2px solid rgba(255,255,255,0.08);border-radius:6px;transition:border-color 0.2s,box-shadow 0.2s;"></canvas>
-                        <!-- Before/After comparison divider -->
-                        <div id="editor-compare-divider" style="display:none;position:absolute;top:0;height:100%;width:2px;background:white;cursor:ew-resize;z-index:10;pointer-events:auto;box-shadow:0 0 6px rgba(0,0,0,0.6);">
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:24px;height:24px;background:white;border-radius:50%;box-shadow:0 0 6px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;">
-                                <span style="color:#333;font-size:10px;font-weight:bold;user-select:none;">&#x21D4;</span>
-                            </div>
-                        </div>
-                        <div id="editor-compare-label-before" style="display:none;position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.5);color:rgba(255,255,255,0.7);padding:2px 8px;border-radius:3px;font-size:0.55rem;pointer-events:none;z-index:11;user-select:none;">Before</div>
-                        <div id="editor-compare-label-after" style="display:none;position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.5);color:rgba(255,255,255,0.7);padding:2px 8px;border-radius:3px;font-size:0.55rem;pointer-events:none;z-index:11;user-select:none;">After</div>
-                        <div id="redact-hint" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:var(--text-1);padding:6px 14px;border-radius:6px;font-size:0.68rem;pointer-events:none;display:none;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:opacity 0.3s;">
-                            Draw rectangles to redact &middot; <span style="color:var(--text-2);">Ctrl+Z to undo</span>
-                        </div>
+                    <div style="flex:1;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;min-height:0;">
+                        <canvas id="editor-canvas" style="max-width:100%;max-height:100%;cursor:crosshair;border:1px solid rgba(255,255,255,0.1);border-radius:4px;"></canvas>
+                        <div id="redact-hint" style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:var(--text-1);padding:4px 10px;border-radius:4px;font-size:0.6rem;pointer-events:none;display:none;">Draw to redact</div>
                     </div>
-                    <div id="photo-editor-sr-announce" aria-live="polite" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0;"></div>
                     <!-- Details (collapsible on mobile) -->
                     <details id="modal-details-wrap" style="flex-shrink:0;margin-top:4px;">
-                        <summary style="color:var(--text-2);font-size:0.65rem;cursor:pointer;padding:4px 0;">Edit Info ▾</summary>
-                        <div id="modal-details" style="background:var(--bg-2);padding:8px;border-radius:var(--radius);color:var(--text-0);font-size:0.75rem;">
-                        </div>
+                        <summary style="color:var(--text-2);font-size:0.65rem;cursor:pointer;padding:4px 0;">Edit Info</summary>
+                        <div id="modal-details" style="background:var(--bg-2);padding:8px;border-radius:var(--radius);color:var(--text-0);font-size:0.75rem;"></div>
                     </details>
                 </div>
             </div>
             </div>
+            <!-- Hidden elements for JS compatibility -->
+            <span id="editor-redact-count" style="display:none;"></span>
+            <span id="editor-selection-badge" style="display:none;" onclick="editorDeleteSelected()"></span>
+            <div id="editor-shortcut-bar" style="display:none;"></div>
+            <div id="editor-history-panel" style="display:none;"><div id="editor-history-log"></div></div>
+            <div id="editor-compare-divider" style="display:none;"></div>
+            <div id="editor-compare-label-before" style="display:none;"></div>
+            <div id="editor-compare-label-after" style="display:none;"></div>
+            <div id="photo-editor-sr-announce" style="display:none;"></div>
+            <div id="editor-canvas-wrapper" style="display:none;"></div>
 
             <!-- Documentation Panel -->
             <!-- Documentation panel removed — merged into Photo Library -->
