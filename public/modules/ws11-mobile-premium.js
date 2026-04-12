@@ -740,6 +740,149 @@
 
     /* === 44. Status Bar Theme Color === */
     /* Handled via JS — meta[name="theme-color"] updated on toggle */
+
+    /* === 45. Photos Gallery Mobile === */
+    @media(max-width:900px){
+      #photo-library-grid{
+        grid-template-columns:repeat(auto-fill,minmax(105px,1fr)) !important;
+        gap:8px !important;
+      }
+      #page-photos .card > div:first-child{
+        flex-direction:column !important;gap:8px !important;
+        align-items:flex-start !important;
+      }
+      #page-photos #sort-order{width:100% !important}
+      /* Photo modal → full screen */
+      #photo-modal > div{
+        max-width:100% !important;padding:4px !important;
+      }
+      #editor-toolbar{
+        overflow-x:auto;flex-wrap:nowrap !important;
+        -webkit-overflow-scrolling:touch;gap:6px !important;
+        padding:4px 0;
+      }
+      #editor-toolbar .btn{
+        flex-shrink:0;min-height:36px;padding:6px 12px !important;
+        font-size:0.72rem !important;border-radius:8px;
+      }
+      #photo-modal canvas{
+        max-height:60vh;width:100% !important;
+        object-fit:contain;border-radius:8px;
+      }
+    }
+    @media(max-width:380px){
+      #photo-library-grid{
+        grid-template-columns:repeat(3,1fr) !important;gap:4px !important;
+      }
+    }
+
+    /* === 46. Invoices Mobile === */
+    @media(max-width:900px){
+      #inv-summary{
+        grid-template-columns:1fr 1fr !important;gap:6px !important;
+      }
+      /* Invoice modal → full sheet */
+      #inv-modal > div{
+        position:fixed !important;bottom:0 !important;left:0 !important;right:0 !important;
+        top:auto !important;max-width:100% !important;margin:0 !important;
+        border-radius:20px 20px 0 0 !important;max-height:92vh !important;
+        overflow-y:auto !important;-webkit-overflow-scrolling:touch;
+        padding:20px 16px calc(20px + env(safe-area-inset-bottom)) !important;
+      }
+      #inv-modal{align-items:flex-end !important;display:flex !important}
+      /* Invoice form grids → stack */
+      #inv-modal div[style*="grid-template-columns"]{
+        grid-template-columns:1fr !important;
+      }
+      /* New Invoice button → full width */
+      #page-invoices .btn[onclick*="showNewInvoice"]{
+        width:100%;margin-top:4px;
+      }
+      /* Invoice list cards */
+      #inv-list-container .tbl{font-size:0.72rem}
+      #inv-list-container .tbl .hide-mobile{display:none}
+    }
+    @media(max-width:380px){
+      #inv-summary{grid-template-columns:1fr !important}
+    }
+
+    /* === 47. Mission Control Mobile === */
+    @media(max-width:900px){
+      .kanban-board{
+        grid-template-columns:1fr !important;gap:12px !important;
+      }
+      .kanban-col{padding:12px}
+      .kanban-items{min-height:auto !important}
+      .health-grid{
+        grid-template-columns:1fr 1fr !important;gap:10px !important;
+      }
+      .health-value{font-size:1.4rem}
+      .mc-tab-nav{
+        overflow-x:auto;-webkit-overflow-scrolling:touch;
+        flex-wrap:nowrap;scrollbar-width:none;
+      }
+      .mc-tab-nav::-webkit-scrollbar{display:none}
+      .mc-tab-btn{
+        flex-shrink:0;white-space:nowrap;
+        padding:10px 14px;font-size:0.65rem;min-height:40px;
+      }
+      .schedule-card{
+        flex-direction:column;align-items:flex-start;gap:10px;
+      }
+      .backlog-card{padding:12px}
+      .backlog-title{font-size:0.82rem}
+      .error-card{padding:12px}
+    }
+    @media(max-width:380px){
+      .health-grid{grid-template-columns:1fr !important}
+    }
+
+    /* === 48. Jam/Chat Page Mobile === */
+    @media(max-width:900px){
+      .chat-container,
+      #page-jam .card{
+        border-radius:0 !important;border-left:none !important;border-right:none !important;
+        margin-left:-10px !important;margin-right:-10px !important;
+        width:calc(100% + 20px) !important;
+      }
+      .chat-messages{
+        max-height:calc(100vh - 220px) !important;
+        -webkit-overflow-scrolling:touch;
+      }
+      .chat-input-area textarea{
+        font-size:16px !important;min-height:44px;border-radius:12px;
+      }
+      .chat-input-area button{
+        min-height:44px;min-width:44px;border-radius:12px;
+      }
+    }
+
+    /* === 49. CRM Page Mobile === */
+    @media(max-width:900px){
+      #page-ad-crm div[style*="grid-template-columns"]{
+        grid-template-columns:1fr !important;
+      }
+      #page-ad-crm .tbl .hide-mobile{display:none}
+    }
+
+    /* === 50. Rubber-band Overscroll === */
+    @media(max-width:900px){
+      .main{
+        overscroll-behavior-y:contain;
+      }
+    }
+
+    /* === 51. Selection Highlight === */
+    @media(max-width:900px){
+      ::selection{background:rgba(212,175,55,0.25)}
+      html.light ::selection{background:rgba(160,120,32,0.25)}
+    }
+
+    /* === 52. Print Hide Mobile Chrome === */
+    @media print{
+      .mobile-nav,.ws11-theme-fab,.ws11-scroll-progress,
+      .ws11-swipe-edge,.footer{display:none !important}
+    }
     `; }
 
     // ── JS Behavior Layer ──
@@ -1173,7 +1316,11 @@
             closeCtxMenu();
             MK.Haptic?.success();
             if (window.MK?.Toast) MK.Toast.show('Saved to watchlist', { type: 'success' });
-          }}
+          }},
+          ...(navigator.share ? [{ label: 'Share deal', icon: 'M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13', action: () => {
+            closeCtxMenu();
+            if (window.MK?.Share) MK.Share.deal(ref.trim(), price, '');
+          }}] : [])
         ].map(a =>
           `<button class="ws11-ctx-action" role="menuitem">` +
           `<svg class="ws11-ctx-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="${a.icon}"/></svg>` +
@@ -1189,7 +1336,8 @@
             closeCtxMenu();
             if (window.MK?.Toast) MK.Toast.show('Copied: ' + ref.trim(), { type: 'success' });
           },
-          () => { closeCtxMenu(); MK.Haptic?.success(); if (window.MK?.Toast) MK.Toast.show('Saved to watchlist', { type: 'success' }); }
+          () => { closeCtxMenu(); MK.Haptic?.success(); if (window.MK?.Toast) MK.Toast.show('Saved to watchlist', { type: 'success' }); },
+          ...(navigator.share ? [() => { closeCtxMenu(); if (window.MK?.Share) MK.Share.deal(ref.trim(), price, ''); }] : [])
         ];
         actionBtns.forEach((btn, i) => btn.addEventListener('click', actionData[i]));
 
@@ -1761,6 +1909,70 @@
       }
     }
 
+    // ── Web Share API for deals ──
+    function ws11InitShare() {
+      if (window.innerWidth >= 900) return;
+      if (!navigator.share) return; // Not supported
+
+      // Expose MK.Share for use in context menus
+      window.MK = window.MK || {};
+      MK.Share = {
+        async deal(ref, price, discount) {
+          try {
+            await navigator.share({
+              title: `MK Opulence — ${ref}`,
+              text: `${ref} at ${price} (${discount} below market)`,
+              url: window.location.origin + '?p=deals'
+            });
+            MK.Haptic?.success();
+          } catch (e) {
+            if (e.name !== 'AbortError') console.warn('[MK] Share failed:', e);
+          }
+        },
+        async text(title, text) {
+          try {
+            await navigator.share({ title, text });
+            MK.Haptic?.success();
+          } catch (e) {
+            if (e.name !== 'AbortError') console.warn('[MK] Share failed:', e);
+          }
+        }
+      };
+    }
+
+    // ── Orientation change handler ──
+    function ws11InitOrientation() {
+      if (window.innerWidth >= 900) return;
+
+      // Re-check mobile state on orientation change
+      window.addEventListener('orientationchange', () => {
+        setTimeout(() => {
+          // Force layout recalculation after orientation settles
+          document.body.style.display = 'none';
+          document.body.offsetHeight; // Force reflow
+          document.body.style.display = '';
+        }, 100);
+      });
+
+      // Also handle resize for fold/unfold devices
+      let lastWidth = window.innerWidth;
+      window.addEventListener('resize', () => {
+        const newWidth = window.innerWidth;
+        if (Math.abs(newWidth - lastWidth) > 100) {
+          // Significant resize (fold/unfold, orientation)
+          lastWidth = newWidth;
+          // Re-sync any width-dependent features
+          document.querySelectorAll('.tbl-wrap').forEach(wrap => {
+            if (wrap.scrollWidth <= wrap.clientWidth) {
+              wrap.classList.add('ws11-scrolled-end');
+            } else {
+              wrap.classList.remove('ws11-scrolled-end');
+            }
+          });
+        }
+      }, { passive: true });
+    }
+
     function ws11Cleanup() {
       ['ws11-mobile-premium-styles', 'ws11-toast-container', 'ws11-ptr'].forEach(id => {
         const el = document.getElementById(id);
@@ -1818,6 +2030,8 @@
             ws11InitScrollProgress();
             ws11InitThemeColorSync();
             ws11InitScrollMemory();
+            ws11InitShare();
+            ws11InitOrientation();
 
             const elapsed = (performance.now() - t0).toFixed(1);
             console.log(`[MK] ${MOD_ID}: Premium mobile layer active (${elapsed}ms) — ` +
