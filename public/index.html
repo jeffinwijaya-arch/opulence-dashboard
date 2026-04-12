@@ -3317,9 +3317,9 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                     </div>
                     <!-- Canvas area (takes most space) -->
                     <div style="flex:1;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;min-height:0;">
-                        <canvas id="editor-canvas" style="max-width:100%;max-height:100%;cursor:crosshair;border:1px solid rgba(255,255,255,0.1);border-radius:4px;"></canvas>
-                        <div id="redact-hint" style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:var(--text-1);padding:4px 10px;border-radius:4px;font-size:0.6rem;pointer-events:none;display:none;">
-                            Draw to redact
+                        <canvas id="editor-canvas" style="max-width:100%;max-height:100%;cursor:default;border:2px solid rgba(255,255,255,0.08);border-radius:6px;transition:border-color 0.2s,box-shadow 0.2s;"></canvas>
+                        <div id="redact-hint" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:var(--text-1);padding:6px 14px;border-radius:6px;font-size:0.68rem;pointer-events:none;display:none;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:opacity 0.3s;">
+                            Draw rectangles to redact &middot; <span style="color:var(--text-2);">Ctrl+Z to undo</span>
                         </div>
                     </div>
                     <!-- Details (collapsible on mobile) -->
@@ -5607,31 +5607,31 @@ function openPostingRedactEditor(file, row, desc) {
 
     const overlay = document.createElement('div');
     overlay.id = 'posting-redact-modal';
-    const canvasH = window.innerHeight - 50;
-    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;height:100dvh;background:#000;z-index:99999;overflow:hidden;touch-action:none;display:flex;flex-direction:column;';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;height:100dvh;background:#000;z-index:99999;overflow:hidden;touch-action:none;display:flex;flex-direction:column;opacity:0;transition:opacity 0.15s ease-out;';
     document.body.style.overflow = 'hidden';
+    const isMobile = window.innerWidth <= 768;
     overlay.innerHTML = `
-        <div id="redact-toolbar" style="display:flex;align-items:center;gap:4px;padding:env(safe-area-inset-top,0) 10px 6px 10px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.1);">
-            <button onclick="postingRedactUndo()" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,.85);font-size:13px;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;min-width:44px;min-height:36px;">Undo</button>
-            <button onclick="postingRedactRotate()" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,.85);font-size:13px;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;min-width:44px;min-height:36px;">Rotate</button>
-            <button onclick="postingAutoRedact()" id="posting-auto-btn" style="background:rgba(138,43,226,0.25);color:#d4aaff;font-size:13px;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;min-width:44px;min-height:36px;">Auto</button>
-            <span id="posting-redact-count" style="font-size:11px;color:rgba(255,255,255,0.5);padding:0 4px;display:none;"></span>
+        ${!isMobile ? '' : '<div style="flex:1;display:flex;overflow:hidden;position:relative;" id="redact-canvas-wrapper"><canvas id="posting-redact-canvas" style="cursor:crosshair;position:absolute;transform-origin:0 0;"></canvas><div id="posting-redact-hint" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.75);color:rgba(255,255,255,0.8);padding:14px 24px;border-radius:12px;font-size:14px;pointer-events:none;text-align:center;transition:opacity 0.4s;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);line-height:1.6;">Draw rectangles to redact<br><span style="font-size:11px;color:rgba(255,255,255,0.4);">Pinch to zoom &middot; two fingers to pan</span></div></div>'}
+        <div id="redact-toolbar" style="display:flex;align-items:center;gap:6px;padding:${isMobile ? '8px 10px env(safe-area-inset-bottom, 8px) 10px' : 'env(safe-area-inset-top,0) 10px 8px 10px'};flex-shrink:0;${isMobile ? 'border-top' : 'border-bottom'}:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);">
+            <button onclick="postingRedactUndo()" id="posting-undo-btn" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,.85);font-size:13px;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;min-width:44px;min-height:40px;transition:background 0.15s,opacity 0.15s;">Undo</button>
+            <button onclick="postingRedactRotate()" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,.85);font-size:13px;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;min-width:44px;min-height:40px;transition:background 0.15s;">Rotate</button>
+            <button onclick="postingAutoRedact()" id="posting-auto-btn" style="background:rgba(138,43,226,0.25);color:#d4aaff;font-size:13px;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;min-width:44px;min-height:40px;transition:background 0.15s,opacity 0.15s;">Auto</button>
+            <span id="posting-redact-count" style="font-size:11px;color:rgba(255,255,255,0.45);padding:0 2px;display:none;font-variant-numeric:tabular-nums;"></span>
             <div style="flex:1;"></div>
-            <div style="display:inline-flex;gap:2px;background:rgba(255,255,255,0.05);border-radius:6px;padding:2px;">
-                <button onclick="redactZoomOut()" style="background:none;color:rgba(255,255,255,.6);font-size:18px;padding:6px 10px;border:none;border-radius:4px;cursor:pointer;min-width:36px;min-height:36px;">-</button>
-                <span id="redact-zoom-label" style="font-size:11px;color:rgba(255,255,255,.4);align-self:center;min-width:28px;text-align:center;">1.0x</span>
-                <button onclick="redactZoomIn()" style="background:none;color:rgba(255,255,255,.6);font-size:18px;padding:6px 10px;border:none;border-radius:4px;cursor:pointer;min-width:36px;min-height:36px;">+</button>
+            <div style="display:inline-flex;gap:2px;background:rgba(255,255,255,0.06);border-radius:8px;padding:2px;">
+                <button onclick="redactZoomOut()" style="background:none;color:rgba(255,255,255,.55);font-size:18px;padding:6px 10px;border:none;border-radius:6px;cursor:pointer;min-width:38px;min-height:38px;transition:background 0.15s;" onpointerdown="this.style.background='rgba(255,255,255,0.1)'" onpointerup="this.style.background='none'" onpointerleave="this.style.background='none'">-</button>
+                <span id="redact-zoom-label" style="font-size:11px;color:rgba(255,255,255,.35);align-self:center;min-width:32px;text-align:center;font-variant-numeric:tabular-nums;">1.0x</span>
+                <button onclick="redactZoomIn()" style="background:none;color:rgba(255,255,255,.55);font-size:18px;padding:6px 10px;border:none;border-radius:6px;cursor:pointer;min-width:38px;min-height:38px;transition:background 0.15s;" onpointerdown="this.style.background='rgba(255,255,255,0.1)'" onpointerup="this.style.background='none'" onpointerleave="this.style.background='none'">+</button>
             </div>
             <div style="flex:1;"></div>
-            <button onclick="postingRedactSkip()" style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,.5);font-size:13px;padding:8px 14px;border:none;border-radius:6px;cursor:pointer;min-height:36px;">Skip</button>
-            <button onclick="postingRedactSave()" style="background:rgba(74,222,128,0.2);color:#4ade80;font-size:14px;padding:8px 18px;border:1px solid rgba(74,222,128,0.3);border-radius:6px;cursor:pointer;font-weight:600;min-height:36px;">Done</button>
+            <button onclick="postingRedactSkip()" style="background:rgba(255,255,255,0.06);color:rgba(255,255,255,.4);font-size:13px;padding:8px 14px;border:1px solid rgba(255,255,255,0.08);border-radius:6px;cursor:pointer;min-height:40px;transition:background 0.15s;">Skip</button>
+            <button onclick="postingRedactSave()" id="posting-done-btn" style="background:rgba(74,222,128,0.2);color:#4ade80;font-size:14px;padding:8px 20px;border:1px solid rgba(74,222,128,0.3);border-radius:8px;cursor:pointer;font-weight:600;min-height:40px;transition:background 0.15s,opacity 0.15s;">Done</button>
         </div>
-        <div id="redact-canvas-wrapper" style="flex:1;overflow:hidden;position:relative;">
-            <canvas id="posting-redact-canvas" style="cursor:crosshair;position:absolute;transform-origin:0 0;"></canvas>
-            <div id="posting-redact-hint" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.7);color:rgba(255,255,255,0.7);padding:10px 18px;border-radius:8px;font-size:13px;pointer-events:none;text-align:center;transition:opacity 0.3s;">Draw rectangles to redact<br><span style="font-size:11px;color:rgba(255,255,255,0.4);">Pinch to zoom \u00b7 two fingers to pan</span></div>
-        </div>
+        ${isMobile ? '' : '<div id="redact-canvas-wrapper" style="flex:1;overflow:hidden;position:relative;"><canvas id="posting-redact-canvas" style="cursor:crosshair;position:absolute;transform-origin:0 0;"></canvas><div id="posting-redact-hint" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.75);color:rgba(255,255,255,0.8);padding:14px 24px;border-radius:12px;font-size:14px;pointer-events:none;text-align:center;transition:opacity 0.4s;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);line-height:1.6;">Draw rectangles to redact<br><span style="font-size:11px;color:rgba(255,255,255,0.4);">Pinch to zoom &middot; two fingers to pan</span></div></div>'}
     `;
     document.body.appendChild(overlay);
+    // Fade in
+    requestAnimationFrame(() => { requestAnimationFrame(() => { overlay.style.opacity = '1'; }); });
 
     const canvas = document.getElementById('posting-redact-canvas');
     const ctx = canvas.getContext('2d');
@@ -5678,12 +5678,7 @@ function openPostingRedactEditor(file, row, desc) {
         if (!_postingRedactDrawing) return;
         const p = _redactCanvasCoord(e.offsetX, e.offsetY);
         postingRedactRender();
-        const c = document.getElementById('posting-redact-canvas').getContext('2d');
-        c.fillStyle = 'rgba(0,0,0,0.7)';
-        c.fillRect(_postingRedactStart.x, _postingRedactStart.y, p.x - _postingRedactStart.x, p.y - _postingRedactStart.y);
-        c.strokeStyle = 'rgba(255,0,0,0.5)';
-        c.lineWidth = 1;
-        c.strokeRect(_postingRedactStart.x, _postingRedactStart.y, p.x - _postingRedactStart.x, p.y - _postingRedactStart.y);
+        _drawLiveRedactRect(document.getElementById('posting-redact-canvas').getContext('2d'), _postingRedactStart, p);
     };
     canvas.onmouseup = function(e) {
         if (!_postingRedactDrawing) return;
@@ -5734,12 +5729,7 @@ function openPostingRedactEditor(file, row, desc) {
         } else if (e.touches.length === 1 && _postingRedactDrawing) {
             const m = _redactTouchCoord(e, canvas);
             postingRedactRender();
-            const c = canvas.getContext('2d');
-            c.fillStyle = 'rgba(0,0,0,0.7)';
-            c.fillRect(_postingRedactStart.x, _postingRedactStart.y, m.x - _postingRedactStart.x, m.y - _postingRedactStart.y);
-            c.strokeStyle = 'rgba(255,0,0,0.5)';
-            c.lineWidth = 1;
-            c.strokeRect(_postingRedactStart.x, _postingRedactStart.y, m.x - _postingRedactStart.x, m.y - _postingRedactStart.y);
+            _drawLiveRedactRect(canvas.getContext('2d'), _postingRedactStart, m);
         }
     };
     canvas.ontouchend = function(e) {
@@ -5770,6 +5760,25 @@ function openPostingRedactEditor(file, row, desc) {
         setTimeout(_redactRefit, 150);
     };
     window.addEventListener('resize', window._redactResizeHandler);
+
+    // Keyboard shortcuts: Ctrl+Z undo, Escape close, +/- zoom
+    window._redactKeyHandler = function(e) {
+        if (!document.getElementById('posting-redact-modal')) return;
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); postingRedactUndo(); }
+        else if (e.key === 'Escape') { e.preventDefault(); postingRedactSkip(); }
+        else if (e.key === '=' || e.key === '+') { e.preventDefault(); redactZoomIn(); }
+        else if (e.key === '-') { e.preventDefault(); redactZoomOut(); }
+    };
+    window.addEventListener('keydown', window._redactKeyHandler);
+
+    // Double-tap to zoom (mobile)
+    let _redactLastTap = 0;
+    canvas.addEventListener('dblclick', function(e) {
+        e.preventDefault();
+        if (_redactZoom > 1) { _redactZoom = 1; _redactPanX = 0; _redactPanY = 0; }
+        else { _redactZoom = 3; }
+        _redactClampPan(); _redactApplyTransform();
+    });
 }
 
 function _pinchDist(touches) {
@@ -5854,14 +5863,86 @@ function redactZoomOut() {
     _redactApplyTransform();
 }
 
+function _drawLiveRedactRect(ctx, start, end) {
+    // Semi-transparent fill + animated dashed red border
+    const x = Math.min(start.x, end.x), y = Math.min(start.y, end.y);
+    const w = Math.abs(end.x - start.x), h = Math.abs(end.y - start.y);
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(x, y, w, h);
+    ctx.setLineDash([6, 4]);
+    ctx.lineDashOffset = -(Date.now() / 60 % 20);
+    ctx.strokeStyle = 'rgba(239,68,68,0.8)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+    ctx.setLineDash([]);
+    // Dimension label
+    if (w > 30 && h > 20) {
+        const label = Math.round(w) + 'x' + Math.round(h);
+        ctx.font = '10px Inter,system-ui,sans-serif';
+        const tw = ctx.measureText(label).width;
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(x + w/2 - tw/2 - 4, y + h/2 - 7, tw + 8, 14);
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.fillText(label, x + w/2 - tw/2, y + h/2 + 4);
+    }
+}
+
 function _updatePostingRedactCount() {
     const badge = document.getElementById('posting-redact-count');
-    if (!badge) return;
-    if (_postingRedactRects.length > 0) {
-        badge.style.display = 'inline';
-        badge.textContent = _postingRedactRects.length + ' area' + (_postingRedactRects.length > 1 ? 's' : '');
-    } else {
-        badge.style.display = 'none';
+    const undoBtn = document.getElementById('posting-undo-btn');
+    const n = _postingRedactRects.length;
+    if (badge) {
+        badge.style.display = n > 0 ? 'inline' : 'none';
+        badge.textContent = n + ' area' + (n > 1 ? 's' : '');
+    }
+    if (undoBtn) {
+        undoBtn.textContent = n > 0 ? 'Undo (' + n + ')' : 'Undo';
+        undoBtn.style.opacity = (n > 0 || (_postingRedactOrigImg && _postingRedactImg !== _postingRedactOrigImg)) ? '1' : '0.4';
+    }
+}
+
+function _drawRedactRects(ctx, rects, opts) {
+    // Draw redaction rectangles with crosshatch pattern + numbered labels
+    const showNumbers = opts && opts.showNumbers;
+    for (let i = 0; i < rects.length; i++) {
+        const r = rects[i];
+        // Solid black fill
+        ctx.fillStyle = '#000';
+        ctx.fillRect(r.x, r.y, r.w, r.h);
+        // Crosshatch pattern overlay
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(r.x, r.y, r.w, r.h);
+        ctx.clip();
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        const step = 8;
+        for (let d = -Math.max(r.w, r.h); d < Math.max(r.w, r.h); d += step) {
+            ctx.beginPath();
+            ctx.moveTo(r.x + d, r.y);
+            ctx.lineTo(r.x + d + r.h, r.y + r.h);
+            ctx.stroke();
+        }
+        ctx.restore();
+        // Red border
+        ctx.strokeStyle = 'rgba(239,68,68,0.6)';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+        // Number label (top-left corner)
+        if (showNumbers && rects.length > 1) {
+            const label = String(i + 1);
+            ctx.font = '600 10px Inter,system-ui,sans-serif';
+            const tw = ctx.measureText(label).width;
+            const pad = 3;
+            ctx.fillStyle = 'rgba(239,68,68,0.8)';
+            const lx = r.x + 2, ly = r.y + 2, lw = tw + pad * 2, lh = 14, lr = 3;
+            ctx.beginPath();
+            if (ctx.roundRect) { ctx.roundRect(lx, ly, lw, lh, lr); }
+            else { ctx.moveTo(lx+lr,ly); ctx.lineTo(lx+lw-lr,ly); ctx.arcTo(lx+lw,ly,lx+lw,ly+lr,lr); ctx.lineTo(lx+lw,ly+lh-lr); ctx.arcTo(lx+lw,ly+lh,lx+lw-lr,ly+lh,lr); ctx.lineTo(lx+lr,ly+lh); ctx.arcTo(lx,ly+lh,lx,ly+lh-lr,lr); ctx.lineTo(lx,ly+lr); ctx.arcTo(lx,ly,lx+lr,ly,lr); ctx.closePath(); }
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.fillText(label, r.x + 2 + pad, r.y + 13);
+        }
     }
 }
 
@@ -5887,8 +5968,7 @@ function postingRedactRender() {
         ctx.drawImage(_postingRedactImg, 0, 0, cssW, cssH);
     }
     ctx.restore();
-    ctx.fillStyle = 'black';
-    for (const r of _postingRedactRects) ctx.fillRect(r.x, r.y, r.w, r.h);
+    _drawRedactRects(ctx, _postingRedactRects, { showNumbers: true });
 }
 async function postingAutoRedact() {
     if (!_postingRedactFile) return;
@@ -5952,20 +6032,29 @@ function postingRedactUndo() {
 }
 function postingRedactClear() { _postingRedactRects = []; postingRedactRender(); _updatePostingRedactCount(); }
 
+function _cleanupPostingRedact() {
+    if (window._redactResizeHandler) window.removeEventListener('resize', window._redactResizeHandler);
+    if (window._redactKeyHandler) window.removeEventListener('keydown', window._redactKeyHandler);
+    const modal = document.getElementById('posting-redact-modal');
+    if (modal) { modal.style.opacity = '0'; setTimeout(() => modal.remove(), 150); }
+    document.body.style.overflow = '';
+}
+
 function postingRedactSkip() {
     // Always use original (un-redacted) file when skipping
     _postingRedactFile = _postingRedactOrigFile || _postingRedactFile;
-    if (window._redactResizeHandler) window.removeEventListener('resize', window._redactResizeHandler);
-    document.getElementById('posting-redact-modal')?.remove();
-    document.body.style.overflow = '';
+    _cleanupPostingRedact();
     // Upload original file without redaction
     doUploadPostingFile(_postingRedactFile, _postingRedactRow, _postingRedactDesc);
 }
 
 async function postingRedactSave() {
+    const doneBtn = document.getElementById('posting-done-btn');
+    if (doneBtn) { doneBtn.textContent = 'Saving...'; doneBtn.disabled = true; doneBtn.style.opacity = '0.6'; }
+
     const displayCanvas = document.getElementById('posting-redact-canvas');
     const scale = parseFloat(displayCanvas.dataset.scale) || 1;
-    
+
     const fullCanvas = document.createElement('canvas');
     const natW = _postingRedactImg.naturalWidth;
     const natH = _postingRedactImg.naturalHeight;
@@ -5990,9 +6079,7 @@ async function postingRedactSave() {
     const blob = await new Promise(r => fullCanvas.toBlob(r, 'image/jpeg', 0.92));
     const redactedFile = new File([blob], (_postingRedactFile.name || 'photo').replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' });
 
-    if (window._redactResizeHandler) window.removeEventListener('resize', window._redactResizeHandler);
-    document.getElementById('posting-redact-modal')?.remove();
-    document.body.style.overflow = '';
+    _cleanupPostingRedact();
     await doUploadPostingFile(redactedFile, _postingRedactRow, _postingRedactDesc);
 }
 
@@ -12800,7 +12887,7 @@ async function loadPayments() {
         img.src = '/api/watch-photos/' + watchId + '/image?t=' + Date.now();
         
         $('#photo-modal').style.display = 'block';
-        
+
         // Wire up canvas events
         canvas.onmousedown = editorMouseDown;
         canvas.onmousemove = editorMouseMove;
@@ -12810,6 +12897,16 @@ async function loadPayments() {
         canvas.ontouchstart = function(e) { e.preventDefault(); editorMouseDown(touchToMouse(e)); };
         canvas.ontouchmove = function(e) { e.preventDefault(); editorMouseMove(touchToMouse(e)); };
         canvas.ontouchend = function(e) { e.preventDefault(); editorMouseUp(touchToMouse(e)); };
+
+        // Keyboard shortcuts
+        window._editorKeyHandler = function(e) {
+            if ($('#photo-modal').style.display === 'none') return;
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoRedaction(); }
+            else if (e.key === 'Escape') { e.preventDefault(); closePhotoModal(); }
+            else if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveRedactedPhoto(); }
+            else if (e.key === 'r') { if (!e.ctrlKey && !e.metaKey && document.activeElement.tagName !== 'INPUT') { setEditorTool(editorTool === 'redact' ? 'view' : 'redact'); } }
+        };
+        window.addEventListener('keydown', window._editorKeyHandler);
     }
     
     function touchToMouse(e) {
@@ -12823,23 +12920,23 @@ async function loadPayments() {
         const canvas = $('#editor-canvas');
         const ctx = canvas.getContext('2d');
         if (!editorImage) return;
-        
+
         // Draw image
         ctx.drawImage(editorImage, 0, 0, canvas.width, canvas.height);
-        
-        // Draw existing redactions
-        ctx.fillStyle = 'black';
-        for (const r of editorRedactions) {
-            ctx.fillRect(r.x, r.y, r.w, r.h);
-        }
+
+        // Draw redaction rectangles with crosshatch + numbers
+        _drawRedactRects(ctx, editorRedactions, { showNumbers: true });
     }
     
     function setEditorTool(tool) {
         editorTool = tool;
         const canvas = $('#editor-canvas');
-        canvas.style.cursor = tool === 'redact' ? 'crosshair' : 'default';
+        const isRedact = tool === 'redact';
+        canvas.style.cursor = isRedact ? 'crosshair' : 'default';
+        canvas.style.borderColor = isRedact ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.08)';
+        canvas.style.boxShadow = isRedact ? '0 0 12px rgba(239,68,68,0.15)' : 'none';
         const hint = $('#redact-hint');
-        hint.style.display = tool === 'redact' ? 'block' : 'none';
+        hint.style.display = isRedact ? 'block' : 'none';
         updateToolButtons();
     }
     
@@ -12863,12 +12960,15 @@ async function loadPayments() {
 
     function updateEditorRedactCount() {
         const badge = $('#editor-redact-count');
-        if (!badge) return;
-        if (editorRedactions.length > 0) {
-            badge.style.display = 'inline';
-            badge.textContent = editorRedactions.length + ' area' + (editorRedactions.length > 1 ? 's' : '');
-        } else {
-            badge.style.display = 'none';
+        const undoBtn = document.querySelector('#editor-toolbar button[onclick="undoRedaction()"]');
+        const n = editorRedactions.length;
+        if (badge) {
+            badge.style.display = n > 0 ? 'inline' : 'none';
+            badge.textContent = n + ' area' + (n > 1 ? 's' : '');
+        }
+        if (undoBtn) {
+            undoBtn.textContent = n > 0 ? 'Undo (' + n + ')' : 'Undo';
+            undoBtn.style.opacity = n > 0 ? '1' : '0.5';
         }
     }
     
@@ -12882,15 +12982,7 @@ async function loadPayments() {
     function editorMouseMove(e) {
         if (!editorDrawing || editorTool !== 'redact') return;
         renderEditor();
-        const ctx = $('#editor-canvas').getContext('2d');
-        const w = e.offsetX - editorStartX;
-        const h = e.offsetY - editorStartY;
-        ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        ctx.fillRect(editorStartX, editorStartY, w, h);
-        // Draw border for visibility while dragging
-        ctx.strokeStyle = 'rgba(255,0,0,0.5)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(editorStartX, editorStartY, w, h);
+        _drawLiveRedactRect($('#editor-canvas').getContext('2d'), {x: editorStartX, y: editorStartY}, {x: e.offsetX, y: e.offsetY});
     }
     
     function editorMouseUp(e) {
@@ -12923,6 +13015,7 @@ async function loadPayments() {
         const btn = $('#btn-auto-redact');
         btn.textContent = 'Detecting...';
         btn.disabled = true;
+        btn.style.opacity = '0.6';
         statusEl.textContent = ' Running Vision detection...';
         statusEl.style.display = 'inline';
         statusEl.style.color = 'var(--accent)';
@@ -12957,8 +13050,9 @@ async function loadPayments() {
             statusEl.style.color = 'var(--red)';
         }
         
-        btn.textContent = 'Auto-Redact';
+        btn.textContent = 'Auto-Detect';
         btn.disabled = false;
+        btn.style.opacity = '1';
     }
     
     function undoRedaction() {
@@ -12988,59 +13082,65 @@ async function loadPayments() {
         if (editorRedactions.length === 0) {
             if (!confirm('No redactions drawn. Save the image as-is?')) return;
         }
-        
+
         const statusEl = $('#editor-status');
+        const saveBtn = document.querySelector('#editor-toolbar button[onclick="saveRedactedPhoto()"]');
+        const origLabel = saveBtn ? saveBtn.textContent : 'Save';
+        if (saveBtn) { saveBtn.textContent = 'Saving...'; saveBtn.disabled = true; saveBtn.style.opacity = '0.6'; }
         statusEl.textContent = ' Saving...';
         statusEl.style.display = 'inline';
         statusEl.style.color = 'var(--accent)';
-        
+
         try {
             // Render final image at full resolution
             const fullCanvas = document.createElement('canvas');
             fullCanvas.width = editorImage.naturalWidth;
             fullCanvas.height = editorImage.naturalHeight;
             const ctx = fullCanvas.getContext('2d');
-            
+
             // Draw original image at full res
             ctx.drawImage(editorImage, 0, 0);
-            
+
             // Scale redactions from display to full resolution
             const displayCanvas = $('#editor-canvas');
             const scale = parseFloat(displayCanvas.dataset.scale) || 1;
-            
+
             ctx.fillStyle = 'black';
             for (const r of editorRedactions) {
                 ctx.fillRect(r.x / scale, r.y / scale, r.w / scale, r.h / scale);
             }
-            
+
             // Export as JPEG blob
             const blob = await new Promise(resolve => fullCanvas.toBlob(resolve, 'image/jpeg', 0.92));
-            
+
             // Upload
             const formData = new FormData();
             formData.append('image', blob, 'redacted.jpg');
-            
+
             const resp = await fetch(`/api/watch-photos/${editorWatchId}/save-redacted`, {
                 method: 'POST',
                 body: formData
             });
-            
+
             if (!resp.ok) throw new Error(await resp.text());
-            
+
             statusEl.textContent = ' Saved!';
             statusEl.style.color = 'var(--green)';
-            
+
             // Reload the image to show saved version
             editorImage.src = '/api/watch-photos/' + editorWatchId + '/image?t=' + Date.now();
             editorRedactions = [];
-            
+            updateEditorRedactCount();
+
             // Refresh gallery thumbnails
             setTimeout(() => loadPhotoLibrary(), 500);
-            
+
         } catch (err) {
             statusEl.textContent = 'X Save failed: ' + err.message;
             statusEl.style.color = 'var(--red)';
             console.error('Save error:', err);
+        } finally {
+            if (saveBtn) { saveBtn.textContent = origLabel; saveBtn.disabled = false; saveBtn.style.opacity = '1'; }
         }
     }
     
@@ -13072,6 +13172,7 @@ async function loadPayments() {
         editorImage = null;
         editorRedactions = [];
         editorDrawing = false;
+        if (window._editorKeyHandler) { window.removeEventListener('keydown', window._editorKeyHandler); window._editorKeyHandler = null; }
     }
     
     function copyPhotoInfo(watchId) {
