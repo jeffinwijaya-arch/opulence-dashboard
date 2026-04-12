@@ -3293,16 +3293,27 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                             <button onclick="closePhotoModal()" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;line-height:1;">×</button>
                         </div>
                     </div>
-                    <!-- Toolbar (single compact row) -->
-                    <div id="editor-toolbar" style="display:flex;gap:4px;margin-bottom:4px;flex-wrap:wrap;align-items:center;flex-shrink:0;">
-                        <button class="btn" onclick="setEditorTool('redact')" id="btn-redact" style="padding:2px 8px;font-size:0.65rem;background:var(--red-dim);color:var(--red);border-color:var(--red);">■ Redact</button>
-                        <button class="btn" onclick="setEditorTool('view')" id="btn-view" style="padding:2px 8px;font-size:0.65rem;"> View</button>
-                        <button class="btn" onclick="autoRedactPhoto()" id="btn-auto-redact" style="padding:2px 8px;font-size:0.65rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">Auto</button>
-                        <button class="btn" onclick="undoRedaction()" style="padding:2px 8px;font-size:0.65rem;">↩</button>
-                        <button class="btn" onclick="clearRedactions()" style="padding:2px 8px;font-size:0.65rem;">X</button>
-                        <button class="btn" onclick="saveRedactedPhoto()" style="padding:2px 8px;font-size:0.65rem;background:var(--green-dim);color:var(--green);border-color:var(--green);"> Save</button>
+                    <!-- Toolbar -->
+                    <div id="editor-toolbar" style="display:flex;gap:6px;margin-bottom:4px;flex-wrap:wrap;align-items:center;flex-shrink:0;">
+                        <!-- Mode toggle group -->
+                        <div style="display:inline-flex;border-radius:6px;overflow:hidden;border:1px solid var(--border);">
+                            <button class="btn" onclick="setEditorTool('redact')" id="btn-redact" style="padding:6px 12px;font-size:0.72rem;border:none;border-radius:0;background:var(--red-dim);color:var(--red);font-weight:600;">Redact</button>
+                            <button class="btn" onclick="setEditorTool('view')" id="btn-view" style="padding:6px 12px;font-size:0.72rem;border:none;border-radius:0;background:var(--bg-2);color:var(--text-2);">View</button>
+                        </div>
+                        <!-- Auto-detect -->
+                        <button class="btn" onclick="autoRedactPhoto()" id="btn-auto-redact" style="padding:6px 12px;font-size:0.72rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">Auto-Detect</button>
+                        <!-- Edit actions -->
+                        <div style="display:inline-flex;gap:4px;">
+                            <button class="btn" onclick="undoRedaction()" title="Undo last redaction" style="padding:6px 10px;font-size:0.75rem;">Undo</button>
+                            <button class="btn" onclick="confirmClearRedactions()" title="Remove all redactions" style="padding:6px 10px;font-size:0.75rem;">Clear</button>
+                        </div>
+                        <!-- Redaction count badge -->
+                        <span id="editor-redact-count" style="display:none;font-size:0.65rem;color:var(--text-2);background:var(--bg-2);padding:2px 8px;border-radius:10px;"></span>
                         <div style="flex:1;"></div>
-                        <button class="btn" onclick="confirmDeletePhoto()" style="padding:2px 8px;font-size:0.65rem;background:var(--red-dim);color:var(--red);border-color:var(--red);"></button>
+                        <!-- Save (green, prominent) -->
+                        <button class="btn" onclick="saveRedactedPhoto()" style="padding:6px 14px;font-size:0.75rem;background:var(--green-dim);color:var(--green);border-color:var(--green);font-weight:600;">Save</button>
+                        <!-- Delete (icon only, separated) -->
+                        <button class="btn" onclick="confirmDeletePhoto()" title="Delete photo" style="padding:6px 10px;font-size:0.75rem;background:transparent;color:var(--text-2);border-color:var(--border);">Delete</button>
                     </div>
                     <!-- Canvas area (takes most space) -->
                     <div style="flex:1;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;min-height:0;">
@@ -5600,19 +5611,24 @@ function openPostingRedactEditor(file, row, desc) {
     overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;height:100dvh;background:#000;z-index:99999;overflow:hidden;touch-action:none;display:flex;flex-direction:column;';
     document.body.style.overflow = 'hidden';
     overlay.innerHTML = `
-        <div id="redact-toolbar" style="display:flex;align-items:center;padding:env(safe-area-inset-top,0) 12px 0 12px;flex-shrink:0;">
-            <a onclick="postingRedactUndo()" style="color:rgba(255,255,255,.7);font-size:13px;padding:10px 8px;cursor:pointer;">Undo</a>
-            <a onclick="postingRedactRotate()" style="color:rgba(255,255,255,.7);font-size:13px;padding:10px 8px;cursor:pointer;">Rotate</a>
-            <a onclick="postingAutoRedact()" style="color:#b388ff;font-size:13px;padding:10px 8px;cursor:pointer;">Auto</a>
+        <div id="redact-toolbar" style="display:flex;align-items:center;gap:4px;padding:env(safe-area-inset-top,0) 10px 6px 10px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.1);">
+            <button onclick="postingRedactUndo()" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,.85);font-size:13px;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;min-width:44px;min-height:36px;">Undo</button>
+            <button onclick="postingRedactRotate()" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,.85);font-size:13px;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;min-width:44px;min-height:36px;">Rotate</button>
+            <button onclick="postingAutoRedact()" id="posting-auto-btn" style="background:rgba(138,43,226,0.25);color:#d4aaff;font-size:13px;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;min-width:44px;min-height:36px;">Auto</button>
+            <span id="posting-redact-count" style="font-size:11px;color:rgba(255,255,255,0.5);padding:0 4px;display:none;"></span>
             <div style="flex:1;"></div>
-            <a onclick="redactZoomIn()" style="color:rgba(255,255,255,.4);font-size:16px;padding:10px 6px;cursor:pointer;">+</a>
-            <a onclick="redactZoomOut()" style="color:rgba(255,255,255,.4);font-size:16px;padding:10px 6px;cursor:pointer;">−</a>
+            <div style="display:inline-flex;gap:2px;background:rgba(255,255,255,0.05);border-radius:6px;padding:2px;">
+                <button onclick="redactZoomOut()" style="background:none;color:rgba(255,255,255,.6);font-size:18px;padding:6px 10px;border:none;border-radius:4px;cursor:pointer;min-width:36px;min-height:36px;">-</button>
+                <span id="redact-zoom-label" style="font-size:11px;color:rgba(255,255,255,.4);align-self:center;min-width:28px;text-align:center;">1.0x</span>
+                <button onclick="redactZoomIn()" style="background:none;color:rgba(255,255,255,.6);font-size:18px;padding:6px 10px;border:none;border-radius:4px;cursor:pointer;min-width:36px;min-height:36px;">+</button>
+            </div>
             <div style="flex:1;"></div>
-            <a onclick="postingRedactSkip()" style="color:rgba(255,255,255,.4);font-size:13px;padding:10px 8px;cursor:pointer;">Skip</a>
-            <a onclick="postingRedactSave()" style="color:#4ade80;font-size:14px;padding:10px 8px;cursor:pointer;font-weight:600;">Done</a>
+            <button onclick="postingRedactSkip()" style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,.5);font-size:13px;padding:8px 14px;border:none;border-radius:6px;cursor:pointer;min-height:36px;">Skip</button>
+            <button onclick="postingRedactSave()" style="background:rgba(74,222,128,0.2);color:#4ade80;font-size:14px;padding:8px 18px;border:1px solid rgba(74,222,128,0.3);border-radius:6px;cursor:pointer;font-weight:600;min-height:36px;">Done</button>
         </div>
         <div id="redact-canvas-wrapper" style="flex:1;overflow:hidden;position:relative;">
             <canvas id="posting-redact-canvas" style="cursor:crosshair;position:absolute;transform-origin:0 0;"></canvas>
+            <div id="posting-redact-hint" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.7);color:rgba(255,255,255,0.7);padding:10px 18px;border-radius:8px;font-size:13px;pointer-events:none;text-align:center;transition:opacity 0.3s;">Draw rectangles to redact<br><span style="font-size:11px;color:rgba(255,255,255,0.4);">Pinch to zoom \u00b7 two fingers to pan</span></div>
         </div>
     `;
     document.body.appendChild(overlay);
@@ -5650,10 +5666,13 @@ function openPostingRedactEditor(file, row, desc) {
     reader.readAsDataURL(file);
 
     // Mouse drawing
+    // Hide hint on first draw
     canvas.onmousedown = function(e) {
         _postingRedactDrawing = true;
         const p = _redactCanvasCoord(e.offsetX, e.offsetY);
         _postingRedactStart = p;
+        const hint = document.getElementById('posting-redact-hint');
+        if (hint) hint.style.opacity = '0';
     };
     canvas.onmousemove = function(e) {
         if (!_postingRedactDrawing) return;
@@ -5679,6 +5698,7 @@ function openPostingRedactEditor(file, row, desc) {
             w: Math.abs(w), h: Math.abs(h)
         });
         postingRedactRender();
+        _updatePostingRedactCount();
     };
     canvas.onmouseleave = canvas.onmouseup;
 
@@ -5694,6 +5714,8 @@ function openPostingRedactEditor(file, row, desc) {
             const m = _redactTouchCoord(e, canvas);
             _postingRedactDrawing = true;
             _postingRedactStart = m;
+            const hint = document.getElementById('posting-redact-hint');
+            if (hint) hint.style.opacity = '0';
         }
     };
     canvas.ontouchmove = function(e) {
@@ -5738,6 +5760,7 @@ function openPostingRedactEditor(file, row, desc) {
                 w: Math.abs(w), h: Math.abs(h)
             });
             postingRedactRender();
+            _updatePostingRedactCount();
         }
     };
 
@@ -5831,6 +5854,17 @@ function redactZoomOut() {
     _redactApplyTransform();
 }
 
+function _updatePostingRedactCount() {
+    const badge = document.getElementById('posting-redact-count');
+    if (!badge) return;
+    if (_postingRedactRects.length > 0) {
+        badge.style.display = 'inline';
+        badge.textContent = _postingRedactRects.length + ' area' + (_postingRedactRects.length > 1 ? 's' : '');
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
 function postingRedactRender() {
     const canvas = document.getElementById('posting-redact-canvas');
     if (!canvas || !_postingRedactImg) return;
@@ -5858,8 +5892,8 @@ function postingRedactRender() {
 }
 async function postingAutoRedact() {
     if (!_postingRedactFile) return;
-    const autoBtn = document.querySelector('#posting-redact-modal > div:first-child a:nth-child(3)');
-    if (autoBtn) autoBtn.textContent = 'Detecting...';
+    const autoBtn = document.getElementById('posting-auto-btn');
+    if (autoBtn) { autoBtn.textContent = 'Detecting...'; autoBtn.disabled = true; autoBtn.style.opacity = '0.6'; }
     try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 90000);
@@ -5870,9 +5904,9 @@ async function postingAutoRedact() {
         if (!resp.ok) throw new Error('Auto-redact failed: ' + resp.status);
         const blob = await resp.blob();
         const count = resp.headers.get('X-Redaction-Count') || '0';
-        
+
         _postingRedactFile = new File([blob], _postingRedactFile.name, { type: 'image/jpeg' });
-        
+
         const rd = new FileReader();
         rd.onload = function(ev2) {
             const img = new Image();
@@ -5880,33 +5914,43 @@ async function postingAutoRedact() {
                 _postingRedactImg = img;
                 _postingRedactRects = [];
                 postingRedactRender();
-                if (autoBtn) autoBtn.textContent = count === '0' ? 'Not found — draw manually' : `${count} redacted`;
+                _updatePostingRedactCount();
+                if (autoBtn) {
+                    autoBtn.textContent = count === '0' ? 'None found' : count + ' redacted';
+                    autoBtn.style.opacity = '1';
+                    autoBtn.disabled = false;
+                }
             };
             img.onerror = function() {
-                if (toolbar) toolbar.textContent = 'Image load failed';
+                if (autoBtn) { autoBtn.textContent = 'Load failed'; autoBtn.style.opacity = '1'; autoBtn.disabled = false; }
             };
             img.src = ev2.target.result;
         };
         rd.readAsDataURL(blob);
     } catch(e) {
-        if (autoBtn) autoBtn.textContent = e.name === 'AbortError' ? 'Timed out' : 'Failed';
+        if (autoBtn) {
+            autoBtn.textContent = e.name === 'AbortError' ? 'Timed out' : 'Failed';
+            autoBtn.style.opacity = '1'; autoBtn.disabled = false;
+        }
     }
 }
 function postingRedactUndo() {
     if (_postingRedactRects.length > 0) {
         _postingRedactRects.pop();
         postingRedactRender();
+        _updatePostingRedactCount();
     } else if (_postingRedactOrigImg && _postingRedactImg !== _postingRedactOrigImg) {
         // Undo auto-redact: restore original image
         _postingRedactImg = _postingRedactOrigImg;
         _postingRedactFile = _postingRedactOrigFile;
         _postingRedactRects = [];
         postingRedactRender();
-        const autoBtn = document.querySelector('#redact-toolbar a:nth-child(3)');
+        _updatePostingRedactCount();
+        const autoBtn = document.getElementById('posting-auto-btn');
         if (autoBtn) autoBtn.textContent = 'Auto';
     }
 }
-function postingRedactClear() { _postingRedactRects = []; postingRedactRender(); }
+function postingRedactClear() { _postingRedactRects = []; postingRedactRender(); _updatePostingRedactCount(); }
 
 function postingRedactSkip() {
     // Always use original (un-redacted) file when skipping
@@ -12803,12 +12847,28 @@ async function loadPayments() {
         const btnRedact = $('#btn-redact');
         const btnView = $('#btn-view');
         if (btnRedact) {
-            btnRedact.style.opacity = editorTool === 'redact' ? '1' : '0.5';
-            btnRedact.style.transform = editorTool === 'redact' ? 'scale(1.05)' : 'scale(1)';
+            const active = editorTool === 'redact';
+            btnRedact.style.background = active ? 'var(--red-dim)' : 'var(--bg-2)';
+            btnRedact.style.color = active ? 'var(--red)' : 'var(--text-2)';
+            btnRedact.style.fontWeight = active ? '600' : '400';
         }
         if (btnView) {
-            btnView.style.opacity = editorTool === 'view' ? '1' : '0.5';
-            btnView.style.transform = editorTool === 'view' ? 'scale(1.05)' : 'scale(1)';
+            const active = editorTool === 'view';
+            btnView.style.background = active ? 'var(--accent-dim)' : 'var(--bg-2)';
+            btnView.style.color = active ? 'var(--accent)' : 'var(--text-2)';
+            btnView.style.fontWeight = active ? '600' : '400';
+        }
+        updateEditorRedactCount();
+    }
+
+    function updateEditorRedactCount() {
+        const badge = $('#editor-redact-count');
+        if (!badge) return;
+        if (editorRedactions.length > 0) {
+            badge.style.display = 'inline';
+            badge.textContent = editorRedactions.length + ' area' + (editorRedactions.length > 1 ? 's' : '');
+        } else {
+            badge.style.display = 'none';
         }
     }
     
@@ -12854,6 +12914,7 @@ async function loadPayments() {
         
         editorRedactions.push(rect);
         renderEditor();
+        updateEditorRedactCount();
     }
     
     async function autoRedactPhoto() {
@@ -12904,12 +12965,22 @@ async function loadPayments() {
         if (editorRedactions.length > 0) {
             editorRedactions.pop();
             renderEditor();
+            updateEditorRedactCount();
         }
     }
-    
+
+    function confirmClearRedactions() {
+        if (editorRedactions.length === 0) return;
+        if (editorRedactions.length >= 2 && !confirm('Clear all ' + editorRedactions.length + ' redactions?')) return;
+        editorRedactions = [];
+        renderEditor();
+        updateEditorRedactCount();
+    }
+
     function clearRedactions() {
         editorRedactions = [];
         renderEditor();
+        updateEditorRedactCount();
     }
     
     async function saveRedactedPhoto() {
