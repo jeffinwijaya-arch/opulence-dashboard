@@ -4219,7 +4219,9 @@ window.__BUILD__ = {
 };
 try { console.info('%c[MK build]', 'color:#d4af37;font-weight:700', window.__BUILD__); } catch(e) {}
 // ── Force clear stale service workers + cache on version mismatch ──
-(function(){const V='v3';if(navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(regs=>{regs.forEach(r=>{r.unregister();});});caches.keys().then(ks=>ks.forEach(k=>{if(!k.includes(V))caches.delete(k);}));}})();
+// Removed: v3 self-destruct (was unregistering all SWs on every load).
+// The sw.js v6 network-first caching service worker now handles cache
+// hygiene in its own activate event.
 // ── Skeleton loader helpers ──
 function skelRows(n=4){let h='';for(let i=0;i<n;i++){const w1=['w30','w40','w50'][i%3],w2=['w20','w30','w40'][i%3];h+=`<div class="skel-row"><div class="skel-line ${w1}"></div><div class="skel-line ${w2}"></div><div class="skel-line w20"></div></div>`;}return h;}
 function skelTable(cols=5,rows=5){let h='<table class="tbl"><tbody>';for(let r=0;r<rows;r++){h+='<tr>';for(let c=0;c<cols;c++){const w=['w40','w30','w20','w50','w60'][c%5];h+=`<td><div class="skel-line ${w}" style="min-width:40px;"></div></td>`;}h+='</tr>';}return h+'</tbody></table>';}
@@ -4559,28 +4561,57 @@ function showPage(name, pushState=true) {
 // ── DATA ──
 async function loadData() {
     try {
-        const [dealsR, arbR, topR, syncR] = await Promise.all([fetch('/api/deals'), fetch('/api/arbitrage'), fetch('/api/top_refs'), fetch('/api/sync_info')]);
-        // If any response is 401, redirect to login
-        if (dealsR.status === 401) { window.location.href = '/login'; return; }
-        // Every endpoint is wrapped in its own ok/parse guard so a single
-        // 404 (or an HTML error page where JSON was expected) can't take
-        // down the whole loader. Before this guard, if /api/top_refs or
-        // /api/sync_info returned HTML, the json() call threw a
-        // SyntaxError and the entire catch block ran — leaving DATA.refs
-        // undefined and the Price Intelligence page with nothing to
-        // render.
+        // CRITICAL: Fetch bundle.json FIRST. It's a static file that
+        // always works on the Pages deploy, and it contains everything
+        // the dashboard needs for its core views (refs, deals, arb,
+        // sellers, summary). The /api/* calls below are for live
+        // backend data — they can fail (backend down, network blip,
+        // no worker deployed) and the dashboard should still render
+        // from the static bundle rather than showing a blank page.
+        //
+        // Before this reorder, bundle.json was fetched AFTER
+        //   DATA.deals = await dealsR.json()
+        // which meant any /api/ failure crashed the whole pipeline
+        // before the bundle ever loaded — the #1 cause of the "Price
+        // Intelligence shows nothing" bug.
+        try {
+            const br = await fetch('/data/bundle.json');
+            if (br.ok) {
+                const b = await br.json();
+                if (b.refs) DATA.refs = b.refs;
+                if (b.sellers) DATA.sellers = b.sellers;
+                if (b.summary) DATA.summary = b.summary;
+                if (b.deals && Array.isArray(b.deals)) DATA.deals = b.deals;
+                if (b.arbitrage && Array.isArray(b.arbitrage)) DATA.arbitrage = b.arbitrage;
+                if (b.movers) DATA.movers = b.movers;
+            }
+        } catch(e) { console.warn('bundle.json failed:', e); }
+
+        // Now try the live /api/* endpoints. These overlay the static
+        // bundle with fresher data from the backend. Each is guarded
+        // so a single failure can't crash the loader.
         const safeJson = async (resp, fallback) => {
             if (!resp || !resp.ok) return fallback;
             try { return await resp.json(); } catch(_) { return fallback; }
         };
-        DATA.deals = await safeJson(dealsR, []);
-        if (!Array.isArray(DATA.deals)) { DATA.deals = []; }
-        DATA.arbitrage = await safeJson(arbR, []);
+        try {
+            const [dealsR, arbR, topR, syncR] = await Promise.all([
+                fetch('/api/deals'), fetch('/api/arbitrage'),
+                fetch('/api/top_refs'), fetch('/api/sync_info'),
+            ]);
+            if (dealsR.status === 401) { window.location.href = '/login'; return; }
+            const liveDealsParsed = await safeJson(dealsR, null);
+            if (liveDealsParsed && Array.isArray(liveDealsParsed)) DATA.deals = liveDealsParsed;
+            const liveArbParsed = await safeJson(arbR, null);
+            if (liveArbParsed && Array.isArray(liveArbParsed)) DATA.arbitrage = liveArbParsed;
+            const liveTopRefs = await safeJson(topR, null);
+            if (liveTopRefs && Array.isArray(liveTopRefs)) DATA.topRefs = liveTopRefs;
+            DATA.syncInfo = await safeJson(syncR, null);
+        } catch(e) { console.warn('Live API overlay failed (using bundle):', e); }
+
+        if (!Array.isArray(DATA.deals)) DATA.deals = [];
         if (!Array.isArray(DATA.arbitrage)) DATA.arbitrage = [];
-        DATA.topRefs = await safeJson(topR, []);
         if (!Array.isArray(DATA.topRefs)) DATA.topRefs = [];
-        DATA.syncInfo = await safeJson(syncR, null);
-        try { const br = await fetch('/data/bundle.json'); if (br.ok) { const b = await br.json(); if (b.refs) DATA.refs=b.refs; if (b.sellers) DATA.sellers=b.sellers; if (b.summary) DATA.summary=b.summary; } } catch(e) {}
         renderAll();
         checkStale();
         dismissSplash();
@@ -16189,21 +16220,24 @@ async function loadPayments() {
 
 <!-- PWA Service Worker Registration -->
 <script>
-if ('serviceWorker' in navigator && false) {
+// Re-enabled in v6. The old SW (v1-v5) was disabled because it
+// aggressively cached stale HTML. v6 uses network-first for the
+// shell (always gets the newest deploy) and stale-while-revalidate
+// for data (snappy + fresh). The activate handler in sw.js v6
+// deletes old caches from previous versions.
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then(registration => {
-        console.log('SW registered:', registration);
+        console.log('SW registered:', registration.scope);
       })
       .catch(error => {
-        console.log('SW registration failed:', error);
+        console.warn('SW registration failed:', error);
       });
   });
 }
 </script>
 <script>
-// SW disabled — was causing stale cache issues
-if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(regs=>regs.forEach(r=>r.unregister()));
 window.addEventListener('offline', () => {
   let b = document.getElementById('offline-banner');
   if (!b) { b = document.createElement('div'); b.id = 'offline-banner';
