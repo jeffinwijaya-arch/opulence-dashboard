@@ -3310,6 +3310,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                         <div style="display:inline-flex;gap:3px;">
                             <button class="btn" onclick="undoRedaction()" id="btn-editor-undo" title="Undo (Ctrl+Z)" style="padding:6px 10px;font-size:0.72rem;">Undo</button>
                             <button class="btn" onclick="editorRedo()" id="btn-editor-redo" title="Redo (Ctrl+Shift+Z)" style="padding:6px 10px;font-size:0.72rem;opacity:0.35;">Redo</button>
+                            <button class="btn" onpointerdown="editorStartPeek()" onpointerup="editorStopPeek()" onpointerleave="editorStopPeek()" id="btn-editor-peek" title="Hold to see original" style="padding:6px 10px;font-size:0.72rem;opacity:0.5;user-select:none;-webkit-user-select:none;">Peek</button>
                             <button class="btn" onclick="confirmClearRedactions()" title="Remove all redactions" style="padding:6px 10px;font-size:0.72rem;">Clear</button>
                         </div>
                         <!-- Redaction count / selection badge -->
@@ -13336,6 +13337,9 @@ async function loadPayments() {
                 selBadge.style.display = 'none';
             }
         }
+        // Peek button opacity
+        const peekBtn = $('#btn-editor-peek');
+        if (peekBtn && !editorPeeking) { peekBtn.style.opacity = n > 0 ? '0.8' : '0.35'; }
         // Show shortcut bar when in redact mode with content
         if (shortcutBar) {
             shortcutBar.style.display = (editorTool === 'redact') ? 'block' : 'none';
@@ -13531,6 +13535,21 @@ async function loadPayments() {
             renderEditor();
             updateEditorRedactCount();
         }
+    }
+
+    function editorStartPeek() {
+        if (editorRedactions.length === 0) return;
+        editorPeeking = true;
+        renderEditor();
+        const btn = $('#btn-editor-peek');
+        if (btn) { btn.style.background = 'var(--accent-dim)'; btn.style.color = 'var(--accent)'; btn.style.opacity = '1'; }
+    }
+    function editorStopPeek() {
+        if (!editorPeeking) return;
+        editorPeeking = false;
+        renderEditor();
+        const btn = $('#btn-editor-peek');
+        if (btn) { btn.style.background = ''; btn.style.color = ''; btn.style.opacity = editorRedactions.length > 0 ? '0.8' : '0.5'; }
     }
 
     function confirmClearRedactions() {
@@ -14492,28 +14511,56 @@ async function loadPayments() {
         text = text.replace(/\b(?=[A-Z0-9]*[A-Z])(?=[A-Z0-9]*\d)[A-Z0-9]{7,10}\b/gi, '[SERIAL]');
         // Serial prefix: N1, N2, N3, N4 etc (Rolex N-serial batches)
         text = text.replace(/\b[NM]\d{1,2}\b/g, '[SERIAL]');
+        // Rolex rehaut serial: 8-digit pure numeric on newer models
+        text = text.replace(/\b(?:serial|s\/n|ser)\s*[:#]?\s*\d{8,10}\b/gi, '[SERIAL]');
         // Card dates: 03/2026, 12/2025, 01/24 etc
         text = text.replace(/\b\d{1,2}[.\/\-]\d{2,4}\b/g, '[DATE]');
         // Month + Year text: March 2026, January 2025, etc
         text = text.replace(/\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}\b/gi, '[DATE]');
+        // Short month + year: Mar 2026, Jan '25
+        text = text.replace(/\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(?:'?\d{2,4})\b/gi, '[DATE]');
         // Full dates: 01/15/2026, 2026-03-15
         text = text.replace(/\b\d{1,2}[.\/\-]\d{1,2}[.\/\-]\d{2,4}\b/g, '[DATE]');
         text = text.replace(/\b\d{4}[.\/\-]\d{1,2}[.\/\-]\d{1,2}\b/g, '[DATE]');
         // Warranty/cert numbers
         text = text.replace(/(?:warranty|guarantee|card|cert)\s*(?:#|no\.?|number)?\s*:?\s*[\w\-]+/gi, '[REDACTED]');
+        // Invoice / order numbers
+        text = text.replace(/(?:invoice|order|receipt|ref)\s*(?:#|no\.?|number)?\s*:?\s*[\w\-]+/gi, '[REDACTED]');
         // Buyer/customer names
         text = text.replace(/(?:sold\s*to|buyer|customer|owner|client)\s*:?\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*/gi, '[REDACTED]');
-        // Phone numbers
+        // Phone numbers (international formats)
         text = text.replace(/(?:\+?\d{1,3}[\s\-]?)?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{4}/g, '[REDACTED]');
+        // WhatsApp style: +852 9123 4567, +86 138 0000 1234
+        text = text.replace(/\+\d{1,3}\s?\d[\d\s\-]{6,14}\d/g, '[REDACTED]');
         // Email addresses
         text = text.replace(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g, '[REDACTED]');
+        // Instagram handles
+        text = text.replace(/@[\w.]{2,30}\b/g, '[REDACTED]');
+        // Physical addresses (number + street patterns)
+        text = text.replace(/\d{1,5}\s+[A-Z][a-z]+\s+(?:St|Ave|Rd|Blvd|Dr|Ln|Way|Ct|Pl|Cir|Pkwy|Hwy)\.?(?:\s*,?\s*(?:Suite|Ste|Apt|Unit|#)\s*[\w\-]+)?/gi, '[REDACTED]');
+        // Tracking numbers (FedEx/UPS/DHL patterns)
+        text = text.replace(/\b(?:\d{12,22}|1Z[A-Z0-9]{16}|JD\d{18})\b/g, '[TRACKING]');
         // Clean up consecutive redaction markers
-        text = text.replace(/(\[(SERIAL|DATE|REDACTED)\]\s*){2,}/g, function(m) {
-            return m.includes('[SERIAL]') ? '[SERIAL] ' : m.includes('[DATE]') ? '[DATE] ' : '[REDACTED] ';
+        text = text.replace(/(\[(SERIAL|DATE|REDACTED|TRACKING)\]\s*){2,}/g, function(m) {
+            if (m.includes('[SERIAL]')) return '[SERIAL] ';
+            if (m.includes('[DATE]')) return '[DATE] ';
+            if (m.includes('[TRACKING]')) return '[TRACKING] ';
+            return '[REDACTED] ';
         });
         ta.value = text.trim();
+        // Count what was redacted for feedback
+        const counts = {};
+        (text.match(/\[(SERIAL|DATE|REDACTED|TRACKING)\]/g) || []).forEach(m => { counts[m] = (counts[m]||0)+1; });
+        const summary = Object.entries(counts).map(([k,v]) => v + ' ' + k.replace(/[\[\]]/g,'')).join(', ');
         const btn = event?.target?.closest('button');
-        if (btn) { const o = btn.textContent; btn.textContent = 'DONE'; btn.style.background = 'var(--green-dim)'; btn.style.color = 'var(--green)'; btn.style.borderColor = 'var(--green)'; setTimeout(() => { btn.textContent = o; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = ''; }, 1500); }
+        if (btn) {
+            const o = btn.textContent;
+            btn.textContent = summary ? summary : 'Nothing found';
+            btn.style.background = summary ? 'var(--green-dim)' : 'var(--bg-2)';
+            btn.style.color = summary ? 'var(--green)' : 'var(--text-2)';
+            btn.style.borderColor = summary ? 'var(--green)' : 'var(--border)';
+            setTimeout(() => { btn.textContent = o; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = ''; }, 2500);
+        }
     }
 
     function closePriceEditModal() {
