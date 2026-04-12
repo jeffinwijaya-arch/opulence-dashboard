@@ -3323,11 +3323,13 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                     </div>
                     <!-- Shortcut hint bar (appears on hover/focus) -->
                     <div id="editor-shortcut-bar" style="display:none;font-size:0.6rem;color:var(--text-2);padding:0 2px 4px;flex-shrink:0;">
-                        <kbd style="padding:1px 4px;background:var(--bg-2);border-radius:3px;font-family:inherit;">R</kbd> toggle redact
+                        <kbd style="padding:1px 4px;background:var(--bg-2);border-radius:3px;font-family:inherit;">R</kbd> toggle
                         &middot; <kbd style="padding:1px 4px;background:var(--bg-2);border-radius:3px;font-family:inherit;">Ctrl+Z</kbd> undo
                         &middot; <kbd style="padding:1px 4px;background:var(--bg-2);border-radius:3px;font-family:inherit;">Ctrl+Shift+Z</kbd> redo
                         &middot; <kbd style="padding:1px 4px;background:var(--bg-2);border-radius:3px;font-family:inherit;">Ctrl+S</kbd> save
-                        &middot; hold to peek original
+                        &middot; <kbd style="padding:1px 4px;background:var(--bg-2);border-radius:3px;font-family:inherit;">Ctrl+D</kbd> duplicate
+                        &middot; <kbd style="padding:1px 4px;background:var(--bg-2);border-radius:3px;font-family:inherit;">&uarr;&darr;&larr;&rarr;</kbd> nudge
+                        &middot; hold to peek
                     </div>
                     <!-- Canvas area (takes most space) -->
                     <div style="flex:1;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;min-height:0;">
@@ -5880,6 +5882,15 @@ function openPostingRedactEditor(file, row, desc) {
         }
         else if (e.key === 'a' && !e.ctrlKey && !e.metaKey) {
             e.preventDefault(); postingAutoRedact();
+        }
+        else if ((e.ctrlKey || e.metaKey) && e.key === 'd' && _postingRedactSelected >= 0) {
+            e.preventDefault();
+            const src = _postingRedactRects[_postingRedactSelected];
+            const dup = {x: src.x + 12, y: src.y + 12, w: src.w, h: src.h};
+            _postingRedactRects.push(dup);
+            _postingRedactRedoStack = [];
+            _postingRedactSelected = _postingRedactRects.length - 1;
+            postingRedactRender(); _updatePostingRedactCount(); _hapticTap();
         }
         else if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key) && _postingRedactSelected >= 0) {
             e.preventDefault();
@@ -13192,6 +13203,15 @@ async function loadPayments() {
                 editorRedoStack.push(editorRedactions.splice(editorSelectedIdx, 1)[0]);
                 editorSelectedIdx = -1;
                 renderEditor(); updateEditorRedactCount();
+            }
+            else if ((e.ctrlKey || e.metaKey) && e.key === 'd' && editorSelectedIdx >= 0) {
+                e.preventDefault();
+                const src = editorRedactions[editorSelectedIdx];
+                const dup = {x: src.x + 12, y: src.y + 12, w: src.w, h: src.h};
+                editorRedactions.push(dup);
+                editorRedoStack = [];
+                editorSelectedIdx = editorRedactions.length - 1;
+                renderEditor(); updateEditorRedactCount(); _hapticTap();
             }
             else if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key) && editorSelectedIdx >= 0) {
                 e.preventDefault();
