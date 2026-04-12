@@ -585,6 +585,13 @@
             .ws4-coverage-matrix table tr:hover {
                 background: rgba(201,168,76,0.04);
             }
+
+        @media (max-width:768px) {
+            .ws4-gen-btn { min-height:44px; }
+            .ws4-price-badge { min-height:44px; flex:1; min-width:0; }
+            .ws4-stats-grid { grid-template-columns:1fr 1fr!important; }
+            .ws4-caption-preview { max-height:200px; }
+        }
         `;
         document.head.appendChild(style);
     }
