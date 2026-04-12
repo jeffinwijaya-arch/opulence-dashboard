@@ -5,5 +5,8 @@
   "scripts": {
     "dev": "wrangler pages dev public",
     "deploy": "wrangler pages deploy public --project-name=opulence-dashboard"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.4"
   }
 }
