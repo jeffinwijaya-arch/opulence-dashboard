@@ -3044,7 +3044,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                         <option value="us_to_hk">US → HK (Export)</option>
                         <option value="all">All Directions</option>
                     </select>
-                    <input class="input" id="arb-search" placeholder="Filter ref, model..." oninput="renderArbitrage()" style="flex:1;max-width:240px;">
+                    <input class="input" id="arb-search" placeholder="Filter ref, model..." oninput="debouncedRenderArbitrage()" style="flex:1;max-width:240px;">
                     <span class="dim" style="font-size:0.72rem;font-family:var(--mono);" id="arb-summary"></span>
                 </div>
                 <div class="card"><div class="tbl-wrap"><table class="tbl" id="arb-table"><thead><tr>
@@ -3236,7 +3236,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                         <div>
                             <label style="font-size:0.72rem;color:var(--text-2);text-transform:uppercase;">Contact / Preset</label>
                             <div style="display:flex;gap:6px;margin-top:4px;">
-                                <input class="input" id="ship-contact-search" placeholder="Search contacts..." oninput="filterContactsDropdown(this.value)" style="flex:1;" autocomplete="off">
+                                <input class="input" id="ship-contact-search" placeholder="Search contacts..." oninput="debouncedFilterContactsDropdown()" style="flex:1;" autocomplete="off">
                                 <button class="btn" onclick="toggleContactsList()" style="font-size:0.7rem;padding:4px 10px;white-space:nowrap;">&#9776; Contacts</button>
                             </div>
                             <div id="ship-contacts-dropdown" style="display:none;position:relative;z-index:100;background:var(--bg-2);border:1px solid var(--border-strong);border-radius:var(--radius);margin-top:2px;max-height:160px;overflow-y:auto;"></div>
@@ -3368,7 +3368,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                 </div>
                 <div class="card-body">
                     <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
-                        <input class="input" id="contacts-search" placeholder="Search contacts..." oninput="loadContactsList(this.value)" style="flex:1;">
+                        <input class="input" id="contacts-search" placeholder="Search contacts..." oninput="debouncedLoadContactsList()" style="flex:1;">
                     </div>
                     <div id="contacts-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;">
                         <div class="skel-card"><div class="skel-line w60 h16"></div><div class="skel-line w40 h8"></div></div>
@@ -3924,7 +3924,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                     <option value="paid">Paid</option>
                     <option value="void">Void</option>
                 </select>
-                <input class="input" id="inv-search" placeholder="Search customer or invoice #..." oninput="loadInternalInvoices()" style="flex:1;min-width:150px;">
+                <input class="input" id="inv-search" placeholder="Search customer or invoice #..." oninput="debouncedLoadInternalInvoices()" style="flex:1;min-width:150px;">
                 <button class="btn" onclick="showNewInvoiceModal()" style="white-space:nowrap;background:var(--accent);color:var(--bg-1);">+ New Invoice</button>
             </div>
             <!-- Invoice list -->
@@ -4215,8 +4215,8 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
             <!-- Filters & Search -->
             <div class="card" style="margin-bottom:16px;">
                 <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-                    <input class="input" id="library-search" placeholder="Search by model, dial, date..." 
-                           oninput="filterPhotoLibrary()" style="flex:1;min-width:200px;">
+                    <input class="input" id="library-search" placeholder="Search by model, dial, date..."
+                           oninput="debouncedFilterPhotoLibrary()" style="flex:1;min-width:200px;">
                     <select class="input" id="model-filter" onchange="filterPhotoLibrary()" style="width:140px;">
                         <option value="">All Models</option>
                         <option value="126710BLRO">GMT Pepsi</option>
@@ -5331,15 +5331,46 @@ function matchesSearch(text, terms) { const tl = text.toLowerCase(); return term
 let DATA = { deals:[], arbitrage:[], topRefs:[], portfolio:null, refs:{}, listings:[] };
 let allListings = [];
 let browseOffset = 0;
+let browseTopPruned = 0; // virtual scroll: rows removed from top (behind spacer)
 const BROWSE_PAGE = 80;
+const BROWSE_MAX_DOM_ROWS = 200; // keep at most this many data rows in DOM
 let currentDealsRegion = 'all';
 
 // ── Generic debounce utility ──
 function _mkDebounce(fn, ms) { let t; return function() { clearTimeout(t); t = setTimeout(fn, ms); }; }
-const debouncedFilterBrowse = _mkDebounce(function(){ browseOffset=0; renderBrowse(); }, 200);
+
+// ── sessionStorage response cache (TTL in ms) ──
+// Used for large static files that don't change between page navigations.
+function cachedFetch(url, ttlMs) {
+    const KEY = 'mk_cache_v1_' + url;
+    try {
+        const raw = sessionStorage.getItem(KEY);
+        if (raw) {
+            const { ts, data } = JSON.parse(raw);
+            if (Date.now() - ts < ttlMs) {
+                // Return a Response-like object so callers can use .ok and .json()
+                return Promise.resolve({ ok: true, json: () => Promise.resolve(data), _fromCache: true });
+            }
+        }
+    } catch(_) {}
+    return fetch(url).then(r => {
+        if (r.ok) {
+            r.clone().json().then(data => {
+                try { sessionStorage.setItem(KEY, JSON.stringify({ ts: Date.now(), data })); } catch(_) {}
+            }).catch(()=>{});
+        }
+        return r;
+    });
+}
+const debouncedFilterBrowse = _mkDebounce(function(){ browseOffset=0; browseTopPruned=0; renderBrowse(); }, 200);
 const debouncedFilterDeals = _mkDebounce(function(){ if(typeof filterDeals==='function') filterDeals(); }, 200);
 const debouncedFilterInventory = _mkDebounce(function(){ if(typeof filterInventory==='function') filterInventory(); }, 200);
 const debouncedFilterPostings = _mkDebounce(function(){ if(typeof filterPostings==='function') filterPostings(); }, 200);
+const debouncedRenderArbitrage = _mkDebounce(function(){ if(typeof renderArbitrage==='function') renderArbitrage(); }, 250);
+const debouncedLoadContactsList = _mkDebounce(function(){ const el=document.getElementById('contacts-search'); if(el&&typeof loadContactsList==='function') loadContactsList(el.value); }, 250);
+const debouncedLoadInternalInvoices = _mkDebounce(function(){ if(typeof loadInternalInvoices==='function') loadInternalInvoices(); }, 300);
+const debouncedFilterPhotoLibrary = _mkDebounce(function(){ if(typeof filterPhotoLibrary==='function') filterPhotoLibrary(); }, 250);
+const debouncedFilterContactsDropdown = _mkDebounce(function(){ const el=document.getElementById('ship-contact-search'); if(el&&typeof filterContactsDropdown==='function') filterContactsDropdown(el.value); }, 200);
 
 const PAGE_NAMES = {dashboard:'Overview',lookup:'Prices',portfolio:'Portfolio',deals:'Deals & Arbitrage',invoices:'Invoices',shipping:'Shipping',inventory:'Inventory',payments:'Payments',photos:'Photos','mission-control':'Mission Control'};
 
@@ -5453,7 +5484,7 @@ async function loadData() {
         // before the bundle ever loaded — the #1 cause of the "Price
         // Intelligence shows nothing" bug.
         try {
-            const br = await fetch('/data/bundle.json');
+            const br = await cachedFetch('/data/bundle.json', 5 * 60 * 1000); // 5-min TTL
             if (br.ok) {
                 const b = await br.json();
                 if (b.refs) DATA.refs = b.refs;
@@ -5505,7 +5536,8 @@ async function loadData() {
 async function loadPortfolio() { try { const r = await fetch('/api/portfolio_insights'); DATA.portfolio = await r.json(); renderPortfolio(); } catch(e) { console.error(e); } }
 async function loadListings() {
     try {
-        let r = await fetch('/data/listings.json?v=' + Date.now()); if (!r.ok) r = await fetch('/api/search?q=');
+        let r = await cachedFetch('/data/listings.json', 5 * 60 * 1000); // 5-min TTL
+        if (!r.ok) r = await fetch('/api/search?q=');
         if (r.ok) {
             allListings = (await r.json()).map(l => ({ref:l.ref||'',model:l.model||'',dial:l.dial||'',bracelet:l.bracelet||'',price:l.price_usd||l.price||0,condition:l.condition||'',completeness:l.completeness||'',region:l.region||'',seller:l.seller||'',phone:l.phone||'',group:l.group||'',brand:l.brand||'Rolex',year:l.year||'',source_text:l.source_text||''}));
             allListings.sort((a,b)=>a.price-b.price);
@@ -5533,7 +5565,7 @@ async function refreshData() {
 }
 
 // ── RENDER ──
-function renderAll() { renderTicker(); renderDashboard(); renderDeals(); renderArbitrage(); loadActivityFeed(); document.dispatchEvent(new CustomEvent('mk:data-loaded')); if (window.MKModules) window.MKModules.renderAll(); }
+function renderAll() { renderTicker(); renderDashboard(); renderDeals(); renderArbitrage(); document.dispatchEvent(new CustomEvent('mk:data-loaded')); if (window.MKModules) window.MKModules.renderAll(); }
 
 
 
@@ -6504,7 +6536,7 @@ function openPostingModal(item, photoCount) {
                     <div style="display:flex;gap:6px;flex-wrap:wrap;max-height:160px;overflow-y:auto;">
                         ${d.photos.map(p => `
                             <div style="position:relative;cursor:pointer;" onclick="useLibraryPhoto('${p.id}', '${p.url}', ${item.row}, '${(item.description||'').replace(/'/g,"\\'")}')">
-                                <img src="${p.url}" style="width:140px;height:140px;object-fit:cover;border-radius:6px;border:1px solid var(--border);" />
+                                <img src="${p.url}" style="width:140px;height:140px;object-fit:cover;border-radius:6px;border:1px solid var(--border);" loading="lazy" />
                                 <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);color:white;font-size:0.5rem;padding:1px 3px;border-radius:0 0 4px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.dial||p.ref}</div>
                             </div>
                         `).join('')}
@@ -6537,7 +6569,7 @@ async function loadPostingPhotoPreviews(row) {
         if (!data.photos?.length) { preview.innerHTML = ''; return; }
         preview.innerHTML = data.photos.map(p =>
             `<div style="position:relative;display:inline-block;">
-                <img src="/api/watch-photos/${row}/images/${p.filename}" style="width:140px;height:140px;object-fit:cover;border-radius:6px;border:1px solid var(--border);" />
+                <img src="/api/watch-photos/${row}/images/${p.filename}" style="width:140px;height:140px;object-fit:cover;border-radius:6px;border:1px solid var(--border);" loading="lazy" />
                 <button onclick="event.stopPropagation();deletePostingPhoto(${row},'${p.filename}')" style="position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;background:var(--red);color:#fff;border:2px solid var(--bg-1);font-size:0.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;z-index:10;touch-action:manipulation;">x</button>
                 <button onclick="redactPostingPhoto(${row},'${p.filename}','')" style="position:absolute;bottom:4px;left:4px;font-size:0.55rem;padding:2px 6px;background:rgba(0,0,0,0.7);color:#fff;border:none;border-radius:4px;cursor:pointer;">Redact</button>
             </div>`
@@ -8674,7 +8706,32 @@ function renderBrowse(append) {
         $('#browse-more').style.display = 'none';
         return;
     }
-    if (append) tbody.innerHTML+=html; else tbody.innerHTML=html;
+    if (append) {
+        tbody.innerHTML += html;
+        // Virtual DOM pruning: remove oldest rows when DOM gets too large
+        const dataRows = Array.from(tbody.querySelectorAll('tr:not(#browse-vspacer):not(.source-row)'));
+        if (dataRows.length > BROWSE_MAX_DOM_ROWS) {
+            const pruneCount = dataRows.length - BROWSE_MAX_DOM_ROWS;
+            const rowH = dataRows[0]?.getBoundingClientRect().height || 33;
+            for (let i = 0; i < pruneCount; i++) {
+                const row = dataRows[i];
+                if (row.nextElementSibling?.classList.contains('source-row')) row.nextElementSibling.remove();
+                row.remove();
+            }
+            browseTopPruned += pruneCount;
+            let spacer = document.getElementById('browse-vspacer');
+            if (!spacer) {
+                spacer = document.createElement('tr');
+                spacer.id = 'browse-vspacer';
+                spacer.innerHTML = '<td colspan="11" style="padding:0;border:none;"></td>';
+                tbody.prepend(spacer);
+            }
+            spacer.style.height = (browseTopPruned * rowH) + 'px';
+        }
+    } else {
+        tbody.innerHTML = html;
+        browseTopPruned = 0;
+    }
     browseOffset+=BROWSE_PAGE;
     $('#browse-more').style.display = browseOffset>=f.length?'none':'';
     const bsub = $('#browse-subtitle'); if (bsub) { const total = allListings.length; bsub.textContent = (f.length < total ? f.length.toLocaleString() + ' of ' : '') + total.toLocaleString() + ' listings in database'; }
@@ -8692,7 +8749,7 @@ function toggleSource(el) {
         el.textContent = srcRow.style.display === 'none' ? 'src' : 'hide';
     }
 }
-function filterBrowse(){browseOffset=0;renderBrowse();}
+function filterBrowse(){browseOffset=0;browseTopPruned=0;renderBrowse();}
 function loadMoreBrowse(){renderBrowse(true);}
 // Infinite scroll for browse table
 (function(){
@@ -8718,6 +8775,48 @@ function loadMoreBrowse(){renderBrowse(true);}
     setTimeout(_setupBrowseInfiniteScroll, 2000);
 })();
 
+// ── INTERSECTION OBSERVER: lazy-load off-screen dashboard sections ──
+(function(){
+    if (!window.IntersectionObserver) {
+        // Fallback for very old browsers
+        loadActivityFeed();
+        return;
+    }
+    let _activityLoaded = false;
+    let _newsLoaded = false;
+    const _lazyObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            const id = entry.target.id;
+            if (id === 'activity-feed' && !_activityLoaded) {
+                _activityLoaded = true;
+                loadActivityFeed();
+                _lazyObserver.unobserve(entry.target);
+            }
+            if (id === 'news-feed' && !_newsLoaded) {
+                _newsLoaded = true;
+                if (!DATA.news) loadNews();
+                else renderNews();
+                _lazyObserver.unobserve(entry.target);
+            }
+        });
+    }, { rootMargin: '200px' });
+    // Observe after DOM is ready
+    requestAnimationFrame(() => {
+        const af = document.getElementById('activity-feed');
+        const nf = document.getElementById('news-feed');
+        if (af) _lazyObserver.observe(af);
+        if (nf) _lazyObserver.observe(nf);
+    });
+    // Re-observe when navigating back to dashboard
+    document.addEventListener('mk:data-loaded', () => {
+        if (!_activityLoaded) {
+            const af = document.getElementById('activity-feed');
+            if (af) _lazyObserver.observe(af);
+        }
+    });
+})();
+
 // ── KEYBOARD ──
 document.addEventListener('keydown',e=>{
     if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT'||e.target.tagName==='TEXTAREA')return;
@@ -8739,7 +8838,7 @@ document.addEventListener('keydown',e=>{
 // ── NEWS ──
 async function loadNews() {
     try {
-        const r = await fetch('/data/news.json');
+        const r = await cachedFetch('/data/news.json', 15 * 60 * 1000); // 15-min TTL
         if (!r.ok) return;
         const data = await r.json();
         DATA.news = data.articles || [];
@@ -8843,7 +8942,8 @@ async function loadSparklines() {
         if (r.ok) _sparkData = await r.json();
     } catch(e) {}
 }
-loadSparklines();
+// Deferred — not needed for first paint; load after idle
+(window.requestIdleCallback || (cb => setTimeout(cb, 800)))(loadSparklines);
 
 // ═══ CHART RENDERER (canvas-based, no dependencies) — gradient area + bezier + tooltips ═══
 function renderChart(canvasId, data, opts={}) {
@@ -10001,7 +10101,8 @@ if (_userRole.allowedPages) {
     // Full access — load everything now
     loadData();
     setTimeout(renderTicker, 3000);
-    loadNews();
+    // Defer non-critical fetches until after initial render/idle
+    (window.requestIdleCallback || (cb => setTimeout(cb, 1000)))(loadNews);
     fxLoadRates();
     fxCalc();
 }
@@ -10129,8 +10230,11 @@ function updateDevotion(){
   if(ref)ref.textContent=v.r;
   if(ts){const h=hour%12||12;const ap=hour>=12?'PM':'AM';ts.textContent=h+':00 '+ap;}
 }
-updateDevotion();
-setInterval(updateDevotion,60000);
+// Deferred — devotion card is below the fold; defer to after initial render
+(window.requestIdleCallback || (cb => setTimeout(cb, 600)))(function(){
+    updateDevotion();
+    setInterval(updateDevotion,60000);
+});
 
 // ── INVENTORY MANAGEMENT ──
 var invMgmtData = [];
@@ -10679,7 +10783,7 @@ async function loadWatchPhotos(row) {
         const d = await r.json();
         if (d.ok && d.photos.length) {
             grid.innerHTML = d.photos.map((p, i) => `<div style="position:relative;aspect-ratio:1;min-height:80px;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--bg-3);">
-                <img src="${p.url}" style="width:100%;height:100%;object-fit:cover;display:block;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="viewWatchPhoto('${p.url}', ${JSON.stringify(d.photos.map(x=>x.url)).replace(/'/g,'\\\'')}, ${i})">
+                <img src="${p.url}" style="width:100%;height:100%;object-fit:cover;display:block;cursor:pointer;-webkit-tap-highlight-color:transparent;" loading="lazy" onclick="viewWatchPhoto('${p.url}', ${JSON.stringify(d.photos.map(x=>x.url)).replace(/'/g,'\\\'')}, ${i})">
                 <button onclick="event.stopPropagation();deleteWatchPhoto(${row},'${p.filename}')" style="position:absolute;top:5px;right:5px;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,0.7);color:#fff;border:none;font-size:0.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;-webkit-tap-highlight-color:transparent;">&#x2715;</button>
             </div>`).join('');
         } else { grid.innerHTML = '<div style="grid-column:1/-1;">' + emptyState('box','No photos yet','Upload photos to see them here.') + '</div>'; }
@@ -11150,8 +11254,8 @@ function showWatchPhotoModal(watchInfo) {
     const photosHtml = watchInfo.photos.map(photo => {
         return `
             <div style="text-align:center;margin:8px;">
-                <img src="/api/watch-photos/${watchInfo.row}/images/${photo.filename}" 
-                     style="max-width:300px;max-height:400px;border-radius:8px;border:2px solid var(--border);" />
+                <img src="/api/watch-photos/${watchInfo.row}/images/${photo.filename}"
+                     style="max-width:300px;max-height:400px;border-radius:8px;border:2px solid var(--border);" loading="lazy" />
                 <div style="font-size:0.7rem;color:var(--text-2);margin-top:4px;">
                     ${photo.filename}
                 </div>
@@ -14952,7 +15056,7 @@ async function loadPayments() {
             const photoGrid = b.watches.map(w => {
                 const photoUrl = w.photo_url || '';
                 return photoUrl 
-                    ? `<img src="${photoUrl}" style="width:100px;height:100px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;" onclick="window.open('${photoUrl}','_blank')">`
+                    ? `<img src="${photoUrl}" style="width:100px;height:100px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;" loading="lazy" onclick="window.open('${photoUrl}','_blank')">`
                     : `<div style="width:100px;height:100px;background:var(--bg-1);border-radius:6px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:var(--text-2);">No photo</div>`;
             }).join('');
 
@@ -15081,7 +15185,7 @@ async function loadPayments() {
             const price = p.price ? '$' + Number(p.price).toLocaleString() : '—';
             const mid = p.message_id || '';
             const photoHtml = p.photo
-                ? `<img src="/api/posting-photo/${p.photo}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">`
+                ? `<img src="/api/posting-photo/${p.photo}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;cursor:pointer;" loading="lazy" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">`
                 : '<span style="color:var(--text-2);font-size:0.65rem;">No photo</span>';
             const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\').replace(/\n/g,' ').replace(/\r/g,'');
             const safePhoto = (p.photo || '').replace(/'/g,'&apos;');
@@ -15137,7 +15241,7 @@ async function loadPayments() {
                 const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\').replace(/\n/g,' ').replace(/\r/g,'');
                 const safePhoto = (p.photo || '').replace(/'/g,'&apos;');
                 const imgTag = p.photo
-                    ? `<img src="/api/posting-photo/${p.photo}" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">`
+                    ? `<img src="/api/posting-photo/${p.photo}" loading="lazy" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">`
                     : '';
                 const isDraft = p.status === 'draft';
                 const statusBadge = isDraft ? '<span style="background:var(--yellow,#ffd600);color:#000;font-size:0.6rem;padding:1px 6px;border-radius:4px;font-weight:600;">DRAFT</span> ' : '';
@@ -16574,7 +16678,7 @@ async function loadPayments() {
             const price = p.price ? '$' + Number(p.price).toLocaleString() : '—';
             const mid = p.message_id || '';
             const photoHtml = p.photo
-                ? `<img src="/api/posting-photo/${p.photo}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;cursor:pointer;" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">`
+                ? `<img src="/api/posting-photo/${p.photo}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;cursor:pointer;" loading="lazy" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">`
                 : '<span style="color:var(--text-2);font-size:0.65rem;">No photo</span>';
             const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\').replace(/\n/g,' ').replace(/\r/g,'');
             const safePhoto = (p.photo || '').replace(/'/g,'&apos;');
@@ -16633,7 +16737,7 @@ async function loadPayments() {
                 const priceRaw = p.price || '';
                 const safeDesc = desc.replace(/'/g,'&apos;').replace(/\\/g,'\\\\').replace(/\n/g,' ').replace(/\r/g,'');
                 const safePhoto = (p.photo || '').replace(/'/g,'&apos;');
-                const imgTag = p.photo ? `<img src="/api/posting-photo/${p.photo}" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">` : '';
+                const imgTag = p.photo ? `<img src="/api/posting-photo/${p.photo}" loading="lazy" onclick="window.open('/api/posting-photo/${p.photo}','_blank')">` : '';
                 const isDraft = p.status === 'draft';
                 const statusBadge = isDraft ? '<span style="background:var(--yellow,#ffd600);color:#000;font-size:0.6rem;padding:1px 6px;border-radius:4px;font-weight:600;">DRAFT</span> ' : '';
                 const perf = _postingPerformanceData[String(mid)] || {};
