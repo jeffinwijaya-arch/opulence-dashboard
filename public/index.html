@@ -3263,6 +3263,11 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                         <option value="BNIB">BNIB</option>
                         <option value="Pre-owned">Pre-owned</option>
                     </select>
+                    <select class="input" id="redact-filter" onchange="filterPhotoLibrary()" style="width:140px;">
+                        <option value="">All</option>
+                        <option value="needs">Needs Redact</option>
+                        <option value="redacted">Redacted</option>
+                    </select>
                     <button class="btn" onclick="showPhotoStats()" style="padding:0 16px;">Stats</button>
                 </div>
             </div>
@@ -12880,8 +12885,9 @@ async function loadPayments() {
         const search = ($('#library-search').value || '').toLowerCase();
         const modelFilter = $('#model-filter').value;
         const conditionFilter = $('#condition-filter').value;
+        const redactFilter = $('#redact-filter').value;
         const sortOrder = $('#sort-order').value;
-        
+
         let filtered = photoLibraryData.filter(watch => {
             // Hide watches with no photos
             if (!watch.photo_count || watch.photo_count === 0) return false;
@@ -12895,6 +12901,15 @@ async function loadPayments() {
 
             if (modelFilter && watch.model !== modelFilter) return false;
             if (conditionFilter && watch.condition !== conditionFilter) return false;
+
+            // Redaction status filter
+            if (redactFilter === 'needs') {
+                // Needs Redact: has serial but no redacted/redacted_at flag
+                if (!watch.serial || watch.redacted || watch.redacted_at) return false;
+            } else if (redactFilter === 'redacted') {
+                // Redacted: has redacted or redacted_at
+                if (!watch.redacted && !watch.redacted_at) return false;
+            }
 
             return true;
         });
@@ -13223,6 +13238,10 @@ async function loadPayments() {
             canvas.height = img.height * scale;
             canvas.dataset.scale = scale;
             renderEditor();
+            // Auto-enter redact mode if watch needs redaction (has serial but not yet redacted)
+            if (watch.serial && !watch.redacted && !watch.redacted_at) {
+                setEditorTool('redact');
+            }
         };
         img.onerror = function() {
             canvas.width = 400; canvas.height = 300;
