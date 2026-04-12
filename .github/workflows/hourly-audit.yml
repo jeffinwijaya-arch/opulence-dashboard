@@ -1,0 +1,125 @@
+name: Hourly audit
+
+# Runs scripts/audit_repo.py every hour and commits the resulting
+# reports to .github/audit/LATEST.md and .github/audit/HISTORY.md.
+#
+# Scope (deliberately narrow):
+#   - Reads the repo state.
+#   - Runs the existing pytest + vitest suites (no side effects).
+#   - Probes production URLs if DASHBOARD_URL is set.
+#   - Writes two report files and commits them. Nothing else.
+#
+# Explicitly NOT scoped for:
+#   - Modifying source code
+#   - Regenerating public/data/*.json
+#   - Deploying
+#   - Opening PRs or issues
+#
+# See .github/audit/README.md for the kill switch and how to enable
+# production health checks.
+
+on:
+  schedule:
+    # Every hour on the hour, UTC.
+    - cron: "0 * * * *"
+  # Manual trigger for testing.
+  workflow_dispatch:
+
+# Prevent overlapping runs — if one audit is slow, skip the next
+# rather than stacking up. Keeps the token + runner cost bounded.
+concurrency:
+  group: hourly-audit
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    name: Run audit + commit report
+    runs-on: ubuntu-latest
+    # Hard cap: if a check hangs, kill the run. Audit reports are
+    # nice-to-have; never worth a stuck runner.
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Need full history so `git log --oneline -5` in the audit
+          # script doesn't report the shallow-clone pseudo-commits.
+          fetch-depth: 10
+
+      - name: Kill switch check
+        id: killswitch
+        run: |
+          if [ -f .github/audit/DISABLED ]; then
+            echo "Kill switch active — .github/audit/DISABLED exists. Exiting cleanly."
+            echo "disabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "disabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Python
+        if: steps.killswitch.outputs.disabled != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Python deps
+        if: steps.killswitch.outputs.disabled != 'true'
+        run: pip install pytest jsonschema
+
+      - name: Set up Node
+        if: steps.killswitch.outputs.disabled != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install Node deps
+        if: steps.killswitch.outputs.disabled != 'true'
+        run: npm ci
+
+      - name: Run audit
+        if: steps.killswitch.outputs.disabled != 'true'
+        env:
+          # Set this at the repo level (Settings → Secrets and
+          # variables → Actions → Variables) to enable production
+          # health checks. Without it, the health check is skipped.
+          DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
+        run: python3 scripts/audit_repo.py
+
+      - name: Commit report changes
+        if: steps.killswitch.outputs.disabled != 'true'
+        run: |
+          # Only commit if the report files actually changed. In the
+          # steady state (everything green, no new data) nothing may
+          # have changed and the commit is skipped.
+          if git diff --quiet .github/audit/LATEST.md .github/audit/HISTORY.md; then
+            echo "No changes — nothing to commit."
+            exit 0
+          fi
+          git config user.name "opulence-audit-bot"
+          git config user.email "opulence-audit-bot@users.noreply.github.com"
+          git add .github/audit/LATEST.md .github/audit/HISTORY.md
+          # Pull the headline out of LATEST.md for the commit message.
+          OVERALL=$(grep -m1 '^\*\*Overall\*\*' .github/audit/LATEST.md | sed -E 's/\*\*Overall\*\*: `([A-Z]+)`/\1/' || echo "?")
+          TS=$(date -u +"%Y-%m-%dT%H:%MZ")
+          git commit -m "audit: ${TS} — ${OVERALL}
+
+          Automated hourly audit. See .github/audit/LATEST.md for the full
+          report. This commit was created by .github/workflows/hourly-audit.yml
+          and touches only the two report files. To stop these commits, create
+          .github/audit/DISABLED."
+          # Retry push up to 3 times on transient network errors.
+          for i in 1 2 3; do
+            if git push; then
+              exit 0
+            fi
+            echo "push failed, retrying in ${i}s..."
+            sleep $i
+          done
+          echo "push failed after 3 attempts"
+          exit 1
