@@ -207,6 +207,70 @@ describe('endpoint_not_available fallback (JSON 404)', () => {
   });
 });
 
+describe('vision API routes', () => {
+  it('returns 503 when ANTHROPIC_API_KEY is not set', async () => {
+    const env = makeEnv({});
+    // No ANTHROPIC_API_KEY in env
+    const req = new Request('https://example.test/api/vision/identify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image_base64: 'dGVzdA==' }),
+    });
+    const res = await worker.fetch(req, env);
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(body.error).toContain('ANTHROPIC_API_KEY');
+  });
+
+  it('returns 405 for GET on identify endpoint', async () => {
+    const env = makeEnv({});
+    const res = await worker.fetch(
+      new Request('https://example.test/api/vision/identify'),
+      env,
+    );
+    expect(res.status).toBe(405);
+    expect(res.headers.get('Content-Type')).toBe('application/json');
+  });
+
+  it('health endpoint returns status', async () => {
+    const env = {
+      ASSETS: { fetch: async () => new Response('{}', { status: 200 }) },
+    };
+    const res = await worker.fetch(
+      new Request('https://example.test/api/vision/health'),
+      env,
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.status).toBe('no_api_key');
+    expect(body.api_key_set).toBe(false);
+  });
+
+  it('health endpoint shows ok when key is set', async () => {
+    const env = {
+      ANTHROPIC_API_KEY: 'sk-test-key',
+      ASSETS: { fetch: async () => new Response('{}', { status: 200 }) },
+    };
+    const res = await worker.fetch(
+      new Request('https://example.test/api/vision/health'),
+      env,
+    );
+    const body = await res.json();
+    expect(body.status).toBe('ok');
+    expect(body.api_key_set).toBe(true);
+  });
+
+  it('CORS headers present on vision responses', async () => {
+    const env = makeEnv({});
+    const res = await worker.fetch(
+      new Request('https://example.test/api/vision/health'),
+      env,
+    );
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*');
+  });
+});
+
 describe('non-API routes', () => {
   it('passes through to ASSETS untouched', async () => {
     let captured = null;
