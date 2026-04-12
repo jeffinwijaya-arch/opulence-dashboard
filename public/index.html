@@ -3366,7 +3366,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                     </details>
                     <!-- Canvas area (takes most space) -->
                     <div id="editor-canvas-wrapper" style="flex:1;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;min-height:200px;touch-action:none;">
-                        <canvas id="editor-canvas" role="img" aria-label="Photo being edited" style="cursor:default;border:2px solid rgba(255,255,255,0.08);border-radius:6px;transition:border-color 0.2s,box-shadow 0.2s;max-width:100%;max-height:100%;"></canvas>
+                        <canvas id="editor-canvas" role="img" aria-label="Photo being edited" style="cursor:default;border:2px solid rgba(255,255,255,0.08);border-radius:6px;transition:border-color 0.2s,box-shadow 0.2s;"></canvas>
                         <!-- Before/After comparison divider -->
                         <div id="editor-compare-divider" style="display:none;position:absolute;top:0;height:100%;width:2px;background:white;cursor:ew-resize;z-index:10;pointer-events:auto;box-shadow:0 0 6px rgba(0,0,0,0.6);">
                             <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:24px;height:24px;background:white;border-radius:50%;box-shadow:0 0 6px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;">
@@ -13343,18 +13343,33 @@ async function loadPayments() {
         $('#editor-status').style.display = 'none';
         updateToolButtons();
         
+        // Show modal FIRST so wrapper has layout dimensions
+        $('#photo-modal').style.display = 'block';
+
         // Load image onto canvas
         const canvas = $('#editor-canvas');
         const ctx = canvas.getContext('2d');
+
+        // Measure available space after modal is visible
+        const wrapper = $('#editor-canvas-wrapper');
+        const availW = wrapper.clientWidth || (window.innerWidth - 16);
+        const availH = wrapper.clientHeight || (window.innerHeight - 200);
+
+        // Show loading placeholder at measured size
+        canvas.width = Math.min(300, availW);
+        canvas.height = Math.min(200, availH);
+        ctx.fillStyle = '#111';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#555';
+        ctx.font = '12px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Loading...', canvas.width / 2, canvas.height / 2);
+
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = function() {
             editorImage = img;
-            // Scale canvas to fit while preserving aspect ratio
-            const wrapper = $('#editor-canvas-wrapper');
-            const maxW = Math.min(860, wrapper.clientWidth || (window.innerWidth - 16));
-            const maxH = wrapper.clientHeight || (window.innerHeight - 200);
-            const scale = Math.min(maxW / img.width, maxH / img.height, 1);
+            const scale = Math.min(availW / img.width, availH / img.height, 1);
             canvas.width = Math.round(img.width * scale);
             canvas.height = Math.round(img.height * scale);
             canvas.dataset.scale = scale;
@@ -13363,37 +13378,25 @@ async function loadPayments() {
             renderEditor();
             editorZoom = 1; editorPanX = 0; editorPanY = 0;
             _editorApplyTransform();
-            // Auto-enter redact mode if watch needs redaction (has serial but not yet redacted)
             if (watch.serial && !watch.redacted && !watch.redacted_at) {
                 setEditorTool('redact');
             }
         };
         img.onerror = function() {
-            canvas.width = 300; canvas.height = 200;
+            canvas.width = Math.min(300, availW);
+            canvas.height = Math.min(200, availH);
             const ctx2 = canvas.getContext('2d');
             ctx2.fillStyle = '#1a1a2e';
-            ctx2.fillRect(0, 0, 300, 200);
+            ctx2.fillRect(0, 0, canvas.width, canvas.height);
             ctx2.fillStyle = '#e74c3c';
             ctx2.font = 'bold 14px Inter, system-ui, sans-serif';
             ctx2.textAlign = 'center';
-            ctx2.fillText('Image failed to load', 150, 90);
+            ctx2.fillText('Image failed to load', canvas.width / 2, canvas.height / 2 - 10);
             ctx2.fillStyle = '#888';
             ctx2.font = '11px Inter, system-ui, sans-serif';
-            ctx2.fillText(watchId || 'unknown', 150, 115);
-            ctx2.fillText('Check network or try again', 150, 135);
+            ctx2.fillText('Tap X to close, try again', canvas.width / 2, canvas.height / 2 + 15);
         };
-        // Show loading state while image fetches
-        canvas.width = 300; canvas.height = 200;
-        const _lctx = canvas.getContext('2d');
-        _lctx.fillStyle = '#111';
-        _lctx.fillRect(0, 0, 300, 200);
-        _lctx.fillStyle = '#555';
-        _lctx.font = '12px Inter, system-ui, sans-serif';
-        _lctx.textAlign = 'center';
-        _lctx.fillText('Loading...', 150, 105);
         img.src = '/api/watch-photos/' + watchId + '/image?t=' + Date.now();
-        
-        $('#photo-modal').style.display = 'block';
         // Focus first toolbar button for keyboard accessibility
         const firstToolbarBtn = document.querySelector('#editor-toolbar button');
         if (firstToolbarBtn) firstToolbarBtn.focus();
@@ -13508,21 +13511,10 @@ async function loadPayments() {
         var canvas = $('#editor-canvas');
         if (!canvas) return;
         if (editorZoom <= 1 && editorPanX === 0 && editorPanY === 0) {
-            // At 1x: natural flex layout, no transform
-            canvas.style.position = '';
             canvas.style.transform = '';
         } else {
-            // Zoomed/panned: absolute + CSS transform
-            var wrapper = $('#editor-canvas-wrapper');
-            var wW = wrapper.clientWidth, wH = wrapper.clientHeight;
-            var cw = canvas.width, ch = canvas.height;
-            // Canvas may be scaled down by max-width/max-height; use actual display size
-            var dispW = canvas.offsetWidth || cw, dispH = canvas.offsetHeight || ch;
-            var centerX = (wW - dispW) / 2;
-            var centerY = (wH - dispH) / 2;
-            canvas.style.position = 'absolute';
-            canvas.style.transform = 'translate(' + (centerX + editorPanX) + 'px, ' + (centerY + editorPanY) + 'px) scale(' + editorZoom + ')';
             canvas.style.transformOrigin = '0 0';
+            canvas.style.transform = 'scale(' + editorZoom + ') translate(' + editorPanX + 'px, ' + editorPanY + 'px)';
         }
     }
 
