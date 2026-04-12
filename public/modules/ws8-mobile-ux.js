@@ -285,6 +285,37 @@
             .mk-swipe-wrap.mk-swiping .deal-card {
                 transition: none !important;
             }
+
+            /* ── Vision panel — 44px touch targets + scrollable result (2026-04-12) ── */
+            /* Identify/Read Card buttons shipped with padding:2px 8px — unusable on iPhone */
+            @media (max-width: ${MOBILE_BP}px) {
+                #btn-vision-identify,
+                #btn-vision-card {
+                    min-height: 44px !important;
+                    padding: 10px 16px !important;
+                    font-size: 0.78rem !important;
+                    flex-grow: 1;
+                }
+                #editor-toolbar {
+                    row-gap: 4px;
+                }
+                #vision-result-panel {
+                    max-height: 50vh !important;
+                    overflow-y: auto !important;
+                    -webkit-overflow-scrolling: touch;
+                    overscroll-behavior: contain;
+                }
+            }
+            @media (max-width: 390px) {
+                #btn-vision-identify,
+                #btn-vision-card {
+                    font-size: 0.72rem !important;
+                }
+                #vision-result-panel {
+                    max-height: 40vh !important;
+                    font-size: 0.72rem !important;
+                }
+            }
         `;
         document.head.appendChild(_styleEl);
     }
