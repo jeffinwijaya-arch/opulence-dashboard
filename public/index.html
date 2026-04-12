@@ -3304,8 +3304,17 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                             <button class="btn" onclick="setEditorTool('redact')" id="btn-redact" style="padding:6px 12px;font-size:0.72rem;border:none;border-radius:0;background:var(--red-dim);color:var(--red);font-weight:600;">Redact</button>
                             <button class="btn" onclick="setEditorTool('view')" id="btn-view" style="padding:6px 12px;font-size:0.72rem;border:none;border-radius:0;background:var(--bg-2);color:var(--text-2);">View</button>
                         </div>
-                        <!-- Auto-detect -->
+                        <!-- Auto-detect + presets -->
                         <button class="btn" onclick="autoRedactPhoto()" id="btn-auto-redact" style="padding:6px 12px;font-size:0.72rem;background:rgba(138,43,226,0.15);color:#9b59b6;border-color:#9b59b6;">Auto-Detect</button>
+                        <select class="btn" id="editor-preset-select" onchange="applyRedactPreset(this.value);this.value='';" title="Quick-redact presets for common watch photo areas" style="padding:5px 6px;font-size:0.68rem;background:var(--bg-2);color:var(--text-2);border-color:var(--border);cursor:pointer;min-width:0;width:auto;">
+                            <option value="">Presets</option>
+                            <option value="caseback-serial">Caseback serial</option>
+                            <option value="caseback-date">Caseback date stamp</option>
+                            <option value="card-serial">Card serial number</option>
+                            <option value="card-date">Card date</option>
+                            <option value="rehaut-serial">Rehaut serial (6 o'clock)</option>
+                            <option value="clasp-code">Clasp code</option>
+                        </select>
                         <!-- Edit actions -->
                         <div style="display:inline-flex;gap:3px;">
                             <button class="btn" onclick="undoRedaction()" id="btn-editor-undo" title="Undo (Ctrl+Z)" style="padding:6px 10px;font-size:0.72rem;">Undo</button>
@@ -13535,6 +13544,32 @@ async function loadPayments() {
             renderEditor();
             updateEditorRedactCount();
         }
+    }
+
+    function applyRedactPreset(presetId) {
+        if (!presetId || !editorImage) return;
+        const canvas = $('#editor-canvas');
+        const cw = canvas.width, ch = canvas.height;
+        // Presets are proportional rects based on typical watch photo framing
+        // Values are [x%, y%, w%, h%] of canvas dimensions
+        const presets = {
+            'caseback-serial':  [0.28, 0.40, 0.44, 0.12],  // Center of caseback
+            'caseback-date':    [0.30, 0.55, 0.40, 0.08],  // Below serial on caseback
+            'card-serial':      [0.10, 0.30, 0.45, 0.08],  // Left side of warranty card
+            'card-date':        [0.10, 0.42, 0.30, 0.07],  // Below serial on card
+            'rehaut-serial':    [0.30, 0.72, 0.40, 0.06],  // 6 o'clock rehaut area
+            'clasp-code':       [0.35, 0.45, 0.30, 0.08],  // Center of clasp
+        };
+        const p = presets[presetId];
+        if (!p) return;
+        const rect = { x: Math.round(cw * p[0]), y: Math.round(ch * p[1]), w: Math.round(cw * p[2]), h: Math.round(ch * p[3]) };
+        editorRedactions.push(rect);
+        editorRedoStack = [];
+        editorSelectedIdx = editorRedactions.length - 1;
+        if (editorTool !== 'redact') setEditorTool('redact');
+        renderEditor();
+        updateEditorRedactCount();
+        _hapticTap();
     }
 
     function editorStartPeek() {
