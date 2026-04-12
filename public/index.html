@@ -5951,6 +5951,7 @@ function openPostingRedactEditor(file, row, desc) {
             _postingRedactRedoStack = [];
             _postingRedactSelected = _postingRedactRects.length - 1;
             postingRedactRender(); _updatePostingRedactCount(); _hapticTap();
+            showToast('Duplicated rect #' + _postingRedactRects.length, 'info', 2000);
         }
         else if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key) && _postingRedactSelected >= 0) {
             e.preventDefault();
@@ -6338,6 +6339,7 @@ async function postingAutoRedact() {
                     autoBtn.disabled = false;
                 }
                 _hapticTap();
+                showToast(count === '0' ? 'No areas found' : 'Auto-detected ' + count + ' area' + (count !== '1' ? 's' : ''), count === '0' ? 'warning' : 'success', 2500);
             };
             img.onerror = function() {
                 _stopRedactScanAnim();
