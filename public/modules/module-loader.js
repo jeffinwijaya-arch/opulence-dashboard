@@ -36,7 +36,8 @@ window.MKModules = {
         'ws7-analytics',
         'ws8-mobile-ux',
         'ws9-reporting',
-        'ws10-automation'
+        'ws10-automation',
+        'ws11-mobile-premium'
     ],
 
     /**
@@ -418,7 +419,8 @@ window.MKModules = {
         'ws7-analytics',
         'ws8-mobile-ux',
         'ws9-reporting',
-        'ws10-automation'
+        'ws10-automation',
+        'ws11-mobile-premium'
     ];
 
     const base = '/modules/';
