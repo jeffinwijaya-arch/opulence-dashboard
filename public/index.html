@@ -11476,7 +11476,7 @@ async function loadShippingPackages() {
         const hasInstructions = pending.some(p => p.notes);
         let html = `<div class="card" style="margin-bottom:12px;">
             <div class="card-head" style="cursor:pointer;" onclick="const b=this.nextElementSibling;b.style.display=b.style.display==='none'?'':'none';this.querySelector('.toggle-arrow').textContent=b.style.display==='none'?'\\u25B6':'\\u25BC';">
-                <span>Packages to Ship (${pending.length})</span>
+                <span>Watches to Ship (${pending.reduce((s,p)=>s+(p.watches?.length||1),0)})</span>
                 <span class="toggle-arrow" style="font-size:0.65rem;">&#9660;</span>
             </div>
             <div class="tbl-wrap" style="max-height:400px;overflow-y:auto;">
@@ -17297,7 +17297,7 @@ async function submitNewJournal() {
 const _jamLang = {
     en: {
         arrival: 'Arrival', ship: 'Ship', purchased: 'Purchased', sold: 'Sold',
-        toShip: 'TO SHIP', shipped: 'SHIPPED', pending: 'packages to ship', completed: 'completed',
+        toShip: 'TO SHIP', shipped: 'SHIPPED', pending: 'watches to ship', completed: 'completed',
         today: 'TODAY', yesterday: 'YESTERDAY', tomorrow: 'TOMORROW', unscheduled: 'UNSCHEDULED',
         uploadArrival: 'Take Arrival Photo', uploadArrivalSub: 'Tap to take Watch Full Set Picture',
         viewLabel: 'VIEW LABEL', print: 'PRINT', noLabel: 'No Label',
@@ -17313,7 +17313,7 @@ const _jamLang = {
     },
     id: {
         arrival: 'Kedatangan', ship: 'Kirim', purchased: 'Dibeli', sold: 'Dijual',
-        toShip: 'AKAN DIKIRIM', shipped: 'SUDAH DIKIRIM', pending: 'paket yang dikirim', completed: 'selesai',
+        toShip: 'AKAN DIKIRIM', shipped: 'SUDAH DIKIRIM', pending: 'jam yang dikirim', completed: 'selesai',
         today: 'HARI INI', yesterday: 'KEMARIN', tomorrow: 'BESOK', unscheduled: 'BELUM DIJADWALKAN',
         uploadArrival: 'Foto Kedatangan', uploadArrivalSub: 'Ketuk untuk foto Full Set jam',
         viewLabel: 'LIHAT LABEL', print: 'CETAK', noLabel: 'Tidak Ada Label',
@@ -17590,9 +17590,9 @@ function renderJamFeed(type) {
                 if (i.package_id) _pkgIds.add(i.package_id);
                 else _looseCount++;
             }
-            const _packageCount = _pkgIds.size + _looseCount;
+            const _watchCount = visiblePending.length;
             html += `<div style="padding:16px;margin-bottom:12px;background:var(--bg-2);border:2px solid var(--orange);border-radius:var(--radius-lg);text-align:center;position:relative;">
-                <div style="font-size:2.2rem;font-weight:700;color:var(--orange);line-height:1.2;">${_packageCount}</div>
+                <div style="font-size:2.2rem;font-weight:700;color:var(--orange);line-height:1.2;">${_watchCount}</div>
                 <div style="font-size:1rem;font-weight:600;color:var(--text-0);text-transform:uppercase;letter-spacing:1px;">${_t('pending')}</div>
                 ${!isLogistics ? `<button onclick="event.stopPropagation();showNewPackageModal()" style="position:absolute;top:10px;right:10px;cursor:pointer;padding:6px 14px;border-radius:20px;font-size:0.72rem;font-weight:700;border:1px solid var(--accent);background:var(--accent-dim);color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;">+ NEW PACKAGE</button>` : ''}
             </div>`;
