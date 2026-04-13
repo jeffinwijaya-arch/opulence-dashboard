@@ -18012,6 +18012,14 @@ async function showNewPackageModal() {
                 </div>
                 <div style="display:flex;gap:10px;">
                     <div style="flex:1;">
+                        <label style="font-size:0.68rem;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Shipper</label>
+                        <select id="pkg-shipper" style="width:100%;padding:10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.82rem;margin-top:4px;">
+                            <option value="Eddy">Eddy</option>
+                            <option value="Luigi">Luigi</option>
+                            <option value="Jeffin">Jeffin</option>
+                        </select>
+                    </div>
+                    <div style="flex:1;">
                         <label style="font-size:0.68rem;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Carrier</label>
                         <select id="pkg-carrier" style="width:100%;padding:10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.82rem;margin-top:4px;">
                             <option value="FedEx">FedEx</option>
@@ -18019,6 +18027,8 @@ async function showNewPackageModal() {
                             <option value="Local Delivery">Local Delivery</option>
                         </select>
                     </div>
+                </div>
+                <div style="display:flex;gap:10px;">
                     <div style="flex:1;">
                         <label style="font-size:0.68rem;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;">Ship By</label>
                         <input type="date" id="pkg-ship-date" value="${today}" style="width:100%;padding:10px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-0);font-size:0.82rem;margin-top:4px;box-sizing:border-box;">
@@ -18044,10 +18054,13 @@ function pkgWatchToggle() {
     const checked = document.querySelectorAll('.pkg-watch-cb:checked');
     const countEl = document.getElementById('pkg-watch-count');
     const btn = document.getElementById('pkg-create-btn');
+    const recipient = document.getElementById('pkg-recipient')?.value?.trim() || '';
     if (countEl) countEl.textContent = `(${checked.length} selected)`;
+    // Enable button if recipient is filled (watches optional)
+    const canCreate = recipient.length > 0;
     if (btn) {
-        btn.disabled = checked.length === 0;
-        btn.style.opacity = checked.length > 0 ? '1' : '0.4';
+        btn.disabled = !canCreate;
+        btn.style.opacity = canCreate ? '1' : '0.4';
     }
     // Auto-fill recipient from first selected watch's buyer
     if (checked.length === 1 && !document.getElementById('pkg-recipient').value) {
@@ -18060,9 +18073,10 @@ function pkgRecipientChange() {
     const recipient = document.getElementById('pkg-recipient')?.value || '';
     const nameInput = document.getElementById('pkg-name');
     if (nameInput && !nameInput._userEdited) {
-        const checked = document.querySelectorAll('.pkg-watch-cb:checked');
         nameInput.value = recipient ? `Package - ${recipient}` : '';
     }
+    // Re-evaluate create button (recipient is now the gate, not watches)
+    pkgWatchToggle();
 }
 
 async function createNewPackage() {
@@ -18074,17 +18088,19 @@ async function createNewPackage() {
     const carrier = document.getElementById('pkg-carrier')?.value || 'FedEx';
     const shipDate = document.getElementById('pkg-ship-date')?.value || '';
 
-    if (!watchIds.length) {
-        alert('Select at least one watch');
+    if (!recipient) {
+        alert('Enter a recipient name');
         if (btn) { btn.disabled = false; btn.textContent = 'CREATE PACKAGE'; }
         return;
     }
+
+    const shipper = document.getElementById('pkg-shipper')?.value || 'Eddy';
 
     try {
         const r = await fetch('/api/shipping/packages', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ watch_ids: watchIds, recipient, carrier, ship_by_date: shipDate })
+            body: JSON.stringify({ watch_ids: watchIds, recipient, carrier, ship_by_date: shipDate, shipper })
         });
         const data = await r.json();
         if (data.ok) {
