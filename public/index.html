@@ -2734,6 +2734,207 @@
             background:rgba(160,120,32,0.4) !important;
         }
 
+        /* ══════════════════════════════════════════════════
+           MOBILE UX v5 — Targeted Fixes
+           ══════════════════════════════════════════════════ */
+
+        /* ── v5-1. SCROLL-TOP BUTTON — 44px minimum touch target ── */
+        .scroll-top-btn {
+            width:44px !important;
+            height:44px !important;
+        }
+        .scroll-top-btn svg { width:20px; height:20px; }
+
+        /* ── v5-2. INV-MODAL — outer overlay must not scroll;
+                   inner div owns scrolling so content never gets
+                   clipped behind the fixed overlay edges ── */
+        @media(max-width:768px) {
+            #inv-modal {
+                overflow:hidden !important;
+                display:flex !important;
+                flex-direction:column !important;
+                align-items:flex-start !important;
+                justify-content:flex-start !important;
+                padding:0 !important;
+            }
+            /* Override "display:none" is safe because inline style
+               (display:none, no !important) loses to CSS !important.
+               JS must call style.display='flex'/'none' for this to
+               work — see showNewInvoiceModal / closeInvModal. */
+            #inv-modal[style*="display: none"],
+            #inv-modal[style*="display:none"] {
+                display:none !important;
+            }
+            #inv-modal > div {
+                height:100dvh !important;
+                min-height:unset !important;
+                max-height:100dvh !important;
+                overflow-y:auto !important;
+                -webkit-overflow-scrolling:touch !important;
+                overscroll-behavior:contain !important;
+                width:100% !important;
+                max-width:100% !important;
+                border-radius:0 !important;
+                margin:0 !important;
+            }
+        }
+
+        /* ── v5-3. MODAL DRAG HANDLE — native sheet feel on fullscreen modals ── */
+        .mobile-modal-handle {
+            display:none;
+        }
+        @media(max-width:768px) {
+            .mobile-modal-handle {
+                display:block; width:36px; height:4px; border-radius:2px;
+                background:rgba(255,255,255,0.18); margin:10px auto 0;
+                flex-shrink:0; pointer-events:none;
+            }
+            html.light .mobile-modal-handle {
+                background:rgba(0,0,0,0.15);
+            }
+            /* Inject via CSS pseudo-element on the inner modal div */
+            #watch-modal > div::before,
+            #sell-modal > div::before,
+            #ship-modal > div::before,
+            #post-modal > div::before,
+            #inv-modal > div::before,
+            #tracker-form-modal > div::before {
+                content:'';
+                display:block; width:36px; height:4px; border-radius:2px;
+                background:rgba(255,255,255,0.18);
+                margin:10px auto 2px; flex-shrink:0;
+            }
+            html.light #watch-modal > div::before,
+            html.light #sell-modal > div::before,
+            html.light #ship-modal > div::before,
+            html.light #post-modal > div::before,
+            html.light #inv-modal > div::before,
+            html.light #tracker-form-modal > div::before {
+                background:rgba(0,0,0,0.15);
+            }
+        }
+
+        /* ── v5-4. ADDITIONAL FULLSCREEN MODALS —
+                   posting-modal, ul-paste-modal, ul-manage-modal,
+                   photo-modal catch-all ── */
+        @media(max-width:768px) {
+            #posting-modal, #ul-paste-modal, #ul-manage-modal,
+            #photo-modal, #posting-redact-modal {
+                align-items:flex-start !important;
+                justify-content:flex-start !important;
+                padding:0 !important;
+            }
+            #posting-modal > div, #ul-paste-modal > div,
+            #ul-manage-modal > div, #photo-modal > div,
+            #posting-redact-modal > div {
+                width:100% !important;
+                max-width:100% !important;
+                height:100dvh !important;
+                min-height:unset !important;
+                border-radius:0 !important;
+                margin:0 !important;
+                overflow-y:auto !important;
+                -webkit-overflow-scrolling:touch !important;
+                overscroll-behavior:contain !important;
+            }
+        }
+
+        /* ── v5-5. INVENTORY CARD PRICE OVERFLOW GUARD ── */
+        @media(max-width:900px) {
+            .inv-card-price-val {
+                max-width:100%;
+                overflow:hidden;
+                text-overflow:ellipsis;
+                white-space:nowrap;
+            }
+            /* When card has only one price visible, let it be wider */
+            .inv-card-prices:only-child .inv-card-price-val { max-width:none; }
+
+            /* From/to name: prevent overflow */
+            .inv-card-price-item:last-child .inv-card-price-val {
+                font-size:0.7rem !important;
+                color:var(--text-2);
+                white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+                max-width:80px;
+            }
+        }
+        @media(max-width:380px) {
+            /* On <380px: stack prices into two columns */
+            .inv-card-prices {
+                display:grid !important;
+                grid-template-columns:1fr 1fr !important;
+                gap:8px 12px !important;
+            }
+            .inv-card-price-item { display:block !important; }
+        }
+
+        /* ── v5-6. TABLE SCROLL INDICATOR — improved visibility ── */
+        @media(max-width:900px) {
+            /* Restore the thin gold scrollbar on ALL tbl-wraps inside card bodies
+               (the global mobile rule hides all scrollbars; this re-enables
+               the gold indicator on horizontal table wrappers only) */
+            .card-body .tbl-wrap::-webkit-scrollbar,
+            .tbl-wrap::-webkit-scrollbar {
+                display:block !important; height:3px !important;
+            }
+            .card-body .tbl-wrap::-webkit-scrollbar-thumb,
+            .tbl-wrap::-webkit-scrollbar-thumb {
+                background:rgba(212,175,55,0.35) !important;
+                border-radius:3px !important;
+            }
+            /* Scroll hint chip: JS sets style.display directly — just
+               ensure the base layout is flex when visible */
+            .tbl-scroll-hint {
+                display:none;  /* JS overrides to flex when scrollable */
+            }
+        }
+
+        /* ── v5-7. TAP FEEDBACK — extend to table rows and list items ── */
+        @media(hover:none) and (pointer:coarse) {
+            .tbl tbody tr[onclick]:active td { background:var(--bg-3) !important; }
+            .inv-card:active { background:var(--bg-3) !important; }
+            /* Card-head links: gold bg on tap */
+            .card-head .link:active, .card-head a:active {
+                background:var(--accent-dim) !important;
+                color:var(--accent) !important;
+            }
+            /* Theme toggle tap feedback */
+            .theme-toggle:active {
+                background:var(--accent-dim) !important;
+                border-color:var(--accent) !important;
+                transform:scale(0.93) !important;
+            }
+            /* FAB button tap */
+            .fab-btn:active {
+                transform:scale(0.90) !important;
+                box-shadow:0 2px 12px rgba(212,175,55,0.25) !important;
+            }
+        }
+
+        /* ── v5-8. SUB-400px OVERFLOW LAST-RESORT GUARDS ── */
+        @media(max-width:400px) {
+            /* Inv card: ensure ref+swipe hint never overflow card width */
+            .inv-card-header {
+                overflow:hidden;
+            }
+            .inv-card-ref {
+                font-size:0.9rem !important;
+            }
+            /* Price values: never wrap in mobile cards */
+            .inv-card-price-val {
+                font-size:0.82rem !important;
+            }
+            /* Batch toolbar: full-width stack */
+            #batch-toolbar {
+                flex-direction:column !important;
+                align-items:stretch !important;
+            }
+            #batch-toolbar .btn {
+                width:100% !important;
+                min-height:44px !important;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -2789,8 +2990,8 @@
 // the badge CSS explains why it exists. If the user screenshots a
 // broken state and this stamp is an old value, we know the real
 // problem is an iOS PWA cache that hasn't refreshed, not a code bug.
-window.__V = '20260412-mobile-ux-v4';
-window.__BUILD = { commit: 'pending', deployedAt: '2026-04-12T00:00Z', version: window.__V };
+window.__V = '20260413-mobile-ux-v5';
+window.__BUILD = { commit: 'pending', deployedAt: '2026-04-13T00:00Z', version: window.__V };
 
 // Always-visible build badge (bottom-left). Small and dim so it
 // doesn't interfere with the dashboard UI.
@@ -10783,16 +10984,37 @@ function renderInventoryTable(rows) {
             return b;
         };
         const swipeActionsHtml = r => {
+            const desc = (r.description||'').replace(/'/g,"\\'");
             let html = '';
-            if (r.arrived!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--accent);color:var(--bg-0);" onclick="event.stopPropagation();quickAction(${r.row},'arrived')"><span class="isa-icon">Arrive</div>`;
+            if (r.arrived!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--accent);color:var(--bg-0);" onclick="event.stopPropagation();quickAction(${r.row},'arrived')">Arrive</div>`;
             if (r.arrived==='Yes'&&!r.at_store&&r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--orange);color:var(--bg-0);" onclick="event.stopPropagation();quickAction(${r.row},'to-store')">Store</div>`;
             if (r.at_store) html += `<div class="inv-swipe-action" style="background:var(--blue);color:var(--bg-0);" onclick="event.stopPropagation();quickAction(${r.row},'from-store')">Pull</div>`;
-            if (r.posted==='Yes'&&r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:#e9a445;color:var(--bg-0);" onclick="event.stopPropagation();repostWatch(${r.row})"><span class="isa-icon">Repost</div>`;
-            html += `<div class="inv-swipe-action" style="background:#a855f7;color:var(--bg-0);" onclick="event.stopPropagation();shareWatchCard(${r.row},'${(r.description||'').replace(/'/g,"\\'")}')">Share</div>`;
-            html += `<div class="inv-swipe-action" style="background:#06b6d4;color:var(--bg-0);" onclick="event.stopPropagation();viewWatchPhotos('${r.description}', ${r.row})">Photos</div>`;
-            if (r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--green);color:var(--bg-0);" onclick="event.stopPropagation();showSellModal(${r.row})"><span class="isa-icon">Sell</div>`;
+            if (r.posted==='Yes'&&r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:#e9a445;color:var(--bg-0);" onclick="event.stopPropagation();repostWatch(${r.row})">Repost</div>`;
+            html += `<div class="inv-swipe-action" style="background:#a855f7;color:var(--bg-0);" onclick="event.stopPropagation();shareWatchCard(${r.row},'${desc}')">Share</div>`;
+            html += `<div class="inv-swipe-action" style="background:#06b6d4;color:var(--bg-0);" onclick="event.stopPropagation();viewWatchPhotos('${desc}',${r.row})">Photos</div>`;
+            if (r.sold!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--green);color:var(--bg-0);" onclick="event.stopPropagation();showSellModal(${r.row})">Sell</div>`;
             if (r.sold==='Yes'&&r.shipped!=='Yes') html += `<div class="inv-swipe-action" style="background:var(--blue);color:var(--bg-0);" onclick="event.stopPropagation();showShipModal(${r.row})">Ship</div>`;
             return html;
+        };
+        // Mobile card actions — one clear primary CTA + Edit/Del only (swipe reveals the rest)
+        const mobileActions = r => {
+            const desc = (r.description||'').replace(/'/g,"\\'");
+            const btnBase = 'cursor:pointer;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;font-size:0.75rem;font-weight:600;min-height:44px;padding:10px 14px;text-decoration:none;';
+            let primary = '';
+            if (r.arrived!=='Yes') {
+                primary = `<a onclick="quickAction(${r.row},'arrived')" style="${btnBase}flex:1;color:var(--accent);border:1px solid var(--accent);background:rgba(212,175,55,0.08);">Mark Arrived</a>`;
+            } else if (r.sold!=='Yes' && r.posted!=='Yes') {
+                primary = `<a onclick="showPostModal(${r.row})" style="${btnBase}flex:1;color:#f0c040;border:1px solid #f0c040;background:rgba(240,192,64,0.08);">Post Listing</a>`;
+            } else if (r.sold!=='Yes') {
+                primary = `<a onclick="showSellModal(${r.row})" style="${btnBase}flex:1;color:var(--green);border:1px solid var(--green);background:rgba(0,230,118,0.08);">Mark Sold</a>`;
+            } else if (r.shipped!=='Yes') {
+                primary = `<a onclick="showShipModal(${r.row})" style="${btnBase}flex:1;color:var(--blue);border:1px solid var(--blue);background:rgba(96,165,250,0.08);">Ship</a>`;
+            } else if (r.paid_after_sold!=='Yes') {
+                primary = `<a onclick="quickAction(${r.row},'paid')" style="${btnBase}flex:1;color:var(--green);border:1px solid var(--green);background:rgba(0,230,118,0.08);">Mark Paid</a>`;
+            }
+            const edit = `<a onclick="editWatch(${r.row})" style="${btnBase}color:var(--text-1);border:1px solid var(--border-strong);">Edit</a>`;
+            const del  = `<a onclick="deleteWatchDirect(${r.row},'${desc}')" style="${btnBase}color:var(--red);border:1px solid rgba(255,23,68,0.3);background:rgba(255,23,68,0.06);">Del</a>`;
+            return `<div style="display:flex;gap:8px;width:100%;">${primary}${edit}${del}</div>`;
         };
         let cardHtml = '';
         let renderErr = null;
@@ -10821,7 +11043,7 @@ function renderInventoryTable(rows) {
                         ${diff!==null?`<div class="inv-card-price-item"><div class="inv-card-price-label">P&L</div><div class="inv-card-price-val">${pnlStr}</div></div>`:''}
                         ${r.bought_from?`<div class="inv-card-price-item"><div class="inv-card-price-label">From</div><div class="inv-card-price-val" style="font-size:0.72rem;color:var(--text-1);">${r.bought_from}</div></div>`:''}
                     </div>
-                    <div class="inv-card-actions" onclick="event.stopPropagation();">${actions(r)}</div>
+                    <div class="inv-card-actions" onclick="event.stopPropagation();">${mobileActions(r)}</div>
                 </div>
                 ${swipeContent ? `<div class="inv-card-swipe-actions">${swipeContent}</div>` : ''}
             </div>`;
