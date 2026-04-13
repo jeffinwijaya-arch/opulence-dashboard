@@ -926,7 +926,7 @@
       .mc-tab-nav::-webkit-scrollbar{display:none}
       .mc-tab-btn{
         flex-shrink:0;white-space:nowrap;
-        padding:10px 14px;font-size:0.65rem;min-height:40px;
+        padding:10px 14px;font-size:0.68rem;min-height:44px;
       }
       .schedule-card{
         flex-direction:column;align-items:flex-start;gap:10px;

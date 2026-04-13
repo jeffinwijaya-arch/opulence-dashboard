@@ -9468,6 +9468,23 @@ function drawMonthlyProfitChart(months) {
         profitTt.classList.add('visible');
     };
     canvas.onmouseleave = () => { const t = document.getElementById('monthly-profit-tt'); if (t) t.classList.remove('visible'); };
+    canvas.ontouchstart = function(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const mx = (touch.clientX - rect.left) * (W / rect.width);
+        let hit = null;
+        for (const h of _profitHitAreas) { if (mx >= h.x && mx <= h.x + h.barW) { hit = h; break; } }
+        if (!hit) { profitTt.classList.remove('visible'); return; }
+        const mo = hit.month ? hit.month.replace('-', '/') : '';
+        const pColor = hit.profit >= 0 ? 'var(--green)' : 'var(--red)';
+        const mColor = hit.margin >= 10 ? 'var(--green)' : hit.margin >= 5 ? 'var(--text-0)' : 'var(--red)';
+        profitTt.innerHTML = `<div class="tt-date">${mo} · ${hit.pieces} sold</div><div class="tt-val" style="color:${pColor};">${hit.profit >= 0 ? '+' : ''}$${Math.round(hit.profit).toLocaleString()}</div><div style="font-size:0.7rem;color:var(--text-2);">Revenue: $${Math.round(hit.revenue).toLocaleString()}</div><div style="font-size:0.7rem;color:${mColor};">Margin: ${hit.margin}%</div>`;
+        profitTt.style.left = Math.min(touch.clientX + 12, window.innerWidth - 160) + 'px';
+        profitTt.style.top = Math.max(touch.clientY - 80, 10) + 'px';
+        profitTt.classList.add('visible');
+        setTimeout(() => profitTt.classList.remove('visible'), 2000);
+    };
 
     // Margin % overlay line
     const margins = months.map(m => m.margin || 0);
@@ -9774,6 +9791,23 @@ function drawRegionSpreadChart(canvasId, usB25, hkB25, usLow, hkLow, usHigh, hkH
         tt.classList.add('visible');
     };
     canvas.onmouseleave = () => { const t = document.getElementById('region-spread-tt'); if(t) t.classList.remove('visible'); };
+    canvas.ontouchstart = function(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const mx = (touch.clientX - rect.left) * (W / rect.width);
+        let hit = null;
+        for (const r of regions) { if (mx >= r.x && mx <= r.x + barW) { hit = r; break; } }
+        if (!hit) { tt.classList.remove('visible'); return; }
+        let html = `<div class="tt-date">${hit.label} Market</div><div class="tt-val" style="color:${hit.color};">B25: $${Math.round(hit.b25).toLocaleString()}</div>`;
+        if (hit.low) html += `<div style="font-size:0.62rem;color:var(--text-2);">Low: $${Math.round(hit.low).toLocaleString()}</div>`;
+        if (hit.high) html += `<div style="font-size:0.62rem;color:var(--text-2);">High: $${Math.round(hit.high).toLocaleString()}</div>`;
+        tt.innerHTML = html;
+        tt.style.left = Math.min(touch.clientX + 12, window.innerWidth - 160) + 'px';
+        tt.style.top = Math.max(touch.clientY - 60, 10) + 'px';
+        tt.classList.add('visible');
+        setTimeout(() => tt.classList.remove('visible'), 2000);
+    };
 }
 
 // ═══ MONTHLY SALES/PURCHASES GROUPED BAR CHART ═══
@@ -9869,6 +9903,22 @@ function drawMonthlySalesChart(canvasId, months) {
         tt.classList.add('visible');
     };
     canvas.onmouseleave = () => { const t=document.getElementById('monthly-sales-tt'); if(t) t.classList.remove('visible'); };
+    canvas.ontouchstart = function(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const mx = (touch.clientX - rect.left) * (W / rect.width);
+        let hit = null;
+        for (const h of _hitAreas) { if (mx >= h.x && mx <= h.x + h.groupW) { hit = h; break; } }
+        if (!hit) { tt.classList.remove('visible'); return; }
+        const mo = hit.month ? hit.month.replace('-', '/') : '';
+        const profit = hit.rev - hit.cost;
+        tt.innerHTML = `<div class="tt-date">${mo} · ${hit.pieces} sold</div><div class="tt-val" style="color:#00e676;">Revenue: $${Math.round(hit.rev).toLocaleString()}</div><div style="font-size:0.7rem;color:#d4af37;">Cost: $${Math.round(hit.cost).toLocaleString()}</div><div style="font-size:0.7rem;color:${profit>=0?'var(--green)':'var(--red)'};">Profit: ${profit>=0?'+':''}$${Math.round(profit).toLocaleString()}</div>`;
+        tt.style.left = Math.min(touch.clientX + 12, window.innerWidth - 160) + 'px';
+        tt.style.top = Math.max(touch.clientY - 80, 10) + 'px';
+        tt.classList.add('visible');
+        setTimeout(() => tt.classList.remove('visible'), 2000);
+    };
 }
 
 // ═══ DONUT CHART (Canvas, animated) ═══
