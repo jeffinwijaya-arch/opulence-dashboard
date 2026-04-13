@@ -7218,30 +7218,62 @@ async function doLookup() {
         }
         // If no year filter, keep default sort (cheapest first from API)
         const _allListingsData = window._cheapestAll;
-        const cheapest = _allListingsData.map((l,i)=>{
+        // Helper to build a clean listing card (used for both split and unsplit views)
+        function _buildListingCard(l, _b25) {
             const srcText = String(l.source_text||'').replace(/\+?\s*label\s+gambar tidak disertakan/gi,'').replace(/gambar tidak disertakan/gi,'').replace(/\(file terlampir\)/gi,'').trim().split('<').join('&lt;').split('>').join('&gt;');
-            const phoneClean2 = (l.phone||'').replace(/[^0-9]/g,'');
-            const waBtn2 = phoneClean2 ? ' <a href="https://wa.me/'+phoneClean2+'" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);text-decoration:none;font-weight:700;">WA</a>' : '';
+            const phoneClean = (l.phone||'').replace(/[^0-9]/g,'');
+            const waBtn = phoneClean ? ' <a href="https://wa.me/'+phoneClean+'" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);text-decoration:none;font-weight:700;">WA</a>' : '';
             const ts = l.ts || '';
-            let card = '<div class="listing-card">';
+            const _lp = l.price_usd || l.price;
+            const _pct = _b25 > 0 && _lp > 0 ? ((_lp - _b25) / _b25 * 100) : null;
+            const _vb = _pct != null ? '<span style="font-size:0.6rem;font-weight:600;padding:1px 6px;border-radius:3px;margin-left:5px;background:'+(_pct<-2?'rgba(0,230,118,0.12)':_pct>5?'rgba(255,23,68,0.1)':'rgba(255,255,255,0.04)')+';color:'+(_pct<-2?'var(--green)':_pct>5?'var(--red)':'var(--text-2)')+';border:1px solid '+(_pct<-2?'rgba(0,230,118,0.2)':_pct>5?'rgba(255,23,68,0.2)':'rgba(255,255,255,0.06)')+';">'+(_pct>=0?'+':'')+_pct.toFixed(1)+'%</span>' : '';
+            // Days ago
+            let daysAgo = '';
+            if (ts) { try { const d = new Date(ts); const diff = Math.floor((Date.now()-d.getTime())/(86400000)); daysAgo = diff<=0?'today':diff===1?'1d ago':diff+'d ago'; } catch(e) { daysAgo = ''; } }
+            let card = '<div class="listing-card" style="position:relative;">';
+            // Row 1: Price (big) + condition badge + days ago
             card += '<div style="display:flex;justify-content:space-between;align-items:center;">';
-            card += '<span style="font-family:var(--mono);font-weight:700;color:var(--green)">'+fmt(l.price_usd||l.price)+'</span>';
-            card += '<span><span class="tag '+condTag(l.condition)+'">'+(l.condition||'\u2014')+'</span> '+regionLabel(l.region)+'</span>';
+            card += '<span style="font-family:var(--mono);font-weight:700;font-size:1.05rem;color:var(--green)">'+fmt(_lp)+_vb+'</span>';
+            card += '<span style="display:flex;align-items:center;gap:6px;"><span class="tag '+condTag(l.condition)+'">'+(l.condition||'\u2014')+'</span>'+(daysAgo?'<span style="font-size:0.6rem;color:var(--text-3);font-family:var(--mono);">'+daysAgo+'</span>':'')+'</span>';
             card += '</div>';
-            card += '<div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">'+(l.dial||'')+' '+(l.bracelet||'')+' '+(l.year?'('+l.year+')':'')+' · '+(l.completeness||'')+' · '+(l.seller||'?')+waBtn2+' · '+(l.group||'?')+'</div>';
-            if(ts) card += '<div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;"> '+ts+'</div>';
-            if(srcText) card += '<div style="font-size:0.70rem;color:var(--text-1);margin-top:4px;padding:6px 8px;background:rgba(255,255,255,0.04);border-radius:4px;border-left:2px solid var(--accent);font-family:var(--mono);white-space:pre-wrap;word-break:break-all;line-height:1.4;">'+srcText+'</div>';
+            // Row 2: specs line
+            card += '<div style="font-size:0.72rem;color:var(--text-2);margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;">';
+            if(l.dial) card += '<span style="background:var(--bg-4);padding:1px 6px;border-radius:3px;">'+l.dial+'</span>';
+            if(l.bracelet) card += '<span style="background:var(--bg-4);padding:1px 6px;border-radius:3px;">'+l.bracelet+'</span>';
+            if(l.year) card += '<span style="background:var(--bg-4);padding:1px 6px;border-radius:3px;">'+l.year+'</span>';
+            if(l.completeness) card += '<span style="background:var(--bg-4);padding:1px 6px;border-radius:3px;">'+l.completeness+'</span>';
+            card += '</div>';
+            // Row 3: seller + group
+            card += '<div style="font-size:0.68rem;color:var(--text-2);margin-top:3px;">'+(l.seller||'Unknown')+waBtn+(l.group?' · '+l.group:'')+'</div>';
+            // Row 4: collapsible source text
+            if(srcText) {
+                const uid = 'src-'+Math.random().toString(36).slice(2,9);
+                card += '<details style="margin-top:4px;"><summary style="font-size:0.62rem;color:var(--text-3);cursor:pointer;user-select:none;letter-spacing:0.3px;">Source text</summary><div id="'+uid+'" style="font-size:0.68rem;color:var(--text-1);margin-top:4px;padding:6px 8px;background:rgba(255,255,255,0.04);border-radius:4px;border-left:2px solid var(--accent);font-family:var(--mono);white-space:pre-wrap;word-break:break-all;line-height:1.4;">'+srcText+'</div></details>';
+            }
             card += '</div>';
             return card;
-        }).join('');
+        }
+        const cheapest = _allListingsData.map((l,i)=> _buildListingCard(l, b25)).join('');
 
         let dialTable = '';
         if (dials.length > 1) {
             dialTable = `<div style="margin-top:12px;">
                 <div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:600;">Per-Dial Pricing</div>
-                <table class="tbl"><thead><tr><th>Dial</th><th class="right">Avg B25</th><th class="right">Low</th><th class="right">High</th><th class="right">Count</th></tr></thead><tbody>
-                ${Object.entries(dialBreak).filter(([n])=>n!=='Unknown').sort((a,b)=>b[1].count-a[1].count).map(([name,info])=>`<tr style="cursor:pointer" onclick="$('#ref-search').value='${ref} ${name.toLowerCase()}';doLookup();"><td style="color:var(--accent)">${name}</td><td class="right">${fmt(info.b25||info.median)}</td><td class="right green">${fmt(info.low)}</td><td class="right">${fmt(info.high)}</td><td class="right dim">${info.count}</td></tr>`).join('')}
-                </tbody></table></div>`;
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;">
+                ${Object.entries(dialBreak).filter(([n])=>n!=='Unknown').sort((a,b)=>(b[1].b25||b[1].median||0)-(a[1].b25||a[1].median||0)).map(([name,info])=>{
+                    const dialB25 = info.b25||info.median||0;
+                    const diffFromBase = b25 > 0 && dialB25 > 0 ? ((dialB25-b25)/b25*100).toFixed(1) : null;
+                    const diffLabel = diffFromBase !== null ? (parseFloat(diffFromBase) >= 0 ? '<span style="color:var(--red);font-size:0.6rem;">+'+diffFromBase+'%</span>' : '<span style="color:var(--green);font-size:0.6rem;">'+diffFromBase+'%</span>') : '';
+                    return `<div style="background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;cursor:pointer;transition:border-color 0.2s;" onclick="$('#ref-search').value='${ref} ${name.toLowerCase()}';doLookup();" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
+                        <div style="font-size:0.72rem;color:var(--accent);font-weight:600;margin-bottom:3px;">${name}</div>
+                        <div style="font-family:var(--mono);font-size:1rem;font-weight:700;color:var(--text-0);">${fmt(dialB25)}</div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px;">
+                            ${diffLabel}
+                            <span style="font-size:0.58rem;color:var(--text-3);font-family:var(--mono);">${info.count} listings</span>
+                        </div>
+                    </div>`;
+                }).join('')}
+                </div></div>`;
         }
 
         // Material/case breakdown (Ti, WG, RG, etc.)
@@ -7268,41 +7300,106 @@ async function doLookup() {
             signalHtml = `<div style="margin-top:10px;padding:8px;background:var(--bg-3);border-radius:var(--radius);"><div style="font-size:0.65rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;font-weight:600;">Signals</div>${d.signals.map(s=>`<div style="font-size:0.72rem;color:var(--text-1);padding:2px 0;">${typeof s==='object'?(s.text||s.label||s.message||JSON.stringify(s)):s}</div>`).join('')}</div>`;
         }
 
+        // Compute spread label
+        const _spreadPct = b25 > 0 ? (high-low)/b25*100 : 0;
+        const _spreadLabel = _spreadPct < 10 ? 'Tight' : _spreadPct <= 20 ? 'Normal' : 'Wide';
+        const _spreadColor = _spreadPct < 10 ? 'var(--green)' : _spreadPct <= 20 ? 'var(--accent)' : 'var(--red)';
+
+        // Low/High % labels
+        const _lowPct = b25>0&&low>0 ? Math.abs(((low-b25)/b25)*100).toFixed(1) : null;
+        const _highPct = b25>0&&high>0 ? Math.abs(((high-b25)/b25)*100).toFixed(1) : null;
+
+        // Regional arbitrage card
+        let regionalCard = '';
+        if (usB25 && hkB25) {
+            const cheaper = usB25 < hkB25 ? 'US' : 'HK';
+            const diffAmt = Math.abs(usB25 - hkB25);
+            const diffPctReg = (diffAmt / Math.max(usB25, hkB25) * 100).toFixed(1);
+            const arrowDir = usB25 < hkB25 ? '&larr;' : '&rarr;';
+            regionalCard = `<div class="card" style="margin-top:8px;border:1px solid rgba(212,175,55,0.2);">
+                <div class="card-head"><span>Regional Arbitrage</span></div>
+                <div class="card-body" style="padding:12px;">
+                    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;">
+                        <div style="text-align:center;">
+                            <div style="font-size:0.62rem;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">US Market</div>
+                            <div style="font-family:var(--mono);font-size:1.3rem;font-weight:700;color:${cheaper==='US'?'var(--green)':'var(--text-0)'};">${fmt(usB25)}</div>
+                            ${cheaper==='US'?'<div style="font-size:0.6rem;color:var(--green);font-weight:600;margin-top:2px;">CHEAPER</div>':''}
+                        </div>
+                        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+                            <div style="font-size:1.5rem;color:var(--accent);">${arrowDir}</div>
+                            <div style="font-family:var(--mono);font-size:0.85rem;font-weight:700;color:var(--accent);">${fmt(diffAmt)}</div>
+                            <div style="font-size:0.6rem;color:var(--text-2);">${diffPctReg}% gap</div>
+                        </div>
+                        <div style="text-align:center;">
+                            <div style="font-size:0.62rem;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">HK Market</div>
+                            <div style="font-family:var(--mono);font-size:1.3rem;font-weight:700;color:${cheaper==='HK'?'var(--green)':'var(--text-0)'};">${fmt(hkB25)}</div>
+                            ${cheaper==='HK'?'<div style="font-size:0.6rem;color:var(--green);font-weight:600;margin-top:2px;">CHEAPER</div>':''}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        } else if (regionalHtml) {
+            regionalCard = `<div class="card" style="margin-top:8px;">
+                <div class="card-head"><span>Regional Pricing</span></div>
+                <div class="card-body" style="padding:10px;">${regionalHtml}</div>
+            </div>`;
+        }
+
+        // Available dials as mini-cards with B25
+        let dialsCard = '';
+        if (dials.length > 0) {
+            dialsCard = `<div style="margin-top:8px;">
+                <div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:600;">Available Dials</div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                ${dials.map(d => {
+                    const di = dialBreak[d];
+                    const dB25 = di ? (di.b25||di.median||0) : 0;
+                    return `<div style="background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);padding:6px 10px;cursor:pointer;min-width:90px;transition:border-color 0.2s;" onclick="$('#ref-search').value='${ref} ${d.toLowerCase()}';doLookup();" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
+                        <div style="font-size:0.72rem;color:var(--accent);font-weight:600;">${d}</div>
+                        ${dB25 ? `<div style="font-family:var(--mono);font-size:0.78rem;font-weight:700;color:var(--text-0);margin-top:1px;">${fmt(dB25)}</div>` : ''}
+                    </div>`;
+                }).join('')}
+                </div>
+            </div>`;
+        }
+
+        // Build US/HK listing cards using shared helper
+        const usListings = _allListingsData.filter(l=>(l.region||'').toUpperCase()==='US');
+        const hkListings = _allListingsData.filter(l=>(l.region||'').toUpperCase()==='HK');
+
         c.innerHTML = `<div class="fade-in">
             <div class="card"><div class="card-body">
                 <h2 style="font-size:1.1rem;margin-bottom:2px;">${ref} <span style="color:var(--text-2);font-size:0.85rem;font-weight:400;">${model}</span></h2>
                 <p style="margin-bottom:4px;">${condTags} <span style="color:var(--text-2);font-size:0.72rem;margin-left:6px;">${dials.length?dials.length+' dials':''}</span></p>
                 ${condBar}
-                <div id="lookup-histogram" style="margin:10px 0;height:48px;position:relative;"></div>
+                <div id="lookup-histogram" style="margin:12px 0;position:relative;"></div>
                 <div style="display:flex;align-items:center;gap:6px;margin:6px 0;"><span style="font-size:0.72rem;font-weight:700;color:var(--accent);font-family:var(--mono);background:rgba(212,175,55,0.08);padding:3px 10px;border-radius:4px;border:1px solid rgba(212,175,55,0.15);">${count} listings</span></div>
                 <div class="metrics" style="margin-bottom:10px;">
-                    <div class="metric" style="background:linear-gradient(135deg,var(--bg-2) 0%,rgba(0,230,118,0.06) 100%);border-color:rgba(0,230,118,0.15);"><div class="label">Low</div><div class="val green" style="font-size:1.3rem;">${fmt(low)}</div>${b25>0&&low>0?`<div class="sub" style="color:var(--green);font-weight:600;">${(((low-b25)/b25)*100).toFixed(1)}% vs avg</div>`:''}</div>
+                    <div class="metric" style="background:linear-gradient(135deg,var(--bg-2) 0%,rgba(0,230,118,0.06) 100%);border-color:rgba(0,230,118,0.15);"><div class="label">Low</div><div class="val green" style="font-size:1.3rem;">${fmt(low)}</div>${_lowPct?`<div class="sub" style="color:var(--green);font-weight:600;">${_lowPct}% below market</div>`:''}</div>
                     <div class="metric" style="border-color:rgba(212,175,55,0.2);"><div class="label">${usB25 ? 'US B25' : 'Avg B25'}</div><div class="val" style="color:${usB25 ? 'var(--green)' : 'var(--accent)'};font-size:1.5rem;">${fmt(usB25 || b25)}</div><div class="sub">${usB25 ? 'sell price' : 'market midpoint'}</div></div>
-                    <div class="metric" style="background:linear-gradient(135deg,var(--bg-2) 0%,rgba(255,23,68,0.04) 100%);border-color:rgba(255,23,68,0.12);"><div class="label">High</div><div class="val" style="font-size:1.3rem;">${fmt(high)}</div>${b25>0&&high>0?`<div class="sub" style="color:var(--red);font-weight:600;">+${(((high-b25)/b25)*100).toFixed(1)}% vs avg</div>`:''}</div>
-                    <div class="metric"><div class="label">Spread</div><div class="val" style="font-size:1.2rem;">${b25>0?(()=>{const s=(high-low)/b25*100;return s>999?'>999%':pct(s);})():'—'}</div>${b25>0?`<div class="sub">${fmt(high-low)} range</div>`:''}</div>
+                    <div class="metric" style="background:linear-gradient(135deg,var(--bg-2) 0%,rgba(255,23,68,0.04) 100%);border-color:rgba(255,23,68,0.12);"><div class="label">High</div><div class="val" style="color:var(--red);font-size:1.3rem;">${fmt(high)}</div>${_highPct?`<div class="sub" style="color:var(--red);font-weight:600;">${_highPct}% above market</div>`:''}</div>
+                    <div class="metric" style="position:relative;"><div class="label" style="display:flex;align-items:center;gap:4px;">Spread <span style="cursor:help;font-size:0.55rem;background:var(--bg-4);border-radius:50%;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;color:var(--text-3);" title="Spread = (High - Low) / B25. Tight (<10%) = stable pricing, Normal (10-20%) = healthy market, Wide (>20%) = volatile or illiquid.">?</span></div><div class="val" style="font-size:1.2rem;color:${_spreadColor};">${_spreadLabel}</div><div class="sub" style="color:${_spreadColor};">${b25>0?pct(_spreadPct):'\u2014'} &middot; ${fmt(high-low)} range</div></div>
                 </div>
-                <div class="detail-grid">
-                    <div><div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:600;">Regional Pricing</div>${regionalHtml||'<div style="color:var(--text-2)">Single region</div>'}</div>
-                    <div><div style="font-size:0.68rem;color:var(--text-2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:600;">Available Dials</div>${dials.map(d=>`<span class="tag tag-gold" style="margin:1px;cursor:pointer;" onclick="$('#ref-search').value='${ref} ${d.toLowerCase()}';doLookup();">${d}</span>`).join(' ')||'—'}</div>
-                </div>
+                ${dialsCard}
                 <div id="ref-info-panel"></div>
                 ${dialTable}
                 ${materialTable}
                 ${signalHtml}
                 ${relatedHtml}
             </div></div>
-            <div class="card" style="margin-top:8px;" id="lookup-chart-card"><div class="card-head"><span>Price History (14d)</span></div><div class="card-body" style="padding:8px;"><canvas id="lookup-chart" aria-label="Price history chart"></canvas><div id="lookup-chart-empty" class="dim" style="text-align:center;padding:12px;display:none;">No history available</div></div></div>
+            ${regionalCard}
+            <div class="card" style="margin-top:8px;" id="lookup-chart-card"><div class="card-head"><span>Price History (14d)</span><span id="lookup-chart-delta" style="font-size:0.72rem;font-family:var(--mono);"></span></div><div class="card-body" style="padding:8px;"><canvas id="lookup-chart" aria-label="Price history chart"></canvas><div id="lookup-chart-empty" class="dim" style="text-align:center;padding:12px;display:none;">No history available</div></div></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
-                <div class="card"><div class="card-head"><span>US Listings (${_allListingsData.filter(l=>(l.region||'').toUpperCase()==='US').length})</span></div><div class="card-body" style="max-height:400px;overflow-y:auto;"><div id="cheapest-us">${(()=>{const usL=_allListingsData.filter(l=>(l.region||'').toUpperCase()==='US');if(!usL.length)return'<div style="color:var(--text-2);padding:8px;">No US listings</div>';return usL.map((l,i)=>{const srcText=String(l.source_text||'').replace(/\+?\s*label\s+gambar tidak disertakan/gi,'').replace(/gambar tidak disertakan/gi,'').replace(/\(file terlampir\)/gi,'').trim().split('<').join('&lt;').split('>').join('&gt;');const phoneClean=(l.phone||'').replace(/[^0-9]/g,'');const waBtn=phoneClean?' <a href="https://wa.me/'+phoneClean+'" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);text-decoration:none;font-weight:700;">WA</a>':'';const ts=l.ts||'';let card='<div class="listing-card">';card+='<div style="display:flex;justify-content:space-between;align-items:center;">';const _lp=l.price_usd||l.price;const _pct=b25>0&&_lp>0?((_lp-b25)/b25*100):null;const _vb=_pct!=null?'<span style="font-size:0.6rem;font-weight:600;padding:1px 6px;border-radius:3px;margin-left:5px;background:'+(_pct<-2?'rgba(0,230,118,0.12)':_pct>5?'rgba(255,23,68,0.1)':'rgba(255,255,255,0.04)')+';color:'+(_pct<-2?'var(--green)':_pct>5?'var(--red)':'var(--text-2)')+';border:1px solid '+(_pct<-2?'rgba(0,230,118,0.2)':_pct>5?'rgba(255,23,68,0.2)':'rgba(255,255,255,0.06)')+';">'+(_pct>=0?'+':'')+_pct.toFixed(1)+'%</span>':'';card+='<span style="font-family:var(--mono);font-weight:700;color:var(--green)">'+fmt(_lp)+_vb+'</span>';card+='<span><span class="tag '+condTag(l.condition)+'">'+(l.condition||'\u2014')+'</span></span>';card+='</div>';card+='<div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">'+(l.dial||'')+' '+(l.bracelet||'')+' '+(l.year?'('+l.year+')':'')+' · '+(l.seller||'?')+waBtn+'</div>';if(ts)card+='<div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">'+ts+'</div>';if(srcText)card+='<div style="font-size:0.70rem;color:var(--text-1);margin-top:4px;padding:6px 8px;background:rgba(255,255,255,0.04);border-radius:4px;border-left:2px solid var(--green);font-family:var(--mono);white-space:pre-wrap;word-break:break-all;line-height:1.4;">'+srcText+'</div>';card+='</div>';return card;}).join('');})()}</div></div></div>
-                <div class="card"><div class="card-head"><span>HK Listings (${_allListingsData.filter(l=>(l.region||'').toUpperCase()==='HK').length})</span></div><div class="card-body" style="max-height:400px;overflow-y:auto;"><div id="cheapest-hk">${(()=>{const hkL=_allListingsData.filter(l=>(l.region||'').toUpperCase()==='HK');if(!hkL.length)return'<div style="color:var(--text-2);padding:8px;">No HK listings</div>';return hkL.map((l,i)=>{const srcText=String(l.source_text||'').replace(/\+?\s*label\s+gambar tidak disertakan/gi,'').replace(/gambar tidak disertakan/gi,'').replace(/\(file terlampir\)/gi,'').trim().split('<').join('&lt;').split('>').join('&gt;');const phoneClean=(l.phone||'').replace(/[^0-9]/g,'');const waBtn=phoneClean?' <a href="https://wa.me/'+phoneClean+'" target="_blank" onclick="event.stopPropagation()" style="color:var(--green);text-decoration:none;font-weight:700;">WA</a>':'';const ts=l.ts||'';let card='<div class="listing-card">';card+='<div style="display:flex;justify-content:space-between;align-items:center;">';const _lp=l.price_usd||l.price;const _pct=b25>0&&_lp>0?((_lp-b25)/b25*100):null;const _vb=_pct!=null?'<span style="font-size:0.6rem;font-weight:600;padding:1px 6px;border-radius:3px;margin-left:5px;background:'+(_pct<-2?'rgba(0,230,118,0.12)':_pct>5?'rgba(255,23,68,0.1)':'rgba(255,255,255,0.04)')+';color:'+(_pct<-2?'var(--green)':_pct>5?'var(--red)':'var(--text-2)')+';border:1px solid '+(_pct<-2?'rgba(0,230,118,0.2)':_pct>5?'rgba(255,23,68,0.2)':'rgba(255,255,255,0.06)')+';">'+(_pct>=0?'+':'')+_pct.toFixed(1)+'%</span>':'';card+='<span style="font-family:var(--mono);font-weight:700;color:var(--green)">'+fmt(_lp)+_vb+'</span>';card+='<span><span class="tag '+condTag(l.condition)+'">'+(l.condition||'\u2014')+'</span></span>';card+='</div>';card+='<div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">'+(l.dial||'')+' '+(l.bracelet||'')+' '+(l.year?'('+l.year+')':'')+' · '+(l.seller||'?')+waBtn+'</div>';if(ts)card+='<div style="font-size:0.68rem;color:var(--text-2);margin-top:2px;">'+ts+'</div>';if(srcText)card+='<div style="font-size:0.70rem;color:var(--text-1);margin-top:4px;padding:6px 8px;background:rgba(255,255,255,0.04);border-radius:4px;border-left:2px solid var(--orange);font-family:var(--mono);white-space:pre-wrap;word-break:break-all;line-height:1.4;">'+srcText+'</div>';card+='</div>';return card;}).join('');})()}</div></div></div>
+                <div class="card"><div class="card-head"><span>US Listings (${usListings.length})</span></div><div class="card-body" style="max-height:500px;overflow-y:auto;"><div id="cheapest-us">${usListings.length ? usListings.map(l => _buildListingCard(l, b25)).join('') : '<div style="color:var(--text-2);padding:8px;">No US listings</div>'}</div></div></div>
+                <div class="card"><div class="card-head"><span>HK Listings (${hkListings.length})</span></div><div class="card-body" style="max-height:500px;overflow-y:auto;"><div id="cheapest-hk">${hkListings.length ? hkListings.map(l => _buildListingCard(l, b25)).join('') : '<div style="color:var(--text-2);padding:8px;">No HK listings</div>'}</div></div></div>
             </div>
         </div>`;
-        // Render price distribution histogram
+        // Render price distribution histogram — taller bars, B25 highlighted, clean axis
         setTimeout(() => {
             const histEl = document.getElementById('lookup-histogram');
             const prices = _allListingsData.map(l => l.price_usd || l.price).filter(p => p > 0).sort((a,b) => a-b);
             if (histEl && prices.length >= 3) {
-                const buckets = 20;
+                const buckets = Math.min(20, Math.max(8, Math.ceil(prices.length / 2)));
                 const min = prices[0], max = prices[prices.length-1];
                 const range = max - min || 1;
                 const step = range / buckets;
@@ -7310,17 +7407,38 @@ async function doLookup() {
                 prices.forEach(p => { const i = Math.min(Math.floor((p-min)/step), buckets-1); counts[i]++; });
                 const maxC = Math.max(...counts, 1);
                 const barW = 100/buckets;
-                let barsHtml = counts.map((c, i) => {
-                    const h = Math.max(2, (c/maxC)*100);
+                const barH = 80; // taller bars
+                let barsHtml = counts.map((cnt, i) => {
+                    const h = Math.max(3, (cnt/maxC)*100);
                     const price = min + i*step;
                     const isB25 = b25 >= price && b25 < price+step;
-                    const bg = isB25 ? 'var(--accent)' : 'rgba(212,175,55,0.25)';
-                    const valLabel = c > 0 ? '<span style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:7px;color:var(--text-2);font-family:var(--mono);pointer-events:none;">' + c + '</span>' : '';
-                    const opacity = 0.2 + 0.6 * (c / maxC);
+                    const opacity = 0.15 + 0.65 * (cnt / maxC);
                     const barBg = isB25 ? 'var(--accent)' : 'rgba(212,175,55,' + opacity.toFixed(2) + ')';
-                    return `<div title="${fmt(price)}-${fmt(price+step)}: ${c} listings" style="position:absolute;bottom:0;left:${i*barW}%;width:${barW-0.5}%;height:${h}%;background:${barBg};border-radius:2px 2px 0 0;transition:height 0.3s;cursor:crosshair;" onmouseenter="this.style.background='var(--accent)'" onmouseleave="this.style.background='${barBg}'">${c>=2?valLabel:''}</div>`;
+                    const border = isB25 ? 'border:1px solid var(--accent);border-bottom:none;' : '';
+                    // Only show count label on bars that are tall enough (>25% of max)
+                    const showLabel = cnt > 0 && (cnt/maxC) >= 0.25;
+                    const valLabel = showLabel ? '<span style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:8px;color:var(--text-1);font-family:var(--mono);pointer-events:none;font-weight:600;">' + cnt + '</span>' : '';
+                    const b25Marker = isB25 ? '<span style="position:absolute;top:-24px;left:50%;transform:translateX(-50%);font-size:7px;color:var(--accent);font-weight:700;letter-spacing:0.3px;white-space:nowrap;">B25</span>' : '';
+                    return `<div title="${fmt(price)} - ${fmt(price+step)}: ${cnt} listings" style="position:absolute;bottom:0;left:${i*barW}%;width:${barW-0.3}%;height:${h}%;background:${barBg};${border}border-radius:2px 2px 0 0;transition:height 0.3s,background 0.15s;cursor:crosshair;" onmouseenter="this.style.background='var(--accent)';this.style.opacity='1'" onmouseleave="this.style.background='${barBg.replace(/'/g,"\\'")}';">${valLabel}${b25Marker}</div>`;
                 }).join('');
-                histEl.innerHTML = `<div style="font-size:0.6rem;color:var(--text-3);margin-bottom:2px;font-family:var(--mono);display:flex;justify-content:space-between;"><span>${fmt(min)}</span><span>Price Distribution (${prices.length} listings)</span><span>${fmt(max)}</span></div><div style="position:relative;height:56px;background:var(--bg-3);border-radius:4px;overflow:hidden;">${barsHtml}</div>`;
+                // Axis: show 5 price ticks along the bottom
+                const tickCount = 5;
+                let ticksHtml = '';
+                for (let t = 0; t < tickCount; t++) {
+                    const pctPos = (t / (tickCount - 1)) * 100;
+                    const tickPrice = min + (range * t / (tickCount - 1));
+                    const align = t === 0 ? 'left:0;text-align:left;' : t === tickCount-1 ? 'right:0;text-align:right;' : 'left:'+pctPos+'%;transform:translateX(-50%);text-align:center;';
+                    ticksHtml += `<span style="position:absolute;${align}font-size:8px;color:var(--text-3);font-family:var(--mono);">${fmt(tickPrice)}</span>`;
+                }
+                histEl.innerHTML = `
+                    <div style="font-size:0.6rem;color:var(--text-3);margin-bottom:4px;font-family:var(--mono);display:flex;justify-content:space-between;align-items:center;">
+                        <span style="text-transform:uppercase;letter-spacing:0.5px;font-weight:600;color:var(--text-2);">Price Distribution</span>
+                        <span>${prices.length} listings</span>
+                    </div>
+                    <div style="position:relative;height:${barH}px;background:var(--bg-3);border-radius:4px;overflow:visible;padding-top:24px;">
+                        <div style="position:relative;height:${barH}px;overflow:visible;">${barsHtml}</div>
+                    </div>
+                    <div style="position:relative;height:14px;margin-top:2px;">${ticksHtml}</div>`;
             } else if (histEl) {
                 histEl.innerHTML = '';
             }
@@ -7329,7 +7447,7 @@ async function doLookup() {
         // Track recently viewed
         addRecentView(ref, model, b25);
 
-        // Load price history chart
+        // Load price history chart with 30d change indicator
         try {
             const hr = await fetch(`/api/price_history/${encodeURIComponent(ref)}`);
             if (hr.ok) {
@@ -7337,6 +7455,17 @@ async function doLookup() {
                 if (hist.length >= 2) {
                     const chartData = hist.map(h => ({value: h.b25, label: h.d?.slice(5)}));
                     setTimeout(() => renderChart('lookup-chart', chartData), 50);
+                    // Show 30d or available-range change
+                    const oldest = hist[0]?.b25 || 0;
+                    const newest = hist[hist.length-1]?.b25 || 0;
+                    if (oldest > 0 && newest > 0) {
+                        const chg = ((newest - oldest) / oldest * 100).toFixed(1);
+                        const deltaEl = document.getElementById('lookup-chart-delta');
+                        if (deltaEl) {
+                            const isUp = parseFloat(chg) >= 0;
+                            deltaEl.innerHTML = `<span style="color:${isUp?'var(--green)':'var(--red)'};">${isUp?'+':''}${chg}% (${hist.length}d)</span>`;
+                        }
+                    }
                 } else {
                     const chartCard = document.getElementById('lookup-chart-card');
                     if (chartCard) chartCard.style.display = 'none';
