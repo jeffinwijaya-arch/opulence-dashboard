@@ -18084,30 +18084,34 @@ async function createNewPackage() {
     if (btn) { btn.disabled = true; btn.textContent = 'CREATING...'; }
 
     const watchIds = Array.from(document.querySelectorAll('.pkg-watch-cb:checked')).map(cb => Number(cb.value));
-    const recipient = document.getElementById('pkg-recipient')?.value || '';
+    const recipient = document.getElementById('pkg-recipient')?.value?.trim() || '';
     const carrier = document.getElementById('pkg-carrier')?.value || 'FedEx';
     const shipDate = document.getElementById('pkg-ship-date')?.value || '';
+    const shipper = document.getElementById('pkg-shipper')?.value || 'Eddy';
 
     if (!recipient) {
-        alert('Enter a recipient name');
+        showToast('Enter a recipient name', 'error');
         if (btn) { btn.disabled = false; btn.textContent = 'CREATE PACKAGE'; }
         return;
     }
 
-    const shipper = document.getElementById('pkg-shipper')?.value || 'Eddy';
+    const payload = { watch_ids: watchIds, recipient, carrier, ship_by_date: shipDate, shipper };
+    console.log('Creating package:', payload);
 
     try {
         const r = await fetch('/api/shipping/packages', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ watch_ids: watchIds, recipient, carrier, ship_by_date: shipDate, shipper })
+            body: JSON.stringify(payload)
         });
         const data = await r.json();
-        if (data.ok) {
+        console.log('Package response:', data);
+        if (data.ok || data.package_id) {
             document.getElementById('pkg-modal')?.remove();
+            showToast('Package created: ' + (data.name || 'Package #' + data.package_id), 'success');
             loadJamFeed('keluar');
         } else {
-            alert('Error: ' + (data.error || 'Unknown'));
+            showToast('Error: ' + (data.error || 'Unknown'), 'error');
             if (btn) { btn.disabled = false; btn.textContent = 'CREATE PACKAGE'; }
         }
     } catch(e) {

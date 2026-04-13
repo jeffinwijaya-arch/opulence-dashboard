@@ -1,6 +1,16 @@
 {
   "articles": [
     {
+      "id": "4e44834566b3",
+      "title": "Czapek at Watches and Wonders 2026: Recasting the Antarctique in Titanium and Cosmic Blue",
+      "link": "https://revolutionwatch.com/czapek-at-watches-and-wonders-2026/",
+      "desc": "The post Czapek at Watches and Wonders 2026: Recasting the Antarctique in Titanium and Cosmic Blue appeared first on Revolution Watch.",
+      "date": "2026-04-13T19:22:33+00:00",
+      "source": "REVOLUTION",
+      "image": "",
+      "relevance": 10
+    },
+    {
       "id": "e859cf3e166a",
       "title": "Introducing \u2013 The Pequignet Royal Paris Chrono \u2013 the Brand\u2019s First Chronograph",
       "link": "https://monochrome-watches.com/the-pequignet-royal-paris-chrono-the-brands-first-chronograph/",
@@ -31,16 +41,6 @@
       "relevance": 0
     },
     {
-      "id": "06fe74d82094",
-      "title": "Introducing: The Trilobe Trente Deux Secret",
-      "link": "https://www.hodinkee.com/articles/introducing-trilobe-trente-deux-secret",
-      "desc": "The brand's breakthrough model gets an artful, personal touch for buyers who want to upgrade.",
-      "date": "2026-04-13T13:00:55-04:00",
-      "source": "HODINKEE",
-      "image": "https://hodinkee.imgix.net/uploads/images/4dc4b922-0280-46f8-8a2d-41624606d789/Trente-DeuxSecret-Steelmodel-Beautyshot2.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
-      "relevance": 0
-    },
-    {
       "id": "bfd488ac75ec",
       "title": "Introducing \u2013 The New Singer DualTrack, Ready for Travel",
       "link": "https://monochrome-watches.com/singer-dualtrack-dual-time-gmt-watch-introducing-price/",
@@ -58,6 +58,16 @@
       "date": "2026-04-13T13:00:04+00:00",
       "source": "REVOLUTION",
       "image": "",
+      "relevance": 0
+    },
+    {
+      "id": "06fe74d82094",
+      "title": "Introducing: The Trilobe Trente Deux Secret",
+      "link": "https://www.hodinkee.com/articles/introducing-trilobe-trente-deux-secret",
+      "desc": "The brand's breakthrough model gets an artful, personal touch for buyers who want to upgrade.",
+      "date": "2026-04-13T13:00:00-04:00",
+      "source": "HODINKEE",
+      "image": "https://hodinkee.imgix.net/uploads/images/4dc4b922-0280-46f8-8a2d-41624606d789/Trente-DeuxSecret-Steelmodel-Beautyshot2.jpg?ixlib=rails-1.1.0&amp;fm=jpg&amp;q=55&amp;auto=format&amp;usm=12&amp;ch=Width%2CDPR%2CSave-Data&amp;fit=crop&amp;w=2000",
       "relevance": 0
     },
     {
@@ -301,16 +311,6 @@
       "relevance": 0
     },
     {
-      "id": "bf4b8d0a32df",
-      "title": "Rolex Certified Pre-Owned: The Quiet Revolution",
-      "link": "https://revolutionwatch.com/rolex-certified-pre-owned-the-quiet-revolution/",
-      "desc": "The post Rolex Certified Pre-Owned: The Quiet Revolution appeared first on Revolution Watch.",
-      "date": "2026-04-11T02:57:11+00:00",
-      "source": "REVOLUTION",
-      "image": "",
-      "relevance": 20
-    },
-    {
       "id": "1a716223362d",
       "title": "Auctions: Sotheby's To Offer A Massive 300+ Piece Cartier Collection Across Sales This Year",
       "link": "https://www.hodinkee.com/articles/auctions-sothebys-cartier-collection",
@@ -351,7 +351,7 @@
       "relevance": 0
     }
   ],
-  "fetched_at": "2026-04-13T19:00:03.613092+00:00",
+  "fetched_at": "2026-04-13T22:00:03.343281+00:00",
   "sources": [
     "HODINKEE",
     "MONOCHROME",
