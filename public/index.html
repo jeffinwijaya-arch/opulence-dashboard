@@ -17656,9 +17656,13 @@ function renderJamFeed(type) {
                         + '<button onclick="event.stopPropagation();jamPrintLabel(\'' + grp.labelFile + '\')" style="cursor:pointer;padding:8px 10px;border:none;border-radius:8px;background:var(--accent-dim);color:var(--accent);font-weight:700;font-size:0.7rem;">PRINT</button>'
                         + '<button onclick="event.stopPropagation();jamChangeLabel(' + grp.items[0].id + ')" style="cursor:pointer;padding:8px 10px;border:none;border-radius:8px;background:var(--orange);color:#000;font-weight:700;font-size:0.7rem;">CHANGE</button>'
                         + '</div>';
-                } else if (grpPkgId && !isLogistics) {
-                    pkgLabelBtn = '<div ondragover="event.preventDefault();event.stopPropagation();this.style.outline=\'3px solid var(--accent)\';this.style.background=\'var(--accent-dim)\'" ondragleave="this.style.outline=\'none\';this.style.background=\'none\'" ondrop="event.preventDefault();event.stopPropagation();this.style.outline=\'none\';this.style.background=\'none\';jamDropLabelOnPackage(event,' + grpPkgId + ')" style="display:flex;gap:6px;align-items:center;border-radius:8px;transition:all 0.15s;">'
-                        + '<button onclick="event.stopPropagation();jamAttachLabelToPackage(' + grpPkgId + ')" style="cursor:pointer;padding:8px 14px;border:2px dashed var(--accent);border-radius:8px;background:var(--accent-dim);color:var(--accent);font-weight:700;font-size:0.78rem;min-height:36px;">ATTACH LABEL</button>'
+                } else if (!isLogistics) {
+                    // Show attach button even without package_id — will create package on attach
+                    const _attachPkgId = grpPkgId || 0;
+                    const _attachWatchIds = JSON.stringify(grp.items.map(i=>i.id));
+                    const _attachBuyer = buyerName.replace(/'/g,"\\'");
+                    pkgLabelBtn = '<div ondragover="event.preventDefault();event.stopPropagation();this.style.outline=\'3px solid var(--accent)\';this.style.background=\'var(--accent-dim)\'" ondragleave="this.style.outline=\'none\';this.style.background=\'none\'" ondrop="event.preventDefault();event.stopPropagation();this.style.outline=\'none\';this.style.background=\'none\';jamDropLabelOnPackage(event,' + _attachPkgId + ')" style="display:flex;gap:6px;align-items:center;border-radius:8px;transition:all 0.15s;">'
+                        + '<button onclick="event.stopPropagation();jamAttachLabelToPackage(' + _attachPkgId + ',\'' + _attachBuyer + '\',' + _attachWatchIds.replace(/"/g,'&quot;') + ')" style="cursor:pointer;padding:8px 14px;border:2px dashed var(--accent);border-radius:8px;background:var(--accent-dim);color:var(--accent);font-weight:700;font-size:0.78rem;min-height:36px;">ATTACH LABEL</button>'
                         + '</div>';
                 }
                 html += '<div class="pkg-drop-zone" data-pkg-id="' + grpPkgId + '" data-recipient="' + buyerName.replace(/"/g,'&quot;') + '" style="border:2px solid ' + pColor + ';border-radius:12px;padding:4px;margin:8px 0;background:var(--bg-1);transition:background 0.15s,border-color 0.15s;" ondragover="event.preventDefault();this.style.borderColor=\'var(--accent)\';this.style.background=\'var(--accent-dim)\'" ondragleave="this.style.borderColor=\'' + pColor + '\';this.style.background=\'var(--bg-1)\'" ondrop="event.preventDefault();this.style.borderColor=\'' + pColor + '\';this.style.background=\'var(--bg-1)\';handlePkgDrop(event,' + grpPkgId + ')">'
@@ -18657,7 +18661,29 @@ async function jamDropLabelOnPackage(event, packageId) {
     } catch(e) { alert('Upload error: ' + e.message); }
 }
 
-function jamAttachLabelToPackage(packageId) {
+function jamAttachLabelToPackage(packageId, buyerName, watchIds) {
+    // If no package exists yet, create one first
+    if (!packageId && watchIds && watchIds.length) {
+        (async () => {
+            try {
+                showToast('Creating package...', 'info');
+                const r = await fetch('/api/shipping/packages', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({recipient: buyerName || 'Unknown', watch_ids: watchIds})
+                });
+                const d = await r.json();
+                if (d.id) {
+                    showToast('Package created', 'success');
+                    jamAttachLabelToPackage(d.id);
+                } else {
+                    showToast('Failed to create package: ' + (d.error||''), 'error');
+                }
+            } catch(e) { showToast('Error: ' + e.message, 'error'); }
+        })();
+        return;
+    }
+    packageId = packageId || 0;
     const now = new Date();
     const today = _localDate(0);
     const tomorrow = _localDate(1);
