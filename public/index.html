@@ -19173,8 +19173,22 @@ async function loadClaudeSessions() {
             el.innerHTML = '<div class="mc-empty">No Claude Code sessions found<br/><span style="font-size:0.7rem;color:var(--text-3);">Start a new session to get started</span></div>';
             return;
         }
-        // Sort: idle sessions first (resumable), active last (locked)
-        sessions.sort((a,b) => (a.status === 'active' ? 1 : 0) - (b.status === 'active' ? 1 : 0));
+        // Sort: active sessions first (the ones the user is currently
+        // talking to — most important to surface), then by last_activity
+        // descending so recently-used idle sessions appear above stale
+        // ones. Previously this sorted active *last*, which buried the
+        // sessions the user had just interacted with beneath a wall of
+        // idle sessions and made them look like they weren't showing up.
+        const _ccTs = v => {
+            const t = v ? new Date(v).getTime() : 0;
+            return Number.isFinite(t) ? t : 0;
+        };
+        sessions.sort((a, b) => {
+            const aActive = a.status === 'active' ? 1 : 0;
+            const bActive = b.status === 'active' ? 1 : 0;
+            if (aActive !== bActive) return bActive - aActive;
+            return _ccTs(b.last_activity) - _ccTs(a.last_activity);
+        });
         el.innerHTML = sessions.map(s => {
             const ago = timeAgo(s.last_activity);
             const statusColor = s.status === 'active' ? '#4ADE80' : '#6B7280';
