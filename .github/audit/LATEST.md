@@ -1,4 +1,4 @@
-# Audit — 2026-04-14T07:17:25+00:00
+# Audit — 2026-04-14T13:01:11+00:00
 
 **Overall**: `FAIL`
 
@@ -9,7 +9,7 @@
 | Data schemas | `OK` | schemas: 16 data files valid |
 | Pipeline parity | `OK` | parity: export_data <-> rebuild_dashboard_data agree |
 | API endpoint gaps | `FAIL` | api-gap: 2/128 endpoints resolvable (2%) |
-| Data freshness | `OK` | freshness: data is 10.5h old |
+| Data freshness | `WARN` | freshness: data is 16.3h old |
 | Production health | `SKIP` | health: DASHBOARD_URL not set (set repo variable to enable) |
 | Recent commits | `OK` | recent commits |
 
@@ -21,7 +21,7 @@
 
     ........................................................................ [ 50%]
     ........................................................................ [100%]
-    144 passed in 2.39s
+    144 passed in 2.18s
 
 ### Tests (vitest) — `OK`
 
@@ -30,8 +30,8 @@
     
     [2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
     [2m      Tests [22m [1m[32m106 passed[39m[22m[90m (106)[39m
-    [2m   Start at [22m 07:17:29
-    [2m   Duration [22m 1.59s[2m (transform 121ms, setup 0ms, collect 175ms, tests 247ms, environment 1.96s, prepare 462ms)[22m
+    [2m   Start at [22m 13:01:14
+    [2m   Duration [22m 1.54s[2m (transform 91ms, setup 0ms, collect 122ms, tests 184ms, environment 1.92s, prepare 432ms)[22m
 
 ### Data schemas — `OK`
 
@@ -57,9 +57,9 @@
 - `/api/ad-crm/store`
 - …and 116 more
 
-### Data freshness — `OK`
+### Data freshness — `WARN`
 
-> freshness: data is 10.5h old
+> freshness: data is 16.3h old
 
     updated_at: 2026-04-13T20:45:59.068278+00:00
 
@@ -71,11 +71,11 @@
 
 > recent commits
 
+- `9ed526e audit: 2026-04-14T07:17Z`
 - `e29a11e audit: 2026-04-14T01:26Z`
 - `4863bc2 fix: test.yml — only run test_data_schemas.py, npm install not npm ci`
 - `5233973 fix: hourly-audit — replace npm ci with npm install, reduce to 6h cron`
 - `1e78621 fix: add logging + toast feedback to package creation, check package_id in response`
-- `135a09a fix: enable package creation button, add onchange+onkeyup handlers for recipient`
 
 ---
 
