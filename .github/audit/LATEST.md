@@ -1,15 +1,15 @@
-# Audit — 2026-04-12T03:57:06+00:00
+# Audit — 2026-04-14T01:26:24+00:00
 
 **Overall**: `FAIL`
 
 | Check | Status | Headline |
 |---|---|---|
 | Tests (pytest) | `OK` | pytest: 144 passed |
-| Tests (vitest) | `OK` | vitest: 106 passed |
+| Tests (vitest) | `OK` | vitest: ? passed |
 | Data schemas | `OK` | schemas: 16 data files valid |
 | Pipeline parity | `OK` | parity: export_data <-> rebuild_dashboard_data agree |
 | API endpoint gaps | `FAIL` | api-gap: 2/128 endpoints resolvable (2%) |
-| Data freshness | `WARN` | freshness: data is 26.5h old |
+| Data freshness | `OK` | freshness: data is 4.7h old |
 | Production health | `SKIP` | health: DASHBOARD_URL not set (set repo variable to enable) |
 | Recent commits | `OK` | recent commits |
 
@@ -21,17 +21,17 @@
 
     ........................................................................ [ 50%]
     ........................................................................ [100%]
-    144 passed in 1.77s
+    144 passed in 2.23s
 
 ### Tests (vitest) — `OK`
 
-> vitest: 106 passed
+> vitest: ? passed
 
     
-     Test Files  4 passed (4)
-          Tests  106 passed (106)
-       Start at  03:57:12
-       Duration  4.52s (transform 208ms, setup 0ms, collect 381ms, tests 123ms, environment 13.18s, prepare 1.57s)
+    [2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+    [2m      Tests [22m [1m[32m106 passed[39m[22m[90m (106)[39m
+    [2m   Start at [22m 01:26:27
+    [2m   Duration [22m 1.57s[2m (transform 98ms, setup 0ms, collect 138ms, tests 123ms, environment 1.94s, prepare 427ms)[22m
 
 ### Data schemas — `OK`
 
@@ -57,11 +57,11 @@
 - `/api/ad-crm/store`
 - …and 116 more
 
-### Data freshness — `WARN`
+### Data freshness — `OK`
 
-> freshness: data is 26.5h old
+> freshness: data is 4.7h old
 
-    updated_at: 2026-04-11T01:27:12.959799+00:00
+    updated_at: 2026-04-13T20:45:59.068278+00:00
 
 ### Production health — `SKIP`
 
@@ -71,11 +71,11 @@
 
 > recent commits
 
-- `9d192be diag(price-intel): add build badge + ?debug=1 overlay for iOS PWA cache`
-- `76e50c8 fix(price-intel): root-cause the "Failed to load / Retry" ghost state`
-- `ad6ce12 test: add 244-test suite for Python pipelines, JS modules, and Worker`
-- `31331bf fix: remove emoji + prevent PTR from hijacking scroll in Mission Control`
-- `b858150 UX(mobile): deep behavioral design pass — readability, contrast, performance`
+- `4863bc2 fix: test.yml — only run test_data_schemas.py, npm install not npm ci`
+- `5233973 fix: hourly-audit — replace npm ci with npm install, reduce to 6h cron`
+- `1e78621 fix: add logging + toast feedback to package creation, check package_id in response`
+- `135a09a fix: enable package creation button, add onchange+onkeyup handlers for recipient`
+- `10397bc feat: add shipper dropdown (Eddy/Luigi/Jeffin) + allow empty packages`
 
 ---
 
