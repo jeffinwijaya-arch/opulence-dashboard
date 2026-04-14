@@ -4234,7 +4234,19 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                     #claude-chat-messages .chat-msg{padding:10px 14px;border-radius:10px;margin-bottom:8px;font-size:0.8rem;line-height:1.5;white-space:pre-wrap;word-break:break-word;}
                     #claude-chat-messages .chat-msg.user{background:var(--accent);color:var(--bg-1);margin-left:20%;text-align:right;}
                     #claude-chat-messages .chat-msg.assistant{background:var(--bg-2);color:var(--text-0);margin-right:20%;}
-                    .claude-input-row{display:flex;gap:8px;}
+                    .claude-input-row{display:flex;gap:8px;align-items:flex-end;}
+                    .claude-icon-btn{flex-shrink:0;background:var(--bg-3);border:1px solid var(--border);color:var(--text-1);border-radius:8px;width:40px;height:40px;font-size:1rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;line-height:1;}
+                    .claude-icon-btn:hover{border-color:var(--accent);color:var(--text-0);}
+                    .claude-icon-btn:disabled{opacity:0.4;cursor:not-allowed;}
+                    .claude-icon-btn.listening{background:rgba(239,68,68,0.15);border-color:#ef4444;color:#ef4444;animation:cc-pulse 1s ease-in-out infinite;}
+                    @keyframes cc-pulse{0%,100%{opacity:1;}50%{opacity:0.55;}}
+                    #claude-tts-toggle[aria-pressed="true"]{background:rgba(74,222,128,0.12);border-color:#4ADE80;color:#4ADE80;}
+                    .claude-attach-strip{display:flex;flex-wrap:wrap;gap:6px;padding:6px 2px;margin-bottom:6px;}
+                    .claude-attach-chip{position:relative;width:56px;height:56px;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--bg-3);}
+                    .claude-attach-chip img{width:100%;height:100%;object-fit:cover;display:block;}
+                    .claude-attach-chip .claude-attach-remove{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;border:none;background:rgba(0,0,0,0.65);color:#fff;font-size:0.65rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
+                    .chat-msg.user .chat-msg-images{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;justify-content:flex-end;}
+                    .chat-msg.user .chat-msg-images img{max-width:160px;max-height:160px;border-radius:6px;display:block;}
                     #claude-chat-input{flex:1;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text-0);font-size:0.8rem;resize:none;font-family:inherit;min-height:40px;max-height:120px;}
                     #claude-chat-input:focus{outline:none;border-color:var(--accent);}
                     #claude-send-btn{background:var(--accent);color:var(--bg-1);border:none;border-radius:8px;padding:10px 16px;font-weight:600;cursor:pointer;font-size:0.8rem;}
@@ -4275,10 +4287,30 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                             <span id="claude-chat-title" style="font-weight:600;color:var(--text-0);font-size:0.9rem;"></span>
                             <span id="claude-chat-subtitle" style="font-size:0.7rem;color:var(--text-3);margin-left:8px;"></span>
                         </div>
+                        <button type="button" id="claude-tts-toggle" onclick="_ccToggleTTS()"
+                                title="Read Claude's replies aloud"
+                                aria-label="Toggle voice-over for Claude replies"
+                                aria-pressed="false"
+                                style="margin-left:auto;background:transparent;border:1px solid var(--border);color:var(--text-2);border-radius:6px;padding:4px 10px;font-size:0.72rem;cursor:pointer;">
+                            🔊 Voice off
+                        </button>
                     </div>
                     <div class="claude-chat-container">
                         <div id="claude-chat-messages"></div>
+                        <!-- Pending image attachments preview — populated by _ccAddImage() -->
+                        <div id="claude-attach-strip" class="claude-attach-strip" style="display:none;"></div>
                         <div class="claude-input-row">
+                            <input type="file" id="claude-attach-input" accept="image/*" multiple
+                                   onchange="_ccHandleAttachPick(event)" style="display:none;">
+                            <button type="button" id="claude-attach-btn"
+                                    title="Attach image" aria-label="Attach image"
+                                    onclick="document.getElementById('claude-attach-input').click()"
+                                    class="claude-icon-btn">📎</button>
+                            <button type="button" id="claude-mic-btn"
+                                    title="Dictate message" aria-label="Dictate message"
+                                    aria-pressed="false"
+                                    onclick="_ccToggleDictation()"
+                                    class="claude-icon-btn">🎤</button>
                             <textarea id="claude-chat-input" placeholder="Send a message to Claude..." rows="1"></textarea>
                             <button id="claude-send-btn" onclick="sendClaudeMessage()">Send</button>
                         </div>
@@ -19567,13 +19599,43 @@ async function loadClaudeConversation(sessionId) {
     }
 }
 
-function appendChatMessage(role, content) {
+function appendChatMessage(role, content, opts) {
     const messagesEl = document.getElementById('claude-chat-messages');
     const msgDiv = document.createElement('div');
     msgDiv.className = `chat-msg ${role}`;
-    msgDiv.textContent = content;
+
+    // Optional image attachments (user messages only for now). We
+    // render them as a small image strip above the text so the user
+    // sees what they actually sent. Images are supplied as data URLs.
+    const images = opts && Array.isArray(opts.images) ? opts.images : null;
+    if (images && images.length) {
+        const strip = document.createElement('div');
+        strip.className = 'chat-msg-images';
+        for (const src of images) {
+            const img = document.createElement('img');
+            img.src = src;
+            img.alt = 'attached image';
+            strip.appendChild(img);
+        }
+        msgDiv.appendChild(strip);
+    }
+
+    // Text content — preserved as textContent so we don't open an XSS
+    // hole if the message ever contains HTML-like tokens.
+    if (content) {
+        const textSpan = document.createElement('div');
+        textSpan.textContent = content;
+        msgDiv.appendChild(textSpan);
+    }
+
     messagesEl.appendChild(msgDiv);
     messagesEl.scrollTop = messagesEl.scrollHeight;
+
+    // If TTS is enabled and this is an assistant reply, read it aloud.
+    // Errors here are non-fatal — speechSynthesis is flaky on iOS.
+    if (role === 'assistant' && content && _ccIsTTSEnabled()) {
+        try { _ccSpeak(content); } catch (_) {}
+    }
 }
 
 // showClaudeThinking now tracks a "still connecting" banner that
@@ -19793,7 +19855,14 @@ async function sendClaudeMessage() {
     const sendBtn = document.getElementById('claude-send-btn');
 
     const message = input.value.trim();
-    if (!message) return;
+    // Snapshot any pending image attachments for this turn. We take
+    // a copy so clearing _ccPendingImages after send doesn't mutate
+    // the payload if the send is still in flight.
+    const images = (_ccPendingImages || []).slice();
+    // Allow sending when the user only attached images with no text
+    // (e.g. "what is this?" follow-ups where the image carries the
+    // whole question).
+    if (!message && !images.length) return;
 
     if (!_currentClaudeSessionId) {
         if (typeof showToast === 'function') showToast('No session selected', 'error');
@@ -19807,7 +19876,7 @@ async function sendClaudeMessage() {
     sendBtn.disabled = true;
     sendBtn.textContent = 'Sending...';
 
-    appendChatMessage('user', message);
+    appendChatMessage('user', message, images.length ? { images } : null);
     showClaudeThinking();
 
     // One request id so the same id can be grepped out of the
@@ -19827,7 +19896,13 @@ async function sendClaudeMessage() {
         const r = await _ccPostWithRetry('/api/mission-control/claude-code/send', {
             session_id: _currentClaudeSessionId,
             message: message,
-            project_path: _currentClaudeProject
+            project_path: _currentClaudeProject,
+            // Images are sent as an array of base64 data URLs
+            // (e.g. "data:image/jpeg;base64,..."). The backend must
+            // forward them to Claude's API as image content blocks.
+            // Backends that don't know this field will simply ignore
+            // it — so text-only chat keeps working either way.
+            images: images.length ? images : undefined
         }, { timeout: 120000, retries: 1, reqId });
         sendStatus = r.status;
         sendStatusText = r.statusText;
@@ -19855,8 +19930,10 @@ async function sendClaudeMessage() {
                 req_id: reqId,
                 latency_ms: Date.now() - startedAt
             });
-            // Past the success point — safe to clear the input now.
+            // Past the success point — safe to clear the input and
+            // drop any attachments that went along with this turn.
             input.value = '';
+            _ccClearPendingImages();
         } else {
             const err = (data && data.error) || ('HTTP ' + r.status + ' ' + r.statusText);
             _ccAppendErrorWithRetry(message, err, {
@@ -19895,6 +19972,278 @@ async function sendClaudeMessage() {
         sendBtn.textContent = 'Send';
         if (input) input.focus();
     }
+}
+
+// ──────────────────────────────────────────────────────────────
+// Image attachments
+// ──────────────────────────────────────────────────────────────
+// Pending attachments live in memory between the file-pick moment
+// and the next successful send. Stored as base64 data URLs so we
+// can both preview them locally and ship them in the JSON POST body
+// without needing multipart/form-data.
+let _ccPendingImages = [];
+
+// Cap per-image size to keep the POST body under sane limits. Claude's
+// API has its own limits on image payload size; the Flask backend
+// will also need to accept a reasonably large JSON body. We downscale
+// large photos client-side to stay well under that bar and keep the
+// UI snappy on mobile.
+const _CC_MAX_IMAGE_DIM = 1600;    // px, longest edge
+const _CC_MAX_IMAGE_BYTES = 4 * 1024 * 1024; // 4MB per image after encoding
+
+async function _ccHandleAttachPick(event) {
+    const files = Array.from(event.target.files || []);
+    // Reset the picker value so re-picking the same file re-fires
+    // the change event (browsers skip it otherwise).
+    event.target.value = '';
+    for (const file of files) {
+        if (!file.type || !file.type.startsWith('image/')) {
+            if (typeof showToast === 'function') showToast('Only images can be attached', 'error');
+            continue;
+        }
+        try {
+            const dataUrl = await _ccFileToDataUrl(file);
+            _ccAddImage(dataUrl);
+        } catch (e) {
+            if (typeof showToast === 'function') showToast('Could not read image: ' + (e && e.message || e), 'error');
+        }
+    }
+}
+
+function _ccFileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const src = reader.result;
+            if (typeof src !== 'string' || !src.startsWith('data:')) {
+                return reject(new Error('unexpected reader result'));
+            }
+            // Downscale if the raw payload is too big, otherwise keep as-is.
+            if (src.length * 0.75 > _CC_MAX_IMAGE_BYTES) {
+                _ccDownscaleDataUrl(src, _CC_MAX_IMAGE_DIM).then(resolve, reject);
+            } else {
+                resolve(src);
+            }
+        };
+        reader.onerror = () => reject(reader.error || new Error('file read failed'));
+        reader.readAsDataURL(file);
+    });
+}
+
+function _ccDownscaleDataUrl(src, maxDim) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+            const w = Math.round(img.width * scale);
+            const h = Math.round(img.height * scale);
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            // JPEG at 0.85 keeps photos recognisable and tiny; matches
+            // what Claude's vision can work with comfortably.
+            try {
+                resolve(canvas.toDataURL('image/jpeg', 0.85));
+            } catch (e) { reject(e); }
+        };
+        img.onerror = () => reject(new Error('could not load image for downscale'));
+        img.src = src;
+    });
+}
+
+function _ccAddImage(dataUrl) {
+    _ccPendingImages.push(dataUrl);
+    _ccRenderAttachStrip();
+}
+
+function _ccRemoveImage(index) {
+    _ccPendingImages.splice(index, 1);
+    _ccRenderAttachStrip();
+}
+
+function _ccClearPendingImages() {
+    _ccPendingImages = [];
+    _ccRenderAttachStrip();
+}
+
+function _ccRenderAttachStrip() {
+    const strip = document.getElementById('claude-attach-strip');
+    if (!strip) return;
+    if (!_ccPendingImages.length) {
+        strip.style.display = 'none';
+        strip.innerHTML = '';
+        return;
+    }
+    strip.style.display = 'flex';
+    strip.innerHTML = '';
+    _ccPendingImages.forEach((src, i) => {
+        const chip = document.createElement('div');
+        chip.className = 'claude-attach-chip';
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = 'attachment ' + (i + 1);
+        chip.appendChild(img);
+        const rm = document.createElement('button');
+        rm.type = 'button';
+        rm.className = 'claude-attach-remove';
+        rm.setAttribute('aria-label', 'Remove attachment');
+        rm.textContent = '×';
+        rm.onclick = () => _ccRemoveImage(i);
+        chip.appendChild(rm);
+        strip.appendChild(chip);
+    });
+}
+
+// ──────────────────────────────────────────────────────────────
+// Voice input (dictation) — Web Speech API
+// ──────────────────────────────────────────────────────────────
+// We use the vendor-prefixed webkitSpeechRecognition on Safari/Chrome
+// and the standard SpeechRecognition everywhere else. On browsers
+// without either, we hide the mic button entirely so we never advertise
+// a feature we can't deliver.
+let _ccRecognition = null;
+let _ccRecognizing = false;
+
+function _ccSpeechRecognitionCtor() {
+    return (typeof window !== 'undefined') &&
+        (window.SpeechRecognition || window.webkitSpeechRecognition || null);
+}
+
+function _ccToggleDictation() {
+    const Ctor = _ccSpeechRecognitionCtor();
+    if (!Ctor) {
+        if (typeof showToast === 'function') showToast('Voice input not supported on this browser', 'error');
+        return;
+    }
+    if (_ccRecognizing) {
+        try { _ccRecognition && _ccRecognition.stop(); } catch (_) {}
+        return;
+    }
+    const rec = new Ctor();
+    rec.continuous = false;
+    rec.interimResults = true;
+    rec.lang = (navigator.language || 'en-US');
+    const input = document.getElementById('claude-chat-input');
+    const micBtn = document.getElementById('claude-mic-btn');
+    // Remember the base text so interim results append cleanly
+    // without stomping whatever the user had already typed.
+    const base = (input && input.value) ? input.value.replace(/\s+$/, '') + ' ' : '';
+
+    rec.onstart = () => {
+        _ccRecognizing = true;
+        if (micBtn) {
+            micBtn.classList.add('listening');
+            micBtn.setAttribute('aria-pressed', 'true');
+            micBtn.title = 'Stop dictation';
+        }
+    };
+    rec.onerror = (e) => {
+        if (typeof showToast === 'function') {
+            const msg = (e && e.error) ? ('Mic: ' + e.error) : 'Mic error';
+            showToast(msg, 'error');
+        }
+    };
+    rec.onend = () => {
+        _ccRecognizing = false;
+        _ccRecognition = null;
+        if (micBtn) {
+            micBtn.classList.remove('listening');
+            micBtn.setAttribute('aria-pressed', 'false');
+            micBtn.title = 'Dictate message';
+        }
+        if (input) input.focus();
+    };
+    rec.onresult = (ev) => {
+        let transcript = '';
+        for (let i = 0; i < ev.results.length; i++) {
+            transcript += ev.results[i][0].transcript;
+        }
+        if (input) {
+            input.value = base + transcript;
+            // Trigger any auto-resize listeners that may be watching.
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    };
+    _ccRecognition = rec;
+    try {
+        rec.start();
+    } catch (e) {
+        // Chrome throws if start() is called while a previous session
+        // is still tearing down. Surface it as a toast and reset.
+        _ccRecognizing = false;
+        _ccRecognition = null;
+        if (typeof showToast === 'function') showToast('Mic is busy — try again in a sec', 'error');
+    }
+}
+
+// ──────────────────────────────────────────────────────────────
+// Voice output (TTS) — SpeechSynthesis
+// ──────────────────────────────────────────────────────────────
+const _CC_LS_TTS = 'mk_cc_tts_enabled';
+
+function _ccIsTTSEnabled() {
+    try {
+        return localStorage.getItem(_CC_LS_TTS) === '1';
+    } catch (_) { return false; }
+}
+
+function _ccSetTTSEnabled(on) {
+    try {
+        if (on) localStorage.setItem(_CC_LS_TTS, '1');
+        else localStorage.removeItem(_CC_LS_TTS);
+    } catch (_) {}
+    const btn = document.getElementById('claude-tts-toggle');
+    if (btn) {
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        btn.textContent = on ? '🔊 Voice on' : '🔊 Voice off';
+    }
+}
+
+function _ccToggleTTS() {
+    if (!('speechSynthesis' in window)) {
+        if (typeof showToast === 'function') showToast('Voice output not supported on this browser', 'error');
+        return;
+    }
+    const next = !_ccIsTTSEnabled();
+    _ccSetTTSEnabled(next);
+    // If turning off mid-sentence, cut it off immediately.
+    if (!next) {
+        try { window.speechSynthesis.cancel(); } catch (_) {}
+    }
+}
+
+function _ccSpeak(text) {
+    if (!('speechSynthesis' in window)) return;
+    // Strip anything that'd make TTS sound like nonsense — code blocks,
+    // bare URLs, long token ids. Keep it to prose.
+    const clean = String(text)
+        .replace(/```[\s\S]*?```/g, ' code block omitted ')
+        .replace(/`([^`]+)`/g, '$1')
+        .replace(/\bhttps?:\/\/\S+/g, ' link ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    if (!clean) return;
+    try { window.speechSynthesis.cancel(); } catch (_) {}
+    const utter = new SpeechSynthesisUtterance(clean);
+    utter.lang = (navigator.language || 'en-US');
+    utter.rate = 1.0;
+    utter.pitch = 1.0;
+    window.speechSynthesis.speak(utter);
+}
+
+// Feature-detect on DOM ready: hide buttons the browser can't actually
+// honour so we don't silently fail when the user taps them.
+if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', () => {
+        const micBtn = document.getElementById('claude-mic-btn');
+        if (micBtn && !_ccSpeechRecognitionCtor()) micBtn.style.display = 'none';
+        const ttsBtn = document.getElementById('claude-tts-toggle');
+        if (ttsBtn && !('speechSynthesis' in window)) ttsBtn.style.display = 'none';
+        // Restore persisted TTS preference.
+        if (ttsBtn && _ccIsTTSEnabled()) _ccSetTTSEnabled(true);
+    });
 }
 
 async function createNewClaudeSession() {
