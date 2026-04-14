@@ -17,7 +17,7 @@
 // aggressively caching stale HTML. This version is careful to keep
 // the shell cache small and fresh.
 
-const CACHE_NAME = 'mk-shell-v6';
+const CACHE_NAME = 'mk-shell-v7';
 
 // Files to pre-cache on install. These are the minimum set required
 // for the PWA to render *something* instead of iOS's error page.
@@ -68,6 +68,20 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   if (url.origin !== self.location.origin) return;
 
+  // Strategy 0: Never touch /api/*. These endpoints are dynamic
+  // (Claude Code sessions, send/poll, live mirror, etc) and stale
+  // data is actively harmful — e.g. the claude-sessions list served
+  // from cache was hiding the session the user was actually just
+  // talking to, because a 2-day-old cached payload was being handed
+  // back while the fresh response quietly repopulated the cache in
+  // the background. `_headers` already sets `Cache-Control: no-store`
+  // on /api/*; honour that here by going straight to the network
+  // with no SW caching at all. Bypassing event.respondWith() lets
+  // the browser's default fetch handle it.
+  if (url.pathname.startsWith('/api/')) {
+    return;
+  }
+
   // Strategy 1: Network-first for the HTML shell.
   // Why: we ALWAYS want the newest deploy to win, but we need a
   // fallback for when the user is offline or CDN is down (which is
@@ -92,7 +106,6 @@ self.addEventListener('fetch', (event) => {
   // then update the cache in the background from the network.
   if (url.pathname.startsWith('/data/') ||
       url.pathname.startsWith('/modules/') ||
-      url.pathname.startsWith('/api/') ||
       url.pathname === '/enhanced-pricing.js' ||
       url.pathname === '/manifest.json') {
     event.respondWith(
@@ -109,7 +122,7 @@ self.addEventListener('fetch', (event) => {
             // Network failed — return cached version or a JSON error
             // that won't crash the caller's .json() parse.
             if (cached) return cached;
-            if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/data/')) {
+            if (url.pathname.startsWith('/data/')) {
               return new Response(
                 JSON.stringify({ ok: false, error: 'offline', cached: false }),
                 { status: 503, headers: { 'Content-Type': 'application/json' } }
