@@ -12013,27 +12013,71 @@ async function loadRecentLabels() {
         const d = await r.json();
         const labels = d.labels || [];
         const pending = d.pending || [];
-        
+
         let html = '';
-        
-        // Show pending/processing/failed jobs
-        if (pending.length) {
-            html += pending.map(j => {
+
+        // Group consecutive failures for the same recipient into a
+        // single card so the 3× "browser not responding" retries from
+        // the backend don't flood the list. Pending (non-failed) jobs
+        // and unique failures pass through unchanged.
+        const grouped = _groupLabelJobs(pending);
+
+        // Systemic-failure banner — if the last few pending entries
+        // all failed with the same OTP/browser pattern, say so at the
+        // top so the user knows it's not a per-shipment problem.
+        const banner = _labelSystemicFailureBanner(pending);
+        if (banner) html += banner;
+
+        if (grouped.length) {
+            html += grouped.map((g, gi) => {
+                const j = g.latest;
                 const isFailed = j.status === 'failed';
                 const borderColor = isFailed ? 'var(--red)' : 'var(--accent)';
-                const statusText = isFailed ? `Failed: ${j.error||'Unknown'}` : 'Creating label...';
                 const statusColor = isFailed ? 'var(--red)' : 'var(--accent)';
+                const info = isFailed ? _labelJobErrorSummary(j.error || '') : null;
+                const summaryText = isFailed ? (info.summary || 'Failed') : 'Creating label...';
+                const retryBadge = (isFailed && g.count > 1)
+                    ? ` <span style="background:rgba(255,59,48,0.2);color:var(--red);font-size:0.6rem;padding:1px 6px;border-radius:10px;font-weight:600;margin-left:4px;">${g.count}× in ${g.spanLabel}</span>`
+                    : '';
+                // Pack the retry config as a URL-safe base64 JSON blob
+                // so the click handler can resubmit without us having
+                // to re-emit onclick attribute payloads with quoted
+                // addresses etc. (the address field often contains
+                // apostrophes that break onclick string escaping).
+                const configBlob = _encodeLabelConfig(j.config || {});
+                const actions = isFailed
+                    ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+                         <button class="btn" onclick="_retryLabelJob('${configBlob}', this)" style="font-size:0.68rem;padding:4px 10px;background:var(--accent);color:var(--bg-1);border-color:var(--accent);">Retry</button>
+                         <button class="btn" onclick="_recordManuallyFromJob('${configBlob}')" style="font-size:0.68rem;padding:4px 10px;">Record manually</button>
+                         <button class="btn" onclick="_toggleLabelDetails(${gi})" style="font-size:0.68rem;padding:4px 10px;opacity:0.8;" id="lbl-details-btn-${gi}">Show details</button>
+                       </div>`
+                    : '';
+                // Full debug log (collapsed by default) — folded inside
+                // a <div> rather than <details> so we control styling
+                // and can fold multiple attempts from the same group.
+                const detailsBody = isFailed
+                    ? `<div id="lbl-details-${gi}" style="display:none;margin-top:8px;padding:8px 10px;background:var(--bg-3);border-radius:6px;font-size:0.65rem;font-family:var(--mono);color:var(--text-2);white-space:pre-wrap;word-break:break-word;max-height:260px;overflow-y:auto;">${
+                        g.attempts.map((a, ai) => {
+                            const hdr = g.attempts.length > 1 ? `── attempt ${ai + 1} @ ${a.created || ''} ──\n` : '';
+                            return _esc(hdr + (a.error || '(no error recorded)'));
+                        }).join('\n\n')
+                      }</div>`
+                    : '';
                 return `
                 <div class="listing-card" style="border-left:3px solid ${borderColor};">
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                        <span style="color:${statusColor};font-weight:600;">${statusText}</span>
-                        <span style="font-size:0.72rem;color:var(--text-2);">${j.created}</span>
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+                        <span style="color:${statusColor};font-weight:600;line-height:1.35;">${_esc(summaryText)}${retryBadge}</span>
+                        <span style="font-size:0.72rem;color:var(--text-2);white-space:nowrap;">${_esc(j.created || '')}</span>
                     </div>
-                    <div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">${j.config?.contact||''} | ${j.config?.address||''} | $${j.config?.value||0}</div>
+                    ${info && info.hint ? `<div style="font-size:0.68rem;color:var(--accent);margin-top:4px;">${_esc(info.hint)}</div>` : ''}
+                    <div style="font-size:0.72rem;color:var(--text-2);margin-top:4px;">${_esc((j.config?.contact) || '')}${j.config?.address ? ' | ' + _esc(j.config.address) : ''}${j.config?.value ? ' | $' + _esc(String(j.config.value)) : ''}</div>
+                    ${actions}
+                    ${detailsBody}
                 </div>
-            `}).join('');
+            `;
+            }).join('');
         }
-        
+
         // Show completed/recent labels
         if (labels.length) {
             html += labels.map(l => `
@@ -12045,14 +12089,245 @@ async function loadRecentLabels() {
                     <div style="font-size:0.72rem;color:var(--text-2);margin-top:2px;">${l.size_kb}KB ${l.is_real_label?'':'(wrapper)'} | Click to download</div>
                 </div>
             `).join('');
-        } else if (!pending.length) {
+        } else if (!grouped.length && !banner) {
             html = emptyState('truck','No recent labels','Create a shipping label to see it here.');
         }
-        
+
         container.innerHTML = html;
     } catch(e) {
         container.innerHTML = `<p style="color:var(--red);text-align:center;">Error: ${e.message}</p>`;
     }
+}
+
+// ──────────────────────────────────────────────────────────────
+// Recent Labels helpers — error summarization + retry plumbing
+// ──────────────────────────────────────────────────────────────
+
+// Compress a backend error log into a one-line human summary plus an
+// optional hint about what to do. The backend ships the full DEBUG
+// log as `error`, e.g.:
+//     "Script failed (exit 1): DEBUG: browser not responding,
+//      retry 1/3 DEBUG: browser not responding, retry 2/3 ..."
+// or:
+//     "Script failed (exit 1): DEBUG: 2FA required, trying iMessage
+//      first... DEBUG: OTP attempt 1/8 (iMessage) ..."
+// which is useless as a list-row title. This distills the root cause.
+function _labelJobErrorSummary(raw) {
+    const err = String(raw || '').trim();
+    const lo = err.toLowerCase();
+
+    // Ordered: most specific pattern first. Each entry returns a
+    // one-line summary and an optional actionable hint.
+    if (/browser not responding/.test(lo)) {
+        const retries = (err.match(/retry\s+(\d+)\s*\/\s*(\d+)/i) || [])[0];
+        return {
+            summary: 'Automation browser crashed or hung',
+            hint: retries ? `Backend retried ${retries} and gave up — Playwright likely out of memory or the target site is blocking.` : 'Backend browser crashed — try again in a moment.',
+            category: 'browser',
+        };
+    }
+    if (/otp|2fa|two[\s\-]*factor|imessage|gmail|oauth/.test(lo)) {
+        // Pull the highest attempt numbers we can see so the user
+        // knows how hard the backend fought before giving up. The
+        // backend log shape is:
+        //     "OTP attempt 8/8 (iMessage) ... OTP attempt 4/5 (Gmail)"
+        // so we scan for all "N/M (iMessage|Gmail)" pairs and take
+        // the highest N per source.
+        const maxAttempt = (label) => {
+            const re = new RegExp('(\\d+)\\s*\\/\\s*(\\d+)\\s*\\(' + label + '\\)', 'gi');
+            let m, best = null;
+            while ((m = re.exec(err)) !== null) {
+                const n = parseInt(m[1], 10);
+                const d = parseInt(m[2], 10);
+                if (best == null || n > best.n) best = { n, d };
+            }
+            return best ? best.n + '/' + best.d : '';
+        };
+        const iMsg = maxAttempt('iMessage');
+        const gmail = maxAttempt('Gmail');
+        const bits = [iMsg && 'iMessage ' + iMsg, gmail && 'Gmail ' + gmail].filter(Boolean).join(', ');
+        return {
+            summary: '2FA OTP scrape failed' + (bits ? ` (${bits})` : ''),
+            hint: 'The IFS 2FA step reads the OTP from iMessage → Gmail and both paths are failing. Refresh the backend Gmail/iMessage auth, or use Record manually below.',
+            category: 'otp',
+        };
+    }
+    if (/401|403|unauthorized|forbidden/.test(lo)) {
+        return { summary: 'IFS rejected credentials (401/403)', hint: 'IFS session expired — the backend needs a fresh login.', category: 'auth' };
+    }
+    if (/timeout|timed out/.test(lo)) {
+        return { summary: 'Automation timed out', hint: 'IFS site was slow or unreachable — retry usually fixes this.', category: 'timeout' };
+    }
+    if (/network|dns|connection refused|enotfound/.test(lo)) {
+        return { summary: 'Network error reaching IFS', hint: 'Transient — retry in a moment.', category: 'network' };
+    }
+    // Fallback: keep the first useful sentence, strip DEBUG repetition.
+    const firstLine = err.split(/DEBUG:|[\r\n]+/).map(s => s.trim()).filter(Boolean)[0] || err;
+    return { summary: firstLine.slice(0, 140), hint: '', category: 'other' };
+}
+
+// Collapse consecutive failures for the same recipient (address
+// + declared value) into one card. The backend's auto-retry writes
+// a new pending entry per attempt, so without this the user ends
+// up with 3+ red walls for a single shipment.
+function _groupLabelJobs(jobs) {
+    if (!Array.isArray(jobs) || !jobs.length) return [];
+    // Jobs come back oldest→newest or newest→oldest depending on
+    // backend mood; normalize to newest-first by created time, with
+    // stable fallback on array order.
+    const withIdx = jobs.map((j, i) => ({ j, i }));
+    withIdx.sort((a, b) => {
+        const ta = Date.parse(a.j.created || '') || 0;
+        const tb = Date.parse(b.j.created || '') || 0;
+        if (ta !== tb) return tb - ta;
+        return b.i - a.i;
+    });
+    const out = [];
+    for (const { j } of withIdx) {
+        const key = (j.status === 'failed')
+            ? `${(j.config?.contact) || ''}||${(j.config?.address) || ''}||${(j.config?.value) || ''}`
+            : null;
+        // Only group failed jobs — pending/processing always render
+        // as their own card so you can see they're in flight.
+        if (key) {
+            const last = out[out.length - 1];
+            if (last && last.key === key && last.latest.status === 'failed') {
+                last.attempts.push(j);
+                last.count = last.attempts.length;
+                last.spanLabel = _labelSpanLabel(last.attempts);
+                continue;
+            }
+            out.push({ key, latest: j, attempts: [j], count: 1, spanLabel: '' });
+        } else {
+            out.push({ key: null, latest: j, attempts: [j], count: 1, spanLabel: '' });
+        }
+    }
+    return out;
+}
+
+function _labelSpanLabel(attempts) {
+    if (!attempts || attempts.length < 2) return '';
+    const times = attempts.map(a => Date.parse(a.created || '') || 0).filter(Boolean);
+    if (times.length < 2) return '';
+    const spanMs = Math.max(...times) - Math.min(...times);
+    const mins = Math.round(spanMs / 60000);
+    if (mins < 1) return 'under a minute';
+    if (mins < 60) return mins + ' min';
+    const hrs = Math.round(mins / 60);
+    return hrs + 'h';
+}
+
+// Systemic-failure banner — when the 3 most recent failed jobs all
+// share the same error category, the automation is down, not this
+// one shipment. Surface that so the user doesn't keep hammering Retry.
+function _labelSystemicFailureBanner(jobs) {
+    if (!Array.isArray(jobs) || jobs.length < 3) return '';
+    const recent = jobs
+        .filter(j => j.status === 'failed')
+        .slice(-3);
+    if (recent.length < 3) return '';
+    const cats = recent.map(j => _labelJobErrorSummary(j.error || '').category);
+    const allSame = cats.every(c => c === cats[0]);
+    if (!allSame || cats[0] === 'other') return '';
+    const catText = {
+        browser: 'The automation browser is crashing on every run',
+        otp:     'The 2FA OTP pipeline (iMessage → Gmail) is broken',
+        auth:    'IFS is rejecting the backend credentials',
+        timeout: 'IFS has been timing out repeatedly',
+        network: 'The backend can\'t reach IFS at all',
+    }[cats[0]] || 'The automation is failing in the same way repeatedly';
+    return `<div style="background:rgba(255,59,48,0.1);border:1px solid rgba(255,59,48,0.35);border-radius:8px;padding:10px 12px;margin-bottom:10px;">
+        <div style="font-size:0.78rem;font-weight:700;color:var(--red);">IFS automation looks unhealthy</div>
+        <div style="font-size:0.7rem;color:var(--text-1);margin-top:4px;line-height:1.4;">${_esc(catText)} on the last 3 attempts. Create labels manually in IFS and use <b>Record Tracking</b> to log them here until the backend is fixed.</div>
+    </div>`;
+}
+
+function _esc(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function _encodeLabelConfig(config) {
+    try {
+        // btoa can't handle UTF-8 directly; run it through
+        // encodeURIComponent first so addresses with accents etc.
+        // survive the round-trip.
+        return btoa(unescape(encodeURIComponent(JSON.stringify(config || {}))));
+    } catch (_) { return ''; }
+}
+
+function _decodeLabelConfig(blob) {
+    try {
+        return JSON.parse(decodeURIComponent(escape(atob(blob || ''))));
+    } catch (_) { return {}; }
+}
+
+function _toggleLabelDetails(idx) {
+    const el = document.getElementById('lbl-details-' + idx);
+    const btn = document.getElementById('lbl-details-btn-' + idx);
+    if (!el) return;
+    const open = el.style.display !== 'none';
+    el.style.display = open ? 'none' : 'block';
+    if (btn) btn.textContent = open ? 'Show details' : 'Hide details';
+}
+
+async function _retryLabelJob(blob, btn) {
+    const config = _decodeLabelConfig(blob);
+    if (!config || !config.contact) {
+        if (typeof showToast === 'function') showToast('Could not retry — job config missing', 'error');
+        return;
+    }
+    const origText = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = 'Retrying...'; }
+    try {
+        const r = await fetch('/api/ifs/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(config),
+        });
+        const d = await r.json();
+        if (d.error) {
+            if (typeof showToast === 'function') showToast('Retry failed: ' + d.error, 'error');
+        } else {
+            if (typeof showToast === 'function') showToast('Retry submitted — watching for result...', 'success');
+            if (d.job?.id && typeof pollLabelStatus === 'function') pollLabelStatus(d.job.id);
+        }
+    } catch (e) {
+        if (typeof showToast === 'function') showToast('Retry failed: ' + e.message, 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = origText || 'Retry'; }
+        setTimeout(loadRecentLabels, 1500);
+    }
+}
+
+function _recordManuallyFromJob(blob) {
+    const config = _decodeLabelConfig(blob);
+    // Populate the ship form with the failed job's data so the user
+    // can copy the address into IFS manually, then drop the tracking
+    // number into the manual-tracking form which is already linked
+    // off this page.
+    const set = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = v; };
+    set('ship-contact', config.contact);
+    set('ship-company', config.company);
+    set('ship-address', config.address);
+    set('ship-apt', config.apt);
+    set('ship-city', config.city);
+    set('ship-state', config.state);
+    set('ship-zip', config.zip);
+    set('ship-phone', config.phone);
+    set('ship-email', config.email);
+    set('ship-value', config.value);
+    set('ship-weight', config.weight);
+    set('ship-service', config.service);
+    set('ship-signature', config.signature);
+    if (typeof toggleManualTrackingForm === 'function') toggleManualTrackingForm(true);
+    const wrap = document.getElementById('ship-manual-form');
+    if (wrap) try { wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) {}
+    if (typeof showToast === 'function') showToast('Form pre-filled — paste IFS tracking when you have it', 'info');
 }
 
 async function loadShippedHistory() {
