@@ -11331,7 +11331,7 @@ async function shareWatchCard(watchId, desc) {
 // meant a hoisting race every page load.)
 
 // ─── Modal Functions ─────────────────────────────────────────────
-function showAddWatchModal() {
+function showAddWatchModal(prefill) {
     document.getElementById('watch-modal-title').textContent = 'Add Watch';
     document.getElementById('wm-row').value = '';
     document.getElementById('wm-delete').style.display = 'none';
@@ -11347,6 +11347,23 @@ function showAddWatchModal() {
         const el = document.getElementById(id); if(el) el.checked = false;
     });
     document.getElementById('wm-status').style.display = 'none';
+    // Pre-fill any fields the caller supplied. Used by the
+    // ?add=... query-string hook below so links can open the modal
+    // already populated — so you don't have to retype a purchase
+    // you've already described elsewhere (a WeChat thread, a text
+    // from yourself, a Claude Code chat, etc).
+    if (prefill && typeof prefill === 'object') {
+        const set = (id, v) => { if (v != null && v !== '') { const el = document.getElementById(id); if (el) el.value = v; } };
+        const chk = (id, v) => { if (v != null) { const el = document.getElementById(id); if (el) el.checked = !!v; } };
+        set('wm-desc', prefill.description || prefill.desc);
+        set('wm-from', prefill.bought_from || prefill.from);
+        set('wm-cost', prefill.cost_price || prefill.cost);
+        set('wm-buy-date', prefill.bought_date || prefill.buy_date);
+        set('wm-card-date', prefill.date_on_card || prefill.card_date);
+        set('wm-serial', prefill.serial);
+        set('wm-sale-price', prefill.sale_price);
+        chk('wm-wt', prefill.wt);
+    }
     const modal = document.getElementById('watch-modal');
     modal.style.display = 'flex';
     // Ensure modal appears in viewport
@@ -11739,6 +11756,47 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target && e.target.id && (e.target.id.startsWith('ship-') || e.target.id.startsWith('hal-'))) _persistShipForm();
     });
     _restoreShipForm();
+});
+
+// ──────────────────────────────────────────────────────────────
+// Deep-link: `?add=...` opens the Add Watch modal pre-filled.
+// ──────────────────────────────────────────────────────────────
+// Intended for one-tap inventory logging from elsewhere (a WeChat
+// thread, a note to self, a Claude chat). The query params map 1:1
+// onto the prefill object showAddWatchModal() accepts:
+//
+//     ?add=1
+//       &desc=278273%20Jubilee%20MOP
+//       &from=WeChat%20Peipei
+//       &cost=18500
+//       &card_date=04%2F2026
+//       &wt=1
+//
+// The modal opens on next tick so the rest of the page finishes
+// mounting (invMgmtData fetch, ref-autofill wiring, etc) before the
+// user lands on the form.
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        const q = new URLSearchParams(location.search);
+        if (!q.has('add')) return;
+        const prefill = {
+            description:  q.get('desc')      || q.get('description'),
+            bought_from:  q.get('from')      || q.get('bought_from'),
+            cost_price:   q.get('cost')      || q.get('cost_price'),
+            bought_date:  q.get('buy_date')  || q.get('bought_date'),
+            date_on_card: q.get('card_date') || q.get('date_on_card'),
+            serial:       q.get('serial'),
+            sale_price:   q.get('sale_price'),
+            wt:           q.get('wt') === '1' || q.get('wt') === 'true' || q.get('wt') === 'yes',
+        };
+        // Strip the ?add=... so a hard-refresh doesn't re-pop the
+        // modal with stale values.
+        const cleanUrl = location.pathname + location.hash;
+        history.replaceState(null, '', cleanUrl);
+        setTimeout(() => {
+            try { showAddWatchModal(prefill); } catch (_) {}
+        }, 300);
+    } catch (_) { /* best-effort — any failure here is non-fatal */ }
 });
 
 async function copyShipFormForIFS() {
