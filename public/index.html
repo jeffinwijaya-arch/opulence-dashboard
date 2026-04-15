@@ -11027,13 +11027,81 @@ async function submitSale() {
         });
         const d = await r.json();
         if (d.ok) {
-            let msg = ' Sold!.';
-            if (d.invoice) msg += ` Invoice ${d.invoice.invoice_number} created & sent!`;
-            else if (d.invoice_error) msg += `  Invoice failed: ${d.invoice_error}`;
-            status.style.color='var(--green)'; status.textContent=msg; setTimeout(()=>{closeSellModal();loadInventoryPage();},1500); }
+            // Sale recorded. Now surface the invoice state explicitly
+            // rather than auto-closing with a potentially-lying
+            // "created & sent!" message. The backend's invoice
+            // auto-send path is flaky (raw Telegram API, not tied to
+            // the user's active chat-reply flow), so the invoice PDF
+            // may exist while the Telegram delivery silently missed.
+            // Giving the user PDF + manual Telegram buttons means they
+            // can verify delivery instead of trusting a toast.
+            status.style.color = 'var(--green)';
+            let html = '<div style="font-weight:700;margin-bottom:6px;">Sale recorded</div>';
+            if (d.invoice && d.invoice.id) {
+                html += `<div style="font-size:0.72rem;color:var(--text-1);margin-bottom:6px;">Invoice <b>${_esc(d.invoice.invoice_number || ('#' + d.invoice.id))}</b> created. Backend auto-send to Telegram is unreliable — verify delivery below.</div>`;
+                html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
+                    <a href="/api/internal-invoices/${d.invoice.id}/pdf" target="_blank" class="btn" style="font-size:0.7rem;padding:4px 10px;text-decoration:none;">Open PDF</a>
+                    <button type="button" class="btn" onclick="_sendInvoiceTelegram(${d.invoice.id}, this)" style="font-size:0.7rem;padding:4px 10px;background:var(--accent);color:var(--bg-1);border-color:var(--accent);">Send to Telegram</button>
+                    <button type="button" class="btn" onclick="closeSellModal();loadInventoryPage();" style="font-size:0.7rem;padding:4px 10px;opacity:0.8;">Done</button>
+                </div>`;
+            } else if (d.invoice_error) {
+                html += `<div style="font-size:0.72rem;color:var(--red);margin-bottom:6px;">Invoice creation failed: ${_esc(d.invoice_error)}</div>`;
+                html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
+                    <button type="button" class="btn" onclick="closeSellModal();loadInventoryPage();showPage('invoices');" style="font-size:0.7rem;padding:4px 10px;">Create invoice manually</button>
+                    <button type="button" class="btn" onclick="closeSellModal();loadInventoryPage();" style="font-size:0.7rem;padding:4px 10px;opacity:0.8;">Dismiss</button>
+                </div>`;
+            } else {
+                // No invoice field at all in the response — backend
+                // probably didn't attempt creation. Fall back to the
+                // old auto-close behaviour so we don't leave the user
+                // stuck looking at a modal with no actions.
+                html += '<div style="font-size:0.72rem;color:var(--text-2);">Inventory updated. No invoice was created.</div>';
+                setTimeout(() => { closeSellModal(); loadInventoryPage(); }, 1500);
+            }
+            status.innerHTML = html;
+        }
         else { status.style.color='var(--red)'; status.textContent='Error: '+(d.error||'Unknown'); }
     } catch(e) { status.style.color='var(--red)'; status.textContent='Error: '+e.message; }
     btn.disabled = false; btn.textContent = 'Sell';
+}
+
+// Manual resend of an invoice PDF to Telegram. The backend's auto-send
+// on sale-complete is flaky (per the Mochi Khai bot diagnosis: old
+// code uses raw Telegram API, not tied to the user's active chat/reply
+// flow, silently misses), so this button is the reliable fallback.
+// Hits /api/internal-invoices/<id>/send-telegram — parallel to the
+// existing /api/postings/<id>/send-telegram endpoint.
+async function _sendInvoiceTelegram(invoiceId, btn) {
+    if (!invoiceId) return;
+    const origText = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+    try {
+        const r = await fetch(`/api/internal-invoices/${invoiceId}/send-telegram`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+        });
+        // Backend may return 404 until the endpoint is wired up
+        // (see scripts/backend-ref/invoice_telegram_send.py). Handle
+        // that specifically so the user sees a useful message
+        // instead of a generic "HTTP 404".
+        if (r.status === 404) {
+            if (typeof showToast === 'function') showToast('Telegram send endpoint not deployed yet — use Open PDF and share manually', 'error');
+            if (btn) { btn.disabled = false; btn.textContent = origText || 'Send to Telegram'; }
+            return;
+        }
+        const d = await r.json().catch(() => ({}));
+        if (r.ok && d.ok !== false) {
+            if (typeof showToast === 'function') showToast('Invoice sent to Telegram', 'success');
+            if (btn) { btn.textContent = 'Sent ✓'; setTimeout(() => { btn.disabled = false; btn.textContent = origText || 'Send to Telegram'; }, 2500); }
+        } else {
+            const err = (d && d.error) || ('HTTP ' + r.status);
+            if (typeof showToast === 'function') showToast('Telegram send failed: ' + err, 'error');
+            if (btn) { btn.disabled = false; btn.textContent = origText || 'Send to Telegram'; }
+        }
+    } catch (e) {
+        if (typeof showToast === 'function') showToast('Telegram send failed: ' + e.message, 'error');
+        if (btn) { btn.disabled = false; btn.textContent = origText || 'Send to Telegram'; }
+    }
 }
 
 // ── FedEx Pickup ──
@@ -12540,7 +12608,11 @@ async function loadInternalInvoices(append) {
             const actions = [
                 `<a onclick="editInvModal(${inv.id})" style="cursor:pointer;font-size:0.72rem;">Edit</a>`,
                 `<a href="/api/internal-invoices/${inv.id}/pdf" target="_blank" style="cursor:pointer;font-size:0.72rem;color:var(--accent);">PDF</a>`,
-                inv.status==='draft'?`<a onclick="invMarkSent(${inv.id})" style="cursor:pointer;font-size:0.72rem;color:var(--blue);">Send</a>`:'',
+                // Telegram delivery is the reliability problem — always
+                // expose a manual resend so a flaky backend auto-send
+                // doesn't leave the user invoice-less.
+                inv.status!=='void'?`<a onclick="_sendInvoiceTelegram(${inv.id}, this)" style="cursor:pointer;font-size:0.72rem;color:#27a7e7;">Telegram</a>`:'',
+                inv.status==='draft'?`<a onclick="invMarkSent(${inv.id})" style="cursor:pointer;font-size:0.72rem;color:var(--blue);">Mark Sent</a>`:'',
                 inv.status==='sent'?`<a onclick="invMarkPaid(${inv.id})" style="cursor:pointer;font-size:0.72rem;color:var(--green);">Paid</a>`:'',
                 inv.status!=='void'?`<a onclick="invVoid(${inv.id})" style="cursor:pointer;font-size:0.72rem;color:var(--red);opacity:0.6;">Void</a>`:''
             ].filter(Boolean).join('<span style="color:var(--text-3);margin:0 6px;">·</span>');
