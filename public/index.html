@@ -13025,7 +13025,10 @@ async function sinAddEntry() {
 }
 
 // ── Payments & Collections ──
+var _paymentsLoading = false;
 async function loadPayments() {
+        if (_paymentsLoading) return;
+        _paymentsLoading = true;
         try {
             const response = await fetch('/api/payments/collections-dashboard');
             const data = await response.json();
@@ -13052,6 +13055,8 @@ async function loadPayments() {
         } catch (error) {
             console.error('Failed to load payments:', error);
             document.getElementById('payments-content').innerHTML = '<div style="color:var(--red);padding:20px;">Failed to load payment data</div>';
+        } finally {
+            _paymentsLoading = false;
         }
     }
     
