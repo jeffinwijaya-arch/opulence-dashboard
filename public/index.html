@@ -2344,22 +2344,19 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
             <span id="notif-count" style="display:none;position:absolute;top:-2px;right:-4px;background:var(--red);color:#fff;font-size:0.55rem;font-weight:700;min-width:16px;height:16px;border-radius:8px;align-items:center;justify-content:center;font-family:var(--mono);padding:0 3px;"></span>
         </div>
         <nav class="nav" id="mainNav" role="navigation" aria-label="Main navigation">
-            <a data-page="dashboard" class="active" onclick="showPage('dashboard')">Overview</a>
-            <a data-page="lookup" onclick="showPage('lookup')">Prices</a>
-            <a data-page="portfolio" onclick="showPage('portfolio')">Portfolio</a>
-            <a data-page="deals" onclick="showPage('deals')" title="Best deals below market median">Deals <span class="badge" id="deals-count">0</span></a>
-            <!-- Market tab removed — Price Intelligence covers it -->
-            <a data-page="invoices" onclick="showPage('invoices')">Invoices</a>
-            <a data-page="shipping" onclick="showPage('shipping')">Shipping</a>
-            <a data-page="inventory" onclick="showPage('inventory')">Inventory</a>
-            <a data-page="mission-control" onclick="showPage('mission-control')">Mission Control</a>
-            <a data-page="payments" onclick="showPage('payments')" title="Outstanding & completed payments">Payments <span class="badge" id="payments-count">0</span></a>
-            <a data-page="postings" onclick="showPage('postings')">My Postings</a>
-            <a data-page="jam" onclick="showPage('jam')">Operations</a>
-            <a data-page="photos" onclick="showPage('photos')">Photos</a>
-
-            <!-- Aging tab removed -->
-            <a data-page="ad-crm" onclick="showPage('ad-crm')">AD CRM</a>
+            <a href="javascript:void(0)" data-page="dashboard" class="active" onclick="showPage('dashboard')">Overview</a>
+            <a href="javascript:void(0)" data-page="lookup" onclick="showPage('lookup')">Prices</a>
+            <a href="javascript:void(0)" data-page="portfolio" onclick="showPage('portfolio')">Portfolio</a>
+            <a href="javascript:void(0)" data-page="deals" onclick="showPage('deals')" title="Best deals below market median">Deals <span class="badge" id="deals-count">0</span></a>
+            <a href="javascript:void(0)" data-page="invoices" onclick="showPage('invoices')">Invoices</a>
+            <a href="javascript:void(0)" data-page="shipping" onclick="showPage('shipping')">Shipping</a>
+            <a href="javascript:void(0)" data-page="inventory" onclick="showPage('inventory')">Inventory</a>
+            <a href="javascript:void(0)" data-page="mission-control" onclick="showPage('mission-control')">Mission Control</a>
+            <a href="javascript:void(0)" data-page="payments" onclick="showPage('payments')" title="Outstanding & completed payments">Payments <span class="badge" id="payments-count">0</span></a>
+            <a href="javascript:void(0)" data-page="postings" onclick="showPage('postings')">My Postings</a>
+            <a href="javascript:void(0)" data-page="jam" onclick="showPage('jam')">Operations</a>
+            <a href="javascript:void(0)" data-page="photos" onclick="showPage('photos')">Photos</a>
+            <a href="javascript:void(0)" data-page="ad-crm" onclick="showPage('ad-crm')">AD CRM</a>
             <!-- Briefing tab removed -->
         </nav>
         <div class="live-clock" id="live-clock"></div>
@@ -2426,43 +2423,43 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
 
     <!-- MOBILE NAV -->
     <nav class="mobile-nav" id="mobile-nav" role="navigation" aria-label="Mobile navigation">
-        <a data-page="dashboard" class="active" onclick="showPage('dashboard')">
+        <a href="javascript:void(0)" data-page="dashboard" class="active" onclick="showPage('dashboard')">
             <span class="mn-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>Home
         </a>
-        <a data-page="inventory" onclick="showPage('inventory')">
+        <a href="javascript:void(0)" data-page="inventory" onclick="showPage('inventory')">
             <span class="mn-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>Stock
         </a>
-        <a data-page="jam" onclick="showPage('jam')">
+        <a href="javascript:void(0)" data-page="jam" onclick="showPage('jam')">
             <span class="mn-icon"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span>Ops
         </a>
-        <a data-page="lookup" onclick="showPage('lookup')">
+        <a href="javascript:void(0)" data-page="lookup" onclick="showPage('lookup')">
             <span class="mn-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>Prices
         </a>
-        <a onclick="openQuickCmd()" style="color:var(--accent);">
+        <a href="javascript:void(0)" onclick="openQuickCmd()" style="color:var(--accent);">
             <span class="mn-icon"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>Quick
         </a>
-        <a id="more-toggle" onclick="toggleMobileMore()" style="position:relative;" aria-label="More navigation options">
+        <a href="javascript:void(0)" id="more-toggle" onclick="toggleMobileMore()" style="position:relative;" aria-label="More navigation options">
             <span class="mn-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></span>More
         </a>
     </nav>
     <div id="mobile-more-backdrop" onclick="toggleMobileMore()"></div>
     <div id="mobile-more-menu" style="position:fixed;bottom:60px;left:0;right:0;z-index:9998;background:var(--bg-1);border-top:1px solid var(--border);padding:12px;">
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;">
-            <a class="more-grid-item" onclick="mobileNav('deals')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>Deals</a>
-            <a class="more-grid-item" onclick="mobileNav('portfolio')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 118 2.83"/><path d="M22 12A10 10 0 0012 2v10z"/></svg></span>Portfolio</a>
+            <a href="javascript:void(0)" class="more-grid-item" onclick="mobileNav('deals')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>Deals</a>
+            <a href="javascript:void(0)" class="more-grid-item" onclick="mobileNav('portfolio')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 118 2.83"/><path d="M22 12A10 10 0 0012 2v10z"/></svg></span>Portfolio</a>
 
-            <a class="more-grid-item" onclick="mobileNav('invoices')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>Invoices</a>
-            <a class="more-grid-item" onclick="mobileNav('shipping')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span>Shipping</a>
-            <a class="more-grid-item" onclick="mobileNav('payments')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>Payments</a>
-            <a class="more-grid-item" onclick="mobileNav('postings')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></span>Postings</a>
-            <a class="more-grid-item" onclick="mobileNav('photos')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></span>Photos</a>
+            <a href="javascript:void(0)" class="more-grid-item" onclick="mobileNav('invoices')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>Invoices</a>
+            <a href="javascript:void(0)" class="more-grid-item" onclick="mobileNav('shipping')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span>Shipping</a>
+            <a href="javascript:void(0)" class="more-grid-item" onclick="mobileNav('payments')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>Payments</a>
+            <a href="javascript:void(0)" class="more-grid-item" onclick="mobileNav('postings')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></span>Postings</a>
+            <a href="javascript:void(0)" class="more-grid-item" onclick="mobileNav('photos')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></span>Photos</a>
             <!-- Market mobile nav removed -->
 
             <!-- Aging mobile nav removed -->
             <!-- Briefing mobile nav removed -->
-            <a class="more-grid-item" onclick="mobileNav('mission-control')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Mission Control</a>
-            <a class="more-grid-item" onclick="mobileNav('dashboard');openUnifiedSearch()"><span class="mgi-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>Search</a>
-            <a class="more-grid-item" onclick="mobileNav('ad-crm')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span>AD CRM</a>
+            <a href="javascript:void(0)" class="more-grid-item" onclick="mobileNav('mission-control')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Mission Control</a>
+            <a href="javascript:void(0)" class="more-grid-item" onclick="mobileNav('dashboard');openUnifiedSearch()"><span class="mgi-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>Search</a>
+            <a href="javascript:void(0)" class="more-grid-item" onclick="mobileNav('ad-crm')"><span class="mgi-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span>AD CRM</a>
         </div>
     </div>
 
@@ -2531,18 +2528,18 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
                 <div class="card">
-                    <div class="card-head"><span>Top Deals</span><a class="link" onclick="showPage('deals')">View all</a></div>
+                    <div class="card-head"><span>Top Deals</span><a href="javascript:void(0)" class="link" onclick="showPage('deals')">View all</a></div>
                     <div class="tbl-wrap"><table class="tbl" id="dash-deals"><tbody></tbody></table></div>
                 </div>
                 <div class="card">
-                    <div class="card-head"><span>Arbitrage</span><a class="link" onclick="showPage('deals');switchDealsSubtab('arb',document.getElementById('deals-subtab-arb'))">View all</a></div>
+                    <div class="card-head"><span>Arbitrage</span><a href="javascript:void(0)" class="link" onclick="showPage('deals');switchDealsSubtab('arb',document.getElementById('deals-subtab-arb'))">View all</a></div>
                     <div class="tbl-wrap"><table class="tbl" id="dash-arb"><tbody></tbody></table></div>
                 </div>
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
                 <div class="card">
-                    <div class="card-head"><span>Portfolio Snapshot</span><a class="link" onclick="showPage('portfolio')">Details</a></div>
+                    <div class="card-head"><span>Portfolio Snapshot</span><a href="javascript:void(0)" class="link" onclick="showPage('portfolio')">Details</a></div>
                     <div class="card-body"><div class="pf-grid" id="portfolio-snapshot"></div></div>
                 </div>
                 <div class="card">
@@ -2555,7 +2552,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
 
             <!-- Full Portfolio Table -->
             <div class="card" style="margin-top:8px;">
-                <div class="card-head"><span>Inventory Positions</span><a class="popout-spacer"></a><a class="link" onclick="showPage('inventory')">View All</a></div>
+                <div class="card-head"><span>Inventory Positions</span><a class="popout-spacer"></a><a href="javascript:void(0)" class="link" onclick="showPage('inventory')">View All</a></div>
                 <div class="tbl-wrap"><table class="tbl" id="dash-inventory"><thead><tr>
                     <th>Ref</th><th>Details</th><th class="right">Cost</th><th class="right">Market</th><th class="right">P&L</th><th class="right">%</th><th class="right">Held</th><th>Status</th>
                 </tr></thead><tbody><tr><td colspan="8" style="padding:0;"><div class="skel-row"><div class="skel-line w40"></div><div class="skel-line w30"></div><div class="skel-line w20"></div></div><div class="skel-row"><div class="skel-line w30"></div><div class="skel-line w50"></div><div class="skel-line w20"></div></div><div class="skel-row"><div class="skel-line w50"></div><div class="skel-line w30"></div><div class="skel-line w20"></div></div></td></tr></tbody></table></div>
