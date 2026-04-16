@@ -5859,36 +5859,46 @@ function openPostingModal(item, photoCount) {
     if (desc.toLowerCase().includes('pre-owned')) condition = 'Pre-Owned';
     else if (desc.toLowerCase().includes('retail ready')) condition = 'Retail Ready';
 
-    // Build month/year from card date (handles "03/2026", "March 2026", "March 7, 2026")
+    // Build month/year from card date, supporting DD/MM/YYYY and MM/YYYY
     const months = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
-    let monthYear = '', cardMM = 0;
+    let monthYear = '', cardMM = 0, cardYYYY = '';
     if (cardDate) {
-        const slashMatch = cardDate.match(/^(\d{1,2})\/(\d{4})$/);
-        if (slashMatch) {
-            cardMM = parseInt(slashMatch[1]);
-            monthYear = (months[cardMM] || '') + ' ' + slashMatch[2];
+        const fullDateMatch = cardDate.match(/^\d{1,2}[\/.-](\d{1,2})[\/.-](\d{4})$/);
+        const monthYearMatch = cardDate.match(/^(\d{1,2})[\/.-](\d{4})$/);
+        if (fullDateMatch) {
+            cardMM = parseInt(fullDateMatch[1], 10);
+            cardYYYY = fullDateMatch[2];
+            monthYear = `${months[cardMM] || ''} ${cardYYYY}`.trim();
+        } else if (monthYearMatch) {
+            cardMM = parseInt(monthYearMatch[1], 10);
+            cardYYYY = monthYearMatch[2];
+            monthYear = `${months[cardMM] || ''} ${cardYYYY}`.trim();
         } else {
-            // Try "March 2026" or "March 7, 2026"
             const textMatch = cardDate.match(/([A-Za-z]+)\s+(?:\d+,?\s+)?(\d{4})/);
             if (textMatch) {
                 const mi = months.findIndex(m => m.toLowerCase() === textMatch[1].toLowerCase());
-                if (mi > 0) { cardMM = mi; monthYear = months[mi] + ' ' + textMatch[2]; }
-                else monthYear = cardDate;
+                if (mi > 0) {
+                    cardMM = mi;
+                    cardYYYY = textMatch[2];
+                    monthYear = `${months[mi]} ${cardYYYY}`;
+                } else {
+                    monthYear = cardDate;
+                }
             }
         }
     }
 
-    // Serial prefix (card date code)
     let serialPrefix = '';
     if (cardMM > 0) serialPrefix = 'N' + cardMM;
 
-    // Full ref vs short ref
-    const refMatch = ref.match(/^(\d{5,6})([A-Z]+)$/);
-    const refLine = refMatch ? `${ref} ${refMatch[1]}` : ref;
-
-    // Caption uses MM/YYYY format
-    const cardDateMMYYYY = cardMM > 0 ? (String(cardMM).padStart(2,'0') + '/' + (cardDate.match(/(\d{4})/)?.[1]||'')) : cardDate;
-    const postingText = `${condition} Full Set ${refLine} ${bracelet} ${dial} Dial ${cardDateMMYYYY} ${monthYear} ${serialPrefix} ${wt}`.replace(/\s+/g,' ').trim();
+    const cardDateMMYYYY = (cardMM > 0 && cardYYYY)
+        ? `${String(cardMM).padStart(2,'0')}/${cardYYYY}`
+        : cardDate;
+    const postingText = [condition, 'Full Set', ref, bracelet, dial, cardDateMMYYYY, monthYear, serialPrefix, wt]
+        .filter(Boolean)
+        .join(' ')
+        .replace(/\s+/g,' ')
+        .trim();
 
     // Show modal
     const overlay = document.createElement('div');
@@ -14784,27 +14794,43 @@ async function loadPayments() {
         _postDirectItem = item;
         _postDirectPhotoFile = null;
 
-        // Generate caption using same logic as openPostingModal
+        // Generate caption using Jeffin's required posting format:
+        // [Condition] Full Set [Ref] [Bracelet] [Dial] [MM/YYYY] [Month Year] [Serial Prefix] with WT
         const ref = item.ref || '';
         const desc = item.description || '';
         const bracelet = item.bracelet || '';
         const dial = item.dial || '';
-        const cardDate = item.card_date || desc.match(/(\d{2}\/\d{4})/)?.[1] || '';
+        let cardDate = item.card_date || desc.match(/(\d{2}\/\d{4})/)?.[1] || '';
         const wt = item.wt ? 'with WT' : '';
         let condition = 'BNIB';
         if (desc.toLowerCase().includes('pre-owned')) condition = 'Pre-Owned';
         else if (desc.toLowerCase().includes('retail ready')) condition = 'Retail Ready';
+
+        const fullDateMatch = cardDate.match(/^\d{1,2}[\/.-](\d{1,2})[\/.-](\d{4})$/);
+        const monthYearMatch = cardDate.match(/^(\d{1,2})[\/.-](\d{4})$/);
+        let mmYyyy = '';
         let monthYear = '';
-        if (cardDate) {
-            const [mm, yyyy] = cardDate.split('/');
-            const months = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
-            monthYear = (months[parseInt(mm)] || '') + ' ' + yyyy;
-        }
         let serialPrefix = '';
-        if (cardDate) { const [mm] = cardDate.split('/'); serialPrefix = 'N' + parseInt(mm); }
-        const refMatch = ref.match(/^(\d{5,6})([A-Z]+)$/);
-        const refLine = refMatch ? `${ref} ${refMatch[1]}` : ref;
-        const captionBase = `${condition} Full Set ${refLine} ${bracelet} ${dial} Dial ${cardDate} ${monthYear} ${serialPrefix} ${wt}`.replace(/\s+/g,' ').trim();
+        const months = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+        if (fullDateMatch) {
+            const mm = parseInt(fullDateMatch[1], 10);
+            const yyyy = fullDateMatch[2];
+            mmYyyy = `${String(mm).padStart(2, '0')}/${yyyy}`;
+            monthYear = `${months[mm] || ''} ${yyyy}`.trim();
+            serialPrefix = `N${mm}`;
+        } else if (monthYearMatch) {
+            const mm = parseInt(monthYearMatch[1], 10);
+            const yyyy = monthYearMatch[2];
+            mmYyyy = `${String(mm).padStart(2, '0')}/${yyyy}`;
+            monthYear = `${months[mm] || ''} ${yyyy}`.trim();
+            serialPrefix = `N${mm}`;
+        }
+
+        const captionBase = [condition, 'Full Set', ref, bracelet, dial, mmYyyy, monthYear, serialPrefix, wt]
+            .filter(Boolean)
+            .join(' ')
+            .replace(/\s+/g, ' ')
+            .trim();
         const salePrice = item.sale_price || '';
 
         document.getElementById('pdm-row').value = item.row || '';
@@ -17700,9 +17726,19 @@ function renderJamFeed(type) {
                         + '</div>';
                 }
                 html += '<div class="pkg-drop-zone" data-pkg-id="' + grpPkgId + '" data-recipient="' + buyerName.replace(/"/g,'&quot;') + '" style="border:2px solid ' + pColor + ';border-radius:12px;padding:4px;margin:8px 0;background:var(--bg-1);transition:background 0.15s,border-color 0.15s;" ondragover="event.preventDefault();this.style.borderColor=\'var(--accent)\';this.style.background=\'var(--accent-dim)\'" ondragleave="this.style.borderColor=\'' + pColor + '\';this.style.background=\'var(--bg-1)\'" ondrop="event.preventDefault();this.style.borderColor=\'' + pColor + '\';this.style.background=\'var(--bg-1)\';handlePkgDrop(event,' + grpPkgId + ')">'
-                    + '<div style="padding:8px 14px;border-radius:8px 8px 0 0;background:var(--accent-dim);display:flex;align-items:center;justify-content:space-between;">'
+                    + '<div style="padding:8px 14px;border-radius:8px 8px 0 0;background:var(--accent-dim);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">'
                     + '<span style="font-size:0.8rem;font-weight:700;color:' + pColor + ';">' + pkgLabel + ' — ' + buyerName.replace(/</g,'&lt;') + ' (' + watchCount + (watchCount === 1 ? ' watch' : ' watches') + ')</span>'
+                    + '<div style="display:flex;gap:6px;align-items:center;">'
+                    + (function(){
+                        if (isLogistics || !grpPkgId) return '';
+                        var curShipper = grp.items[0]?.assigned_shipper || 0;
+                        var eddySel = curShipper === 2 ? 'background:#4A90D9;color:#fff;' : 'background:#4A90D922;color:#4A90D9;border:1px solid #4A90D9;';
+                        var luigiSel = curShipper === 4 ? 'background:#9B59B6;color:#fff;' : 'background:#9B59B622;color:#9B59B6;border:1px solid #9B59B6;';
+                        return '<button onclick="event.stopPropagation();jamChangeShipper(' + grpPkgId + ',2,this.parentElement)" style="cursor:pointer;padding:4px 10px;border:none;border-radius:6px;font-size:0.7rem;font-weight:700;' + eddySel + '">EDDY</button>'
+                             + '<button onclick="event.stopPropagation();jamChangeShipper(' + grpPkgId + ',4,this.parentElement)" style="cursor:pointer;padding:4px 10px;border:none;border-radius:6px;font-size:0.7rem;font-weight:700;' + luigiSel + '">LUIGI</button>';
+                    })()
                     + pkgLabelBtn
+                    + '</div>'
                     + '</div>'
                     + (grp.notes ? '<div style="padding:10px 14px;font-size:1rem;color:var(--text-0);background:var(--bg-1);border-bottom:1px solid var(--border);line-height:1.5;"><strong style="color:var(--orange);font-size:1.05rem;">Instructions:</strong> <span style="font-weight:600;">' + grp.notes.replace(/</g,'&lt;') + '</span></div>' : '')
                     ;
@@ -20211,6 +20247,30 @@ function clearChat() {
 }
 
 function _escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function jamChangeShipper(pkgId, shipperId, btnContainer) {
+    const names = {2: 'Eddy', 4: 'Luigi'};
+    try {
+        const r = await fetch('/api/jam/change-shipper', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({package_id: pkgId, shipper_id: shipperId})
+        });
+        const d = await r.json();
+        if (d.ok) {
+            showToast(names[shipperId] + ' assigned', 'success');
+            if (btnContainer) {
+                btnContainer.querySelectorAll('button').forEach(b => {
+                    const isEddy = b.textContent.trim() === 'EDDY';
+                    const isLuigi = b.textContent.trim() === 'LUIGI';
+                    if (isEddy) b.style.cssText = shipperId===2 ? 'cursor:pointer;padding:4px 10px;border:none;border-radius:6px;font-size:0.7rem;font-weight:700;background:#4A90D9;color:#fff;' : 'cursor:pointer;padding:4px 10px;border:1px solid #4A90D9;border-radius:6px;font-size:0.7rem;font-weight:700;background:#4A90D922;color:#4A90D9;';
+                    if (isLuigi) b.style.cssText = shipperId===4 ? 'cursor:pointer;padding:4px 10px;border:none;border-radius:6px;font-size:0.7rem;font-weight:700;background:#9B59B6;color:#fff;' : 'cursor:pointer;padding:4px 10px;border:1px solid #9B59B6;border-radius:6px;font-size:0.7rem;font-weight:700;background:#9B59B622;color:#9B59B6;';
+                });
+            }
+        } else {
+            showToast(d.error || 'Failed', 'error');
+        }
+    } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
 
 function jamPrintLabel(labelFile) {
     const printWin = window.open(`/api/jam/label/${labelFile}`, '_blank');
