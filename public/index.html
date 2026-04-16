@@ -4933,12 +4933,18 @@ function mobileNav(page) {
     document.getElementById('more-toggle')?.classList.remove('active');
     showPage(page);
 }
+var _navDbg = document.createElement('div');
+_navDbg.id='nav-dbg';
+_navDbg.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:yellow;color:black;font:bold 12px monospace;padding:6px;max-height:80px;overflow:hidden;';
+_navDbg.textContent='v' + Date.now();
+document.body.appendChild(_navDbg);
 function showPage(name, pushState=true) {
+    var d=document.getElementById('nav-dbg');
+    if(d) d.textContent += ' > ' + name;
     // Role-based page restriction
     if (window.__USER_ROLE && window.__USER_ROLE.allowedPages && !window.__USER_ROLE.allowedPages.includes(name)) return;
 
     // NUCLEAR: force every page hidden with inline style, then show only the target.
-    // No CSS classes, no animations, no race conditions.
     var allPages = document.querySelectorAll('.page');
     for (var i = 0; i < allPages.length; i++) {
         allPages[i].style.display = 'none';
