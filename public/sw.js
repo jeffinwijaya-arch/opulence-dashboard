@@ -17,7 +17,7 @@
 // aggressively caching stale HTML. This version is careful to keep
 // the shell cache small and fresh.
 
-const CACHE_NAME = 'mk-shell-v6';
+const CACHE_NAME = 'mk-shell-v7';
 
 // Files to pre-cache on install. These are the minimum set required
 // for the PWA to render *something* instead of iOS's error page.

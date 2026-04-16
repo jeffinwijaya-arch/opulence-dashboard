@@ -4971,19 +4971,16 @@ function showPage(name, pushState=true) {
         document.body.appendChild(_focusProxy);
         _focusProxy.focus();
     }
-    // Small delay for exit animation, then show new page
-    setTimeout(() => {
-        $$('.page').forEach(p => p.classList.remove('active'));
-        $(`#page-${name}`)?.classList.add('active');
-        // Transfer focus from proxy to real input
-        if (name === 'lookup' && _focusProxy) {
-            requestAnimationFrame(() => {
-                var si = document.getElementById('ref-search');
-                if (si) si.focus();
-                if (_focusProxy.parentNode) _focusProxy.remove();
-            });
-        }
-    }, currentPage && currentPage.id !== `page-${name}` ? 80 : 0);
+    // Show new page immediately (no animation delay — prevents flash of wrong page)
+    $$('.page').forEach(p => p.classList.remove('active'));
+    $(`#page-${name}`)?.classList.add('active');
+    if (name === 'lookup' && _focusProxy) {
+        requestAnimationFrame(() => {
+            var si = document.getElementById('ref-search');
+            if (si) si.focus();
+            if (_focusProxy.parentNode) _focusProxy.remove();
+        });
+    }
     $$(`[data-page="${name}"]`).forEach(n => n.classList.add('active'));
     if (name === 'browse') { if (!allListings.length) loadListings(); }
     if (name === 'lookup') { const _q = ($('#ref-search')?.value||'').trim(); if (!_q) { _lookupInitialized = false; initLookupPage(); } }
