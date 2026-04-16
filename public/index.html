@@ -4995,11 +4995,7 @@ function showPage(name, pushState=true) {
     if (name === 'mission-control') loadMissionControl();
     if (name === 'jam') loadJamPage();
     if (name === 'ad-crm') loadAdCrm();
-    if (pushState) {
-        const params = new URLSearchParams(window.location.search);
-        params.set('p', name);
-        history.replaceState(null, '', '?' + params.toString());
-    }
+    // Don't persist page in URL — was causing wrong page on reload
     window.scrollTo(0, 0);
     // Update page context bar
     const pcName = document.getElementById('pc-page-name');
@@ -9393,14 +9389,7 @@ if (!_userRole.allowedPages) {
     // Preload payments badge count so it shows without visiting the page
     fetch('/api/payments/collections-dashboard').then(r=>r.ok?r.json():null).then(d=>{if(!d)return;const n=(d.overdue_receivables?.length||0)+(d.overdue_payables?.length||0);const el=document.getElementById('payments-count');if(el){el.textContent=n;if(n>0){el.style.background='rgba(255,23,68,0.15)';el.style.color='var(--red)';el.style.borderColor='rgba(255,23,68,0.3)';}}}).catch(e=>{console.error('Payments badge preload failed:', e);});
 }
-// Restore page from URL AFTER init (only if allowed)
-// Skip portfolio auto-restore — users kept landing on it accidentally
-{
-    const _initPage = new URLSearchParams(window.location.search).get('p');
-    if (_initPage && _initPage !== 'dashboard' && _initPage !== 'portfolio' && (!_userRole.allowedPages || _userRole.allowedPages.includes(_initPage))) {
-        showPage(_initPage, false);
-    }
-}
+// Always start on dashboard — no URL page restore (was causing wrong-page redirects)
 // Guaranteed page data load: check every 1s until data appears (max 10 attempts)
 // Handles slow API responses (Zoho token refresh, Apps Script cold start)
 {
