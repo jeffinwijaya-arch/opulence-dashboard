@@ -4946,6 +4946,7 @@ function mobileNav(page) {
     showPage(page);
 }
 function showPage(name, pushState=true) {
+    console.log('[NAV] showPage("' + name + '") called from:', new Error().stack.split('\n')[2]?.trim());
     // Role-based page restriction (frontend enforcement)
     if (window.__USER_ROLE && window.__USER_ROLE.allowedPages && !window.__USER_ROLE.allowedPages.includes(name)) {
         console.warn('Access denied:', name);
