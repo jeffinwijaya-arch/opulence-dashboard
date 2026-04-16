@@ -4742,22 +4742,8 @@ const pages=['dashboard','inventory','jam','lookup','deals','portfolio','invoice
 // because drawing a horizontal redaction rectangle was being interpreted
 // as a right-swipe (Postings → Payments was the reported case). Form
 // controls and scrollable tables were already excluded.
-const _SWIPE_NAV_EXCLUDE = 'input,textarea,select,canvas,.tbl-wrap,#qcmd-panel,#usearch-overlay,.listing-card,#posting-redact-modal,#photo-modal,#posting-price-edit-modal,#ul-paste-modal,#ul-manage-modal,[role="dialog"],.modal,.chat-container,.mobile-nav,nav,.nav,.top-bar,header,#mobile-more-menu,button,a[data-page],a[onclick]';
-// Any of these visible in the DOM at touchend disables swipe-nav as a
-// belt-and-suspenders check, in case a modal opened between touchstart
-// and touchend (e.g. the user tapped a button that spawned a modal and
-// then finger-released outside the modal).
-const _SWIPE_NAV_BLOCKING_OPEN = '#posting-redact-modal,#photo-modal,#ul-paste-modal,#ul-manage-modal';
-let sx=0,sy=0,swiping=false;
-document.addEventListener('touchstart',function(e){if(e.target.closest(_SWIPE_NAV_EXCLUDE))return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;swiping=true;},{passive:true});
-document.addEventListener('touchend',function(e){if(!swiping)return;swiping=false;
-if(document.querySelector(_SWIPE_NAV_BLOCKING_OPEN))return;
-const dx=e.changedTouches[0].clientX-sx;const dy=e.changedTouches[0].clientY-sy;if(Math.abs(dx)<80||Math.abs(dy)>Math.abs(dx)*0.6)return;
-const cur=document.querySelector('.page.active')?.id?.replace('page-','');if(!cur)return;
-const allowed=window.__USER_ROLE?.allowedPages||pages;const idx=allowed.indexOf(cur);if(idx<0)return;
-if(dx<-80&&idx<allowed.length-1){showPage(allowed[idx+1]);}
-else if(dx>80&&idx>0){showPage(allowed[idx-1]);}
-},{passive:true});})();
+// Swipe-to-navigate DISABLED — was causing rogue page switches on tap
+})();
 // ── Pull to refresh (mobile) ──
 (function(){if(!('ontouchstart' in window))return;let startY=0,pulling=false;const ptr=document.getElementById('ptr-indicator');const threshold=80;
 function _isInsideScroller(el){while(el&&el!==document.body){const s=getComputedStyle(el);const ov=s.overflowY||s.overflow;if((ov==='auto'||ov==='scroll')&&el.scrollHeight>el.clientHeight&&el.scrollTop>0)return true;el=el.parentElement;}return false;}
@@ -4945,7 +4931,18 @@ function mobileNav(page) {
     document.getElementById('more-toggle')?.classList.remove('active');
     showPage(page);
 }
+var _showPageLog = [];
 function showPage(name, pushState=true) {
+    var _src = (new Error().stack||'').split('\n').slice(1,4).map(function(s){return s.trim();}).join(' << ');
+    _showPageLog.push({t:Date.now(), page:name, src:_src});
+    if (_showPageLog.length > 30) _showPageLog.shift();
+    // Diagnostic: block unexpected navigations away from inventory
+    if (name !== 'dashboard' && name !== 'inventory' && window._lastNavTo === 'inventory' && (Date.now() - (window._lastNavAt||0)) < 2000) {
+        console.error('[NAV-BLOCKED] Tried to go to ' + name + ' within 2s of navigating to inventory. Stack: ' + _src);
+        return;
+    }
+    window._lastNavTo = name;
+    window._lastNavAt = Date.now();
     // Role-based page restriction (frontend enforcement)
     if (window.__USER_ROLE && window.__USER_ROLE.allowedPages && !window.__USER_ROLE.allowedPages.includes(name)) {
         console.warn('Access denied:', name);
