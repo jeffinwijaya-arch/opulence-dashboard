@@ -325,9 +325,10 @@
         }
 
         /* ── PAGES ── */
-        .page { display:none; }
-        .page.active { display:block; animation:pageIn 0.15s ease-out; will-change:opacity,transform; }
-        .page.page-exit { display:block; animation:pageOut 0.08s ease-in forwards; position:absolute; width:100%; pointer-events:none; will-change:opacity,transform; }
+        .page { display:none !important; }
+        .page.active { display:block !important; }
+        .page.active { display:block !important; }
+        .page.page-exit { display:none !important; }
         .page-head { margin-bottom:16px; }
         .page-head h1 { font-size:1.3rem; font-weight:700; letter-spacing:-0.3px; }
         .page-head p { font-size:0.78rem; color:var(--text-2); margin-top:4px; }
@@ -466,8 +467,9 @@
         @media(max-width:1400px) and (min-width:768px) {
             .top-bar { display:none !important; }
             .mobile-nav { display:flex !important; justify-content:space-around; }
-            .page { display:none; }
-            .page.active { display:block; animation:pageIn 0.2s ease-out; }
+            .page { display:none !important; }
+        .page.active { display:block !important; }
+            .page.active { display:block !important; }
             .main { padding:16px 20px; max-width:100%; padding-bottom:calc(76px + env(safe-area-inset-bottom)); }
             .metrics { grid-template-columns:repeat(4,1fr); gap:10px; }
             .detail-grid { grid-template-columns:1fr 1fr; gap:14px; }
@@ -2371,7 +2373,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
     <div class="ticker-bar"><div class="ticker-inner" id="ticker-track"></div></div>
 
     <!-- PAGE CONTEXT BAR (mobile) -->
-    <div class="page-context" id="page-context">
+    <div class="page-context" id="page-context" style="display:none">
         <span class="pc-name" id="pc-page-name">Overview</span>
         <span class="pc-sep">/</span>
         <span id="pc-detail">Market Intelligence</span>
@@ -2466,7 +2468,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
 
     <main class="main" role="main" id="main-content" tabindex="-1">
         <!-- ═══ DASHBOARD ═══ -->
-        <div class="page active" id="page-dashboard">
+        <div class="page active" id="page-dashboard" style="display:block">
             <div class="page-head">
                 <h1>Market Overview</h1>
                 <p id="summary-subtitle"><span class="skel-line w60" style="display:inline-block;height:14px;vertical-align:middle;"></span></p>
@@ -2576,7 +2578,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
         </div>
 
         <!-- ═══ DEALS ═══ -->
-        <div class="page" id="page-deals">
+        <div class="page" id="page-deals" style="display:none">
             <div class="page-head">
                 <h1>Deals & Arbitrage</h1>
                 <p>Below-market opportunities and cross-region price differentials.</p>
@@ -2623,7 +2625,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
         </div>
 
         <!-- ═══ PRICE LOOKUP ═══ -->
-        <div class="page" id="page-lookup">
+        <div class="page" id="page-lookup" style="display:none">
             <div class="page-head">
                 <h1>Price Intelligence</h1>
                 <p>Search by ref, nickname, or natural language — e.g. "daytona panda", "black sub", "126334 blue jubilee"</p>
@@ -2653,7 +2655,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
         </div>
 
         <!-- ═══ PORTFOLIO ═══ -->
-        <div class="page" id="page-portfolio">
+        <div class="page" id="page-portfolio" style="display:none">
             <div class="page-head">
                 <h1>Portfolio Intelligence</h1>
                 <p>Inventory vs. market — P&L, exposure, and position analysis.</p>
@@ -2670,7 +2672,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
         </div>
 
         <!-- ═══ MARKET BROWSE ═══ -->
-        <div class="page" id="page-browse">
+        <div class="page" id="page-browse" style="display:none">
             <div class="page-head">
                 <h1>Market Data</h1>
                 <p id="browse-subtitle">Full listing database.</p>
@@ -2690,7 +2692,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
         </div>
 
         <!-- ═══ SHIPPING ═══ -->
-        <div class="page" id="page-shipping">
+        <div class="page" id="page-shipping" style="display:none">
             <div class="page-head" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;">
                 <div>
                     <h1>Shipping Tracker</h1>
@@ -3010,7 +3012,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
         </div>
 
         <!-- ═══ INVENTORY ═══ -->
-        <div class="page" id="page-inventory">
+        <div class="page" id="page-inventory" style="display:none">
             <div class="page-head">
                 <h1>Inventory</h1>
                 <p>Bot Sheet — Add, edit, and manage watches. Actions auto-sync to Telegram groups.</p>
@@ -3275,7 +3277,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
         </div>
 
         <!-- ═══ MY POSTINGS ═══ -->
-        <div class="page" id="page-postings">
+        <div class="page" id="page-postings" style="display:none">
             <div class="page-head">
                 <h1>My Postings</h1>
                 <p>Manage watches posted in the My Postings WhatsApp group</p>
@@ -3486,7 +3488,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
         </div>
 
         <!-- ═══ INVOICES ═══ -->
-        <div class="page" id="page-invoices">
+        <div class="page" id="page-invoices" style="display:none">
             <div class="page-head">
                 <h1>Invoices</h1>
                 <p>Internal invoice system — create, track, and download PDFs</p>
@@ -3566,7 +3568,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
         </div>
 
         <!-- ═══ PAYMENTS ═══ -->
-        <div class="page" id="page-payments">
+        <div class="page" id="page-payments" style="display:none">
             <div class="page-head">
                 <h1>Payments & Collections</h1>
                 <p>Track receivables, payables, and cash flow</p>
@@ -3764,7 +3766,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
         </div>
 
         <!-- ═══ PHOTOS ═══ -->
-        <div class="page" id="page-photos">
+        <div class="page" id="page-photos" style="display:none">
             <div class="page-head">
                 <h1>Photos & Documentation</h1>
                 <p>Watch photo library, documentation system, and serial-specific archives</p>
@@ -3884,7 +3886,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
         <!-- Analytics and Alerts removed (2026-03-12) -->
 
         <!-- ═══ AGING HEATMAP ═══ -->
-        <div class="page" id="page-aging">
+        <div class="page" id="page-aging" style="display:none">
             <div class="page-head">
                 <h1>Inventory Aging</h1>
                 <p>Watches by days since purchase — color-coded by age</p>
@@ -3899,7 +3901,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
         </div>
 
         <!-- ═══ AD CRM ═══ -->
-        <div class="page" id="page-ad-crm">
+        <div class="page" id="page-ad-crm" style="display:none">
             <div class="page-head" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;">
                 <div>
                     <h1>AD CRM</h1>
@@ -3971,7 +3973,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
         </div>
 
         <!-- ═══ BRIEFING ═══ -->
-        <div class="page" id="page-briefing">
+        <div class="page" id="page-briefing" style="display:none">
             <div class="page-head" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;">
                 <div>
                     <h1>Morning Briefing</h1>
@@ -4059,7 +4061,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
         </div>
 
         <!-- ═══ MISSION CONTROL ═══ -->
-                <div class="page" id="page-mission-control">
+                <div class="page" id="page-mission-control" style="display:none">
             <style>
                 .mc-header{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
                 .mc-logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#F59E0B,#E08830);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:0 4px 16px rgba(245,158,11,0.25);}
@@ -4397,7 +4399,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
         </div>
 
         <!-- ═══ JAM (Activity Feed) ═══ -->
-        <div class="page" id="page-jam">
+        <div class="page" id="page-jam" style="display:none">
             <style>
                 .jam-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
                 .jam-stat{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;text-align:center;cursor:pointer;transition:all 0.2s;}
@@ -4931,51 +4933,39 @@ function mobileNav(page) {
     document.getElementById('more-toggle')?.classList.remove('active');
     showPage(page);
 }
-var _showPageLog = [];
 function showPage(name, pushState=true) {
-    var _src = (new Error().stack||'').split('\n').slice(1,4).map(function(s){return s.trim();}).join(' << ');
-    _showPageLog.push({t:Date.now(), page:name, src:_src});
-    if (_showPageLog.length > 30) _showPageLog.shift();
-    // Diagnostic: block unexpected navigations away from inventory
-    if (name !== 'dashboard' && name !== 'inventory' && window._lastNavTo === 'inventory' && (Date.now() - (window._lastNavAt||0)) < 2000) {
-        console.error('[NAV-BLOCKED] Tried to go to ' + name + ' within 2s of navigating to inventory. Stack: ' + _src);
-        return;
+    // Role-based page restriction
+    if (window.__USER_ROLE && window.__USER_ROLE.allowedPages && !window.__USER_ROLE.allowedPages.includes(name)) return;
+
+    // NUCLEAR: force every page hidden with inline style, then show only the target.
+    // No CSS classes, no animations, no race conditions.
+    var allPages = document.querySelectorAll('.page');
+    for (var i = 0; i < allPages.length; i++) {
+        allPages[i].style.display = 'none';
+        allPages[i].classList.remove('active');
+        allPages[i].classList.remove('page-exit');
     }
-    window._lastNavTo = name;
-    window._lastNavAt = Date.now();
-    // Role-based page restriction (frontend enforcement)
-    if (window.__USER_ROLE && window.__USER_ROLE.allowedPages && !window.__USER_ROLE.allowedPages.includes(name)) {
-        console.warn('Access denied:', name);
-        return;
+    var target = document.getElementById('page-' + name);
+    if (target) {
+        target.style.display = 'block';
+        target.classList.add('active');
     }
-    // Cross-fade: exit current page
-    const currentPage = document.querySelector('.page.active');
-    if (currentPage && currentPage.id !== `page-${name}`) {
-        currentPage.classList.remove('active');
-        currentPage.classList.add('page-exit');
-        setTimeout(() => currentPage.classList.remove('page-exit'), 120);
-    } else if (currentPage) {
-        currentPage.classList.remove('active');
-    }
-    $$('.nav a, #mobile-nav a').forEach(n => n.classList.remove('active'));
-    const mm = document.getElementById('mobile-more-menu'); if (mm) mm.style.display = 'none';
-    // Capture keyboard focus synchronously for mobile (before async page switch)
-    // This preserves the user-gesture chain so iOS will show the keyboard
-    var _focusProxy = null;
+
+    // Nav highlights
+    $$('.nav a, #mobile-nav a').forEach(function(n) { n.classList.remove('active'); });
+    $$('[data-page="' + name + '"]').forEach(function(n) { n.classList.add('active'); });
+    var mm = document.getElementById('mobile-more-menu'); if (mm) mm.style.display = 'none';
+
+    // Focus proxy for search page
     if (name === 'lookup') {
-        _focusProxy = document.createElement('input');
-        _focusProxy.style.cssText = 'position:fixed;top:-100px;left:0;opacity:0;height:1px;width:1px;font-size:16px;border:none;';
-        document.body.appendChild(_focusProxy);
-        _focusProxy.focus();
-    }
-    // Show new page immediately (no animation delay — prevents flash of wrong page)
-    $$('.page').forEach(p => p.classList.remove('active'));
-    $(`#page-${name}`)?.classList.add('active');
-    if (name === 'lookup' && _focusProxy) {
-        requestAnimationFrame(() => {
+        var _fp = document.createElement('input');
+        _fp.style.cssText = 'position:fixed;top:-100px;left:0;opacity:0;height:1px;width:1px;font-size:16px;border:none;';
+        document.body.appendChild(_fp);
+        _fp.focus();
+        requestAnimationFrame(function() {
             var si = document.getElementById('ref-search');
             if (si) si.focus();
-            if (_focusProxy.parentNode) _focusProxy.remove();
+            if (_fp.parentNode) _fp.remove();
         });
     }
     $$(`[data-page="${name}"]`).forEach(n => n.classList.add('active'));
