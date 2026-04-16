@@ -1,0 +1,64 @@
+From e1494500d1dc4ef37442b5331226b96567ae1b56 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Thu, 16 Apr 2026 13:52:06 +0000
+Subject: [PATCH] Fix repost photo regression + dedupe duplicate My Postings
+ listings
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+1. dashboard.py line 17686: repost-all photo resolver had wrong SQL
+   ORDER BY — looked for photo_type='posting' (doesn't exist) before
+   'hero', so redacted hero photo was deprioritized and fallback
+   resolver returned original un-redacted image. Fixed to match the
+   correct priority already at line 15654: hero=0 > arrival=1 >
+   posted=2 > else=3. Also fixed IN clause to 'posted' (actual type).
+
+2. dedupe.py _normalize_seller(): own-posting variants (seller="You"
+   from postings DB, "Unknown" from rolex_listings.json, empty string)
+   all normalized differently, so the same watch appeared 4x in Price
+   Intelligence. Now "you", "unknown", "yourself", "me", "my postings"
+   and empty all return '__self__' so they collapse in pass 1.
+---
+ price_analyzer/dashboard.py | 6 +++---
+ price_analyzer/dedupe.py    | 7 +++++++
+ 2 files changed, 10 insertions(+), 3 deletions(-)
+
+diff --git a/price_analyzer/dashboard.py b/price_analyzer/dashboard.py
+index 599021d..30d2f5a 100644
+--- a/price_analyzer/dashboard.py
++++ b/price_analyzer/dashboard.py
+@@ -17681,9 +17681,9 @@ def api_my_postings_repost_all():
+                 if candidate.exists():
+                     photo_path = candidate
+             if not photo_path and posting.get('watch_id'):
+-                wp = db.execute('''SELECT file_path FROM watch_photos 
+-                                   WHERE watch_id=? AND photo_type IN ('hero','posting','arrival') 
+-                                   ORDER BY CASE photo_type WHEN 'posting' THEN 1 WHEN 'hero' THEN 2 ELSE 3 END
++                wp = db.execute('''SELECT file_path FROM watch_photos
++                                   WHERE watch_id=? AND photo_type IN ('hero','posted','arrival')
++                                   ORDER BY CASE photo_type WHEN 'hero' THEN 0 WHEN 'arrival' THEN 1 WHEN 'posted' THEN 2 ELSE 3 END
+                                    LIMIT 1''', (posting['watch_id'],)).fetchone()
+                 if wp:
+                     p = Path(wp[0] if isinstance(wp, tuple) else wp['file_path'])
+diff --git a/price_analyzer/dedupe.py b/price_analyzer/dedupe.py
+index 0112bb5..54f549d 100644
+--- a/price_analyzer/dedupe.py
++++ b/price_analyzer/dedupe.py
+@@ -27,6 +27,13 @@ class ListingFingerprint:
+ def _normalize_seller(name: str) -> str:
+     """Aggressive seller name normalization for matching."""
+     name = name.lower().strip()
++    # Treat all variants of "the user's own listing" as one identity.
++    # My Postings entries arrive with seller="You" from the postings DB
++    # and seller="Unknown" (or empty) from rolex_listings.json when the
++    # parser can't identify the poster. Without this, the same watch
++    # posted by the user shows up multiple times in Price Intelligence.
++    if not name or name in ('you', 'unknown', 'yourself', 'me', 'my postings'):
++        return '__self__'
+     name = re.sub(r'[^\w\s]', '', name)
+     name = re.sub(r'\s+', ' ', name)
+     for noise in ['watch', 'watches', 'timepieces', 'luxury', 'official',
+-- 
+2.43.0
+
