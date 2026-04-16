@@ -4930,9 +4930,28 @@ function mobileNav(page) {
     document.getElementById('more-toggle')?.classList.remove('active');
     showPage(page);
 }
+// Force-bind tap handlers on mobile nav via touchend (iOS ignores onclick on <a>)
+(function(){
+    var nav = document.getElementById('mobile-nav');
+    if (!nav) return;
+    nav.querySelectorAll('a[data-page]').forEach(function(a) {
+        var page = a.getAttribute('data-page');
+        a.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            showPage(page);
+        }, {passive: false});
+    });
+    // Quick button
+    var quickBtn = nav.querySelector('a[onclick*="openQuickCmd"]');
+    if (quickBtn) quickBtn.addEventListener('touchend', function(e) { e.preventDefault(); openQuickCmd(); }, {passive: false});
+    // More button
+    var moreBtn = document.getElementById('more-toggle');
+    if (moreBtn) moreBtn.addEventListener('touchend', function(e) { e.preventDefault(); toggleMobileMore(); }, {passive: false});
+})();
 var _navDbg = document.createElement('div');
 _navDbg.id='nav-dbg';
-_navDbg.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:yellow;color:black;font:bold 12px monospace;padding:6px;max-height:80px;overflow:hidden;';
+_navDbg.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:yellow;color:black;font:bold 10px monospace;padding:3px 6px;pointer-events:none;';
 _navDbg.textContent='v' + Date.now();
 document.body.appendChild(_navDbg);
 function showPage(name, pushState=true) {
