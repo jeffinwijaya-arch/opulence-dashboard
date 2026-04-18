@@ -4187,6 +4187,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                 <div class="mc-tab-btn" onclick="switchMcTab('journal')">Journal</div>
                 <div class="mc-tab-btn" onclick="switchMcTab('claude-code')">Claude Code</div>
                 <div class="mc-tab-btn" onclick="switchMcTab('terminal')">Terminal</div>
+                <div class="mc-tab-btn" onclick="switchMcTab('wa-export')">WA Export</div>
             </div>
 
             <!-- Backlog Section (Kanban) -->
@@ -4389,6 +4390,103 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                         <span id="web-terminal-status">Not connected</span>
                     </div>
                     <div id="terminal-container"></div>
+                </div>
+            </div>
+
+            <!-- WA Export Section -->
+            <div class="mc-section" id="mc-wa-export">
+                <style>
+                    .wax-card{background:var(--bg-3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;}
+                    .wax-card h3{margin:0 0 10px 0;font-size:0.85rem;color:var(--text-1);font-weight:600;}
+                    .wax-sessions{display:flex;gap:10px;flex-wrap:wrap;}
+                    .wax-session{background:var(--bg-2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;cursor:pointer;transition:all 0.2s;min-width:160px;}
+                    .wax-session:hover{border-color:var(--accent);}
+                    .wax-session.active{border-color:var(--accent);background:var(--accent-dim,rgba(201,168,76,0.1));}
+                    .wax-session.new{border-style:dashed;display:flex;align-items:center;justify-content:center;color:var(--text-2);font-size:0.8rem;min-height:50px;}
+                    .wax-label{font-size:0.82rem;font-weight:600;color:var(--text-0);}
+                    .wax-status{font-size:0.68rem;color:var(--text-2);margin-top:4px;}
+                    .wax-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;}
+                    .wax-dot.connected{background:#4caf50;}
+                    .wax-dot.disconnected{background:#ff6b6b;}
+                    .wax-dot.connecting{background:#ffa726;animation:wax-pulse 1s infinite;}
+                    @keyframes wax-pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+                    .wax-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
+                    .wax-toolbar input[type=text]{flex:1;min-width:160px;background:var(--bg-2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-0);font-size:0.78rem;}
+                    .wax-count{background:var(--accent-dim,rgba(201,168,76,0.15));color:var(--accent);padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:600;}
+                    .wax-btn{padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg-2);color:var(--text-0);cursor:pointer;font-size:0.74rem;font-family:inherit;}
+                    .wax-btn:hover{border-color:var(--accent);}
+                    .wax-btn.primary{background:var(--accent);color:var(--bg-1);border-color:var(--accent);font-weight:600;}
+                    .wax-btn:disabled{opacity:0.4;cursor:not-allowed;}
+                    .wax-grouplist{max-height:420px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;}
+                    .wax-group{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border);cursor:pointer;}
+                    .wax-group:last-child{border-bottom:none;}
+                    .wax-group:hover{background:var(--bg-2);}
+                    .wax-group.selected{background:var(--accent-dim,rgba(201,168,76,0.1));}
+                    .wax-group input{accent-color:var(--accent);width:15px;height:15px;}
+                    .wax-gname{flex:1;font-size:0.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+                    .wax-gmeta{font-size:0.65rem;color:var(--text-2);white-space:nowrap;}
+                    .wax-export-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+                    .wax-export-row select,.wax-export-row label{font-size:0.78rem;color:var(--text-1);}
+                    .wax-export-row select{padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg-2);color:var(--text-0);}
+                    #wax-log{display:none;margin-top:12px;background:var(--bg-2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-family:var(--mono,monospace);font-size:0.72rem;max-height:300px;overflow-y:auto;white-space:pre-wrap;color:var(--text-1);}
+                    #wax-qr{text-align:center;padding:16px;}
+                    #wax-qr img{max-width:260px;background:#fff;padding:10px;border-radius:10px;}
+                    @media (max-width:640px){.wax-sessions{flex-direction:column;}.wax-session{min-width:0;width:100%;}}
+                </style>
+
+                <!-- Accounts -->
+                <div class="wax-card">
+                    <h3>WhatsApp Accounts</h3>
+                    <div class="wax-sessions" id="wax-sessions-list">
+                        <div class="wax-session new" onclick="waxShowNew()">+ Add Account</div>
+                    </div>
+                    <div id="wax-new-form" style="display:none;margin-top:10px;">
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <input type="text" id="wax-new-label" placeholder="Label (e.g. 'Dealer Groups')" style="flex:1;min-width:160px;background:var(--bg-2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-0);font-size:0.78rem;">
+                            <button class="wax-btn primary" onclick="waxConnectNew()">Connect</button>
+                            <button class="wax-btn" onclick="document.getElementById('wax-new-form').style.display='none'">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QR Code -->
+                <div class="wax-card" id="wax-qr-card" style="display:none;">
+                    <h3>Scan QR Code</h3>
+                    <p style="font-size:0.74rem;color:var(--text-2);margin-bottom:8px;">Open WhatsApp on your phone, go to Settings &rarr; Linked Devices &rarr; Link a Device.</p>
+                    <div id="wax-qr"></div>
+                </div>
+
+                <!-- Groups -->
+                <div class="wax-card" id="wax-groups-card" style="display:none;">
+                    <h3>Select Groups to Export</h3>
+                    <div class="wax-toolbar">
+                        <input type="text" id="wax-search" placeholder="Search groups..." oninput="waxRenderGroups()">
+                        <span class="wax-count" id="wax-count">0 selected</span>
+                        <button class="wax-btn" onclick="waxSelectAllVisible()">Select All Visible</button>
+                        <button class="wax-btn" onclick="waxDeselectAll()">Deselect All</button>
+                    </div>
+                    <div class="wax-grouplist" id="wax-grouplist"></div>
+                </div>
+
+                <!-- Export -->
+                <div class="wax-card" id="wax-export-card" style="display:none;">
+                    <h3>Export</h3>
+                    <div class="wax-export-row">
+                        <label>Days:</label>
+                        <select id="wax-days">
+                            <option value="1">Today</option>
+                            <option value="2">Last 2 days</option>
+                            <option value="3">Last 3 days</option>
+                            <option value="7">Last 7 days</option>
+                            <option value="14">Last 14 days</option>
+                            <option value="30">Last 30 days</option>
+                        </select>
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                            <input type="checkbox" id="wax-push" checked style="accent-color:var(--accent);"> Push to Dashboard
+                        </label>
+                        <button class="wax-btn primary" id="wax-export-btn" onclick="waxRunExport()">Export Now</button>
+                    </div>
+                    <div id="wax-log"></div>
                 </div>
             </div>
 
@@ -17081,6 +17179,221 @@ async function loadMissionControl() {
     loadMcTab('backlog');
 }
 
+// ─── WA Export Tool (proxied via /api/wa-export/*) ───
+let _waxCurrent = null;
+let _waxGroups = [];
+let _waxPoll = null;
+
+function waxEsc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+async function waxLoadSessions() {
+    try {
+        const r = await fetch('/api/wa-export/sessions');
+        const d = await r.json();
+        waxRenderSessions(d.sessions || []);
+    } catch(e) { console.error('wax sessions:', e); }
+}
+
+function waxRenderSessions(sessions) {
+    const c = document.getElementById('wax-sessions-list');
+    if (!c) return;
+    let html = '';
+    for (const s of sessions) {
+        const active = _waxCurrent === s.id;
+        const dot = s.status === 'connected' ? 'connected' : (s.status === 'offline' ? 'disconnected' : 'connecting');
+        html += `<div class="wax-session ${active?'active':''}" onclick="waxSelectSession('${waxEsc(s.id)}')">
+            <div class="wax-label"><span class="wax-dot ${dot}"></span>${waxEsc(s.label||s.id)}</div>
+            <div class="wax-status">${waxEsc(s.status)}${s.selectedGroups?(' &middot; '+s.selectedGroups+' groups'):''}</div>
+        </div>`;
+    }
+    html += `<div class="wax-session new" onclick="waxShowNew()">+ Add Account</div>`;
+    c.innerHTML = html;
+}
+
+function waxShowNew() {
+    document.getElementById('wax-new-form').style.display = 'block';
+    setTimeout(()=>document.getElementById('wax-new-label').focus(), 50);
+}
+
+async function waxConnectNew() {
+    const label = (document.getElementById('wax-new-label').value || '').trim() || ('account-'+Date.now());
+    const id = label.toLowerCase().replace(/[^a-z0-9]/g,'-').replace(/-+/g,'-');
+    document.getElementById('wax-new-form').style.display = 'none';
+    try {
+        await fetch(`/api/wa-export/sessions/${encodeURIComponent(id)}/connect`, {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({label})
+        });
+        _waxCurrent = id;
+        waxStartPoll();
+        await waxLoadSessions();
+    } catch(e) { alert('Error: '+e.message); }
+}
+
+async function waxSelectSession(id) {
+    _waxCurrent = id;
+    await waxLoadSessions();
+    try {
+        const r = await fetch(`/api/wa-export/sessions/${encodeURIComponent(id)}/status`);
+        const d = await r.json();
+        if (d.status === 'connected') {
+            waxHideQR();
+            await waxLoadGroups();
+        } else if (d.status === 'qr') {
+            waxShowQR(d.qr);
+            waxStartPoll();
+        } else if (d.status === 'offline') {
+            await fetch(`/api/wa-export/sessions/${encodeURIComponent(id)}/connect`, {
+                method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'
+            });
+            waxStartPoll();
+        } else {
+            waxStartPoll();
+        }
+    } catch(e) { console.error(e); }
+}
+
+function waxStartPoll() {
+    if (_waxPoll) clearInterval(_waxPoll);
+    _waxPoll = setInterval(waxPollStatus, 2000);
+    waxPollStatus();
+}
+
+async function waxPollStatus() {
+    if (!_waxCurrent) return;
+    try {
+        const r = await fetch(`/api/wa-export/sessions/${encodeURIComponent(_waxCurrent)}/status`);
+        const d = await r.json();
+        if (d.status === 'qr' && d.qr) {
+            waxShowQR(d.qr);
+        } else if (d.status === 'connected') {
+            waxHideQR();
+            if (_waxPoll) { clearInterval(_waxPoll); _waxPoll = null; }
+            await waxLoadSessions();
+            await waxLoadGroups();
+        }
+    } catch(e) {}
+}
+
+function waxShowQR(dataUrl) {
+    const card = document.getElementById('wax-qr-card');
+    card.style.display = 'block';
+    document.getElementById('wax-qr').innerHTML = dataUrl
+        ? `<img src="${dataUrl}" alt="QR Code">`
+        : '<p style="color:var(--text-2);font-size:0.75rem;">Waiting for QR code...</p>';
+    document.getElementById('wax-groups-card').style.display = 'none';
+    document.getElementById('wax-export-card').style.display = 'none';
+}
+
+function waxHideQR() {
+    const c = document.getElementById('wax-qr-card');
+    if (c) c.style.display = 'none';
+}
+
+async function waxLoadGroups() {
+    if (!_waxCurrent) return;
+    const r = await fetch(`/api/wa-export/sessions/${encodeURIComponent(_waxCurrent)}/groups`);
+    const d = await r.json();
+    if (!d.ok) return;
+    _waxGroups = d.groups || [];
+    document.getElementById('wax-count').textContent = `${d.selected} of ${d.total} selected`;
+    document.getElementById('wax-groups-card').style.display = 'block';
+    document.getElementById('wax-export-card').style.display = 'block';
+    waxRenderGroups();
+}
+
+function waxRenderGroups() {
+    const search = (document.getElementById('wax-search')?.value || '').toLowerCase();
+    const filtered = search ? _waxGroups.filter(g => (g.name||'').toLowerCase().includes(search)) : _waxGroups;
+    let html = '';
+    for (const g of filtered) {
+        html += `<div class="wax-group ${g.selected?'selected':''}" onclick="waxToggleGroup(this,'${waxEsc(g.jid)}','${waxEsc(g.name)}')">
+            <input type="checkbox" ${g.selected?'checked':''} onclick="event.stopPropagation();waxToggleGroup(this.parentElement,'${waxEsc(g.jid)}','${waxEsc(g.name)}')">
+            <span class="wax-gname">${waxEsc(g.name)}</span>
+            <span class="wax-gmeta">${g.participants||0} members</span>
+        </div>`;
+    }
+    document.getElementById('wax-grouplist').innerHTML = html || '<div style="padding:20px;text-align:center;color:var(--text-2);font-size:0.78rem;">No groups</div>';
+}
+
+async function waxToggleGroup(el, jid, name) {
+    const g = _waxGroups.find(x => x.jid === jid);
+    if (!g) return;
+    g.selected = !g.selected;
+    el.classList.toggle('selected', g.selected);
+    const cb = el.querySelector('input[type=checkbox]');
+    if (cb) cb.checked = g.selected;
+    await fetch(`/api/wa-export/sessions/${encodeURIComponent(_waxCurrent)}/groups/toggle`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({jid, selected: g.selected, name})
+    });
+    const sel = _waxGroups.filter(x => x.selected).length;
+    document.getElementById('wax-count').textContent = `${sel} of ${_waxGroups.length} selected`;
+}
+
+async function waxSelectAllVisible() {
+    const search = (document.getElementById('wax-search')?.value || '').toLowerCase();
+    const visible = search ? _waxGroups.filter(g => (g.name||'').toLowerCase().includes(search)) : _waxGroups;
+    const allSel = visible.every(g => g.selected);
+    const groups = visible.map(g => ({jid:g.jid, name:g.name, selected: !allSel}));
+    await fetch(`/api/wa-export/sessions/${encodeURIComponent(_waxCurrent)}/groups/toggle-bulk`, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({groups})
+    });
+    for (const g of groups) {
+        const o = _waxGroups.find(x => x.jid === g.jid);
+        if (o) o.selected = g.selected;
+    }
+    waxRenderGroups();
+    const sel = _waxGroups.filter(x => x.selected).length;
+    document.getElementById('wax-count').textContent = `${sel} of ${_waxGroups.length} selected`;
+}
+
+async function waxDeselectAll() {
+    const groups = _waxGroups.filter(g => g.selected).map(g => ({jid:g.jid, name:g.name, selected:false}));
+    if (!groups.length) return;
+    await fetch(`/api/wa-export/sessions/${encodeURIComponent(_waxCurrent)}/groups/toggle-bulk`, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({groups})
+    });
+    _waxGroups.forEach(g => g.selected = false);
+    waxRenderGroups();
+    document.getElementById('wax-count').textContent = `0 of ${_waxGroups.length} selected`;
+}
+
+async function waxRunExport() {
+    if (!_waxCurrent) { alert('Select an account first'); return; }
+    const btn = document.getElementById('wax-export-btn');
+    const log = document.getElementById('wax-log');
+    const days = parseInt(document.getElementById('wax-days').value);
+    const push = document.getElementById('wax-push').checked;
+    btn.disabled = true;
+    btn.textContent = 'Exporting...';
+    log.style.display = 'block';
+    log.textContent = `Starting export (${days} day${days>1?'s':''})...\n`;
+    try {
+        const r = await fetch(`/api/wa-export/sessions/${encodeURIComponent(_waxCurrent)}/export`, {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({days, pushToDashboard: push})
+        });
+        const d = await r.json();
+        if (!d.ok) throw new Error(d.error || 'Export failed');
+        log.textContent += `\nDone. ${d.totalMessages || 0} messages exported.\n\n`;
+        for (const row of (d.results || [])) {
+            if (row.error) {
+                log.textContent += `  [x] ${row.group} (${row.date}): ${row.error}\n`;
+            } else {
+                log.textContent += `  [ok] ${row.group} (${row.date}): ${row.messages} messages\n`;
+            }
+        }
+        if (push) log.textContent += '\nPushed to dashboard chats folder.';
+    } catch(e) {
+        log.textContent += `\nError: ${e.message}`;
+    }
+    btn.disabled = false;
+    btn.textContent = 'Export Now';
+}
+
 async function loadMcTab(tab) {
     try {
         switch(tab) {
@@ -17092,6 +17405,7 @@ async function loadMcTab(tab) {
             case 'journal': await loadMcJournal(); break;
             case 'terminal': startTerminal(); break;
             case 'claude-code': loadClaudeSessions(); break;
+            case 'wa-export': waxLoadSessions(); break;
         }
     } catch(e) { console.error('MC tab load error:', e); }
 }
