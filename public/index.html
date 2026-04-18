@@ -2718,8 +2718,31 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                 <button id="tab-outbound" onclick="switchTrackerTab('outbound')" style="padding:8px 20px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-2);font-family:var(--mono);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;cursor:pointer;">
                     Outbound <span id="tab-outbound-count" style="font-size:0.65rem;opacity:0.7;"></span>
                 </button>
+                <button id="tab-sheetinbound" onclick="switchTrackerTab('sheetinbound')" style="padding:8px 20px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-2);font-family:var(--mono);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;cursor:pointer;">
+                    Inbound (Sheet) <span id="tab-sheetinbound-count" style="font-size:0.65rem;opacity:0.7;"></span>
+                </button>
                 <div style="flex:1;"></div>
-                <button onclick="loadTrackerPage()" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:0.72rem;padding:8px 12px;font-family:var(--mono);">Refresh</button>
+                <button onclick="loadTrackerPage();loadInboundSheet();" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:0.72rem;padding:8px 12px;font-family:var(--mono);">Refresh</button>
+            </div>
+
+            <!-- Inbound (Sheet) table — sourced from Sin cash-flow Google Sheet -->
+            <div class="card" id="inbound-sheet-card" style="display:none;">
+                <div class="tbl-wrap">
+                    <table class="tbl" id="inbound-sheet-table">
+                        <thead><tr>
+                            <th>Tracking</th>
+                            <th>Ref / Dial</th>
+                            <th>Status</th>
+                            <th>Location</th>
+                            <th>ETA</th>
+                            <th>Cost</th>
+                            <th></th>
+                        </tr></thead>
+                        <tbody id="inbound-sheet-tbody">
+                            <tr><td colspan="7" style="text-align:center;color:var(--text-2);padding:24px;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- Tracker table -->
@@ -15359,7 +15382,7 @@ async function loadPayments() {
 
     function switchTrackerTab(tab) {
         _trackerTab = tab;
-        ['inbound','outbound'].forEach(t => {
+        ['inbound','outbound','sheetinbound'].forEach(t => {
             const btn = document.getElementById('tab-' + t);
             if (!btn) return;
             if (t === tab) {
@@ -15370,7 +15393,120 @@ async function loadPayments() {
                 btn.style.borderBottomColor = 'transparent';
             }
         });
-        renderTrackerTable();
+        // Toggle visibility: sheet inbound has its own table
+        const mainTbl = document.getElementById('tracker-table');
+        const mainCard = mainTbl ? mainTbl.closest('.card') : null;
+        const sheetCard = document.getElementById('inbound-sheet-card');
+        if (tab === 'sheetinbound') {
+            if (mainCard) mainCard.style.display = 'none';
+            if (sheetCard) sheetCard.style.display = '';
+            loadInboundSheet();
+        } else {
+            if (mainCard) mainCard.style.display = '';
+            if (sheetCard) sheetCard.style.display = 'none';
+            renderTrackerTable();
+        }
+    }
+
+    // ── Inbound (from Google Sheet) ─────────────────────────────────────────
+    let _inboundSheet = [];
+
+    function _inboundStatusBadge(status) {
+        const s = (status || '').toLowerCase();
+        if (!status) return '<span class="tag" style="background:var(--bg-4);color:var(--text-2);border:1px solid var(--border);">Pending</span>';
+        if (s.startsWith('[fedex error')) return `<span class="tag tag-red" title="${status}">FedEx Error</span>`;
+        if (s.includes('delivered')) return '<span class="tag tag-green">Delivered</span>';
+        if (s.includes('out for delivery')) return '<span class="tag tag-gold">Out for Delivery</span>';
+        if (s.includes('exception') || s.includes('delay')) return '<span class="tag tag-red">Exception</span>';
+        if (s.includes('transit') || s.includes('picked up') || s.includes('on fedex')) return '<span class="tag tag-blue">In Transit</span>';
+        return `<span class="tag tag-blue">${status}</span>`;
+    }
+
+    function _fmtEta(ts) {
+        if (!ts) return '<span class="dim">—</span>';
+        const d = new Date(ts * 1000);
+        const now = new Date();
+        const sameDay = d.toDateString() === now.toDateString();
+        const tomorrow = new Date(now); tomorrow.setDate(now.getDate()+1);
+        const isTomorrow = d.toDateString() === tomorrow.toDateString();
+        const time = d.toLocaleTimeString('en-US',{hour:'numeric'}).toLowerCase().replace(' ','');
+        if (sameDay) return `Today ${time}`;
+        if (isTomorrow) return `Tomorrow ${time}`;
+        return d.toLocaleDateString('en-US',{weekday:'short', month:'numeric', day:'numeric'});
+    }
+
+    function renderInboundSheet() {
+        const tbody = document.getElementById('inbound-sheet-tbody');
+        if (!tbody) return;
+        const cnt = document.getElementById('tab-sheetinbound-count');
+        if (cnt) cnt.textContent = _inboundSheet.length ? `(${_inboundSheet.length})` : '';
+        if (!_inboundSheet.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-2);padding:24px;">No inbound shipments tracked from sheet.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = _inboundSheet.map(s => {
+            const fedexUrl = `https://www.fedex.com/fedextrack/?tracknumbers=${s.tracking}`;
+            const refDial = [s.ref, s.dial].filter(Boolean).join(' ') || '<span class="dim">—</span>';
+            const cost = s.cost_price ? `$${Number(s.cost_price).toLocaleString()}` : '<span class="dim">—</span>';
+            const promoteBtn = s.promoted_to_inventory
+                ? '<span class="tag tag-green" style="font-size:0.62rem;">Promoted</span>'
+                : `<button onclick="promoteInbound(${s.id})" style="background:var(--accent);color:var(--bg-1);border:none;border-radius:4px;padding:4px 10px;font-size:0.7rem;font-weight:600;cursor:pointer;">Promote</button>`;
+            return `<tr>
+                <td><a href="${fedexUrl}" target="_blank" style="color:var(--blue);font-family:var(--mono);font-size:0.72rem;">${s.tracking}</a></td>
+                <td><span style="color:var(--accent);font-weight:600;">${refDial}</span></td>
+                <td>${_inboundStatusBadge(s.last_status)}</td>
+                <td class="dim">${s.last_location || '—'}</td>
+                <td class="dim">${_fmtEta(s.eta_ts)}</td>
+                <td class="dim">${cost}</td>
+                <td style="white-space:nowrap;">
+                    <button onclick="refreshInbound(${s.id})" title="Refresh from FedEx" style="background:none;border:none;cursor:pointer;color:var(--text-2);font-size:0.8rem;padding:2px 6px;">&#x21bb;</button>
+                    ${promoteBtn}
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    async function loadInboundSheet() {
+        const tbody = document.getElementById('inbound-sheet-tbody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="padding:0;">'+(typeof skelRows==='function'?skelRows(4):'<div style="padding:24px;text-align:center;color:var(--text-2);">Loading...</div>')+'</td></tr>';
+        try {
+            const r = await fetch('/api/inbound');
+            const d = await r.json();
+            if (!d.ok) throw new Error(d.error || 'load failed');
+            _inboundSheet = d.shipments || [];
+            renderInboundSheet();
+        } catch(e) {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--red);padding:24px;">Error: ${e.message}</td></tr>`;
+        }
+    }
+
+    async function refreshInbound(id) {
+        try {
+            const r = await fetch(`/api/inbound/${id}/refresh`, {method:'POST'});
+            const d = await r.json();
+            if (d.ok && d.shipment) {
+                const idx = _inboundSheet.findIndex(s => s.id === id);
+                if (idx >= 0) _inboundSheet[idx] = d.shipment;
+                renderInboundSheet();
+            } else {
+                alert('Refresh failed: ' + (d.error || 'unknown'));
+            }
+        } catch(e) { alert('Refresh failed: ' + e.message); }
+    }
+
+    async function promoteInbound(id) {
+        if (!confirm('Promote this shipment into inventory?')) return;
+        try {
+            const r = await fetch(`/api/inbound/${id}/promote`, {method:'POST'});
+            const d = await r.json();
+            if (d.ok) {
+                const s = _inboundSheet.find(x => x.id === id);
+                if (s) s.promoted_to_inventory = 1;
+                renderInboundSheet();
+            } else {
+                alert('Promote failed: ' + (d.error || 'unknown'));
+            }
+        } catch(e) { alert('Promote failed: ' + e.message); }
     }
 
     function _statusBadge(status) {
@@ -15589,6 +15725,14 @@ async function loadPayments() {
     const _origLoadShippingPage = loadShippingPage;
     loadShippingPage = async function() {
         loadTrackerPage();
+        // Pre-fetch sheet inbound to populate the tab count
+        fetch('/api/inbound').then(r=>r.json()).then(d=>{
+            if (d && d.ok) {
+                _inboundSheet = d.shipments || [];
+                const cnt = document.getElementById('tab-sheetinbound-count');
+                if (cnt) cnt.textContent = _inboundSheet.length ? `(${_inboundSheet.length})` : '';
+            }
+        }).catch(()=>{});
         if (typeof _origLoadShippingPage === 'function') _origLoadShippingPage();
     };
 
