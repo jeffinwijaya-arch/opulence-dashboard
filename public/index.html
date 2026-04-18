@@ -2178,6 +2178,10 @@
         textarea.auto-resize { overflow:hidden; resize:none !important; min-height:60px; }
 
     </style>
+    <!-- xterm.js for web terminal -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5/css/xterm.css">
+    <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10/lib/addon-fit.js"></script>
 </head>
 <body>
 <!-- Loading Splash -->
@@ -3109,6 +3113,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                         <th style="cursor:pointer;" onclick="sortInventory('bought_from')">From <span id="imh-bought_from"></span></th>
                         <th style="cursor:pointer;" onclick="sortInventory('sold_to')">To <span id="imh-sold_to"></span></th>
                         <th class="right" style="cursor:pointer;" onclick="sortInventory('cost_price')">Cost <span id="imh-cost_price"></span></th>
+                        <th class="right" style="cursor:pointer;" onclick="sortInventory('sale_price')">Posting $ <span id="imh-sale_price"></span></th>
                         <th class="right" style="cursor:pointer;" onclick="sortInventory('sold_price')">Sold $ <span id="imh-sold_price"></span></th>
                         <th class="right" style="cursor:pointer;" onclick="sortInventory('pnl')">P&L <span id="imh-pnl"></span></th>
                         <th style="cursor:pointer;" onclick="sortInventory('arrived')">Arr <span id="imh-arrived"></span></th><th style="cursor:pointer;" onclick="sortInventory('posted')">Post <span id="imh-posted"></span></th><th style="cursor:pointer;" onclick="sortInventory('sold')">Sold <span id="imh-sold"></span></th><th style="cursor:pointer;" onclick="sortInventory('shipped')">Ship <span id="imh-shipped"></span></th><th style="cursor:pointer;" onclick="sortInventory('paid_after_sold')">Paid <span id="imh-paid_after_sold"></span></th><th>Actions</th>
@@ -3940,7 +3945,7 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                     <input type="checkbox" id="crm-group-toggle" onchange="filterCrmStores()" style="accent-color:var(--accent);"> Group by Region
                 </label>
                 <button id="crm-expand-all-btn" class="btn" onclick="crmExpandCollapseAll()" style="font-size:0.6rem;padding:2px 8px;display:none;">Expand All</button>
-                <button id="crm-sync-btn" class="btn" onclick="crmSyncMessages()" style="font-size:0.62rem;padding:3px 8px;opacity:0.8;">⟳ Sync Messages</button>
+                <button id="crm-sync-btn" class="btn" onclick="crmSyncMessages()" style="font-size:0.62rem;padding:3px 8px;opacity:0.8;">Sync Messages</button>
                 <div style="flex:1;"></div>
                 <div id="crm-bulk-bar" style="display:none;align-items:center;gap:6px;">
                     <span id="crm-bulk-count" style="font-size:0.7rem;font-weight:600;color:var(--accent);"></span>
@@ -4364,26 +4369,26 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
                     @keyframes blink{0%,100%{opacity:0.2;}50%{opacity:1;}}
                     .chat-welcome{text-align:center;color:var(--text-2);padding:40px 20px;font-size:0.8rem;line-height:1.6;}
                     .chat-welcome-title{font-size:1rem;font-weight:600;color:var(--text-1);margin-bottom:8px;}
+                    /* Web Terminal */
+                    #web-terminal-wrapper{display:flex;flex-direction:column;height:calc(100vh - 280px);background:#0e0e14;border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+                    #web-terminal-toolbar{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border);background:var(--bg-2);}
+                    #web-terminal-toolbar .term-btn{padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:var(--bg-3);color:var(--text-0);font-size:0.72rem;font-weight:600;font-family:var(--mono);cursor:pointer;transition:all 0.15s;}
+                    #web-terminal-toolbar .term-btn:hover{border-color:var(--accent-border);background:var(--accent-dim);}
+                    #web-terminal-toolbar .term-btn.active{border-color:var(--accent);color:var(--accent);}
+                    #web-terminal-toolbar .term-btn.kill{border-color:rgba(255,23,68,0.3);color:var(--red);}
+                    #web-terminal-toolbar .term-btn.kill:hover{background:var(--red-dim);}
+                    #web-terminal-status{font-size:0.68rem;color:var(--text-2);font-family:var(--mono);margin-left:auto;}
+                    #terminal-container{flex:1;padding:4px;}
+                    #terminal-container .xterm{height:100%;}
                 </style>
-                <div class="chat-container">
-                    <div class="chat-header">
-                        <div class="chat-status" id="chat-status-dot"></div>
-                        <div>
-                            <div class="chat-header-text">Mochie Khai</div>
-                            <div class="chat-header-sub" id="chat-status-text">Online</div>
-                        </div>
-                        <button class="mc-btn mc-btn-secondary" onclick="clearChat()" style="margin-left:auto;font-size:0.65rem;padding:4px 10px;">Clear</button>
+                <div id="web-terminal-wrapper">
+                    <div id="web-terminal-toolbar">
+                        <button class="term-btn" onclick="launchWebTerminal('/bin/zsh')">Launch Shell</button>
+                        <button class="term-btn" onclick="launchWebTerminal('/opt/homebrew/bin/claude')">Launch Claude</button>
+                        <button class="term-btn kill" onclick="killWebTerminal()" id="term-kill-btn" style="display:none;">Kill</button>
+                        <span id="web-terminal-status">Not connected</span>
                     </div>
-                    <div class="chat-messages" id="chat-messages">
-                        <div class="chat-welcome">
-                            <div class="chat-welcome-title">Mochie Khai Terminal</div>
-                            Talk to me directly from the dashboard.<br>Same brain, different surface.
-                        </div>
-                    </div>
-                    <div class="chat-input-bar">
-                        <textarea class="chat-input" id="chat-input" placeholder="Type a message..." rows="1" onkeydown="chatKeydown(event)"></textarea>
-                        <button class="chat-send-btn" id="chat-send-btn" onclick="sendChat()">Send</button>
-                    </div>
+                    <div id="terminal-container"></div>
                 </div>
             </div>
 
@@ -5115,7 +5120,7 @@ function flashChanges(){
 }
 async function refreshData() {
     snapshotMetrics();
-    try { await fetch('/api/refresh',{method:'POST'}); document.querySelector('.main').classList.add('refreshing'); if(typeof showToast==='function') showToast('Refreshing data…'); setTimeout(()=>{loadData();document.querySelector('.main').classList.remove('refreshing'); if(typeof showToast==='function') showToast('Data synced ✓'); setTimeout(flashChanges,500);},3000); } catch(e){console.error('Refresh failed:', e); if(typeof showToast==='function') showToast('Refresh failed','error');}
+    try { await fetch('/api/refresh',{method:'POST'}); document.querySelector('.main').classList.add('refreshing'); if(typeof showToast==='function') showToast('Refreshing data…'); setTimeout(()=>{loadData();document.querySelector('.main').classList.remove('refreshing'); if(typeof showToast==='function') showToast('Data synced'); setTimeout(flashChanges,500);},3000); } catch(e){console.error('Refresh failed:', e); if(typeof showToast==='function') showToast('Refresh failed','error');}
 }
 
 // ── RENDER ──
@@ -9746,7 +9751,7 @@ function filterInventory() {
     rows.sort((a, b) => {
         let va, vb;
         const _ynCols = ['arrived','posted','sold','shipped','paid_after_sold'];
-        if (invSortCol === 'cost_price' || invSortCol === 'sold_price') {
+        if (invSortCol === 'cost_price' || invSortCol === 'sale_price' || invSortCol === 'sold_price') {
             va = p(a[invSortCol]); vb = p(b[invSortCol]);
         } else if (invSortCol === 'pnl') {
             va = a.sold==='Yes' ? p(a.sold_price) - p(a.cost_price) : -Infinity;
@@ -9826,7 +9831,7 @@ function renderInventoryTable(rows) {
     if (!rows.length) {
         const emptyMsg = emptyState('search','No watches found','Try adjusting your search or filter criteria.','clearInventoryFilters()');
         const tbody = document.getElementById('im-tbody');
-        if (tbody) tbody.innerHTML = `<tr><td colspan="13">${emptyMsg}</td></tr>`;
+        if (tbody) tbody.innerHTML = `<tr><td colspan="14">${emptyMsg}</td></tr>`;
         if (cardsEl) cardsEl.innerHTML = emptyMsg;
         return;
     }
@@ -9840,6 +9845,7 @@ function renderInventoryTable(rows) {
             <td style="font-size:0.72rem;">${r.bought_from||'-'}</td>
             <td style="font-size:0.72rem;">${r.sold_to||'-'}</td>
             <td class="right" style="font-size:0.72rem;">${price(r.cost_price)}</td>
+            <td class="right" style="font-size:0.72rem;color:var(--accent);">${price(r.sale_price)}</td>
             <td class="right" style="font-size:0.72rem;">${price(r.sold_price)}</td>
             <td class="right" style="font-size:0.72rem;">${pnlHtml(r)}</td>
             <td>${yn(r.arrived)}</td><td>${yn(r.posted)}</td><td>${yn(r.sold)}</td><td>${yn(r.shipped)}</td><td>${yn(r.paid_after_sold)}</td>
@@ -16308,19 +16314,19 @@ async function loadPayments() {
     
     async function crmSyncMessages() {
         const btn = document.getElementById('crm-sync-btn');
-        btn.textContent = '⟳ Syncing...';
+        btn.textContent = 'Syncing...';
         btn.disabled = true;
         try {
             const r = await fetch('/api/ad-crm/sync-messages', {method:'POST'}).then(r=>r.json());
             if (r.ok) {
-                btn.textContent = `✓ ${r.new_visits} new`;
+                btn.textContent = `${r.new_visits} new`;
                 await loadAdCrm();
-                setTimeout(() => { btn.textContent = '⟳ Sync Messages'; btn.disabled = false; }, 3000);
+                setTimeout(() => { btn.textContent = 'Sync Messages'; btn.disabled = false; }, 3000);
             } else {
-                btn.textContent = '✗ Error';
-                setTimeout(() => { btn.textContent = '⟳ Sync Messages'; btn.disabled = false; }, 3000);
+                btn.textContent = 'Error';
+                setTimeout(() => { btn.textContent = 'Sync Messages'; btn.disabled = false; }, 3000);
             }
-        } catch(e) { btn.textContent = '⟳ Sync Messages'; btn.disabled = false; alert(e.message); }
+        } catch(e) { btn.textContent = 'Sync Messages'; btn.disabled = false; alert(e.message); }
     }
 
     async function crmBulkOutreach() {
@@ -20075,19 +20081,160 @@ if (typeof document !== 'undefined') {
 
 // ── TERMINAL ──
 let _termInterval = null;
+let _webTerm = null;
+let _webTermSessionId = null;
+let _webTermPollTimer = null;
+let _webTermFitAddon = null;
+
+function startTerminal() {
+    // Auto-launch shell if no active session
+    if (!_webTermSessionId) {
+        // Just show the toolbar — user picks shell or claude
+    }
+    // If already connected, just re-fit
+    if (_webTerm && _webTermFitAddon) {
+        setTimeout(() => _webTermFitAddon.fit(), 50);
+    }
+}
+
+async function launchWebTerminal(cmd) {
+    // Kill existing session first
+    if (_webTermSessionId) {
+        await killWebTerminal();
+    }
+    const container = document.getElementById('terminal-container');
+    container.innerHTML = '';
+
+    _webTerm = new Terminal({
+        theme: {
+            background: '#0e0e14',
+            foreground: '#e0ddd4',
+            cursor: '#C9A84C',
+            cursorAccent: '#0e0e14',
+            selection: 'rgba(201,168,76,0.3)',
+            black: '#1a1a2e',
+            red: '#ff1744',
+            green: '#4ADE80',
+            yellow: '#C9A84C',
+            blue: '#60a5fa',
+            magenta: '#a78bfa',
+            cyan: '#22d3ee',
+            white: '#e0ddd4',
+            brightBlack: '#4a4a5e',
+            brightRed: '#ff5252',
+            brightGreen: '#69f0ae',
+            brightYellow: '#ffd54f',
+            brightBlue: '#82b1ff',
+            brightMagenta: '#b388ff',
+            brightCyan: '#84ffff',
+            brightWhite: '#ffffff',
+        },
+        fontFamily: 'JetBrains Mono, Menlo, monospace',
+        fontSize: 14,
+        cursorBlink: true,
+        scrollback: 10000,
+        convertEol: false,
+        allowProposedApi: true,
+    });
+    _webTermFitAddon = new FitAddon.FitAddon();
+    _webTerm.loadAddon(_webTermFitAddon);
+    _webTerm.open(container);
+    _webTermFitAddon.fit();
+
+    // Spawn server-side pty
+    const statusEl = document.getElementById('web-terminal-status');
+    statusEl.textContent = 'Connecting...';
+    try {
+        const r = await fetch('/api/terminal/spawn', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({cmd: cmd, cols: _webTerm.cols, rows: _webTerm.rows})
+        });
+        const d = await r.json();
+        if (!d.ok) { statusEl.textContent = 'Error: ' + (d.error||'spawn failed'); return; }
+        _webTermSessionId = d.session_id;
+        statusEl.textContent = 'Connected';
+        document.getElementById('term-kill-btn').style.display = '';
+    } catch(e) {
+        statusEl.textContent = 'Error: ' + e.message;
+        return;
+    }
+
+    // Send keystrokes to server
+    _webTerm.onData(data => {
+        if (!_webTermSessionId) return;
+        fetch('/api/terminal/input', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({session_id: _webTermSessionId, data: data})
+        });
+    });
+
+    // Poll for output
+    pollTermOutput();
+
+    // Handle resize
+    _webTerm.onResize(({cols, rows}) => {
+        if (!_webTermSessionId) return;
+        fetch('/api/terminal/resize', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({session_id: _webTermSessionId, cols: cols, rows: rows})
+        });
+    });
+
+    // Fit on window resize
+    window._webTermResizeHandler = () => {
+        if (_webTermFitAddon) _webTermFitAddon.fit();
+    };
+    window.addEventListener('resize', window._webTermResizeHandler);
+
+    _webTerm.focus();
+}
+
+async function pollTermOutput() {
+    if (!_webTermSessionId) return;
+    try {
+        const r = await fetch('/api/terminal/output?session_id=' + _webTermSessionId);
+        const d = await r.json();
+        if (d.data && _webTerm) _webTerm.write(d.data);
+        if (d.closed) {
+            if (_webTerm) _webTerm.write('\r\n\x1b[33m[Session ended]\x1b[0m\r\n');
+            document.getElementById('web-terminal-status').textContent = 'Disconnected';
+            document.getElementById('term-kill-btn').style.display = 'none';
+            _webTermSessionId = null;
+            return;
+        }
+    } catch(e) {
+        // Network error — retry after a delay
+    }
+    _webTermPollTimer = setTimeout(pollTermOutput, 80);
+}
+
+async function killWebTerminal() {
+    if (_webTermPollTimer) { clearTimeout(_webTermPollTimer); _webTermPollTimer = null; }
+    if (_webTermSessionId) {
+        try {
+            await fetch('/api/terminal/kill', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({session_id: _webTermSessionId})
+            });
+        } catch(e) {}
+        _webTermSessionId = null;
+    }
+    if (window._webTermResizeHandler) {
+        window.removeEventListener('resize', window._webTermResizeHandler);
+    }
+    document.getElementById('web-terminal-status').textContent = 'Not connected';
+    document.getElementById('term-kill-btn').style.display = 'none';
+}
+
 // ─── Mochie Chat ────────────────────────────────────────────────
 let _chatSending = false;
 let _chatLastTs = '';
 let _chatPollInterval = null;
 let _chatLoadedIds = new Set();
-
-function startTerminal() {
-    loadChatHistory();
-    // Poll for new messages every 3s (catches Telegram messages)
-    if (!_chatPollInterval) {
-        _chatPollInterval = setInterval(pollChatMessages, 3000);
-    }
-}
 
 async function loadChatHistory() {
     try {
