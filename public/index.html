@@ -7176,6 +7176,112 @@ function renderRecentSearches(){
 }
 setTimeout(renderRecentSearches,500);
 
+// Client-side fallback for /api/smart_search. The backend dial parser misses
+// variants like "Lavender", "Aubergine", "Candy Pink" etc. and returns zero
+// matches even when raw listings contain them. This reconstructs a
+// smart_search-shaped response from DATA.refs + allListings so the UI keeps
+// working across the full dial vocabulary.
+async function _clientLocalLookup(query) {
+    const q = (query || '').trim();
+    if (!q) return null;
+    const refMatch = q.match(/\b(\d{5,6}[A-Z]{0,4})\b/i);
+    if (!refMatch) return null;
+    const ref = refMatch[1].toUpperCase();
+    const refInfo = (window.DATA?.refs || {})[ref];
+    if (!refInfo) return null;
+
+    if (!window.allListings || !window.allListings.length) {
+        try { await loadListings(); } catch(e) {}
+    }
+    if (!window.allListings || !window.allListings.length) return null;
+
+    const qLower = q.toLowerCase();
+    const knownDials = Object.keys(refInfo.dials || {})
+        .filter(d => d && d !== 'Unknown')
+        .sort((a, b) => b.length - a.length);
+    let dial = '';
+    for (const d of knownDials) {
+        const parts = d.toLowerCase().split(/\s+/);
+        if (parts.every(p => qLower.includes(p))) { dial = d; break; }
+    }
+    const bracelets = ['Oysterflex', 'Jubilee', 'President', 'Oyster', 'Leather'];
+    let bracelet = '';
+    for (const b of bracelets) {
+        if (qLower.includes(b.toLowerCase())) { bracelet = b; break; }
+    }
+    const yearM = qLower.match(/\b(20\d{2})\b/);
+    const year = yearM ? yearM[1] : '';
+
+    let matches = window.allListings.filter(l => (l.ref || '').toUpperCase() === ref);
+    if (dial) matches = matches.filter(l => (l.dial || '').toLowerCase() === dial.toLowerCase());
+    if (bracelet) matches = matches.filter(l => (l.bracelet || '').toLowerCase() === bracelet.toLowerCase());
+    if (year) matches = matches.filter(l => String(l.year || '').includes(year));
+    if (!matches.length) return null;
+
+    const _stats = arr => {
+        const p = arr.map(l => l.price || 0).filter(x => x > 0).sort((a, b) => a - b);
+        if (!p.length) return null;
+        const n = Math.max(1, Math.floor(p.length * 0.25));
+        const b25 = p.slice(0, n).reduce((s, x) => s + x, 0) / n;
+        return { count: p.length, low: p[0], high: p[p.length - 1],
+                 median: p[Math.floor(p.length / 2)], b25 };
+    };
+    const all = _stats(matches);
+    const us = _stats(matches.filter(l => (l.region || '').toUpperCase() === 'US'));
+    const hk = _stats(matches.filter(l => (l.region || '').toUpperCase() === 'HK'));
+
+    const condBreak = {};
+    for (const l of matches) {
+        const c = l.condition || 'Unknown';
+        if (!condBreak[c]) condBreak[c] = { count: 0 };
+        condBreak[c].count++;
+    }
+
+    const dialBreak = {};
+    for (const l of matches) {
+        const dl = l.dial || 'Unknown';
+        if (!dialBreak[dl]) dialBreak[dl] = { _prices: [] };
+        dialBreak[dl]._prices.push(l.price || 0);
+    }
+    for (const k of Object.keys(dialBreak)) {
+        const p = dialBreak[k]._prices.filter(x => x > 0).sort((a, b) => a - b);
+        const n = Math.max(1, Math.floor(p.length * 0.25));
+        dialBreak[k] = {
+            count: p.length,
+            low: p[0] || 0, high: p[p.length - 1] || 0,
+            median: p[Math.floor(p.length / 2)] || 0,
+            b25: p.length ? p.slice(0, n).reduce((s, x) => s + x, 0) / n : 0
+        };
+    }
+
+    const listings = matches.slice()
+        .sort((a, b) => (a.price || 0) - (b.price || 0))
+        .map(l => Object.assign({}, l, { price_usd: l.price }));
+
+    return {
+        parsed_filters: { ref, dial, bracelet, year },
+        price_summary: {
+            count: all.count, low: all.low, high: all.high,
+            median: all.median, b25: all.b25,
+            us_count: us?.count || 0, us_low: us?.low || 0,
+            us_median: us?.median || 0, us_b25: us?.b25 || 0,
+            hk_count: hk?.count || 0, hk_low: hk?.low || 0,
+            hk_median: hk?.median || 0, hk_b25: hk?.b25 || 0,
+            cheaper_region: (us && hk) ? (us.b25 < hk.b25 ? 'US' : 'HK') : '',
+            by_condition: condBreak
+        },
+        fair_value: {
+            primary: { label: refInfo.model || '', b25: all.b25,
+                       value: all.b25, low: all.low, high: all.high }
+        },
+        dial_breakdown: dialBreak,
+        condition_breakdown: condBreak,
+        listings,
+        total_matches: all.count,
+        _client_side: true
+    };
+}
+
 async function doLookup() {
     const q = ($('#ref-search')?.value||'').trim();
     const c = $('#lookup-result');
@@ -7186,8 +7292,22 @@ async function doLookup() {
     try {
         const url = `/api/smart_search?q=${encodeURIComponent(q)}`;
         const r = await fetch(url);
-        const d = await r.json();
-        if (!r.ok || d.error) throw new Error(d.error||'Not found');
+        let d = {};
+        try { d = await r.json(); } catch(e) { d = {}; }
+
+        // Fall back to client-side lookup when the backend errors out or
+        // returns zero matches for a parseable ref — handles dial variants
+        // (Lavender, Aubergine, etc.) the backend parser misses.
+        const _backendFailed = !r.ok || d.error;
+        const _backendEmpty = d.total_matches === 0 && (d.parsed_filters || {}).ref;
+        if (_backendFailed || _backendEmpty) {
+            const local = await _clientLocalLookup(q);
+            if (local && local.total_matches > 0) {
+                d = local;
+            } else if (_backendFailed) {
+                throw new Error((d && d.error) || 'Not found');
+            }
+        }
 
         // If search returned 0 matches with a dial filter, show clear "not found" with valid dials
         const _pf = d.parsed_filters || {};
