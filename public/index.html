@@ -14536,10 +14536,22 @@ async function loadPayments() {
             const refM = cleanCaption.match(/\b(\d{5,6}[A-Z]{0,4})\b/);
             const ref = refM ? refM[1] : '';
             if (!ref) { intelEl.style.display = 'none'; return; }
-            // Extract dial keywords
-            const dialWords = ['Black','White','Green','Blue','Slate','Rhodium','Grey','Silver','Pink','Champagne','Tiffany','Azzurro','Wimbledon','Diamond','Roman','Stick','Pistachio','Chocolate','MOP','Meteorite','Polar'];
+            // Extract dial from caption. Build dictionary dynamically from DATA.refs
+            // so new dial variants in data are picked up automatically. Sort by length
+            // desc so multi-word dials ("Candy Pink", "Ice Blue") match before generic
+            // single-word colors ("Pink", "Blue").
+            const _refInfo = (window.DATA?.refs || {})[ref] || {};
+            const _refDials = Object.keys(_refInfo.dials || {}).filter(d => d && d !== 'Unknown');
+            const _dialCandidates = (_refDials.length ? _refDials
+                : Array.from(new Set(Object.values(window.DATA?.refs || {})
+                    .flatMap(r => Object.keys((r && r.dials) || {}))
+                    .filter(d => d && d !== 'Unknown')))
+            ).sort((a, b) => b.length - a.length);
             let dial = '';
-            for (const dw of dialWords) { if (cleanCaption.toLowerCase().includes(dw.toLowerCase())) { dial = dw; break; } }
+            const _capLower = cleanCaption.toLowerCase();
+            for (const dw of _dialCandidates) {
+                if (_capLower.includes(dw.toLowerCase())) { dial = dw; break; }
+            }
             const braceletWords = ['Jubilee','Oyster','Oysterflex','President'];
             let bracelet = '';
             for (const bw of braceletWords) { if (cleanCaption.toLowerCase().includes(bw.toLowerCase())) { bracelet = bw; break; } }
