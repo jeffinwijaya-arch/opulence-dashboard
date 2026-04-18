@@ -17386,7 +17386,13 @@ async function waxRunExport() {
                 log.textContent += `  [ok] ${row.group} (${row.date}): ${row.messages} messages\n`;
             }
         }
-        if (push) log.textContent += '\nPushed to dashboard chats folder.';
+        if (push) log.textContent += '\nPushed to dashboard chats folder.\n';
+        if (typeof d.parser_exit_code !== 'undefined') {
+            log.textContent += `\n--- Parser ---\n`;
+            log.textContent += (d.parser_output || '(no output)') + '\n';
+            log.textContent += `[exit ${d.parser_exit_code}]`;
+            if (d.parser_stderr) log.textContent += `\nstderr: ${d.parser_stderr}`;
+        }
     } catch(e) {
         log.textContent += `\nError: ${e.message}`;
     }
