@@ -3311,7 +3311,32 @@ setTimeout(function(){var s=document.getElementById('splash-screen');if(s){s.cla
             <div class="tabs" style="margin-bottom:12px;">
                 <div class="tab active" id="postings-tab-active" onclick="switchPostingsTab('active',this)">Active Postings</div>
                 <div class="tab" id="postings-tab-ready" onclick="switchPostingsTab('ready',this)">Ready to Post</div>
+                <div class="tab" id="postings-tab-incoming" onclick="switchPostingsTab('incoming',this)">Postable — Incoming <span id="postings-tab-incoming-count" style="font-size:0.62rem;opacity:0.7;margin-left:4px;"></span></div>
                 <div class="tab" id="postings-tab-facebook" onclick="switchPostingsTab('facebook',this)">Facebook</div>
+            </div>
+            <!-- Postable — Incoming Panel (from inbound_shipments, pre-arrival) -->
+            <div id="postings-panel-incoming" style="display:none;">
+                <div class="card">
+                    <div class="card-head">
+                        <span style="color:var(--text-2);font-size:0.72rem;">Watches currently en-route. Post them on dealer groups before they arrive. They auto-enter inventory when FedEx reports Delivered.</span>
+                        <span id="postings-incoming-count" style="color:var(--text-2);font-size:0.72rem;margin-left:auto;"></span>
+                    </div>
+                    <div class="tbl-wrap">
+                        <table class="tbl" id="postings-incoming-table">
+                            <thead><tr>
+                                <th>Ref / Dial</th>
+                                <th>Tracking</th>
+                                <th>Status</th>
+                                <th>ETA</th>
+                                <th class="right">Cost</th>
+                                <th>Caption</th>
+                            </tr></thead>
+                            <tbody id="postings-incoming-tbody">
+                                <tr><td colspan="6" style="text-align:center;color:var(--text-2);padding:20px;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
             <!-- Search -->
             <div style="margin-bottom:10px;">
@@ -14351,8 +14376,56 @@ async function loadPayments() {
         document.getElementById('postings-panel-active').style.display = tab === 'active' ? '' : 'none';
         document.getElementById('postings-panel-ready').style.display = tab === 'ready' ? '' : 'none';
         document.getElementById('postings-panel-facebook').style.display = tab === 'facebook' ? '' : 'none';
+        const incPanel = document.getElementById('postings-panel-incoming');
+        if (incPanel) incPanel.style.display = tab === 'incoming' ? '' : 'none';
         if (tab === 'ready' && _postingsReadyData.length === 0) loadReadyToPost();
         if (tab === 'facebook') loadFacebookBundles();
+        if (tab === 'incoming') loadPostingsIncoming();
+    }
+
+    // ── Postable — Incoming (pre-arrival watches from inbound_shipments) ──
+    let _postingsIncoming = [];
+    async function loadPostingsIncoming() {
+        const tbody = document.getElementById('postings-incoming-tbody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-2);padding:20px;">Loading...</td></tr>';
+        try {
+            const r = await fetch('/api/postings/incoming');
+            const d = await r.json();
+            if (!d.ok) throw new Error(d.error || 'load failed');
+            _postingsIncoming = d.incoming || [];
+            renderPostingsIncoming();
+        } catch(e) {
+            if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--red);padding:20px;">Error: ${e.message}</td></tr>`;
+        }
+    }
+    function renderPostingsIncoming() {
+        const tbody = document.getElementById('postings-incoming-tbody');
+        const cntTab = document.getElementById('postings-tab-incoming-count');
+        const cntHdr = document.getElementById('postings-incoming-count');
+        if (cntTab) cntTab.textContent = _postingsIncoming.length ? `(${_postingsIncoming.length})` : '';
+        if (cntHdr) cntHdr.textContent = _postingsIncoming.length ? `${_postingsIncoming.length} incoming` : '';
+        if (!tbody) return;
+        if (!_postingsIncoming.length) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-2);padding:20px;">No incoming watches right now.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = _postingsIncoming.map(s => {
+            const refDial = [s.ref, s.dial].filter(Boolean).join(' ') || '<span class="dim">—</span>';
+            const fedexUrl = `https://www.fedex.com/fedextrack/?tracknumbers=${s.tracking}`;
+            const cost = s.cost_price ? `$${Number(s.cost_price).toLocaleString()}` : '<span class="dim">—</span>';
+            const status = (typeof _inboundStatusBadge==='function') ? _inboundStatusBadge(s.last_status) : (s.last_status||'Pending');
+            const eta = (typeof _fmtEta==='function') ? _fmtEta(s.eta_ts) : '—';
+            const caption = 'Incoming ' + [s.ref, s.dial].filter(Boolean).join(' ');
+            const captionEsc = caption.replace(/"/g, '&quot;');
+            return `<tr>
+                <td><span style="color:var(--accent);font-weight:600;">${refDial}</span></td>
+                <td><a href="${fedexUrl}" target="_blank" style="color:var(--blue);font-family:var(--mono);font-size:0.72rem;">${s.tracking}</a></td>
+                <td>${status}</td>
+                <td class="dim">${eta}</td>
+                <td class="right dim">${cost}</td>
+                <td><button class="btn" style="font-size:0.7rem;padding:4px 10px;" onclick="navigator.clipboard.writeText('${captionEsc}');this.textContent='Copied';setTimeout(()=>this.textContent='Copy Caption',1200);">Copy Caption</button></td>
+            </tr>`;
+        }).join('');
     }
 
     function filterPostings() {
@@ -15448,19 +15521,18 @@ async function loadPayments() {
             const fedexUrl = `https://www.fedex.com/fedextrack/?tracknumbers=${s.tracking}`;
             const refDial = [s.ref, s.dial].filter(Boolean).join(' ') || '<span class="dim">—</span>';
             const cost = s.cost_price ? `$${Number(s.cost_price).toLocaleString()}` : '<span class="dim">—</span>';
-            const promoteBtn = s.promoted_to_inventory
-                ? '<span class="tag tag-green" style="font-size:0.62rem;">Promoted</span>'
-                : `<button onclick="promoteInbound(${s.id})" style="background:var(--accent);color:var(--bg-1);border:none;border-radius:4px;padding:4px 10px;font-size:0.7rem;font-weight:600;cursor:pointer;">Promote</button>`;
+            const promotedTag = s.promoted_to_inventory
+                ? '<span class="tag tag-green" style="font-size:0.62rem;margin-left:6px;" title="Auto-promoted to inventory when delivered">In Inventory</span>'
+                : '';
             return `<tr>
                 <td><a href="${fedexUrl}" target="_blank" style="color:var(--blue);font-family:var(--mono);font-size:0.72rem;">${s.tracking}</a></td>
-                <td><span style="color:var(--accent);font-weight:600;">${refDial}</span></td>
+                <td><span style="color:var(--accent);font-weight:600;">${refDial}</span>${promotedTag}</td>
                 <td>${_inboundStatusBadge(s.last_status)}</td>
                 <td class="dim">${s.last_location || '—'}</td>
                 <td class="dim">${_fmtEta(s.eta_ts)}</td>
                 <td class="dim">${cost}</td>
                 <td style="white-space:nowrap;">
                     <button onclick="refreshInbound(${s.id})" title="Refresh from FedEx" style="background:none;border:none;cursor:pointer;color:var(--text-2);font-size:0.8rem;padding:2px 6px;">&#x21bb;</button>
-                    ${promoteBtn}
                 </td>
             </tr>`;
         }).join('');
@@ -15494,20 +15566,9 @@ async function loadPayments() {
         } catch(e) { alert('Refresh failed: ' + e.message); }
     }
 
-    async function promoteInbound(id) {
-        if (!confirm('Promote this shipment into inventory?')) return;
-        try {
-            const r = await fetch(`/api/inbound/${id}/promote`, {method:'POST'});
-            const d = await r.json();
-            if (d.ok) {
-                const s = _inboundSheet.find(x => x.id === id);
-                if (s) s.promoted_to_inventory = 1;
-                renderInboundSheet();
-            } else {
-                alert('Promote failed: ' + (d.error || 'unknown'));
-            }
-        } catch(e) { alert('Promote failed: ' + e.message); }
-    }
+    // promoteInbound() removed — shipments auto-promote to inventory when FedEx
+    // status flips to "Delivered" (handled server-side by inbound_sync.refresh_one
+    // and the scheduled sync job).
 
     function _statusBadge(status) {
         const s = (status || '').toLowerCase();
@@ -16146,6 +16207,14 @@ async function loadPayments() {
     loadPostingsPage = async function() {
         await _baseLoadPostingsPage();
         await loadPostingPerformance();
+        // Prefetch the incoming count so the tab badge is populated
+        fetch('/api/postings/incoming').then(r=>r.json()).then(d=>{
+            if (d && d.ok) {
+                _postingsIncoming = d.incoming || [];
+                const c = document.getElementById('postings-tab-incoming-count');
+                if (c) c.textContent = _postingsIncoming.length ? `(${_postingsIncoming.length})` : '';
+            }
+        }).catch(()=>{});
     };
 
     // ══════════════════════════════════════════════════
