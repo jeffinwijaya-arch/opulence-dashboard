@@ -1627,18 +1627,22 @@
             #posting-price-edit-modal { align-items:stretch!important; justify-content:stretch!important; }
             #posting-price-edit-modal .epm-dialog {
                 max-width:100%!important; width:100%!important; max-height:100vh!important;
-                height:100vh!important; border-radius:0!important;
+                height:100vh!important; height:100dvh!important; border-radius:0!important;
+                display:flex!important; flex-direction:column!important;
+                overflow:hidden!important;
             }
             #posting-price-edit-modal .epm-header {
                 position:sticky; top:0; z-index:2; background:var(--bg-2);
-                padding:12px 16px!important;
+                padding:12px 16px!important; flex-shrink:0!important;
             }
             #posting-price-edit-modal .epm-body {
+                flex:1 1 auto!important; min-height:0!important; overflow-y:auto!important;
                 padding:14px 16px!important; -webkit-overflow-scrolling:touch;
             }
             #posting-price-edit-modal .epm-footer {
-                position:sticky; bottom:0; z-index:2; background:var(--bg-2);
-                padding:12px 16px!important;
+                position:sticky; bottom:0; z-index:3; background:var(--bg-2);
+                padding:12px 16px calc(12px + env(safe-area-inset-bottom))!important;
+                flex-shrink:0!important;
             }
             #epm-photo-img { max-height:400px!important; width:100%!important; object-fit:contain!important; }
             #epm-caption { min-height:120px!important; font-size:16px!important; }
