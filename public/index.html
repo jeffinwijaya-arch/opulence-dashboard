@@ -2177,6 +2177,105 @@
         /* ── Textarea auto-resize ── */
         textarea.auto-resize { overflow:hidden; resize:none !important; min-height:60px; }
 
+        /* ─────────────────────────────────────────────────────────────
+           MOBILE POLISH PASS (2026-04-18)
+           Targeted fixes for iPhone Safari pain points. Applies across
+           the standard mobile band (≤768px) rather than only ≤480px so
+           iPhone Pro Max (430px), iPad Mini portrait (744px) and
+           landscape phones all benefit. Intentionally conservative —
+           no component rewrites, just sizing + overflow + safe-area.
+           ───────────────────────────────────────────────────────────── */
+        @media (max-width:768px) {
+            /* 1. Touch targets — buttons, tabs, nav links, icon chips.
+               Apple HIG wants 44×44. Keeps existing visual style; just
+               pads to a legal target. */
+            .btn, button:not(.theme-toggle):not(.search-clear):not(.dbg-close) {
+                min-height:44px; padding:10px 14px;
+                font-size:0.82rem; touch-action:manipulation;
+            }
+            .tab { min-height:44px; padding:10px 16px; font-size:0.85rem; }
+            .mobile-nav a { min-height:48px; }
+
+            /* 2. Inputs — avoid Safari auto-zoom on focus.
+               Any input with font-size <16px triggers the zoom. Scope
+               to actual form fields so we don't blow up typography. */
+            input[type="text"], input[type="number"], input[type="email"],
+            input[type="tel"], input[type="search"], input[type="password"],
+            input[type="date"], input[type="datetime-local"], input[type="url"],
+            select, textarea, .input {
+                font-size:16px !important;
+                min-height:44px;
+            }
+            /* Exception: tiny inline inputs inside table cells stay
+               compact so table rows don't balloon. */
+            .tbl input, .tbl select, .tbl textarea {
+                min-height:32px; padding:4px 6px;
+            }
+
+            /* 3. Tables — let long-text columns wrap instead of
+               forcing nowrap on every cell. Keep refs/dates/amounts
+               nowrap via explicit class (.nowrap) or first-col sticky.
+               Also add a scroll-hint shadow so users know the table
+               can scroll horizontally. */
+            .tbl td { white-space:normal; word-break:break-word; }
+            .tbl td.num, .tbl td.right, .tbl td.mono,
+            .tbl td.nowrap, .tbl th { white-space:nowrap; }
+            .tbl-wrap {
+                background:
+                    linear-gradient(90deg, var(--bg-1) 30%, transparent) left/20px 100% no-repeat,
+                    linear-gradient(-90deg, var(--bg-1) 30%, transparent) right/20px 100% no-repeat,
+                    radial-gradient(farthest-side at 0 50%, rgba(0,0,0,0.3), transparent) left/10px 100% no-repeat,
+                    radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,0.3), transparent) right/10px 100% no-repeat;
+                background-attachment: local, local, scroll, scroll;
+            }
+
+            /* 4. Modals — whatever inline-styled modal div is used,
+               constrain to viewport so nothing falls off-screen and
+               keyboard doesn't eat inputs. Uses dvh (dynamic viewport
+               height) so Safari's disappearing toolbar doesn't cut
+               content. 100dvh falls back to 100vh on older browsers. */
+            [id$="-modal"] > div,
+            [id*="modal"][style*="position:fixed"] > div,
+            .modal-content {
+                max-width:96vw !important;
+                max-height:calc(100dvh - 24px) !important;
+                max-height:calc(100vh - 24px) !important;
+                margin:12px auto !important;
+                overflow-y:auto !important;
+                -webkit-overflow-scrolling:touch;
+                padding-bottom:max(16px, env(safe-area-inset-bottom)) !important;
+            }
+            /* Modal backdrops should honour safe-area so content
+               isn't hidden under the home-indicator. */
+            [id$="-modal"], [id*="modal"][style*="position:fixed"] {
+                padding-bottom:env(safe-area-inset-bottom);
+            }
+
+            /* 5. Bottom nav + safe-area — ensure no fixed/sticky page
+               element sits under the mobile bottom nav, and that the
+               nav itself clears the home indicator. Also pad the main
+               scroll region so the last row of content isn't trapped
+               behind the nav. */
+            .mobile-nav { padding-bottom:max(8px, env(safe-area-inset-bottom)); }
+            .main { padding-bottom:calc(72px + env(safe-area-inset-bottom)) !important; }
+            /* Common sticky toolbars inside pages — lift them above
+               the nav when visible. */
+            #batch-toolbar, .sticky-bottom-bar, .bottom-action-bar {
+                bottom:calc(64px + env(safe-area-inset-bottom)) !important;
+            }
+            /* Top-bar / page headers — tighten so less vertical real
+               estate is lost on a 667px-tall iPhone SE. */
+            .page-head { margin-bottom:10px; }
+            .page-head h1 { font-size:1.1rem; }
+        }
+
+        /* Extra-narrow iPhone SE (≤375px) — prevent horizontal overflow
+           from long inline flex rows that don't wrap by default. */
+        @media (max-width:390px) {
+            .card-head { flex-wrap:wrap; gap:6px; }
+            .metrics { gap:6px; }
+        }
+
     </style>
     <!-- xterm.js for web terminal -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5/css/xterm.css">
